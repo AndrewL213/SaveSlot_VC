@@ -33,4 +33,5 @@ Una plataforma web/aplicación móvil que cuenta con funciones como:
 -Vinculación de múltiples cuentas \
 -Buscador potenciado con IA \
 -Página de juego con logros, dificultad, guías, reseñas, plataformas y tiempo \
--Sorteos de juegos - Sistema de gamificación 
+-Sorteos de juegos \
+-Sistema de gamificación 
