@@ -1,37 +1,30 @@
 # SaveSlot
 
-## Un proyecto por:
+SaveSlot reúne tus videojuegos, sus comunidades y funciones con inteligencia artificial en una sola página web.
 
-Kenneth Velásquez, Andrés Hernández y Juan Vigoya
+## El problema
 
-## ¿De qué va?
+Los gamers usan en promedio 4 o 5 canales distintos para informarse sobre sus juegos. Esa dispersión les causa frustración (33 %) y hasta los lleva a abandonar el juego (24 %). Además, el 72 % juega en dos o más plataformas, lo que agrava el problema. *(Fuente: Statista, 2024)*
 
-Saveslot es la página web que reúne a todos los juegos y sus comunidades en un solo lugar, un espacio pensado para los gamers que les permite tener todo al alcance disfrutando de funciones que potencian sus experiencias.
+## Para quién
 
-## ¿Para quién?
+Gamers casuales de 15 a 24 años en España y Latinoamérica que hoy tienen que buscar en varias páginas para encontrar lo que necesitan de sus juegos.
 
-Los gamers casuales que desean disfrutar de experiencias optimizadas.
+## Equipo
 
-## ¿Por qué?
+- **Andrés Hernández** · Líder de producto · Diseñador UX/UI · Desarrollador frontend
+- **Juan Vigoya** · Investigador UX · Responsable de validación con usuarios · QA y gestión de APIs
+- **Kenneth Velásquez** · Director de marca · Productor audiovisual · Responsable de promoción y comunidad
 
-Porque según los datos, la mayoría de los gamers se ven obligados a recurrir a múltiples fuentes, páginas e incluso plataformas para hallar el contenido de sus videojuegos favoritos dando como resultado la perdida del interés o el abrumamiento.
+## Links
 
-## El rol de Saveslot
+- App publicada: pendiente
+- Repositorio del proceso: [SaveSlot-Info](https://github.com/AndrewL213/SaveSlot-Info)
 
-“La solución definitiva”
+## Cómo está organizado este repo
 
-Saveslot reúne a los gamers en una sola plataforma ofreciendo experiencias potenciadas para evitar el abrumamiento que conlleva al abandono de juegos y el desinterés/desconexión con las plataformas gaming.
-
-“Salvar y potenciar”
-
-Saveslot te salva de extensas búsquedas en diversas plataformas que pueden resultar abrumadoras o incluso aburridas, encuentras todos los juegos que quieras y sus comunidades reunidas en un solo lugar con el plus de funciones potenciadas.
-
-## ¿Cómo?
-
-Una plataforma web/aplicación móvil que cuenta con funciones como:
-
--Vinculación de múltiples cuentas \
--Buscador potenciado con IA \
--Página de juego con logros, dificultad, guías, reseñas, plataformas y tiempo \
--Sorteos de juegos \
--Sistema de gamificación 
+- `disenos/` · Las pantallas de la app (inicio, buscador, ficha de juego, perfil, eventos, chat con IA y más), listas para abrir en el navegador.
+- `assets/` · Las imágenes de la app: iconos y portadas de los juegos, con sus créditos en `CREDITOS.md`.
+- `Brief-SaveSlot.md` · El brief del proyecto: problema, usuario, objetivos, mercado y competencia.
+- `README.md` · Esta página.
+- `.gitignore` · Lista de archivos del sistema que no se suben al repositorio.
