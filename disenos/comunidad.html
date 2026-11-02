@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Comunidad · SaveSlot</title>
+<meta name="description" content="Reseñas y guías de la comunidad de SaveSlot.">
+<meta name="theme-color" content="#12161D">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="comunidad" data-section="comunidad">
+
+<main class="container page" style="gap:24px">
+  <div class="stack" style="gap:8px"><h1 class="page-title">Comunidad</h1><p class="muted" style="font-size:17px">Reseñas y guías escritas por jugadores. Vota las que te sirvan.</p></div>
+  <div class="row between">
+    <div class="tabs" role="tablist" aria-label="Contenido de la comunidad" id="com-tabs" style="border:0">
+      <button role="tab" data-tab="rev" aria-selected="true">Reseñas</button><button role="tab" data-tab="gui" aria-selected="false">Guías</button>
+    </div>
+    <div class="row" id="com-sort-wrap"><label for="com-sort" class="small muted">Ordenar</label><select class="select" id="com-sort" style="min-height:44px;padding:8px 12px;background:var(--surface)"><option value="utiles">Más útiles</option><option value="recientes">Más recientes</option></select></div>
+  </div>
+  <div class="grid g-auto-300" id="com-list" aria-live="polite"></div>
+  <a class="btn btn-primary" href="buscar-juegos.html" style="align-self:flex-start">Escribir una reseña</a>
+</main>
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pages-juegos.js"></script>
+<script src="js/pages-cuenta.js"></script>
+</body>
+</html>
