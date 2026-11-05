@@ -19,6 +19,7 @@ solo para identificar cada juego y siempre se indica su fuente y su dueño.
 | portada-pokemon-legends-za.png | Pokémon Legends: Z-A | Wikipedia en inglés (archivo de uso justo) | © Nintendo / Game Freak / The Pokémon Company |
 | portada-valorant.jpg | Valorant | Aportada por el equipo (origen por confirmar) | © Riot Games |
 | favicon.svg, icono-app-*.png | SaveSlot | Diseños del equipo | Equipo SaveSlot |
+| avatar-prueba.jpg | Foto de perfil de prueba (catálogo de componentes) | Fan art de Hyoma Chigiri (Blue Lock) aportado por el equipo; autor desconocido | Personaje © Muneyuki Kaneshiro, Yusuke Nomura / Kodansha. Reemplazar antes del lanzamiento público |
 
 SaveSlot no está respaldado ni patrocinado por Riot Games, Nintendo, Valve ni ninguna de las
 empresas mencionadas. Todas las marcas pertenecen a sus dueños.

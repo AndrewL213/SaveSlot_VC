@@ -1,0 +1,925 @@
+/* ==========================================================================
+   SaveSlot · components.css
+   Cada componente se define una sola vez y usa SOLO variables de tokens.css.
+   Enlazar siempre después de tokens.css.
+   Única excepción: el corte de pantalla de los @media (700px), porque el CSS
+   no permite usar variables dentro de una media query.
+   ========================================================================== */
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--fuente-texto);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-normal);
+  line-height: var(--interlineado-texto);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-weight: var(--peso-titulos);
+  line-height: var(--interlineado-titulos);
+}
+
+a {
+  color: var(--color-primario);
+}
+
+a:hover {
+  color: var(--color-primario-hover);
+}
+
+:focus-visible {
+  outline: var(--borde-grueso) solid var(--color-primario);
+  outline-offset: var(--borde-grueso);
+}
+
+/* ==========================================================================
+   Botón
+   .boton (principal) · --secundario · --fantasma · --peligro
+   Tamaños: --sm · Forma: --bloque (ancho completo) · --icono (cuadrado)
+   ========================================================================== */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  min-height: var(--alto-control);
+  padding: var(--espacio-3) var(--espacio-5);
+  border: var(--borde-fino) solid transparent;
+  border-radius: var(--radio-sm);
+  background: var(--color-primario);
+  color: var(--color-texto-sobre-primario);
+  font-family: inherit;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-fuerte);
+  line-height: var(--interlineado-titulos);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--transicion), border-color var(--transicion), color var(--transicion), transform var(--transicion);
+}
+
+.boton:hover {
+  background: var(--color-primario-hover);
+  color: var(--color-texto-sobre-primario);
+}
+
+.boton:active {
+  transform: scale(0.97);
+}
+
+.boton:disabled,
+.boton[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.boton:disabled:hover,
+.boton[aria-disabled="true"]:hover {
+  background: var(--color-primario);
+}
+
+.boton svg {
+  width: var(--espacio-5);
+  height: var(--espacio-5);
+  flex: none;
+}
+
+.boton--secundario,
+.boton--secundario:hover,
+.boton--secundario:disabled:hover {
+  background: var(--color-superficie-elevada);
+  color: var(--color-texto);
+  border-color: var(--color-borde);
+}
+
+.boton--secundario:hover {
+  border-color: var(--color-primario);
+}
+
+.boton--fantasma,
+.boton--fantasma:disabled:hover {
+  background: transparent;
+  color: var(--color-primario);
+}
+
+.boton--fantasma:hover {
+  background: var(--color-superficie-elevada);
+  color: var(--color-primario-hover);
+}
+
+.boton--peligro,
+.boton--peligro:disabled:hover {
+  background: color-mix(in srgb, var(--color-error) 15%, var(--color-superficie));
+  color: var(--color-texto);
+  border-color: var(--color-error);
+}
+
+.boton--peligro:hover {
+  background: color-mix(in srgb, var(--color-error) 30%, var(--color-superficie));
+  color: var(--color-texto);
+}
+
+.boton--sm {
+  min-height: var(--alto-control-sm);
+  padding: var(--espacio-2) var(--espacio-4);
+  font-size: var(--texto-sm);
+}
+
+.boton--bloque {
+  width: 100%;
+}
+
+.boton--icono {
+  width: var(--alto-control);
+  padding: 0;
+}
+
+.boton--icono.boton--sm {
+  width: var(--alto-control-sm);
+}
+
+/* ==========================================================================
+   Campo de formulario
+   .campo sirve para <input>, <select> y <textarea> · --error · --sm
+   .grupo-campo agrupa etiqueta + campo + ayuda o error
+   ========================================================================== */
+.grupo-campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+}
+
+.grupo-campo__etiqueta {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-fuerte);
+}
+
+.grupo-campo__ayuda {
+  font-size: var(--texto-sm);
+  color: var(--color-texto-suave);
+}
+
+.grupo-campo__error {
+  font-size: var(--texto-sm);
+  color: var(--color-error);
+}
+
+.campo {
+  width: 100%;
+  min-height: var(--alto-control);
+  padding: var(--espacio-3);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-sm);
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--texto-base);
+  transition: border-color var(--transicion);
+}
+
+.campo::placeholder {
+  color: var(--color-texto-suave);
+}
+
+.campo:hover {
+  border-color: var(--color-texto-suave);
+}
+
+.campo:focus-visible {
+  outline: none;
+  border-color: var(--color-primario);
+}
+
+.campo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+textarea.campo {
+  resize: vertical;
+  line-height: var(--interlineado-texto);
+}
+
+.campo--error,
+.campo--error:hover,
+.campo--error:focus-visible {
+  border-color: var(--color-error);
+}
+
+.campo--sm {
+  min-height: var(--alto-control-sm);
+  padding: var(--espacio-2) var(--espacio-3);
+  font-size: var(--texto-sm);
+}
+
+/* ==========================================================================
+   Buscador (campo destacado con botón)
+   ========================================================================== */
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  width: 100%;
+  padding: var(--espacio-1) var(--espacio-1) var(--espacio-1) var(--espacio-4);
+  border: var(--borde-grueso) solid var(--color-primario);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+}
+
+.buscador:focus-within {
+  border-color: var(--color-primario-hover);
+}
+
+.buscador svg {
+  width: var(--espacio-5);
+  height: var(--espacio-5);
+  flex: none;
+}
+
+.buscador__campo {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--alto-control-sm);
+  border: 0;
+  background: transparent;
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--texto-base);
+}
+
+.buscador__campo::placeholder {
+  color: var(--color-texto-suave);
+}
+
+.buscador__campo:focus-visible {
+  outline: none;
+}
+
+/* ==========================================================================
+   Etiqueta (badge)
+   .etiqueta (neutra) · --primario · --exito · --error · --aviso · --ia · --contorno
+   ========================================================================== */
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  padding: var(--espacio-1) var(--espacio-2);
+  border: var(--borde-fino) solid transparent;
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie-elevada);
+  color: var(--color-texto);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+  line-height: var(--interlineado-titulos);
+}
+
+.etiqueta--primario {
+  background: var(--color-primario);
+  color: var(--color-texto-sobre-primario);
+}
+
+.etiqueta--exito {
+  background: var(--color-exito);
+  color: var(--color-texto-sobre-primario);
+}
+
+.etiqueta--error {
+  background: var(--color-error);
+  color: var(--color-texto-sobre-primario);
+}
+
+.etiqueta--aviso {
+  background: var(--color-aviso);
+  color: var(--color-texto-sobre-primario);
+}
+
+.etiqueta--ia {
+  background: color-mix(in srgb, var(--color-secundario) 18%, var(--color-superficie));
+  color: var(--color-secundario);
+  border-color: var(--color-secundario);
+}
+
+.etiqueta--contorno {
+  background: transparent;
+  color: var(--color-texto-suave);
+  border-color: var(--color-borde);
+}
+
+/* ==========================================================================
+   Chip (filtro que se activa y desactiva)
+   Activo: aria-pressed="true" en un <button>, o la clase .chip--activo
+   ========================================================================== */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--alto-control-sm);
+  padding: var(--espacio-2) var(--espacio-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-total);
+  background: var(--color-superficie-elevada);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--texto-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color var(--transicion), background-color var(--transicion), color var(--transicion);
+}
+
+.chip:hover {
+  border-color: var(--color-primario);
+  color: var(--color-texto);
+}
+
+.chip[aria-pressed="true"],
+.chip--activo {
+  background: var(--color-texto);
+  border-color: var(--color-texto);
+  color: var(--color-fondo);
+  font-weight: var(--peso-fuerte);
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Tarjeta · --enlace (toda la tarjeta es un link) · --destacada
+   ========================================================================== */
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  padding: var(--espacio-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+}
+
+.tarjeta__titulo {
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-fuerte);
+}
+
+.tarjeta__texto {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.tarjeta--enlace {
+  text-decoration: none;
+  transition: transform var(--transicion), border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.tarjeta--enlace:hover {
+  color: var(--color-texto);
+  border-color: var(--color-primario);
+  box-shadow: var(--sombra-suave);
+  transform: translateY(calc(var(--espacio-1) * -1));
+}
+
+.tarjeta--destacada {
+  padding: var(--espacio-7);
+  border-color: var(--color-primario);
+  background: color-mix(in srgb, var(--color-primario) 15%, var(--color-superficie));
+}
+
+/* ==========================================================================
+   Panel (contenedor grande de una sección)
+   ========================================================================== */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  padding: var(--espacio-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+}
+
+.panel__titulo {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-titulos);
+  color: var(--color-texto-suave);
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   Dato (número grande con su etiqueta)
+   ========================================================================== */
+.dato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+  padding: var(--espacio-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.dato__etiqueta {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+  color: var(--color-texto-suave);
+  text-transform: uppercase;
+}
+
+.dato__valor {
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-titulos);
+  line-height: var(--interlineado-titulos);
+}
+
+/* ==========================================================================
+   Pestañas (subrayadas)
+   Activa: aria-selected="true"
+   ========================================================================== */
+.pestanas {
+  display: flex;
+  gap: var(--espacio-1);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+  overflow-x: auto;
+}
+
+.pestanas__boton {
+  min-height: var(--alto-control);
+  margin-bottom: calc(var(--borde-fino) * -1);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 0;
+  border-bottom: var(--borde-grueso) solid transparent;
+  background: none;
+  color: var(--color-texto-suave);
+  font-family: inherit;
+  font-size: var(--texto-base);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--transicion);
+}
+
+.pestanas__boton:hover {
+  color: var(--color-texto);
+}
+
+.pestanas__boton[aria-selected="true"] {
+  color: var(--color-texto);
+  font-weight: var(--peso-fuerte);
+  border-bottom-color: var(--color-primario);
+}
+
+.pestanas__boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Control segmentado (2 o 3 opciones de igual ancho)
+   Activa: aria-selected="true"
+   ========================================================================== */
+.segmentado {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--espacio-1);
+  padding: var(--espacio-1);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.segmentado__opcion {
+  min-height: var(--alto-control-sm);
+  padding: var(--espacio-2);
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: none;
+  color: var(--color-texto-suave);
+  font-family: inherit;
+  font-size: var(--texto-sm);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--transicion), color var(--transicion);
+}
+
+.segmentado__opcion:hover {
+  color: var(--color-texto);
+}
+
+.segmentado__opcion[aria-selected="true"] {
+  background: var(--color-superficie-elevada);
+  color: var(--color-texto);
+  font-weight: var(--peso-fuerte);
+}
+
+/* ==========================================================================
+   Navegación
+   Escritorio: barra fija arriba. Celular: los enlaces pasan a una barra
+   fija abajo (la pantalla debe dejar espacio abajo para no taparla).
+   Página actual: aria-current="page"
+   ========================================================================== */
+.navegacion {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+  background: color-mix(in srgb, var(--color-fondo) 92%, transparent);
+  backdrop-filter: blur(var(--espacio-2));
+}
+
+.navegacion__contenido {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-5);
+  max-width: var(--ancho-maximo);
+  margin: 0 auto;
+  padding: var(--espacio-3) var(--espacio-7);
+}
+
+.navegacion__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  color: var(--color-texto);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-titulos);
+  text-decoration: none;
+}
+
+.navegacion__logo:hover {
+  color: var(--color-texto);
+}
+
+.navegacion__logo img {
+  width: var(--espacio-7);
+  height: var(--espacio-7);
+}
+
+.navegacion__enlaces {
+  display: flex;
+  gap: var(--espacio-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navegacion__enlace {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: var(--espacio-2) var(--espacio-3);
+  border-radius: var(--radio-sm);
+  color: var(--color-texto-suave);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-fuerte);
+  text-decoration: none;
+  transition: background-color var(--transicion), color var(--transicion);
+}
+
+.navegacion__enlace:hover,
+.navegacion__enlace[aria-current="page"] {
+  background: var(--color-superficie-elevada);
+  color: var(--color-texto);
+}
+
+.navegacion__enlace svg {
+  width: var(--espacio-5);
+  height: var(--espacio-5);
+  flex: none;
+}
+
+.navegacion__acciones {
+  display: flex;
+  gap: var(--espacio-2);
+  margin-left: auto;
+}
+
+@media (max-width: 700px) {
+  /* Sin desenfoque: si no, la barra fija de abajo queda atrapada dentro del header */
+  .navegacion {
+    backdrop-filter: none;
+    background: var(--color-fondo);
+  }
+
+  .navegacion__contenido {
+    gap: var(--espacio-3);
+    padding: var(--espacio-3) var(--espacio-4);
+  }
+
+  .navegacion__logo {
+    font-size: var(--texto-lg);
+  }
+
+  .navegacion__enlaces {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 0;
+    padding: var(--espacio-1) var(--espacio-1) calc(var(--espacio-1) + env(safe-area-inset-bottom, 0px));
+    border-top: var(--borde-fino) solid var(--color-borde);
+    background: color-mix(in srgb, var(--color-fondo) 96%, transparent);
+    backdrop-filter: blur(var(--espacio-3));
+  }
+
+  .navegacion__enlace {
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--espacio-1);
+    min-height: var(--alto-control);
+    padding: var(--espacio-1);
+    font-size: var(--texto-xs);
+  }
+
+  .navegacion__enlace:hover {
+    background: none;
+  }
+
+  .navegacion__enlace[aria-current="page"] {
+    background: none;
+    color: var(--color-primario);
+  }
+}
+
+/* ==========================================================================
+   Portada de juego
+   La imagen va en style="background-image:url(assets/portada-....jpg)"
+   .portada (tamaño fluido, 3:4) · --sm (48 px, sin título) · --enlace
+   ========================================================================== */
+.portada {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  aspect-ratio: 3 / 4;
+  padding: var(--espacio-3);
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background-color: var(--color-superficie-elevada);
+  background-position: center;
+  background-size: cover;
+  color: var(--color-texto);
+  text-decoration: none;
+  transition: transform var(--transicion), box-shadow var(--transicion);
+}
+
+.portada::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, color-mix(in srgb, var(--color-fondo) 85%, transparent), transparent 55%);
+}
+
+.portada__titulo {
+  position: relative;
+  z-index: 1;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-fuerte);
+  line-height: var(--interlineado-titulos);
+}
+
+.portada__ranking {
+  position: absolute;
+  top: var(--espacio-2);
+  left: var(--espacio-2);
+  z-index: 1;
+  padding: var(--espacio-1) var(--espacio-2);
+  border-radius: var(--radio-sm);
+  background: color-mix(in srgb, var(--color-fondo) 80%, transparent);
+  color: var(--color-texto);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+}
+
+.portada--enlace:hover {
+  color: var(--color-texto);
+  box-shadow: 0 0 0 var(--borde-grueso) var(--color-primario), var(--sombra-suave);
+  transform: translateY(calc(var(--espacio-1) * -1));
+}
+
+.portada--sm {
+  flex: none;
+  width: calc(var(--espacio-8) + var(--espacio-2));
+  padding: 0;
+  border-radius: var(--radio-sm);
+}
+
+.portada--sm::after {
+  display: none;
+}
+
+/* ==========================================================================
+   Avatar (persona) · --lg
+   ========================================================================== */
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--espacio-8);
+  height: var(--espacio-8);
+  overflow: hidden;
+  border-radius: var(--radio-total);
+  background: var(--color-superficie-elevada);
+  color: var(--color-primario);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-titulos);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar--lg {
+  width: calc(var(--espacio-8) * 2);
+  height: calc(var(--espacio-8) * 2);
+  border: var(--borde-grueso) solid var(--color-primario);
+  font-size: var(--texto-xl);
+}
+
+/* ==========================================================================
+   Medidor (barra de progreso) · --exito · --aviso
+   El avance va en style="width:62%" de .medidor__barra
+   ========================================================================== */
+.medidor {
+  height: var(--espacio-2);
+  overflow: hidden;
+  border-radius: var(--radio-total);
+  background: var(--color-superficie-elevada);
+}
+
+.medidor__barra {
+  display: block;
+  height: 100%;
+  border-radius: var(--radio-total);
+  background: var(--color-primario);
+}
+
+.medidor--exito .medidor__barra {
+  background: var(--color-exito);
+}
+
+.medidor--aviso .medidor__barra {
+  background: var(--color-aviso);
+}
+
+/* ==========================================================================
+   Modal
+   .modal-fondo oscurece la pantalla; dentro va .modal.
+   En celular el modal sale desde abajo.
+   ========================================================================== */
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--espacio-4);
+  background: color-mix(in srgb, var(--color-fondo) 75%, transparent);
+}
+
+.modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  width: 100%;
+  max-width: var(--ancho-modal);
+  padding: var(--espacio-7);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+  box-shadow: var(--sombra-media);
+}
+
+.modal__titulo {
+  font-size: var(--texto-xl);
+}
+
+.modal__texto {
+  margin: 0;
+  color: var(--color-texto-suave);
+}
+
+.modal__cerrar {
+  position: absolute;
+  top: var(--espacio-3);
+  right: var(--espacio-3);
+}
+
+.modal__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-3);
+}
+
+.modal__acciones > * {
+  flex: 1;
+}
+
+@media (max-width: 700px) {
+  .modal-fondo {
+    align-items: end;
+    padding: 0;
+  }
+
+  .modal {
+    padding: var(--espacio-6);
+    border-radius: var(--radio-lg) var(--radio-lg) 0 0;
+  }
+}
+
+/* ==========================================================================
+   Aviso flotante (toast): mensaje corto abajo de la pantalla
+   ========================================================================== */
+.aviso-flotante {
+  position: fixed;
+  bottom: var(--espacio-6);
+  left: 50%;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  max-width: calc(100% - var(--espacio-7));
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio-md);
+  background: var(--color-texto);
+  color: var(--color-fondo);
+  font-weight: var(--peso-fuerte);
+  box-shadow: var(--sombra-media);
+  transform: translateX(-50%);
+}
+
+.aviso-flotante__accion {
+  padding: var(--espacio-1) var(--espacio-2);
+  border: 0;
+  background: none;
+  color: var(--color-fondo);
+  font-family: inherit;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-titulos);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  /* Sube para no tapar la barra de navegación de abajo */
+  .aviso-flotante {
+    bottom: calc(var(--alto-control) + var(--espacio-8));
+  }
+}
+
+/* ==========================================================================
+   Estado vacío (cuando una lista no tiene nada)
+   ========================================================================== */
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: var(--espacio-7);
+  border: var(--borde-fino) dashed var(--color-borde);
+  border-radius: var(--radio-md);
+  color: var(--color-texto-suave);
+  text-align: center;
+}
+
+/* ---------- Movimiento reducido ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .panel {
+    padding: var(--espacio-4);
+  }
+
+  .tarjeta--destacada,
+  .vacio {
+    padding: var(--espacio-6);
+  }
+}

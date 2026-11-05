@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Componentes · SaveSlot</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/components.css">
+<style>
+  /* Estilos solo de esta página de catálogo (no son componentes de la app).
+     También usan únicamente variables de tokens.css. */
+  .cat { max-width: var(--ancho-maximo); margin: 0 auto; padding: var(--espacio-8) var(--espacio-7); display: flex; flex-direction: column; gap: var(--espacio-8); }
+  .cat-intro { display: flex; flex-direction: column; align-items: flex-start; gap: var(--espacio-3); }
+  /* Evita que los bloques de código ensanchen la página en el celular */
+  .cat > *, .cat-seccion > *, .cat-componente > * { min-width: 0; max-width: 100%; }
+  .cat-intro h1 { font-size: var(--texto-2xl); }
+  .cat-intro p { margin: 0; color: var(--color-texto-suave); }
+  .cat-seccion { display: flex; flex-direction: column; gap: var(--espacio-5); scroll-margin-top: calc(var(--alto-control) + var(--espacio-8)); }
+  .cat-seccion > h2 { font-size: var(--texto-xl); padding-bottom: var(--espacio-3); border-bottom: var(--borde-fino) solid var(--color-borde); }
+  .cat-componente { display: flex; flex-direction: column; gap: var(--espacio-3); }
+  .cat-componente > h3 { font-size: var(--texto-lg); }
+  .cat-componente > p { margin: 0; color: var(--color-texto-suave); font-size: var(--texto-sm); }
+  .cat-ejemplo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espacio-3); padding: var(--espacio-5); border: var(--borde-fino) solid var(--color-borde); border-radius: var(--radio-md); }
+  .cat-ejemplo--columna { flex-direction: column; align-items: stretch; }
+  .cat-codigo { margin: 0; padding: var(--espacio-3); overflow-x: auto; border-radius: var(--radio-sm); background: var(--color-superficie); color: var(--color-texto-suave); font-family: ui-monospace, Consolas, monospace; font-size: var(--texto-xs); line-height: var(--interlineado-texto); white-space: pre; }
+  .cat-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--espacio-8) * 4), 1fr)); gap: var(--espacio-4); }
+  .cat-muestra { display: flex; flex-direction: column; overflow: hidden; border: var(--borde-fino) solid var(--color-borde); border-radius: var(--radio-md); background: var(--color-superficie); }
+  .cat-muestra__color { height: calc(var(--espacio-8) * 2); border-bottom: var(--borde-fino) solid var(--color-borde); }
+  .cat-muestra__info { display: flex; flex-direction: column; gap: var(--espacio-1); padding: var(--espacio-3); font-size: var(--texto-xs); }
+  .cat-muestra__info code { color: var(--color-texto-suave); }
+  .cat-fila { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--espacio-4); padding: var(--espacio-3) 0; border-bottom: var(--borde-fino) solid var(--color-borde); }
+  .cat-fila code { min-width: calc(var(--espacio-8) * 4); color: var(--color-texto-suave); font-size: var(--texto-xs); }
+  .cat-caja { width: var(--espacio-8); height: var(--espacio-8); border: var(--borde-fino) solid var(--color-borde); background: var(--color-superficie-elevada); }
+  .cat-barra { height: var(--espacio-3); background: var(--color-primario); border-radius: var(--radio-sm); }
+  .cat-portadas { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--espacio-8) * 3), 1fr)); gap: var(--espacio-4); width: 100%; }
+  .cat-fuente { display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(var(--espacio-8) * 6), 1fr)); gap: var(--espacio-4); }
+  .cat-fuente__muestra { font-size: var(--texto-2xl); font-weight: var(--peso-titulos); }
+  .cat-fuente__muestra--sistema { font-family: Arial, sans-serif; }
+  /* Muestras que en la app flotan (modal, aviso) se ven aquí dentro de la página */
+  .cat-estatico .modal-fondo,
+  .cat-estatico .aviso-flotante { position: static; transform: none; }
+  .cat-estatico .modal-fondo { padding: var(--espacio-4); border-radius: var(--radio-md); }
+  @media (max-width: 700px) {
+    .cat { padding: var(--espacio-6) var(--espacio-4); }
+    /* Deja lugar para la barra de navegación de abajo */
+    body { padding-bottom: calc(var(--alto-control) + var(--espacio-6)); }
+    .cat-estatico .modal-fondo { padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- La navegación de este catálogo es el propio componente .navegacion -->
+<header class="navegacion">
+  <div class="navegacion__contenido">
+    <a class="navegacion__logo" href="#inicio"><img src="assets/favicon.svg" alt="">SaveSlot</a>
+    <ul class="navegacion__enlaces">
+      <li><a class="navegacion__enlace" href="#colores" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>Colores</a></li>
+      <li><a class="navegacion__enlace" href="#tipografia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg>Texto</a></li>
+      <li><a class="navegacion__enlace" href="#medidas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="2"/><path d="M7 8v3M11 8v3M15 8v3"/></svg>Medidas</a></li>
+      <li><a class="navegacion__enlace" href="#componentes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Componentes</a></li>
+    </ul>
+    <div class="navegacion__acciones">
+      <a class="boton boton--secundario boton--sm" href="#componentes">Ver todo</a>
+    </div>
+  </div>
+</header>
+
+<main class="cat" id="inicio">
+
+  <div class="cat-intro">
+    <span class="etiqueta etiqueta--ia">Design kit</span>
+    <h1>Componentes de SaveSlot</h1>
+    <p>Todo lo que hay en <code>css/tokens.css</code> y <code>css/components.css</code>. Debajo de cada ejemplo está el HTML para copiarlo. Pasa el mouse sobre los componentes para ver el hover, y usa la tecla Tab para ver el foco.</p>
+  </div>
+
+  <!-- ============ COLORES ============ -->
+  <section class="cat-seccion" id="colores">
+    <h2>Colores</h2>
+    <div class="cat-rejilla" id="muestras-colores"></div>
+  </section>
+
+  <!-- ============ TIPOGRAFÍA ============ -->
+  <section class="cat-seccion" id="tipografia">
+    <h2>Tipografía</h2>
+
+    <div class="cat-componente">
+      <h3>Fuente: Figtree</h3>
+      <p>Se carga desde Google Fonts (al inicio de <code>css/tokens.css</code>). Si la fuente cargó, la muestra de la izquierda se ve distinta a la de Arial: mira la "g", la "R" y el "1".</p>
+      <div class="cat-ejemplo" style="justify-content: space-between">
+        <span class="etiqueta" id="estado-fuente">Comprobando la fuente…</span>
+      </div>
+      <div class="cat-fuente">
+        <div class="tarjeta"><span class="dato__etiqueta">Figtree (la del kit)</span><span class="cat-fuente__muestra">Rg 1 SaveSlot</span></div>
+        <div class="tarjeta"><span class="dato__etiqueta">Arial (respaldo)</span><span class="cat-fuente__muestra cat-fuente__muestra--sistema">Rg 1 SaveSlot</span></div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Escala de tamaños</h3>
+      <div id="escala-texto"></div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Pesos</h3>
+      <div id="escala-pesos"></div>
+    </div>
+  </section>
+
+  <!-- ============ MEDIDAS ============ -->
+  <section class="cat-seccion" id="medidas">
+    <h2>Espacios, bordes y sombras</h2>
+    <div class="cat-componente">
+      <h3>Espacios (múltiplos de 4 px)</h3>
+      <div id="escala-espacios"></div>
+    </div>
+    <div class="cat-componente">
+      <h3>Radios</h3>
+      <div class="cat-ejemplo" id="escala-radios"></div>
+    </div>
+    <div class="cat-componente">
+      <h3>Sombras</h3>
+      <div class="cat-ejemplo">
+        <div class="tarjeta" style="box-shadow: var(--sombra-suave)"><code>--sombra-suave</code>Hover de tarjetas y portadas</div>
+        <div class="tarjeta" style="box-shadow: var(--sombra-media)"><code>--sombra-media</code>Modales y avisos flotantes</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENTES ============ -->
+  <section class="cat-seccion" id="componentes">
+    <h2>Componentes</h2>
+
+    <div class="cat-componente">
+      <h3>Botón · <code>.boton</code></h3>
+      <p>Principal, secundario, fantasma y peligro, en tamaño normal (48 px) y pequeño (40 px).</p>
+      <div class="cat-ejemplo" data-codigo>
+        <button class="boton" type="button">Principal</button>
+        <button class="boton boton--secundario" type="button">Secundario</button>
+        <button class="boton boton--fantasma" type="button">Fantasma</button>
+        <button class="boton boton--peligro" type="button">Desvincular</button>
+      </div>
+      <div class="cat-ejemplo" data-codigo>
+        <button class="boton boton--sm" type="button">Principal pequeño</button>
+        <button class="boton boton--secundario boton--sm" type="button">Secundario pequeño</button>
+        <a class="boton boton--secundario" href="#componentes">Un enlace con forma de botón</a>
+      </div>
+      <p>Desactivado:</p>
+      <div class="cat-ejemplo" data-codigo>
+        <button class="boton" type="button" disabled>Principal</button>
+        <button class="boton boton--secundario" type="button" disabled>Secundario</button>
+      </div>
+      <p>Solo ícono (siempre con <code>aria-label</code>) y ancho completo:</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <button class="boton boton--secundario boton--icono" type="button" aria-label="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+        <button class="boton boton--bloque" type="submit">Crear cuenta</button>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Campo de formulario · <code>.campo</code> y <code>.grupo-campo</code></h3>
+      <p>Sirve para texto, listas y áreas de texto. Siempre con su etiqueta.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="grupo-campo">
+          <label class="grupo-campo__etiqueta" for="ej-correo">Correo</label>
+          <input class="campo" id="ej-correo" type="email" placeholder="tu@correo.com">
+          <span class="grupo-campo__ayuda">Nunca lo mostramos en tu perfil.</span>
+        </div>
+      </div>
+      <p>Con error:</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="grupo-campo">
+          <label class="grupo-campo__etiqueta" for="ej-usuario">Nombre de usuario</label>
+          <input class="campo campo--error" id="ej-usuario" value="sam" aria-invalid="true" aria-describedby="ej-usuario-error">
+          <span class="grupo-campo__error" id="ej-usuario-error">Usa al menos 4 caracteres.</span>
+        </div>
+      </div>
+      <p>Lista, área de texto, pequeño (para filtros) y desactivado:</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="grupo-campo">
+          <label class="grupo-campo__etiqueta" for="ej-tema">Tema</label>
+          <select class="campo" id="ej-tema"><option>Problema con mi cuenta</option><option>Eventos y pagos</option></select>
+        </div>
+        <div class="grupo-campo">
+          <label class="grupo-campo__etiqueta" for="ej-mensaje">Mensaje</label>
+          <textarea class="campo" id="ej-mensaje" rows="3" placeholder="Cuéntanos qué pasó"></textarea>
+        </div>
+        <div class="grupo-campo">
+          <label class="grupo-campo__etiqueta" for="ej-orden">Ordenar</label>
+          <select class="campo campo--sm" id="ej-orden"><option>Más útiles</option><option>Más recientes</option></select>
+        </div>
+        <div class="grupo-campo">
+          <label class="grupo-campo__etiqueta" for="ej-fijo">Usuario</label>
+          <input class="campo" id="ej-fijo" value="samluq" disabled>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Buscador · <code>.buscador</code></h3>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <form class="buscador" role="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input class="buscador__campo" type="search" aria-label="Buscar juegos" placeholder="Busca un juego, por ejemplo Hollow Knight">
+          <button class="boton" type="submit">Buscar</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Etiqueta · <code>.etiqueta</code></h3>
+      <div class="cat-ejemplo" data-codigo>
+        <span class="etiqueta">Neutra</span>
+        <span class="etiqueta etiqueta--primario">Nivel 12</span>
+        <span class="etiqueta etiqueta--exito">Logro</span>
+        <span class="etiqueta etiqueta--error">Sin conexión</span>
+        <span class="etiqueta etiqueta--aviso">Pendiente</span>
+        <span class="etiqueta etiqueta--ia">IA</span>
+        <span class="etiqueta etiqueta--contorno">PC</span>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Chip · <code>.chip</code></h3>
+      <p>Para filtros. El activo lleva <code>aria-pressed="true"</code>. Haz clic para probar.</p>
+      <div class="cat-ejemplo" data-codigo>
+        <button class="chip" type="button" aria-pressed="true">Todos</button>
+        <button class="chip" type="button" aria-pressed="false">Torneos</button>
+        <button class="chip" type="button" aria-pressed="false">Sorteos</button>
+        <button class="chip" type="button" disabled>Próximamente</button>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Tarjeta · <code>.tarjeta</code></h3>
+      <div class="cat-ejemplo" data-codigo>
+        <article class="tarjeta">
+          <h3 class="tarjeta__titulo">Reseña de Hades</h3>
+          <p class="tarjeta__texto">Cada intento enseña algo nuevo.</p>
+        </article>
+        <a class="tarjeta tarjeta--enlace" href="#componentes">
+          <h3 class="tarjeta__titulo">Toda la tarjeta es un enlace</h3>
+          <p class="tarjeta__texto">Se eleva al pasar el mouse.</p>
+        </a>
+      </div>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <article class="tarjeta tarjeta--destacada">
+          <span class="etiqueta etiqueta--primario">Evento del mes</span>
+          <h3 class="tarjeta__titulo">Copa SaveSlot de Rocket League 2v2</h3>
+          <p class="tarjeta__texto">Sábado 17 de octubre · 3:00 p. m.</p>
+        </article>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Panel · <code>.panel</code></h3>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <section class="panel">
+          <h2 class="panel__titulo">Actividad</h2>
+          <p>Contenido del panel.</p>
+        </section>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Dato · <code>.dato</code></h3>
+      <div class="cat-ejemplo" data-codigo>
+        <div class="dato"><span class="dato__etiqueta">Logros</span><span class="dato__valor">1.912</span></div>
+        <div class="dato"><span class="dato__etiqueta">Horas</span><span class="dato__valor">27 h</span></div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Pestañas · <code>.pestanas</code></h3>
+      <p>La activa lleva <code>aria-selected="true"</code>. Haz clic para probar.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="pestanas" role="tablist">
+          <button class="pestanas__boton" role="tab" aria-selected="true">Reseñas</button>
+          <button class="pestanas__boton" role="tab" aria-selected="false">Guías</button>
+          <button class="pestanas__boton" role="tab" aria-selected="false">Logros</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Control segmentado · <code>.segmentado</code></h3>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="segmentado" role="tablist">
+          <button class="segmentado__opcion" role="tab" aria-selected="true">Iniciar sesión</button>
+          <button class="segmentado__opcion" role="tab" aria-selected="false">Crear cuenta</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Navegación · <code>.navegacion</code></h3>
+      <p>La barra de arriba de esta página es el componente. En el celular los enlaces bajan a una barra fija abajo (achica la ventana para verlo).</p>
+      <pre class="cat-codigo">&lt;header class="navegacion"&gt;
+  &lt;div class="navegacion__contenido"&gt;
+    &lt;a class="navegacion__logo" href="index.html"&gt;&lt;img src="assets/favicon.svg" alt=""&gt;SaveSlot&lt;/a&gt;
+    &lt;ul class="navegacion__enlaces"&gt;
+      &lt;li&gt;&lt;a class="navegacion__enlace" href="index.html" aria-current="page"&gt;&lt;svg …&gt;&lt;/svg&gt;Inicio&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a class="navegacion__enlace" href="pages/buscar-juegos.html"&gt;&lt;svg …&gt;&lt;/svg&gt;Juegos&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+    &lt;div class="navegacion__acciones"&gt;
+      &lt;a class="boton boton--sm" href="pages/crear-cuenta.html"&gt;Crear cuenta&lt;/a&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/header&gt;</pre>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Portada · <code>.portada</code></h3>
+      <p>La imagen se indica en <code>style</code> con una ruta de <code>assets/</code>.</p>
+      <div class="cat-ejemplo" data-codigo>
+        <div class="cat-portadas">
+          <a class="portada portada--enlace" href="#componentes" style="background-image: url(assets/portada-hollow-knight.jpg)"><span class="portada__ranking">#1</span><b class="portada__titulo">Hollow Knight</b></a>
+          <a class="portada portada--enlace" href="#componentes" style="background-image: url(assets/portada-hades.jpg)"><span class="portada__ranking">#2</span><b class="portada__titulo">Hades</b></a>
+          <div class="portada"><b class="portada__titulo">Sin imagen</b></div>
+        </div>
+      </div>
+      <div class="cat-ejemplo" data-codigo>
+        <span class="portada portada--sm" style="background-image: url(assets/portada-inside.jpg)" aria-hidden="true"></span>
+        <span>Inside · versión pequeña para listas</span>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Avatar · <code>.avatar</code></h3>
+      <p>Con iniciales, cuando la persona no tiene foto:</p>
+      <div class="cat-ejemplo" data-codigo>
+        <span class="avatar">SL</span>
+        <span class="avatar avatar--lg">SL</span>
+      </div>
+      <p>Con foto de perfil (se recorta en círculo sin deformarse). El <code>alt</code> dice de quién es la foto:</p>
+      <div class="cat-ejemplo" data-codigo>
+        <span class="avatar"><img src="assets/avatar-prueba.jpg" alt="Foto de perfil de samluq"></span>
+        <span class="avatar avatar--lg"><img src="assets/avatar-prueba.jpg" alt="Foto de perfil de samluq"></span>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Medidor · <code>.medidor</code></h3>
+      <p>El avance se indica con <code>style="width: …%"</code>.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="medidor"><span class="medidor__barra" style="width: 62%"></span></div>
+        <div class="medidor medidor--exito"><span class="medidor__barra" style="width: 100%"></span></div>
+        <div class="medidor medidor--aviso"><span class="medidor__barra" style="width: 40%"></span></div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Modal · <code>.modal-fondo</code> y <code>.modal</code></h3>
+      <p>Aquí se muestra dentro de la página. En la app cubre la pantalla, y en el celular sale desde abajo.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna cat-estatico" data-codigo>
+        <div class="modal-fondo">
+          <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ej-modal-titulo">
+            <button class="boton boton--fantasma boton--icono modal__cerrar" type="button" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+            <h2 class="modal__titulo" id="ej-modal-titulo">Necesitas una cuenta</h2>
+            <p class="modal__texto">Crea tu cuenta gratis para guardar tu progreso.</p>
+            <div class="modal__acciones">
+              <a class="boton boton--secundario" href="#componentes">Ya tengo cuenta</a>
+              <a class="boton" href="#componentes">Crear cuenta</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cat-ejemplo">
+        <button class="boton boton--secundario" type="button" id="abrir-modal">Ver el modal de verdad</button>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Aviso flotante · <code>.aviso-flotante</code></h3>
+      <div class="cat-ejemplo cat-estatico" data-codigo>
+        <div class="aviso-flotante" role="status">Agregado a tu lista de deseos <button class="aviso-flotante__accion" type="button">Deshacer</button></div>
+      </div>
+      <div class="cat-ejemplo">
+        <button class="boton boton--secundario" type="button" id="mostrar-aviso">Ver el aviso de verdad</button>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Estado vacío · <code>.vacio</code></h3>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="vacio">
+          <b>Todavía no tienes reseñas</b>
+          <span>Cuando escribas una, aparecerá aquí.</span>
+          <a class="boton boton--sm" href="#componentes">Escribir reseña</a>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<script>
+  // Lee los valores reales de tokens.css para que el catálogo nunca se desactualice.
+  var raiz = getComputedStyle(document.documentElement);
+  function valor(nombre) { return raiz.getPropertyValue(nombre).trim(); }
+
+  var colores = ['--color-primario', '--color-primario-hover', '--color-secundario', '--color-texto-sobre-primario',
+    '--color-fondo', '--color-superficie', '--color-superficie-elevada', '--color-borde',
+    '--color-texto', '--color-texto-suave', '--color-exito', '--color-error', '--color-aviso'];
+  document.getElementById('muestras-colores').innerHTML = colores.map(function (c) {
+    return '<div class="cat-muestra"><div class="cat-muestra__color" style="background: var(' + c + ')"></div>' +
+      '<div class="cat-muestra__info"><b>' + c + '</b><code>' + valor(c) + '</code></div></div>';
+  }).join('');
+
+  var tamanos = [['--texto-3xl', 'Título grande'], ['--texto-2xl', 'Título de página'], ['--texto-xl', 'Título de sección'],
+    ['--texto-lg', 'Texto destacado'], ['--texto-base', 'Texto de párrafo'], ['--texto-sm', 'Texto pequeño'], ['--texto-xs', 'Nota']];
+  document.getElementById('escala-texto').innerHTML = tamanos.map(function (t) {
+    return '<div class="cat-fila"><code>' + t[0] + ': ' + valor(t[0]) + '</code><span style="font-size: var(' + t[0] + ')">' + t[1] + '</span></div>';
+  }).join('');
+
+  var pesos = ['--peso-normal', '--peso-fuerte', '--peso-titulos'];
+  document.getElementById('escala-pesos').innerHTML = pesos.map(function (p) {
+    return '<div class="cat-fila"><code>' + p + ': ' + valor(p) + '</code><span style="font-weight: var(' + p + '); font-size: var(--texto-lg)">Todos tus juegos en un solo lugar</span></div>';
+  }).join('');
+
+  var espacios = [];
+  for (var i = 1; i <= 8; i++) espacios.push('--espacio-' + i);
+  document.getElementById('escala-espacios').innerHTML = espacios.map(function (e) {
+    return '<div class="cat-fila"><code>' + e + ': ' + valor(e) + '</code><span class="cat-barra" style="width: var(' + e + ')"></span></div>';
+  }).join('');
+
+  var radios = ['--radio-sm', '--radio-md', '--radio-lg', '--radio-total'];
+  document.getElementById('escala-radios').innerHTML = radios.map(function (r) {
+    return '<div class="dato"><span class="cat-caja" style="border-radius: var(' + r + ')"></span><code>' + r + ': ' + valor(r) + '</code></div>';
+  }).join('');
+
+  // Debajo de cada ejemplo, muestra su HTML para copiarlo.
+  document.querySelectorAll('[data-codigo]').forEach(function (ejemplo) {
+    var lineas = ejemplo.innerHTML.replace(/^\n+|\s+$/g, '').split('\n');
+    var sangria = Math.min.apply(null, lineas.filter(function (l) { return l.trim(); }).map(function (l) { return l.match(/^\s*/)[0].length; }));
+    var pre = document.createElement('pre');
+    pre.className = 'cat-codigo';
+    pre.textContent = lineas.map(function (l) { return l.slice(sangria); }).join('\n');
+    ejemplo.after(pre);
+  });
+
+  // Comprueba si Figtree cargó de verdad.
+  document.fonts.ready.then(function () {
+    var cargada = false;
+    document.fonts.forEach(function (f) {
+      if (f.family.replace(/["']/g, '') === 'Figtree' && f.status === 'loaded') cargada = true;
+    });
+    var estado = document.getElementById('estado-fuente');
+    estado.textContent = cargada ? '✓ Figtree cargada desde Google Fonts' : '✗ Figtree no cargó: se está usando Arial';
+    estado.className = 'etiqueta ' + (cargada ? 'etiqueta--exito' : 'etiqueta--error');
+  });
+
+  // Chips y pestañas de ejemplo: se pueden activar con clic.
+  document.addEventListener('click', function (e) {
+    var chip = e.target.closest('.chip[aria-pressed]');
+    if (chip && !chip.disabled) chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') !== 'true');
+    var tab = e.target.closest('[role="tab"]');
+    if (tab) tab.parentElement.querySelectorAll('[role="tab"]').forEach(function (t) { t.setAttribute('aria-selected', t === tab); });
+  });
+
+  // Modal y aviso "de verdad".
+  document.getElementById('abrir-modal').addEventListener('click', function () {
+    var fondo = document.createElement('div');
+    fondo.className = 'modal-fondo';
+    fondo.innerHTML = '<div class="modal" role="dialog" aria-modal="true" aria-label="Ejemplo"><button class="boton boton--fantasma boton--icono modal__cerrar" type="button" aria-label="Cerrar">✕</button>' +
+      '<h2 class="modal__titulo">Así se ve el modal</h2><p class="modal__texto">Cierra con la X, con Escape o haciendo clic afuera.</p>' +
+      '<div class="modal__acciones"><button class="boton" type="button">Entendido</button></div></div>';
+    function cerrar() { fondo.remove(); document.removeEventListener('keydown', tecla); }
+    function tecla(ev) { if (ev.key === 'Escape') cerrar(); }
+    fondo.addEventListener('click', function (ev) { if (ev.target === fondo || ev.target.closest('.boton')) cerrar(); });
+    document.addEventListener('keydown', tecla);
+    document.body.appendChild(fondo);
+    fondo.querySelector('.boton').focus();
+  });
+
+  document.getElementById('mostrar-aviso').addEventListener('click', function () {
+    var aviso = document.createElement('div');
+    aviso.className = 'aviso-flotante';
+    aviso.setAttribute('role', 'status');
+    aviso.textContent = 'Así se ve el aviso flotante';
+    document.body.appendChild(aviso);
+    setTimeout(function () { aviso.remove(); }, 3000);
+  });
+</script>
+</body>
+</html>
