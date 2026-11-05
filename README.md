@@ -18,7 +18,7 @@ Gamers casuales de 15 a 24 años en España y Latinoamérica que hoy tienen que 
 
 ## Links
 
-- App publicada: pendiente
+- App publicada: https://saveslot-pi.vercel.app/
 - Brief del proyecto: [Brief-SaveSlot.md](Brief-SaveSlot.md)
 - Repositorio del proceso: [SaveSlot-Info](https://github.com/AndrewL213/SaveSlot-Info)
 
