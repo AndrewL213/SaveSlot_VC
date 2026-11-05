@@ -30,6 +30,10 @@ Digitales 3. Más contexto en README.md.
   consulta a RAWG). JavaScript sin paso de compilación.
 - index.html: la pantalla de inicio, la puerta de entrada de la app.
   Las demás pantallas van en la carpeta pages/.
+- 404.html: la página de error, también en la raíz (Vercel la usa para
+  las direcciones que no existen). Todos los errores llevan ahí.
+- css/prototipo.css y js/prototipo.js: andamio temporal del prototipo;
+  no agregues nada ahí.
 - Nombres de archivos y carpetas: minúsculas, sin tildes, ñ ni
   espacios, con guiones.
 
@@ -49,6 +53,7 @@ Digitales 3. Más contexto en README.md.
 6. Al terminar cada tarea, explica en lenguaje simple qué cambiaste y
    por qué. Somos un equipo aprendiendo.
 7. Antes de cada comando de git, explica en una frase qué hace.
+8. Al terminar cada pantalla, actualiza su fila en pantallas.md.
 
 ## Componentes disponibles
 Definidos en css/components.css; se ven todos en componentes.html.

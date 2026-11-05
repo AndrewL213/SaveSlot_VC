@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Contáctanos · SaveSlot</title>
+<meta name="description" content="Escríbele al equipo de SaveSlot.">
+<meta name="theme-color" content="#12161D">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../css/prototipo.css">
+</head>
+<body data-page="contacto" data-section="ayuda">
+
+<main class="container page" style="max-width:1080px">
+  <div class="split">
+    <div class="side stack" style="flex:1 1 320px;gap:20px">
+      <h1 class="page-title">Contáctanos</h1>
+      <p class="muted" style="font-size:17px">¿Un problema con tu cuenta, un evento o quieres publicar un torneo? Escríbenos.</p>
+      <div class="card"><span class="xs muted">Correo</span><b style="user-select:all">[CORREO DE CONTACTO]</b></div>
+      <div class="card"><span class="xs muted">Redes</span><b>[@SAVESLOT]</b></div>
+      <a class="card card-link" href="matchplay.html" style="background:var(--ai-deep);border-color:var(--ai)"><b>¿Duda rápida?</b><span class="small soft">Pregúntale a MatchPlay.</span></a>
+    </div>
+    <form class="main panel" id="contact-form" novalidate style="padding:28px;gap:18px">
+      <div class="form-grid">
+        <div class="field"><label for="n">Nombre</label><input class="input" id="n" autocomplete="name"><span class="error-text" id="n-err" hidden></span></div>
+        <div class="field"><label for="e">Correo</label><input class="input" id="e" type="email" autocomplete="email"><span class="error-text" id="e-err" hidden></span></div>
+      </div>
+      <div class="field"><label for="t">Tema</label><select class="select" id="t"><option>Problema con mi cuenta</option><option>Eventos y pagos</option><option>Quiero organizar un torneo</option><option>Reportar contenido</option><option>Otro</option></select></div>
+      <div class="field"><label for="m">Mensaje</label><textarea class="textarea" id="m" rows="6" placeholder="Cuéntanos qué pasó"></textarea><span class="error-text" id="m-err" hidden></span></div>
+      <button class="btn btn-primary" type="submit" style="align-self:flex-start">Enviar mensaje</button>
+    </form>
+  </div>
+  <section class="panel faq" aria-labelledby="faq-t">
+    <h2 id="faq-t" style="font-size:22px">Preguntas frecuentes</h2>
+    <details><summary>¿Por qué no puedo vincular PlayStation o Nintendo?</summary><p>No ofrecen una conexión pública para webs como SaveSlot. Puedes registrar tus juegos a mano en tu diario.</p></details>
+    <details><summary>¿Qué es el XP?</summary><p>Son puntos que ganas al reseñar, vincular cuentas e inscribirte en torneos. Con 300 XP entras gratis a un sorteo.</p></details>
+    <details><summary>¿Dónde se guardan mis datos?</summary><p>En este prototipo, solo en tu navegador. Si borras los datos del navegador, se borra tu actividad.</p></details>
+    <details><summary>¿Cómo se calcula la dificultad de un juego?</summary><p>Es el promedio de lo que votan los jugadores al reseñarlo, de 1 (relajado) a 10 (brutal).</p></details>
+    <details><summary>¿Cómo propongo un torneo?</summary><p>Escríbenos con el tema “Quiero organizar un torneo” y te contamos los requisitos.</p></details>
+  </section>
+</main>
+<script src="../js/prototipo.js"></script>
+</body>
+</html>
