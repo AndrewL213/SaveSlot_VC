@@ -15,8 +15,8 @@ Digitales 3. Más contexto en README.md.
   React, Vue, Tailwind ni TypeScript) y sin paso de compilación: todo
   debe funcionar abriendo los archivos en el navegador.
 - La app se publicará en Vercel, conectada a este repositorio.
-- Más adelante, la base de datos será Supabase. Por ahora, los datos
-  son simulados.
+- Cuentas y base de datos: Supabase. Catálogo de juegos: RAWG. Todo lo
+  demás usa datos simulados (ver spec.md).
 
 ## Estructura del proyecto
 - disenos/: diseños originales. Solo de referencia: nunca los modifiques.
@@ -26,6 +26,8 @@ Digitales 3. Más contexto en README.md.
   (componentes) y styles.css (estilos generales de las pantallas).
 - js/: código. app.js (comportamiento) y data.js (datos simulados,
   separados del diseño).
+- api/: funciones de Vercel que usan claves secretas (por ejemplo, la
+  consulta a RAWG). JavaScript sin paso de compilación.
 - index.html: la pantalla de inicio, la puerta de entrada de la app.
   Las demás pantallas van en la carpeta pages/.
 - Nombres de archivos y carpetas: minúsculas, sin tildes, ñ ni
@@ -39,7 +41,10 @@ Digitales 3. Más contexto en README.md.
    estilo o componente que no existe, pregunta: primero se agrega al kit
    y a componentes.html, y después se usa.
 4. Nunca escribas claves, contraseñas ni tokens de acceso en el código:
-   este repositorio es público.
+   este repositorio es público. Única excepción: la clave pública (anon
+   key) de Supabase, hecha para ir en el navegador; los datos se protegen
+   con reglas de acceso en la base. Las demás claves (como la de RAWG) van
+   en las variables de entorno de Vercel y solo se usan desde api/.
 5. Si algo que te pedimos contradice spec.md, avísanos antes de hacerlo.
 6. Al terminar cada tarea, explica en lenguaje simple qué cambiaste y
    por qué. Somos un equipo aprendiendo.
