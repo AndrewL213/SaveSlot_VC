@@ -24,8 +24,13 @@ Gamers casuales de 15 a 24 años en España y Latinoamérica que hoy tienen que 
 
 ## Cómo está organizado este repo
 
-- `disenos/` · Las pantallas de la app (inicio, buscador, ficha de juego, perfil, eventos, chat con IA y más), listas para abrir en el navegador.
-- `assets/` · Las imágenes de la app: iconos y portadas de los juegos, con sus créditos en `CREDITOS.md`.
+- `disenos/` · Los diseños originales de las pantallas (inicio, buscador, ficha de juego, perfil, eventos, chat con IA y más). Son solo de referencia.
+- `assets/` · Las imágenes de la app: iconos, portadas de juegos y una foto de prueba, con sus créditos en `CREDITOS.md`.
+- `css/` · El design kit: `tokens.css` (colores, letras, espacios) y `components.css` (botones, tarjetas, campos y demás piezas).
+- `componentes.html` · Catálogo para ver en el navegador todas las piezas del design kit.
+- `decisiones-design-kit.md` · La revisión del diseño y las decisiones que tomamos para armar el kit.
+- `spec.md` · El plano de la app: qué pantallas tiene, qué datos usa y cuándo está lista cada una.
+- `CLAUDE.md` · Las instrucciones para Claude, el asistente de IA con el que construimos la app.
 - `Brief-SaveSlot.md` · El brief del proyecto: problema, usuario, objetivos, mercado y competencia.
 - `README.md` · Esta página.
 - `.gitignore` · Lista de archivos del sistema que no se suben al repositorio.

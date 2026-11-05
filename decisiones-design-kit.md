@@ -1,5 +1,7 @@
 # Auditoría del design kit — SaveSlot (página web)
 
+> Este archivo tiene dos partes: la **auditoría** (propuestas, filas 1 a 99) y, al final, las **decisiones finales** con lo que quedó en `css/tokens.css` y `css/components.css`. Si una propuesta y una decisión no coinciden, manda la decisión.
+
 **Qué se revisó:** carpeta `disenos/` de este repositorio (17 pantallas HTML, `css/styles.css` y 6 archivos JS que generan parte de la interfaz), versión del 2-nov-2026 (commit `ced7d25`).
 **Cómo se midió:** se leyó todo el código y se abrieron las 18 vistas en un navegador (escritorio 1440 px y móvil 390 px; perfil, diario y editar perfil con sesión iniciada; detalle de evento con un torneo y un sorteo). Se registraron los estilos reales de cada elemento visible.
 
@@ -140,3 +142,40 @@
 | 97 | Tabla | Caja con radio 14, encabezado 12 en mayúsculas, celdas con relleno 12, hover `#202834`; en móvil el diario se vuelve tarjetas | Diario, error | Intencional | Mantener; radio 12 y hover `--surface-2`. |
 | 98 | Barra de prototipo | Fondo `--ai-deep`, borde `--ai`, texto 13, botón cerrar 32 | Las 18 pantallas (se puede ocultar) | Intencional | Mantener; texto 12 o 14 según la fila 40. |
 | 99 | Carga (skeleton) | Degradado animado, radio 10 | Juego, buscar (mientras cargan datos) | Intencional | Mantener; radio 12. |
+
+---
+
+## Decisiones finales (4-nov-2026)
+
+Lo que quedó en el kit. Entre paréntesis, la fila de la auditoría de la que sale.
+
+### Nombres y colores
+- Las variables se nombran por función y en español (`--color-primario`, no `--accent`).
+- `--color-primario` #3DA9F5 (12) · `--color-primario-hover` #9AD4FB (15) · `--color-texto-sobre-primario` #08131C (13)
+- `--color-secundario` **#A99BFF, el morado de IA** (23). Se eligió como segundo color de marca por ser la identidad de MatchPlay.
+- `--color-fondo` #12161D (1) · `--color-superficie` #1B222C (3) · `--color-superficie-elevada` #242D3A (4) · `--color-borde` #2E3A4A (6)
+- `--color-texto` #E6EBF1 (7) · `--color-texto-suave` #9AA8B8 (9)
+- `--color-exito` #4CC870 (19) · `--color-error` #F0616D (21) · `--color-aviso` #E0A23B (22)
+- **Cambio de aspecto aceptado:** el texto suave #C3CDD8 (8) desaparece; todo el texto secundario usa #9AA8B8.
+- Los fondos oscuros de color (azul, verde, rojo y morado "deep", filas 16, 19, 21 y 23) y las capas translúcidas (24, 25 y 26) no tienen variable propia: se obtienen mezclando las variables con `color-mix`.
+
+### Tipografía
+- Una sola fuente: **Figtree**, cargada desde Google Fonts con `@import` al inicio de `tokens.css`, con los pesos 400, 700 y 800. Respaldo: Arial. El riesgo de la fila 33 (sin internet se ve el respaldo) sigue abierto.
+- Tamaños: `--texto-xs` 12 · `--texto-sm` 14 · `--texto-base` 16 · `--texto-lg` 18 · `--texto-xl` 24 · `--texto-2xl` 30–44 · `--texto-3xl` 34–52 (35 a 42).
+- Pesos: `--peso-normal` 400 · `--peso-fuerte` 700 · `--peso-titulos` 800. El 600 se elimina: el menú pasa a 700 (34).
+- El número grande del componente Dato queda en 24 px, no en 28 (42).
+
+### Espacios, bordes y sombras
+- Espacios de `--espacio-1` a `--espacio-8`: 4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 (46). Las medidas mayores se calculan con estas.
+- Radios: `--radio-sm` 8 · `--radio-md` 12 · `--radio-lg` 16 · `--radio-total` 999 (54 a 58). **Cambio de aspecto aceptado:** las etiquetas pasan de radio 4 a 8. Los paneles quedan en 16 (56 y 73).
+- Sombras: `--sombra-suave` (hover) y `--sombra-media` (modales y avisos) (64). El brillo azul del botón primario se elimina.
+- Medidas de apoyo, para que los componentes no tengan valores sueltos: `--borde-fino` 1 · `--borde-grueso` 2 · `--alto-control` 48 · `--alto-control-sm` 40 · `--interlineado-texto` 1.55 · `--interlineado-titulos` 1.15 · `--ancho-maximo` 1280 · `--ancho-modal` 480 · `--transicion` 0.18 s.
+- El contorno de foco usa `--color-primario`, no el azul claro de texto (65).
+
+### Componentes
+- Incluidos: botón, campo, buscador, etiqueta, chip, tarjeta, panel, dato, pestañas, control segmentado, navegación, portada, avatar, medidor, modal, aviso flotante y estado vacío.
+- **Chip:** un solo estilo activo, el de fondo claro (80).
+- **Avatar:** dos tamaños, 40 y 80 px, con iniciales o con foto (93).
+- **Navegación:** en celular no usa desenfoque de fondo. Con desenfoque, la barra fija de abajo quedaba atrapada dentro del encabezado.
+- **Aviso flotante:** su botón de acción usa el color del fondo subrayado, en vez del azul sobre claro (18).
+- Quedan fuera por ahora y se agregan al kit cuando una pantalla los necesite (regla 3 de CLAUDE.md): selector 1–10 (68), indicador de dificultad (69), opción de inscripción (75), spoiler (76), migas de pan (89), encabezado de sección (90), banda superior (91), footer (92), íconos (94), mensajes de chat (96), tabla (97), barra de prototipo (98) y carga (99).
