@@ -59,6 +59,7 @@ Digitales 3. Más contexto en README.md.
 Definidos en css/components.css (estilo v3); se ven todos en componentes.html.
 Cada pantalla enlaza primero css/tokens.css y después css/components.css.
 Las portadas de juegos usan siempre su imagen de assets/; el color del juego (--c) es solo respaldo.
+En las pantallas no se escribe `style`: el color de un juego o evento va en `data-color="#…"` y app.js lo pasa a `--c` con aplicarColores().
 
 - `.antetitulo` y `.titulo-pagina` (+ `--grande`):
   `<span class="antetitulo">Tu gente</span><h1 class="titulo-pagina">Amigos</h1>`
@@ -80,7 +81,7 @@ Las portadas de juegos usan siempre su imagen de assets/; el color del juego (--
   `<span class="nota">9<small>/10</small></span>` · `<div class="nota-anillo" style="--p:90"><b>9</b><span>de 10</span></div>`
 - `.estado` (+ `--jugando`, `--en-linea`, `--desconectado`):
   `<span class="estado estado--jugando">Jugando Hades</span>`
-- `.tarjeta` (+ `--enlace`, `--destacada`, `--resena` con `--c`) con `.tarjeta__titulo` y `.tarjeta__texto`:
+- `.tarjeta` (+ `--enlace`, `--destacada` con `--c`, `--resena` con `--c`) con `.tarjeta__titulo`, `.tarjeta__texto` y `.tarjeta__banda` (banda de color arriba, con `--c`):
   `<article class="tarjeta tarjeta--resena" style="--c:#8A2B2B"><h3 class="tarjeta__titulo">Hades</h3><p class="tarjeta__texto">…</p></article>`
 - `.tarjeta-amigo` (+ `--jugando` con `--c`) con `__cabeza` y `__nombre`:
   `<article class="tarjeta-amigo"><div class="tarjeta-amigo__cabeza"><span class="avatar avatar--md avatar--en-linea">JV</span><h3 class="tarjeta-amigo__nombre">juanvi</h3></div></article>`
@@ -94,10 +95,10 @@ Las portadas de juegos usan siempre su imagen de assets/; el color del juego (--
   `<div class="pestanas" role="tablist"><button class="pestanas__boton" role="tab" aria-selected="true">Reseñas <span class="contador">12</span></button></div>`
 - `.segmentado` con `.segmentado__opcion` (activa con `aria-selected="true"`):
   `<div class="segmentado" role="tablist"><button class="segmentado__opcion" role="tab" aria-selected="true">Iniciar sesión</button></div>`
-- `.navegacion` con `__contenido`, `__logo`, `__enlaces`, `__enlace` (actual con `aria-current="page"`) y `__acciones`. En celular los enlaces bajan a una barra fija: la pantalla debe dejar espacio abajo.
+- `.navegacion` con `__contenido`, `__logo`, `__enlaces`, `__enlace` (actual con `aria-current="page"`; `--escritorio` solo en computador, `--movil` solo en celular), `__buscar` con `__buscar-campo`, `__acciones` (`navegacion__ocultar-movil` para ocultar un botón en celular) y `__usuario` con `__nombre` y `__nivel`. En celular los enlaces bajan a una barra fija (con íconos): la pantalla debe dejar espacio abajo.
   `<header class="navegacion"><div class="navegacion__contenido"><a class="navegacion__logo" href="index.html">SaveSlot</a>…</div></header>`
-- `.portada` (+ `--enlace`, `--sm`) con `.portada__titulo` y `.portada__ranking`; la imagen siempre desde assets/ y `--c` de respaldo:
-  `<a class="portada portada--enlace" href="…" style="--c:#8A2B2B;background-image:url(assets/portada-hades.jpg)"><b class="portada__titulo">Hades</b></a>`
+- `.portada` (+ `--enlace`, `--sm`) con `.portada__imagen` (img con alt, de assets/), `.portada__titulo` y `.portada__ranking`; `--c` de respaldo:
+  `<a class="portada portada--enlace" href="…" data-color="#8A2B2B"><img class="portada__imagen" src="assets/portada-hades.jpg" alt="Portada de Hades"><b class="portada__titulo">Hades</b></a>`
 - `.avatar` (+ `--sm` 32, normal 40, `--md` 56, `--lg` 128, `--ia`; anillo `--jugando`, `--en-linea`, `--desconectado` con `.avatar__punto` opcional):
   `<span class="avatar avatar--md avatar--jugando">SL<span class="avatar__punto"></span></span>`
 - `.medidor` (+ `--exito`, `--aviso`) con `.medidor__barra`:
@@ -108,3 +109,9 @@ Las portadas de juegos usan siempre su imagen de assets/; el color del juego (--
   `<div class="aviso-flotante" role="status">Guardado <button class="aviso-flotante__accion">Deshacer</button></div>`
 - `.vacio`:
   `<div class="vacio"><b>Todavía no tienes reseñas</b><span>Cuando escribas una, aparecerá aquí.</span></div>`
+- `.franja` con `.franja__enlace` (aviso arriba de la página):
+  `<div class="franja" role="region" aria-label="Aviso"><span>Prototipo académico… <a class="franja__enlace" href="…">Más información</a></span><button class="boton boton--fantasma boton--icono boton--sm" aria-label="Ocultar aviso">…</button></div>`
+- `.heroe` con `__texto`, `__arte` y `__portada` (en una `.portada`; las 3 portadas solo en pantallas anchas):
+  `<section class="heroe"><div class="heroe__texto">…</div><div class="heroe__arte" aria-hidden="true"><div class="portada heroe__portada">…</div></div></section>`
+- `.pie` con `__contenido`, `__marca`, `__logo`, `__frase`, `__columnas`, `__columna`, `__titulo`, `__enlace` y `__creditos`:
+  `<footer class="pie"><div class="pie__contenido">…<p class="pie__creditos">…</p></div></footer>`

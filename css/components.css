@@ -50,10 +50,12 @@ h3 {
 
 a {
   color: var(--color-primario);
+  text-decoration: none;
 }
 
 a:hover {
   color: var(--color-primario-hover);
+  text-decoration: underline;
 }
 
 :focus-visible {
@@ -566,10 +568,31 @@ textarea.campo {
   left: 120%;
 }
 
+/* Destacada: toma el color del evento en --c (azul si no lo tiene) */
 .tarjeta--destacada {
   padding: var(--espacio-7);
-  border-color: var(--color-borde-activo);
-  background: color-mix(in srgb, var(--color-primario) 15%, var(--color-superficie));
+  border-color: var(--color-borde-hover);
+  background:
+    radial-gradient(farthest-corner at 100% 0%, var(--color-secundario-tinte), transparent 70%),
+    linear-gradient(135deg, color-mix(in srgb, var(--c, var(--color-primario)) 85%, var(--color-primario)), var(--color-fondo-arriba));
+}
+
+/* Banda de color arriba de la tarjeta (evento): ocupa todo el ancho, color en --c */
+.tarjeta__banda {
+  display: flex;
+  align-items: flex-start;
+  height: calc(var(--espacio-8) * 3);
+  margin: calc(var(--espacio-4) * -1) calc(var(--espacio-4) * -1) 0;
+  padding: var(--espacio-3);
+  background-color: var(--c, var(--color-superficie-elevada));
+  background-image:
+    var(--textura-lineas),
+    linear-gradient(150deg, color-mix(in srgb, var(--c, var(--color-superficie-elevada)) 80%, var(--color-texto)), var(--c, var(--color-superficie-elevada)) 50%, color-mix(in srgb, var(--c, var(--color-superficie-elevada)) 50%, var(--color-fondo)));
+  transition: filter var(--duracion-media) var(--curva);
+}
+
+.tarjeta--enlace:hover .tarjeta__banda {
+  filter: saturate(1.25) brightness(1.08);
 }
 
 .tarjeta--resena {
@@ -1035,16 +1058,113 @@ textarea.campo {
   transform: scaleX(1);
 }
 
+/* Los íconos de los enlaces solo se ven en la barra de celular */
 .navegacion__enlace svg {
+  display: none;
   width: var(--espacio-5);
   height: var(--espacio-5);
   flex: none;
 }
 
+/* Enlaces que solo van en celular (por ejemplo Perfil/Entrar) */
+.navegacion__enlace--movil {
+  display: none;
+}
+
+/* Buscador compacto de la barra (solo escritorio) */
+.navegacion__buscar {
+  display: flex;
+  flex: 1 1 calc(var(--espacio-8) * 4);
+  align-items: center;
+  gap: var(--espacio-2);
+  min-width: 0;
+  min-height: var(--alto-control-sm);
+  padding: 0 var(--espacio-3);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-sm);
+  background: var(--vidrio);
+  color: var(--color-texto-suave);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.navegacion__buscar:hover {
+  border-color: var(--color-borde-hover);
+}
+
+.navegacion__buscar:focus-within {
+  border-color: var(--color-primario);
+  box-shadow: var(--anillo-foco);
+}
+
+.navegacion__buscar svg {
+  width: var(--espacio-4);
+  height: var(--espacio-4);
+  flex: none;
+}
+
+.navegacion__buscar-campo {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--texto-sm);
+}
+
+.navegacion__buscar-campo::placeholder {
+  color: var(--color-texto-suave);
+}
+
+.navegacion__buscar-campo:focus-visible {
+  outline: none;
+}
+
 .navegacion__acciones {
   display: flex;
+  align-items: center;
   gap: var(--espacio-2);
   margin-left: auto;
+}
+
+/* Pastilla del usuario con sesión: avatar, nombre y nivel */
+.navegacion__usuario {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--alto-control-sm);
+  padding: var(--espacio-1) var(--espacio-4) var(--espacio-1) var(--espacio-1);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-total);
+  background: var(--velo);
+  color: var(--color-texto);
+  text-decoration: none;
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.navegacion__usuario:hover {
+  border-color: var(--color-borde-hover);
+  box-shadow: var(--sombra-suave);
+  color: var(--color-texto);
+}
+
+.navegacion__usuario .avatar {
+  background: var(--degradado-primario);
+  color: var(--color-texto-sobre-primario);
+}
+
+.navegacion__nombre {
+  display: block;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-fuerte);
+  line-height: var(--interlineado-titulos);
+}
+
+.navegacion__nivel {
+  display: block;
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xs);
+  line-height: var(--interlineado-titulos);
 }
 
 @media (max-width: 700px) {
@@ -1088,6 +1208,24 @@ textarea.campo {
     font-size: var(--texto-xs);
   }
 
+  .navegacion__enlace svg,
+  .navegacion__enlace--movil {
+    display: flex;
+  }
+
+  .navegacion__enlaces > li:has(> .navegacion__enlace--escritorio),
+  .navegacion__enlace--escritorio,
+  .navegacion__buscar,
+  .navegacion__ocultar-movil,
+  .navegacion__usuario .navegacion__nombre,
+  .navegacion__usuario .navegacion__nivel {
+    display: none;
+  }
+
+  .navegacion__usuario {
+    padding: var(--espacio-1);
+  }
+
   .navegacion__enlace::after {
     top: 0;
     bottom: auto;
@@ -1105,7 +1243,7 @@ textarea.campo {
 
 /* ==========================================================================
    Portada de juego
-   La imagen va en style="background-image:url(assets/portada-....jpg)".
+   La imagen va en <img class="portada__imagen" src="assets/portada-….jpg" alt="Portada de …">.
    El color del juego (--c) es solo respaldo mientras carga o si falta.
    .portada (tamaño fluido, 3:4) · --sm (48 px, sin título) · --enlace
    ========================================================================== */
@@ -1127,6 +1265,15 @@ textarea.campo {
   color: var(--color-texto);
   text-decoration: none;
   transition: transform var(--duracion-media) var(--curva), box-shadow var(--duracion-media) var(--curva);
+}
+
+/* Imagen de la portada (con alt): llena toda la caja sin deformarse */
+.portada__imagen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Degradado oscuro abajo, para que el título se lea sobre la imagen */
@@ -1442,6 +1589,205 @@ textarea.campo {
   border-radius: var(--radio-md);
   color: var(--color-texto-suave);
   text-align: center;
+}
+
+/* ==========================================================================
+   Franja de aviso (arriba de la página, por ejemplo "Prototipo académico")
+   .franja con .franja__enlace y un botón de cerrar (.boton--fantasma.boton--icono.boton--sm)
+   ========================================================================== */
+.franja {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-3);
+  padding: var(--espacio-1) var(--espacio-4);
+  border-bottom: var(--borde-fino) solid var(--color-secundario-tinte);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-secundario) 10%, var(--color-fondo)), color-mix(in srgb, var(--color-secundario) 16%, var(--color-fondo)), color-mix(in srgb, var(--color-secundario) 10%, var(--color-fondo)));
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xs);
+  text-align: center;
+}
+
+.franja__enlace {
+  color: var(--color-secundario);
+}
+
+.franja__enlace:hover {
+  color: var(--color-texto);
+}
+
+/* ==========================================================================
+   Héroe (zona de bienvenida del Inicio)
+   .heroe con .heroe__texto y .heroe__arte (3 portadas inclinadas, solo en
+   pantallas anchas). Las portadas usan .portada con .heroe__portada.
+   ========================================================================== */
+.heroe {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--espacio-6);
+  padding: var(--espacio-5);
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background:
+    radial-gradient(farthest-corner at 100% 0%, var(--color-secundario-tinte), transparent 65%),
+    radial-gradient(farthest-corner at 0% 100%, var(--color-primario-tinte), transparent 65%),
+    linear-gradient(135deg, var(--color-fondo-arriba), var(--color-fondo-medio));
+}
+
+.heroe::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--textura-lineas);
+  opacity: 0.6;
+}
+
+.heroe__texto {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-4);
+}
+
+.heroe__arte {
+  position: relative;
+  display: none;
+  height: calc(var(--espacio-8) * 7 + var(--espacio-5));
+}
+
+.heroe__portada {
+  position: absolute;
+  width: calc(var(--espacio-8) * 3 + var(--espacio-7));
+  box-shadow: var(--sombra-media);
+}
+
+.heroe__portada:nth-child(1) {
+  top: var(--espacio-7);
+  left: 6%;
+  transform: rotate(-9deg);
+}
+
+.heroe__portada:nth-child(2) {
+  top: 0;
+  left: 34%;
+  z-index: 2;
+  width: calc(var(--espacio-8) * 4 + var(--espacio-3));
+}
+
+.heroe__portada:nth-child(3) {
+  top: calc(var(--espacio-8) + var(--espacio-7));
+  left: 64%;
+  z-index: 3;
+  transform: rotate(8deg);
+}
+
+@media (min-width: 701px) {
+  .heroe {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    padding: var(--espacio-8);
+  }
+
+  .heroe__arte {
+    display: block;
+  }
+}
+
+/* ==========================================================================
+   Pie de página
+   .pie con __contenido, __marca, __logo, __frase, __columnas, __columna,
+   __titulo, __enlace y __creditos
+   ========================================================================== */
+.pie {
+  border-top: var(--borde-fino) solid var(--color-borde);
+  background:
+    radial-gradient(farthest-side at 50% 0%, var(--color-primario-tinte), transparent 70%),
+    linear-gradient(180deg, var(--color-fondo), color-mix(in srgb, var(--color-fondo) 60%, var(--color-texto-sobre-primario)));
+}
+
+.pie__contenido {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--espacio-8);
+  max-width: var(--ancho-maximo);
+  margin: 0 auto;
+  padding: var(--espacio-8) var(--espacio-7);
+}
+
+.pie__marca {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  max-width: calc(var(--espacio-8) * 8);
+}
+
+.pie__logo {
+  color: var(--color-texto);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-titulos);
+  text-decoration: none;
+}
+
+.pie__frase {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.pie__columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-8);
+}
+
+.pie__columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  font-size: var(--texto-sm);
+}
+
+.pie__titulo {
+  margin: 0;
+  color: var(--color-texto);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-fuerte);
+}
+
+.pie__enlace {
+  color: var(--color-texto-suave);
+  text-decoration: none;
+}
+
+.pie__enlace:hover {
+  color: var(--color-primario-hover);
+  text-decoration: underline;
+}
+
+.pie__creditos {
+  flex-basis: 100%;
+  margin: 0;
+  padding-top: var(--espacio-4);
+  border-top: var(--borde-fino) solid var(--color-borde);
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xs);
+}
+
+@media (max-width: 700px) {
+  .pie__contenido {
+    gap: var(--espacio-6);
+    padding: var(--espacio-7) var(--espacio-4);
+  }
+
+  .pie__columnas {
+    gap: var(--espacio-7);
+  }
 }
 
 /* ---------- Pantallas táctiles: sin desplazamientos al "pasar el mouse" ---------- */

@@ -1,0 +1,154 @@
+/* ==========================================================================
+   SaveSlot · styles.css
+   Solo la distribución general de las pantallas (dónde va cada cosa).
+   El aspecto de cada pieza está en components.css. Solo variables de tokens.css.
+   ========================================================================== */
+
+html,
+body {
+  overflow-x: clip;
+}
+
+/* Lector de pantalla: texto que no se ve pero se lee */
+.solo-lectores {
+  position: absolute;
+  width: var(--borde-fino);
+  height: var(--borde-fino);
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Contenido de la página ---------- */
+.contenedor {
+  max-width: var(--ancho-maximo);
+  margin: 0 auto;
+  padding: var(--espacio-6) var(--espacio-4) calc(var(--espacio-8) * 2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-7);
+}
+
+.contenedor > * {
+  min-width: 0;
+}
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+}
+
+.seccion[hidden] {
+  display: none;
+}
+
+.lista-limpia {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Fila de elementos que se acomodan solos */
+.en-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-2);
+}
+
+.en-fila--entre {
+  justify-content: space-between;
+}
+
+/* Fila que se desliza de lado en celular en vez de bajar de renglón */
+.en-fila--desliza {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: var(--espacio-1);
+}
+
+.en-fila--desliza > * {
+  flex: none;
+}
+
+/* Empuja un elemento al final de su fila */
+.al-final {
+  margin-left: auto;
+}
+
+/* ---------- Rejillas ---------- */
+/* Portadas: en celular se deslizan de lado; en computador, rejilla */
+.rejilla-juegos {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc(var(--espacio-8) * 4);
+  gap: var(--espacio-4);
+  overflow-x: auto;
+  padding-bottom: var(--espacio-2);
+  scroll-snap-type: x mandatory;
+}
+
+.rejilla-juegos > * {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  scroll-snap-align: start;
+}
+
+.juego__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+}
+
+.rejilla-tarjetas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-4);
+}
+
+.fila-eventos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-4);
+}
+
+.fila-eventos > :first-child {
+  flex: 2 1 calc(var(--espacio-8) * 13);
+}
+
+.fila-eventos > * {
+  flex: 1 1 calc(var(--espacio-8) * 7);
+}
+
+.tarjeta__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+}
+
+/* Celular: deja espacio abajo para la barra de navegación fija */
+@media (max-width: 700px) {
+  body {
+    padding-bottom: calc(var(--alto-control) + var(--espacio-4));
+  }
+}
+
+@media (min-width: 701px) {
+  .contenedor {
+    padding: var(--espacio-8) var(--espacio-7) calc(var(--espacio-8) * 2);
+    gap: var(--espacio-8);
+  }
+
+  .rejilla-juegos {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--espacio-8) * 4), 1fr));
+    overflow: visible;
+  }
+
+  .rejilla-tarjetas {
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--espacio-8) * 7 + var(--espacio-5)), 1fr));
+  }
+}

@@ -310,6 +310,14 @@
           <p class="tarjeta__texto">Se eleva al pasar el mouse.</p>
         </a>
       </div>
+      <p>Con banda de color arriba (evento). La banda toma el color del evento (<code>--c</code>):</p>
+      <div class="cat-ejemplo" data-codigo>
+        <a class="tarjeta tarjeta--enlace" href="#componentes">
+          <div class="tarjeta__banda" style="--c: #2B5A3F"><span class="etiqueta etiqueta--exito">SORTEO</span></div>
+          <h3 class="tarjeta__titulo">Gift card de 50 USD</h3>
+          <p class="tarjeta__texto">Cierra el domingo · 8:00 p. m.</p>
+        </a>
+      </div>
       <p>Reseña: la franja de la izquierda toma el color del juego (<code>--c</code>).</p>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
         <article class="tarjeta tarjeta--resena" style="--c: #8A2B2B">
@@ -352,9 +360,9 @@
       <p>Elemento de una lista: comentario (normal), comparación de notas, actividad y "jugando ahora".</p>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
         <div class="fila"><span class="avatar avatar--sm">ML</span><div><b>mlopez</b><p class="tarjeta__texto">Totalmente de acuerdo con lo del final.</p></div></div>
-        <a class="fila fila--comparacion" href="#componentes"><span class="portada portada--sm" style="background-image: url(assets/portada-hades.jpg)" aria-hidden="true"></span><b>Hades</b><span class="nota" style="margin-left: auto">9<small>/10</small></span><span class="nota nota--texto">8</span></a>
+        <a class="fila fila--comparacion" href="#componentes"><span class="portada portada--sm"><img class="portada__imagen" src="assets/portada-hades.jpg" alt="Portada de Hades"></span><b>Hades</b><span class="nota" style="margin-left: auto">9<small>/10</small></span><span class="nota nota--texto">8</span></a>
         <a class="fila fila--actividad" href="#componentes"><span class="avatar avatar--sm">JV</span><span>juanvi reseñó <b>Rocket League</b></span></a>
-        <a class="fila fila--jugando" href="#componentes"><span class="portada portada--sm" style="background-image: url(assets/portada-hollow-knight.jpg)" aria-hidden="true"></span><span><span class="estado estado--jugando">Jugando ahora</span><br><b>Hollow Knight</b></span></a>
+        <a class="fila fila--jugando" href="#componentes"><span class="portada portada--sm"><img class="portada__imagen" src="assets/portada-hollow-knight.jpg" alt="Portada de Hollow Knight"></span><span><span class="estado estado--jugando">Jugando ahora</span><br><b>Hollow Knight</b></span></a>
       </div>
     </div>
 
@@ -413,20 +421,79 @@
     &lt;/div&gt;
   &lt;/div&gt;
 &lt;/header&gt;</pre>
+      <p>Partes opcionales: <code>navegacion__enlace--escritorio</code> (solo en computador), <code>navegacion__enlace--movil</code> (solo en la barra de celular), <code>navegacion__ocultar-movil</code> (para botones de las acciones), el buscador compacto y la pastilla del usuario con sesión:</p>
+      <div class="cat-ejemplo" data-codigo>
+        <form class="navegacion__buscar" role="search" action="#componentes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input class="navegacion__buscar-campo" type="search" aria-label="Buscar juegos" placeholder="Buscar juegos">
+        </form>
+        <a class="navegacion__usuario" href="#componentes"><span class="avatar avatar--sm">SL</span><span><span class="navegacion__nombre">Samuel</span><span class="navegacion__nivel">Nivel 12</span></span></a>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Franja de aviso · <code>.franja</code></h3>
+      <p>Va arriba de la página, debajo de la navegación. El botón de cerrar usa el botón fantasma.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="franja" role="region" aria-label="Aviso del prototipo">
+          <span>Prototipo académico: los datos de juegos son de ejemplo hasta conectar las APIs. <a class="franja__enlace" href="#componentes">Más información</a></span>
+          <button class="boton boton--fantasma boton--icono boton--sm" type="button" aria-label="Ocultar aviso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Héroe · <code>.heroe</code></h3>
+      <p>Zona de bienvenida del Inicio. Las 3 portadas inclinadas solo se ven en pantallas anchas y están quietas (sin animación).</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <section class="heroe" aria-label="Ejemplo de héroe">
+          <div class="heroe__texto">
+            <span class="antetitulo">Tu solución gamer</span>
+            <p class="titulo-pagina titulo-pagina--grande">Todo sobre tus juegos, en un solo lugar.</p>
+          </div>
+          <div class="heroe__arte" aria-hidden="true">
+            <div class="portada heroe__portada"><img class="portada__imagen" src="assets/portada-zelda-totk.jpg" alt=""><b class="portada__titulo">Zelda: TOTK</b></div>
+            <div class="portada heroe__portada"><img class="portada__imagen" src="assets/portada-hades.jpg" alt=""><b class="portada__titulo">Hades</b></div>
+            <div class="portada heroe__portada"><img class="portada__imagen" src="assets/portada-hollow-knight.jpg" alt=""><b class="portada__titulo">Hollow Knight</b></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Pie de página · <code>.pie</code></h3>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <footer class="pie">
+          <div class="pie__contenido">
+            <div class="pie__marca">
+              <a class="pie__logo" href="#componentes">SaveSlot</a>
+              <p class="pie__frase">Tu solución gamer.</p>
+            </div>
+            <nav class="pie__columnas" aria-label="Ejemplo de pie">
+              <div class="pie__columna">
+                <h2 class="pie__titulo">Explora</h2>
+                <a class="pie__enlace" href="#componentes">Juegos</a>
+                <a class="pie__enlace" href="#componentes">Eventos</a>
+              </div>
+            </nav>
+            <p class="pie__creditos">Proyecto académico sin fines comerciales.</p>
+          </div>
+        </footer>
+      </div>
     </div>
 
     <div class="cat-componente">
       <h3>Portada · <code>.portada</code></h3>
-      <p>La imagen se indica en <code>style</code> con una ruta de <code>assets/</code>.</p>
+      <p>La imagen va en <code>&lt;img class="portada__imagen"&gt;</code> con una ruta de <code>assets/</code> y su <code>alt</code>. El color del juego (<code>--c</code>) es solo respaldo mientras carga.</p>
       <div class="cat-ejemplo" data-codigo>
         <div class="cat-portadas">
-          <a class="portada portada--enlace" href="#componentes" style="background-image: url(assets/portada-hollow-knight.jpg)"><span class="portada__ranking">#1</span><b class="portada__titulo">Hollow Knight</b></a>
-          <a class="portada portada--enlace" href="#componentes" style="background-image: url(assets/portada-hades.jpg)"><span class="portada__ranking">#2</span><b class="portada__titulo">Hades</b></a>
+          <a class="portada portada--enlace" href="#componentes"><img class="portada__imagen" src="assets/portada-hollow-knight.jpg" alt="Portada de Hollow Knight"><span class="portada__ranking">#1</span><b class="portada__titulo">Hollow Knight</b></a>
+          <a class="portada portada--enlace" href="#componentes"><img class="portada__imagen" src="assets/portada-hades.jpg" alt="Portada de Hades"><span class="portada__ranking">#2</span><b class="portada__titulo">Hades</b></a>
           <div class="portada" style="--c: #5B3F96"><b class="portada__titulo">Respaldo: sin imagen todavía</b></div>
         </div>
       </div>
       <div class="cat-ejemplo" data-codigo>
-        <span class="portada portada--sm" style="background-image: url(assets/portada-inside.jpg)" aria-hidden="true"></span>
+        <span class="portada portada--sm"><img class="portada__imagen" src="assets/portada-inside.jpg" alt="Portada de Inside"></span>
         <span>Inside · versión pequeña para listas</span>
       </div>
     </div>

@@ -11,7 +11,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 1. Inicio | `index.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 1. Inicio | `index.html` | ✅ | ✅ | ✅ | ⬜ |
 | 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ⬜ | ⬜ | ⬜ |
 | 4. Juego random | `pages/juego-random.html` | ✅ | ⬜ | ⬜ | ⬜ |
 | 5. MatchPlay | `pages/matchplay.html` | ✅ | ⬜ | ⬜ | ⬜ |
@@ -32,7 +32,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ✅ | ✅ | ⬜ |
 | 13. Eventos | `pages/eventos.html` | ✅ | ⬜ | ⬜ | ⬜ |
 | 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ⬜ | ⬜ | ⬜ |
 | 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ⬜ | ⬜ | ⬜ |
