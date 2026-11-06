@@ -15,19 +15,21 @@ Digitales 3. Más contexto en README.md.
   React, Vue, Tailwind ni TypeScript) y sin paso de compilación: todo
   debe funcionar abriendo los archivos en el navegador.
 - La app se publicará en Vercel, conectada a este repositorio.
-- Cuentas y base de datos: Supabase. Catálogo de juegos: IGDB (de Twitch). Todo lo
+- Cuentas y base de datos: Supabase. Catálogo de juegos: IGDB (de Twitch), con las
+  descripciones traducidas al español por DeepL. Todo lo
   demás usa datos simulados (ver spec.md).
 
 ## Estructura del proyecto
 - disenos/: diseños originales. Solo de referencia: nunca los modifiques.
 - assets/: todas las imágenes, logos e íconos de la app. Usa siempre
-  las de aquí, nunca links de imágenes de internet.
+  las de aquí, nunca links de imágenes de internet. Única excepción: las
+  portadas de juegos que trae IGDB (images.igdb.com), siempre con crédito a IGDB.
 - css/: estilos. tokens.css (decisiones base), components.css
   (componentes) y styles.css (estilos generales de las pantallas).
 - js/: código. app.js (comportamiento) y data.js (datos simulados,
   separados del diseño).
-- api/: funciones de Vercel que usan claves secretas (por ejemplo, la
-  consulta a IGDB). JavaScript sin paso de compilación.
+- api/: funciones de Vercel que usan claves secretas (por ejemplo,
+  api/igdb.js, la consulta a IGDB). JavaScript sin paso de compilación.
 - index.html: la pantalla de inicio, la puerta de entrada de la app.
   Las demás pantallas van en la carpeta pages/.
 - 404.html: la página de error, también en la raíz (Vercel la usa para
@@ -45,7 +47,7 @@ Digitales 3. Más contexto en README.md.
 4. Nunca escribas claves, contraseñas ni tokens de acceso en el código:
    este repositorio es público. Única excepción: la clave pública (anon
    key) de Supabase, hecha para ir en el navegador; los datos se protegen
-   con reglas de acceso en la base. Las demás claves (como las de Twitch para IGDB) van
+   con reglas de acceso en la base. Las demás claves (como las de Twitch para IGDB y la de DeepL) van
    en las variables de entorno de Vercel y solo se usan desde api/.
 5. Si algo que te pedimos contradice spec.md, avísanos antes de hacerlo.
 6. Al terminar cada tarea, explica en lenguaje simple qué cambiaste y
@@ -56,7 +58,7 @@ Digitales 3. Más contexto en README.md.
 ## Componentes disponibles
 Definidos en css/components.css (estilo v3); se ven todos en componentes.html.
 Cada pantalla enlaza primero css/tokens.css y después css/components.css.
-Las portadas de juegos usan siempre su imagen de assets/; el color del juego (--c) es solo respaldo.
+Las portadas de juegos usan su imagen de assets/ si existe; si no, la portada que trae IGDB (con crédito a IGDB). El color del juego (--c) es solo respaldo: los juegos que vienen de IGDB no tienen color y usan el neutro del kit.
 En las pantallas no se escribe `style`: el color de un juego o evento va en `data-color="#…"` y app.js lo pasa a `--c` con aplicarColores().
 
 - `.antetitulo` y `.titulo-pagina` (+ `--grande`):
@@ -130,7 +132,7 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<div class="segmentado" role="tablist"><button class="segmentado__opcion" role="tab" aria-selected="true">Iniciar sesión</button></div>`
 - `.navegacion` con `__contenido`, `__logo`, `__enlaces`, `__enlace` (actual con `aria-current="page"`; `--escritorio` solo en computador, `--movil` solo en celular), `__buscar` con `__buscar-campo`, `__acciones` (`navegacion__ocultar-movil` para ocultar un botón en celular) `__usuario` con `__nombre` y `__nivel`, y `__contador` (un `.contador contador--destacado` sobre la campana). En celular los enlaces bajan a una barra fija (con íconos): la pantalla debe dejar espacio abajo.
   `<header class="navegacion"><div class="navegacion__contenido"><a class="navegacion__logo" href="index.html">SaveSlot</a>…</div></header>`
-- `.portada` (+ `--enlace`, `--sm`) con `.portada__imagen` (img con alt, de assets/), `.portada__titulo`, `.portada__ranking` y `.portada__accion` (botón arriba a la derecha); `--c` de respaldo:
+- `.portada` (+ `--enlace`, `--sm`) con `.portada__imagen` (img con alt, de assets/ o de IGDB), `.portada__titulo`, `.portada__ranking` y `.portada__accion` (botón arriba a la derecha); `--c` de respaldo:
   `<a class="portada portada--enlace" href="…" data-color="#8A2B2B"><img class="portada__imagen" src="assets/portada-hades.jpg" alt="Portada de Hades"><b class="portada__titulo">Hades</b></a>`
 - `.avatar` (+ `--sm` 32, normal 40, `--md` 56, `--lg` 128, `--ia`; anillo `--jugando`, `--en-linea`, `--desconectado` con `.avatar__punto` opcional):
   `<span class="avatar avatar--md avatar--jugando">SL<span class="avatar__punto"></span></span>`

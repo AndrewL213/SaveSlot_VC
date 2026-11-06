@@ -9,7 +9,7 @@ Leyenda de "Qué funciona de verdad":
 - **Después**: no entra en el MVP.
 Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican.
 
-**Portadas:** todas las portadas de juegos se ven con su imagen de `assets/`, en cualquier pantalla: listas, resultados, perfiles, diario, historial y amigos. No se usan rectángulos de color en lugar de la portada.
+**Portadas:** todas las portadas de juegos se ven con su imagen, en cualquier pantalla: listas, resultados, perfiles, diario, historial y amigos. Si el juego tiene imagen en `assets/`, se usa esa; si no, la portada que trae IGDB (desde images.igdb.com), con crédito a IGDB. Solo si IGDB no tiene portada se usa el rectángulo de color de respaldo.
 
 ## Integraciones de backend del MVP
 - **Supabase**: todo lo que se guarda.
@@ -18,6 +18,10 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
   - Presencia: quién está en línea.
   - Su clave pública va en el código; los datos se protegen con reglas de acceso en la base.
 - **IGDB** (de Twitch): catálogo de juegos (búsqueda, filtros, ficha y tiempos para terminar). Sus claves (Client ID y Client Secret de Twitch) se guardan en Vercel y se usan solo desde una función en `api/`, que también renueva el token de acceso; nunca van en el código del navegador (IGDB tampoco acepta pedidos directos desde el navegador). Uso no comercial: si SaveSlot se vuelve comercial, hay que pedir permiso a Twitch.
+  - La función es `api/igdb.js`. Acepta solo tres pedidos: `?buscar=texto` (hasta 20 juegos), `?id=slug` (la ficha de un juego) y `?populares=1` (los 10 más visitados en IGDB, para "Mejores juegos de la semana"). Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`).
+  - Vercel guarda cada respuesta una hora, para hacer menos consultas a IGDB.
+  - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) la traduce al español con **DeepL** (plan gratis: 500.000 caracteres al mes; clave `DEEPL_API_KEY` en Vercel). En las listas (`?buscar=` y `?populares=1`) queda en inglés para no gastar el cupo; cada juego trae `idiomaDescripcion` (`es` o `en`). Si DeepL falla o se acaba el cupo, la ficha llega igual, en inglés.
+  - Mientras no esté conectada (o abriendo los archivos directo en el navegador), la app usa los juegos de `js/data.js`.
 - Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros (también los logros totales de cada juego, que IGDB no da) y la vinculación con Steam y Xbox, y el estado de los servicios.
 
 ## Flujo
@@ -42,7 +46,7 @@ Se puede entrar y explorar sin cuenta. La cuenta se pide solo al escribir, comen
 
 Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale.
 
-- **juegos** (IGDB): id, nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie), horas de la historia, descripción, portada (de `assets/`), color de respaldo
+- **juegos** (IGDB): id, nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie: Indie si IGDB le pone ese género), horas de la historia ("Time to beat" de IGDB), descripción, portada (de `assets/` o de IGDB), color de respaldo (solo los juegos con imagen en `assets/`; los demás usan el neutro del kit)
   - Datos de ejemplo: logros totales (IGDB no los da)
   - Calculados con nuestras reseñas (Supabase): dificultad promedio (1–10), calificación, número de votos, horas al 100 %
 - **reseñas** (Supabase): id, juego, autor, tipo (reseña o guía), estado (publicada o borrador), título (opcional), texto, calificación (1–10), dificultad (1–10), horas jugadas, minutos de lectura (guías), contiene spoilers, votos de "útil", fecha
@@ -79,7 +83,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Vistos recientemente: Real (Supabase; sin sesión, en el navegador)
   - Eventos: Real (Supabase)
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con las portadas de assets/.
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - Al buscar "Hades", lleva a Buscar juegos con ese texto ya escrito.
   - "Vistos recientemente" solo aparece después de abrir al menos un juego.
@@ -107,7 +111,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Búsqueda y filtros: Real (IGDB)
   - Sugerencias automáticas al escribir (del flujograma): Después
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con las portadas de assets/.
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho): los filtros se abren con el botón "Filtros".
   - Cada filtro cambia la lista y el número de resultados.
   - "Limpiar filtros" muestra todos los juegos otra vez.
@@ -122,7 +126,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   3. Botón para pedir otro
 - **Qué funciona de verdad:** Sugerencia: Real (IGDB)
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con la portada de assets/.
+  - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - Al elegir un género, el juego sugerido es de ese género.
   - "Otro" muestra un juego distinto al anterior.
@@ -167,7 +171,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Pestaña Logros: Simulado
   - Pestaña Clips: Después (el diseño dice que llega con la API de Twitch)
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con la portada de assets/.
+  - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - Cada pestaña muestra su contenido y su número.
   - "+ Lista de deseos" cambia de estado y el juego aparece en el Perfil.
@@ -197,7 +201,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Guardar borrador: Real (Supabase)
   - Subir clip: Después
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con la portada de assets/.
+  - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - No deja publicar con menos de 50 caracteres y muestra el error.
   - Al publicar, la reseña aparece en el juego, en el Diario y en el Historial.
@@ -250,7 +254,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Editar o eliminar la reseña propia: Real (Supabase)
   - Compartir (copiar enlace): Simulado
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con la portada de assets/.
+  - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - Al abrir una reseña desde Comunidad, el juego o Inicio, se ve esa reseña.
   - No deja enviar un comentario vacío.
@@ -355,7 +359,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Conexiones (cuentas vinculadas): Simulado
   - Copiar enlace del perfil: Simulado
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con las portadas de assets/.
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - Muestra lo que el usuario hizo: reseñas, favoritos, deseos, amigos y eventos.
   - Sin sesión, pide iniciar sesión.
@@ -383,7 +387,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Vincular PlayStation o Nintendo: Después (no tienen conexión pública, según el diseño)
   - Foto de perfil: Después (el diseño dice que llega con el almacenamiento de archivos)
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con las portadas de assets/.
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - No deja agregar un quinto favorito.
   - Los cambios guardados se ven en el Perfil.
@@ -399,7 +403,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   4. Botón Registrar juego
 - **Qué funciona de verdad:** Diario: Real (Supabase)
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con las portadas de assets/.
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho): la tabla se vuelve tarjetas.
   - Los filtros cambian las filas.
   - Lo publicado en Escribir reseña aparece aquí.
@@ -417,7 +421,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Lista, búsqueda y filtros: Real (Supabase)
   - Editar o eliminar una reseña: Real (Supabase)
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con las portadas de assets/.
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - Buscar, filtrar y ordenar cambian la lista y el contador.
   - Sin resultados, se ve un mensaje con "Limpiar filtros".
@@ -433,7 +437,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   4. Logros más raros
 - **Qué funciona de verdad:** Logros: Simulado
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con las portadas de assets/.
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - El filtro de plataforma cambia la lista y, si no hay datos, lo dice.
   - Indica que son datos de ejemplo.
@@ -455,7 +459,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Actividad de amigos: Real (Supabase)
   - Mensaje: Después (el diseño dice que llegará en una próxima versión)
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con las portadas de assets/.
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - Cada pestaña muestra solo los amigos que corresponden.
   - Enviar una solicitud sin usuario, o a uno que no existe, muestra el error.
@@ -478,7 +482,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   - Compartir (copiar enlace): Simulado
   - Mensaje: Después
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con las portadas de assets/.
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - Muestra el usuario que indica la dirección.
   - El botón de amistad cambia de estado al tocarlo.
