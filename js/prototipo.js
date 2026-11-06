@@ -1,7 +1,8 @@
 /* Andamio temporal: se borra cuando todas las pantallas usen el design kit.
-   Es la unión de los 6 archivos JS de disenos/js/ (config, data, api, app, pages-juegos, pages-cuenta).
-   Único cambio: las rutas a páginas e imágenes pasan por ssRuta / SS_RAIZ, porque ahora
-   index.html y 404.html están en la raíz y las demás páginas en pages/. */
+   Es la unión de los 7 archivos JS de disenos/js/ (v3), en el orden en que los cargan las páginas.
+   Cambios respecto a disenos/: (1) las rutas a páginas pasan por ssRuta / SS_RAIZ, porque
+   index.html y 404.html están en la raíz y las demás en pages/, con los nombres de la app;
+   (2) cada juego tiene su portada de assets/ (campo image). */
 
 var SS_RAIZ = /\/pages\//.test(location.pathname) ? '../' : '';
 // Devuelve la ruta a una página desde la carpeta actual: index.html y 404.html están en la raíz.
@@ -34,7 +35,7 @@ window.SS_DATA = {
   games: [
     { id: 'zelda-totk', name: 'The Legend of Zelda: Tears of the Kingdom', short: 'Zelda: TOTK', genres: ['Aventura'], platforms: ['Nintendo'], year: 2023, dev: 'Nintendo EPD', type: 'AAA', hoursMain: 60, hours100: 220, difficulty: 6, rating: 4.8, votes: 12430, color: '#2F6B4F', image: SS_RAIZ + 'assets/portada-zelda-totk.jpg', achievements: 139,
       desc: 'Mundo abierto enorme donde cada puzzle tiene varias soluciones gracias a Ultramano.' },
-    { id: 'nier-automata', name: 'NieR: Automata', short: 'NieR: Automata', genres: ['RPG', 'Acción'], platforms: ['PC', 'PlayStation', 'Xbox', 'Nintendo'], year: 2017, dev: 'PlatinumGames', type: 'AAA', hoursMain: 20, hours100: 70, difficulty: 6, rating: 4.7, votes: 8120, color: '#7C7566', image: SS_RAIZ + 'assets/portada-nier-automata.jpg', achievements: 47,
+    { id: 'nier-automata', name: 'NieR: Automata', short: 'NieR: Automata', genres: ['RPG', 'Acción'], platforms: ['PC', 'PlayStation', 'Xbox', 'Nintendo'], year: 2017, dev: 'PlatinumGames', type: 'AAA', hoursMain: 20, hours100: 70, difficulty: 6, rating: 4.7, votes: 8120, color: '#7C7566', image: SS_RAIZ + 'assets/portada-nier-automata.jpg', achievements: 50,
       desc: 'Combate ágil y una historia que cambia por completo con cada final.' },
     { id: 'rocket-league', name: 'Rocket League', short: 'Rocket League', genres: ['Deportes'], platforms: ['PC', 'PlayStation', 'Xbox', 'Nintendo'], year: 2015, dev: 'Psyonix', type: 'AAA', hoursMain: null, hours100: null, difficulty: 7, rating: 4.3, votes: 9840, color: '#2456C4', image: SS_RAIZ + 'assets/portada-rocket-league.jpg', achievements: 88,
       desc: 'Fútbol con autos. Partidas de 5 minutos y torneos oficiales varias veces al día.' },
@@ -42,7 +43,7 @@ window.SS_DATA = {
       desc: 'Shooter táctico 5v5 con agentes de habilidades únicas.' },
     { id: 'pokemon-legends-za', name: 'Pokémon Legends Z-A', short: 'Pokémon Legends Z-A', genres: ['RPG'], platforms: ['Nintendo'], year: 2025, dev: 'Game Freak', type: 'AAA', hoursMain: 30, hours100: 80, difficulty: 3, rating: 4.4, votes: 5310, color: '#B8343E', image: SS_RAIZ + 'assets/portada-pokemon-legends-za.png', achievements: 0,
       desc: 'Captura y combate en tiempo real dentro de Ciudad Luminalia.' },
-    { id: 'fnaf-into-the-pit', name: "Five Nights at Freddy's: Into the Pit", short: 'FNAF: Into the Pit', genres: ['Terror'], platforms: ['PC', 'PlayStation', 'Xbox', 'Nintendo'], year: 2024, dev: 'Mega Cat Studios', type: 'Indie', hoursMain: 6, hours100: 10, difficulty: 5, rating: 4.1, votes: 2140, color: '#6B3A1E', image: SS_RAIZ + 'assets/portada-fnaf-into-the-pit.jpg', achievements: 38,
+    { id: 'fnaf-into-the-pit', name: "Five Nights at Freddy's: Into the Pit", short: 'FNAF: Into the Pit', genres: ['Terror'], platforms: ['PC', 'PlayStation', 'Xbox', 'Nintendo'], year: 2024, dev: 'Mega Cat Studios', type: 'Indie', hoursMain: 6, hours100: 10, difficulty: 5, rating: 4.1, votes: 2140, color: '#6B3A1E', image: SS_RAIZ + 'assets/portada-fnaf-into-the-pit.jpg', achievements: 24,
       desc: 'Aventura de terror corta con tensión constante y pocos sustos baratos.' },
     { id: 'hollow-knight', name: 'Hollow Knight', short: 'Hollow Knight', genres: ['Aventura', 'Metroidvania'], platforms: ['PC', 'PlayStation', 'Xbox', 'Nintendo'], year: 2017, dev: 'Team Cherry', type: 'Indie', hoursMain: 27, hours100: 60, difficulty: 7, rating: 4.7, votes: 9010, color: '#2B3A55', image: SS_RAIZ + 'assets/portada-hollow-knight.jpg', achievements: 63,
       desc: 'Metroidvania exigente con un mundo para explorar sin prisa.' },
@@ -50,7 +51,7 @@ window.SS_DATA = {
       desc: 'Escapa del inframundo partida a partida mientras la historia avanza.' },
     { id: 'elden-ring', name: 'Elden Ring', short: 'Elden Ring', genres: ['RPG', 'Acción'], platforms: ['PC', 'PlayStation', 'Xbox'], year: 2022, dev: 'FromSoftware', type: 'AAA', hoursMain: 55, hours100: 130, difficulty: 8, rating: 4.8, votes: 11200, color: '#3E5A2A', image: SS_RAIZ + 'assets/portada-elden-ring.jpg', achievements: 42,
       desc: 'Mundo abierto oscuro y desafiante con libertad total para explorar.' },
-    { id: 'ghost-of-tsushima', name: 'Ghost of Tsushima', short: 'Ghost of Tsushima', genres: ['Aventura', 'Acción'], platforms: ['PlayStation', 'PC'], year: 2020, dev: 'Sucker Punch', type: 'AAA', hoursMain: 25, hours100: 60, difficulty: 5, rating: 4.7, votes: 6400, color: '#7A2E2E', image: SS_RAIZ + 'assets/portada-ghost-of-tsushima.jpg', achievements: 77,
+    { id: 'ghost-of-tsushima', name: 'Ghost of Tsushima', short: 'Ghost of Tsushima', genres: ['Aventura', 'Acción'], platforms: ['PlayStation', 'PC'], year: 2020, dev: 'Sucker Punch', type: 'AAA', hoursMain: 25, hours100: 60, difficulty: 5, rating: 4.7, votes: 6400, color: '#7A2E2E', image: SS_RAIZ + 'assets/portada-ghost-of-tsushima.jpg', achievements: 52,
       desc: 'Samurái en mundo abierto con combate preciso y un viento que te guía.' },
     { id: 'inside', name: 'Inside', short: 'Inside', genres: ['Terror', 'Plataformas'], platforms: ['PC', 'PlayStation', 'Xbox', 'Nintendo'], year: 2016, dev: 'Playdead', type: 'Indie', hoursMain: 3, hours100: 5, difficulty: 4, rating: 4.6, votes: 4300, color: '#3A3F45', image: SS_RAIZ + 'assets/portada-inside.jpg', achievements: 14,
       desc: 'Plataformas oscuro y sin diálogos. Se termina en una tarde.' },
@@ -58,12 +59,46 @@ window.SS_DATA = {
       desc: 'Secuela de Hades con nueva protagonista, Melínoe, y nuevas armas.' }
   ],
   reviews: [
-    { game: 'nier-automata', user: 'kenvel', initials: 'KV', hours: 42, score: 9, diff: 6, useful: 128, text: 'La segunda vuelta no es relleno: cambia todo lo que creías saber. Juégalo completo antes de opinar.' },
-    { game: 'rocket-league', user: 'juanvi', initials: 'JV', hours: 300, score: 8, diff: 7, useful: 74, text: 'Fácil de empezar, difícil de dominar. Si llegas a Diamante, revisa la guía de aéreos de la comunidad.' },
-    { game: 'zelda-totk', user: 'andresh', initials: 'AH', hours: 48, score: 10, diff: 6, useful: 203, text: 'Ultramano cambia cómo resuelves todo. Haz las islas del cielo antes de bajar al subsuelo.' },
-    { game: 'zelda-totk', user: 'mlopez', initials: 'ML', hours: 31, score: 8, diff: 5, useful: 88, text: 'Enorme y generoso. El rendimiento baja en zonas con muchos efectos, pero nunca me sacó del juego.' },
-    { game: 'zelda-totk', user: 'valer1a', initials: 'VR', hours: 190, score: 9, diff: 7, useful: 61, spoiler: true, text: 'El final conecta con todo lo que pasó en el cielo. Que la batalla contra Ganondorf sea en caída libre es lo mejor del juego.' },
-    { game: 'hollow-knight', user: 'd4ni', initials: 'DA', hours: 60, score: 10, diff: 8, useful: 140, text: 'Cada zona tiene identidad propia. Los jefes opcionales son los mejores del género.' }
+    { id: 'r1', game: 'nier-automata', user: 'kenvel', initials: 'KV', date: '2026-10-05', hours: 42, score: 9, diff: 6, useful: 128, likes: 64, text: 'La segunda vuelta no es relleno: cambia todo lo que creías saber. Juégalo completo antes de opinar.' },
+    { id: 'r2', game: 'rocket-league', user: 'juanvi', initials: 'JV', date: '2026-10-03', hours: 300, score: 8, diff: 7, useful: 74, likes: 31, text: 'Fácil de empezar, difícil de dominar. Si llegas a Diamante, revisa la guía de aéreos de la comunidad.' },
+    { id: 'r3', game: 'zelda-totk', user: 'andresh', initials: 'AH', date: '2026-09-28', hours: 48, score: 10, diff: 6, useful: 203, likes: 112, text: 'Ultramano cambia cómo resuelves todo. Haz las islas del cielo antes de bajar al subsuelo.' },
+    { id: 'r4', game: 'zelda-totk', user: 'mlopez', initials: 'ML', date: '2026-09-21', hours: 31, score: 8, diff: 5, useful: 88, likes: 40, text: 'Enorme y generoso. El rendimiento baja en zonas con muchos efectos, pero nunca me sacó del juego.' },
+    { id: 'r5', game: 'zelda-totk', user: 'valer1a', initials: 'VR', date: '2026-09-15', hours: 190, score: 9, diff: 7, useful: 61, likes: 27, spoiler: true, text: 'El final conecta con todo lo que pasó en el cielo. Que la batalla contra Ganondorf sea en caída libre es lo mejor del juego.' },
+    { id: 'r6', game: 'hollow-knight', user: 'd4ni', initials: 'DA', date: '2026-09-10', hours: 60, score: 10, diff: 8, useful: 140, likes: 77, text: 'Cada zona tiene identidad propia. Los jefes opcionales son los mejores del género.' },
+    { id: 'r7', game: 'hades', user: 'kenvel', initials: 'KV', date: '2026-08-30', hours: 70, score: 10, diff: 6, useful: 96, likes: 52, text: 'Cada muerte te deja algo: una conversación, una mejora, una pista de la historia. Nunca se siente como perder el tiempo.' },
+    { id: 'r8', game: 'valorant', user: 'juanvi', initials: 'JV', date: '2026-08-22', hours: 410, score: 7, diff: 8, useful: 58, likes: 19, text: 'Muy bueno con amigos, frustrante en solitario. Aprende dos agentes bien antes de probar todos.' },
+    { id: 'r9', game: 'elden-ring', user: 'd4ni', initials: 'DA', date: '2026-08-14', hours: 120, score: 10, diff: 9, useful: 117, likes: 66, text: 'Si un jefe te bloquea, ve a explorar y vuelve más fuerte. El mundo abierto es la mejor ayuda de dificultad.' },
+    { id: 'r10', game: 'inside', user: 'lau_plays', initials: 'LP', date: '2026-08-02', hours: 4, score: 9, diff: 4, useful: 45, likes: 22, text: 'Tres horas que se quedan contigo. Juégalo de noche, con audífonos y sin leer nada antes.' }
+  ],
+  // Reseñas del usuario de demostración (historial de reseñas)
+  myReviews: [
+    { id: 'm1', game: 'zelda-totk', date: '2026-10-07', hours: 48, score: 10, diff: 6, useful: 34, likes: 21, state: 'Terminado', text: 'Ultramano convierte cada problema en un juguete. Me pasé horas construyendo puentes absurdos y nunca sentí que perdía el tiempo.' },
+    { id: 'm2', game: 'fnaf-into-the-pit', date: '2026-10-04', hours: 6, score: 7, diff: 5, useful: 12, likes: 6, state: 'Terminado', text: 'Corto y con buena tensión. Los saltos de tiempo están bien pensados, aunque el final se siente apurado.' },
+    { id: 'm3', game: 'nier-automata', date: '2026-10-02', hours: 21, score: 9, diff: 6, useful: 27, likes: 15, state: 'Rejugado', spoiler: true, text: 'En la segunda partida con 9S entiendes por qué la primera era solo la mitad. El final E me hizo llorar con los créditos.' },
+    { id: 'm4', game: 'valorant', date: '2026-09-19', hours: 9, score: 5, diff: 8, useful: 4, likes: 2, state: 'Abandonado', text: 'Técnicamente impecable, pero no es para mí. Demasiado castigo para alguien que juega un rato los fines de semana.' },
+    { id: 'm5', game: 'hollow-knight', date: '2026-08-12', hours: 27, score: 9, diff: 7, useful: 41, likes: 25, state: 'Rejugado', text: 'Volví para sacar los finales que me faltaban. El Panteón es duro, pero cada intento enseña algo.' }
+  ],
+  comments: [
+    { review: 'm1', user: 'kenvel', initials: 'KV', when: 'hace 2 días', text: 'Lo de los puentes absurdos es lo mejor del juego, jaja.' },
+    { review: 'm1', user: 'd4ni', initials: 'DA', when: 'hace 1 día', text: '¿Ya probaste el subsuelo completo? Cambia mucho la experiencia.' },
+    { review: 'm3', user: 'juanvi', initials: 'JV', when: 'hace 5 días', text: 'El final E es de lo mejor que he jugado.' },
+    { review: 'r1', user: 'mlopez', initials: 'ML', when: 'hace 3 días', text: 'Totalmente, la ruta C es otro juego.' },
+    { review: 'r3', user: 'kenvel', initials: 'KV', when: 'hace 1 semana', text: 'Buen consejo lo de las islas del cielo primero.' },
+    { review: 'r6', user: 'valer1a', initials: 'VR', when: 'hace 4 días', text: 'Los Hermanos Mantis son mi jefe favorito.' }
+  ],
+  // Personas de la comunidad. rel: friend | in (te envió solicitud) | out (enviaste) | none (sugerencia)
+  users: [
+    { user: 'kenvel', name: 'Kenneth Velásquez', initials: 'KV', rel: 'friend', status: 'playing', game: 'nier-automata', level: 18, since: '2024-02-02', bio: 'RPGs japoneses y bandas sonoras que se quedan en la cabeza.', favorites: ['nier-automata', 'hades', 'elden-ring', 'hollow-knight'], played: { 'nier-automata': 9, 'hades': 10, 'zelda-totk': 9, 'hollow-knight': 8, 'inside': 8 }, color: '#7C7566' },
+    { user: 'juanvi', name: 'Juan Vigoya', initials: 'JV', rel: 'friend', status: 'playing', game: 'rocket-league', level: 21, since: '2023-11-20', bio: 'Competitivo. Diamante en Rocket League, Oro en Valorant.', favorites: ['rocket-league', 'valorant', 'elden-ring', 'zelda-totk'], played: { 'rocket-league': 8, 'valorant': 7, 'zelda-totk': 9, 'nier-automata': 10 }, color: '#2456C4' },
+    { user: 'd4ni', name: 'Daniela Arango', initials: 'DA', rel: 'friend', status: 'playing', game: 'hollow-knight', level: 15, since: '2024-05-09', bio: 'Metroidvanias y soulslikes. Si tiene jefes difíciles, me interesa.', favorites: ['hollow-knight', 'elden-ring', 'hades', 'inside'], played: { 'hollow-knight': 10, 'elden-ring': 10, 'hades': 9, 'zelda-totk': 8 }, color: '#2B3A55' },
+    { user: 'mlopez', name: 'María López', initials: 'ML', rel: 'friend', status: 'online', level: 9, since: '2025-01-15', bio: 'Aventuras tranquilas después del trabajo.', favorites: ['zelda-totk', 'pokemon-legends-za', 'inside', 'ghost-of-tsushima'], played: { 'zelda-totk': 8, 'pokemon-legends-za': 9, 'inside': 9 }, color: '#2F6B4F' },
+    { user: 'lau_plays', name: 'Laura Peña', initials: 'LP', rel: 'friend', status: 'online', level: 11, since: '2024-09-01', bio: 'Indies cortos y juegos de terror con buena historia.', favorites: ['inside', 'fnaf-into-the-pit', 'hades-ii', 'hollow-knight'], played: { 'inside': 9, 'fnaf-into-the-pit': 8, 'hollow-knight': 9 }, color: '#3A3F45' },
+    { user: 'valer1a', name: 'Valeria Ríos', initials: 'VR', rel: 'friend', status: 'offline', last: 'hace 2 h', level: 14, since: '2024-04-22', bio: 'Completista. Si tiene 100 %, lo saco.', favorites: ['zelda-totk', 'ghost-of-tsushima', 'pokemon-legends-za', 'hades'], played: { 'zelda-totk': 9, 'ghost-of-tsushima': 10, 'hades': 8 }, color: '#7A2E2E' },
+    { user: 'nico.gg', name: 'Nicolás Gómez', initials: 'NG', rel: 'friend', status: 'offline', last: 'hace 1 día', level: 7, since: '2025-06-30', bio: 'Shooters con amigos los viernes.', favorites: ['valorant', 'rocket-league', 'elden-ring', 'hades'], played: { 'valorant': 8, 'rocket-league': 7 }, color: '#5B3F96' },
+    { user: 'tatan', name: 'Sebastián Cruz', initials: 'SC', rel: 'in', status: 'online', level: 6, since: '2025-08-12', bio: 'Nuevo en SaveSlot. Busco gente para Rocket League.', favorites: ['rocket-league', 'pokemon-legends-za', 'zelda-totk', 'hades'], played: { 'rocket-league': 8, 'zelda-totk': 10 }, color: '#2456C4', mutual: 2 },
+    { user: 'cami.rpg', name: 'Camila Torres', initials: 'CT', rel: 'in', status: 'offline', last: 'hace 3 h', level: 13, since: '2024-12-03', bio: 'RPGs largos y diarios de juego muy detallados.', favorites: ['nier-automata', 'pokemon-legends-za', 'elden-ring', 'zelda-totk'], played: { 'nier-automata': 10, 'elden-ring': 9 }, color: '#B8343E', mutual: 3 },
+    { user: 'feli_fps', name: 'Felipe Ruiz', initials: 'FR', rel: 'none', status: 'online', level: 10, since: '2025-03-18', bio: 'Torneos de la universidad.', favorites: ['valorant', 'rocket-league', 'ghost-of-tsushima', 'hades'], played: { 'valorant': 9, 'rocket-league': 8 }, color: '#5B3F96', mutual: 4 },
+    { user: 'ana.indie', name: 'Ana Moreno', initials: 'AM', rel: 'none', status: 'offline', last: 'hace 5 h', level: 8, since: '2025-02-10', bio: 'Indies, pixel art y bandas sonoras.', favorites: ['hollow-knight', 'inside', 'hades', 'hades-ii'], played: { 'hollow-knight': 9, 'inside': 10, 'hades': 9 }, color: '#5A2D6B', mutual: 2 }
   ],
   guides: [
     { game: 'zelda-totk', title: 'Las 4 regiones en el orden recomendado', mins: 12, useful: 94 },
@@ -108,7 +143,7 @@ window.SS_DATA = {
 /* ===================== api.js ===================== */
 /* SaveSlot — capa de datos.
    Usa RAWG si hay clave en js/config.js; si no, los datos de ejemplo.
-   Cualquier fallo de una API externa termina en 404.html con el motivo. */
+   Cualquier fallo de una API externa termina en ' + ssRuta('404.html') + ' con el motivo. */
 (function () {
   const CFG = window.SS_CONFIG || {};
   const DATA = window.SS_DATA;
@@ -298,6 +333,41 @@ window.SS_DATA = {
     add(e) { const d = diary.all(); d.unshift(e); d.sort((a, b) => b.date.localeCompare(a.date)); store.set('diary', d); }
   };
 
+  // ---------- Reseñas propias (historial) ----------
+  const reviews = {
+    mine() {
+      let list = store.get('myReviews', null);
+      if (!list) {
+        // Migra reseñas publicadas antes de v3 (clave "reviews") y suma las de ejemplo
+        const old = store.get('reviews', []).map((r, i) => Object.assign({ id: 'u' + i, date: new Date().toISOString().slice(0, 10), likes: 0 }, r));
+        list = old.concat(DATA.myReviews.map((r) => Object.assign({}, r)));
+        store.set('myReviews', list);
+      }
+      const u = auth.user() || { user: 'samluq', initials: 'SL' };
+      return list.map((r) => Object.assign({}, r, { user: u.user, initials: u.initials, mine: true }));
+    },
+    raw() { reviews.mine(); return store.get('myReviews', []); },
+    save(list) { store.set('myReviews', list); },
+    all() { return reviews.mine().concat(DATA.reviews); },
+    byId(id) { return reviews.all().find((r) => r.id === id); },
+    comments(id) { return store.get('comments.' + id, null) || DATA.comments.filter((c) => c.review === id); }
+  };
+
+  // ---------- Amigos (estado de relación guardado en el navegador) ----------
+  const friends = {
+    rel(u) { const m = store.get('friends', {}); return m[u] || ((DATA.users.find((x) => x.user === u) || {}).rel) || 'none'; },
+    set(u, r) { const m = store.get('friends', {}); m[u] = r; store.set('friends', m); },
+    list(r) { return DATA.users.filter((x) => friends.rel(x.user) === r); },
+    user(u) { return DATA.users.find((x) => x.user === u); }
+  };
+  const STATUS_TXT = (f) => f.status === 'playing' ? 'Jugando ' + ((DATA.games.find((g) => g.id === f.game) || {}).short || '') : f.status === 'online' ? 'En línea' : 'Desconectado · ' + (f.last || 'hace un rato');
+  function avatar(f, size) {
+    size = size || 44;
+    return '<span class="av av-' + f.status + '" style="--av:' + (f.color || '#2E3A4A') + ';width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * .36) + 'px">' + esc(f.initials) + '<i aria-hidden="true"></i></span>';
+  }
+  // Enlace al perfil de una persona (el propio va a perfil.html)
+  const userHref = (u) => { const me = auth.user(); return me && me.user === u ? '' + ssRuta('perfil.html') + '' : '' + ssRuta('perfil-usuario.html') + '?u=' + encodeURIComponent(u); };
+
   // ---------- UI: toast y modal ----------
   let toastTimer;
   function toast(msg, opts) {
@@ -391,7 +461,7 @@ window.SS_DATA = {
       '<nav class="main-nav" aria-label="Principal">' + NAV.map((n) => '<a href="' + n[0] + '"' + (n[2] === section ? ' aria-current="page"' : '') + '>' + n[1] + '</a>').join('') + '</nav>' +
       '<form class="header-search" role="search" action="' + ssRuta('buscar-juegos.html') + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA8B8" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
       '<label class="sr-only" for="hq">Buscar juegos</label><input id="hq" name="q" type="search" list="ss-games" autocomplete="off" placeholder="Buscar juegos" value="' + esc(section === 'juegos' ? (params.get('q') || '') : '') + '"><kbd class="kbd hide-sm" title="Atajo: pulsa / para buscar">/</kbd></form>' +
-      (u ? '<button class="icon-btn" id="notif" aria-label="Notificaciones, 2 nuevas"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E6EBF1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span class="dot"></span></button>' +
+      (u ? '<a class="icon-btn hide-sm" href="' + ssRuta('amigos.html') + '" aria-label="Amigos" title="Amigos"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E6EBF1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.5 2.4 3.5 5.2"/></svg>' + (friends.list('in').length ? '<span class="dot" style="background:var(--good)"></span>' : '') + '</a><button class="icon-btn" id="notif" aria-label="Notificaciones, 2 nuevas"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E6EBF1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span class="dot"></span></button>' +
            '<a class="user-pill" href="' + ssRuta('perfil.html') + '"><span class="avatar">' + esc(u.initials) + '</span><span><b>' + esc(u.name.split(' ')[0]) + '</b><span>Nivel ' + p.level + '</span></span></a>'
          : '<a class="btn btn-secondary btn-sm hide-sm" href="' + ssRuta('iniciar-sesion.html') + '">Iniciar sesión</a><a class="btn btn-primary btn-sm" href="' + ssRuta('crear-cuenta.html') + '">Crear cuenta</a>') +
       '</div>';
@@ -431,7 +501,7 @@ window.SS_DATA = {
     tabbar.innerHTML = TABS.map((t) => '<a href="' + t[0] + '"' + (t[2] === active ? ' aria-current="page"' : '') + '><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[t[2]] + '</svg><span>' + t[1] + '</span></a>').join('');
     document.body.appendChild(tabbar);
     const nb = $('#notif', header);
-    if (nb) nb.addEventListener('click', () => modal({ icon: 'trophy', title: 'Notificaciones', html: '<div class="stack" style="width:100%;text-align:left"><div class="card">Tu reseña de NieR: Automata recibió 12 votos de “útil”.</div><div class="card">La Copa SaveSlot 2v2 cierra inscripciones el viernes.</div></div>', actions: [{ label: 'Cerrar' }] }));
+    if (nb) nb.addEventListener('click', () => { const req = friends.list('in'); modal({ icon: 'trophy', title: 'Notificaciones', html: '<div class="stack" style="width:100%;text-align:left;gap:10px">' + (req.length ? '<a class="card card-link" href="' + ssRuta('amigos.html') + '#solicitudes"><b>' + req.length + ' solicitudes de amistad</b><span class="small muted">' + req.map((r) => esc(r.name)).join(', ') + '</span></a>' : '') + '<a class="card card-link" href="' + ssRuta('detalle-resena.html') + '?id=m1"><span>Kenneth y Daniela comentaron tu reseña de Zelda: TOTK.</span></a><a class="card card-link" href="' + ssRuta('historial-resenas.html') + '"><span>Tu reseña de NieR: Automata recibió 12 votos de “útil”.</span></a><a class="card card-link" href="' + ssRuta('detalle-evento.html') + '?id=copa-2v2"><span>La Copa SaveSlot 2v2 cierra inscripciones el viernes.</span></a></div>', actions: [{ label: 'Cerrar' }] }); });
 
     const footer = document.createElement('footer');
     footer.className = 'site-footer';
@@ -440,10 +510,10 @@ window.SS_DATA = {
       '<div style="display:flex;flex-direction:column;gap:10px;max-width:320px"><b style="font-size:20px">SaveSlot</b><span class="muted small">Tu solución gamer. Todos tus juegos y sus comunidades en un solo lugar.</span></div>' +
       '<nav aria-label="Pie de página">' +
       '<div><b>Explora</b><a href="' + ssRuta('buscar-juegos.html') + '">Juegos</a><a href="' + ssRuta('juego-random.html') + '">Juego random</a><a href="' + ssRuta('eventos.html') + '">Eventos</a></div>' +
-      '<div><b>Cuenta</b><a href="' + ssRuta('perfil.html') + '">Mi perfil</a><a href="' + ssRuta('diario.html') + '">Diario</a><a href="' + ssRuta('logros.html') + '">Logros</a>' + (u ? '<a href="#" id="logout">Cerrar sesión</a>' : '<a href="' + ssRuta('iniciar-sesion.html') + '">Iniciar sesión</a>') + '</div>' +
+      '<div><b>Cuenta</b><a href="' + ssRuta('perfil.html') + '">Mi perfil</a><a href="' + ssRuta('amigos.html') + '">Amigos</a><a href="' + ssRuta('historial-resenas.html') + '">Historial de reseñas</a><a href="' + ssRuta('diario.html') + '">Diario</a><a href="' + ssRuta('logros.html') + '">Logros</a>' + (u ? '<a href="#" id="logout">Cerrar sesión</a>' : '<a href="' + ssRuta('iniciar-sesion.html') + '">Iniciar sesión</a>') + '</div>' +
       '<div><b>Ayuda</b><a href="' + ssRuta('contacto.html') + '">Contáctanos</a><a href="' + ssRuta('404.html') + '?tipo=estado">Estado de servicios</a><a href="' + ssRuta('eventos.html') + '#reglas">Reglas de eventos</a></div>' +
       '</nav>' +
-      '<p class="credits">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos, marcas y portadas pertenecen a sus dueños; portadas tomadas de Steam y Wikipedia. Datos de juegos: ejemplo' + (window.SS_API && !SS_API.usingDemo ? ' y <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a>' : '') + '.</p>' +
+      '<p class="credits">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos y marcas pertenecen a sus dueños. Datos de juegos: ejemplo' + (window.SS_API && !SS_API.usingDemo ? ' y <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a>' : '') + '.</p>' +
       '</div>';
     document.body.appendChild(footer);
     const lo = $('#logout', footer);
@@ -462,7 +532,7 @@ window.SS_DATA = {
     window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
   }
 
-  window.SS = { $, $$, esc, params, store, auth, profile, diary, toast, busy, score10, recent, modal, closeModal, cover, gameTile, skulls, gameById, fmt, DATA };
+  window.SS = { $, $$, esc, params, store, auth, profile, diary, reviews, friends, avatar, STATUS_TXT, userHref, toast, busy, score10, recent, modal, closeModal, cover, gameTile, skulls, gameById, fmt, DATA };
 
   document.addEventListener('DOMContentLoaded', () => {
     if (checkSimulation()) return;
@@ -479,20 +549,24 @@ window.SS_DATA = {
 /* SaveSlot — páginas de juegos, búsqueda, eventos y reseñas. */
 window.SS_PAGES = window.SS_PAGES || {};
 (function (P) {
-  const { $, $$, esc, params, store, auth, profile, diary, toast, busy, score10, recent, modal, cover, gameTile, skulls, gameById, fmt, DATA } = window.SS;
+  const { $, $$, esc, params, store, auth, profile, diary, reviews: RV, friends, avatar, userHref, toast, busy, score10, recent, modal, cover, gameTile, skulls, gameById, fmt, DATA } = window.SS;
   const API = window.SS_API;
 
   function skeletonTiles(n) { return Array.from({ length: n }, () => '<div class="skeleton" style="aspect-ratio:3/4"></div>').join(''); }
-  function userReviews() { return store.get('reviews', []); }
+  function userReviews() { return RV.mine(); }
 
   function reviewCard(r, opts) {
     const g = gameById(r.game);
-    const head = '<div class="who"><span class="avatar">' + esc(r.initials) + '</span><div style="line-height:1.3"><b>' + esc(r.user) + '</b><br><span class="muted xs">' +
-      (opts && opts.showGame && g ? 'sobre ' + esc(g.short) + ' · ' : '') + esc(r.hours) + ' h jugadas</span></div><span class="score" style="margin-left:auto;font-size:18px">' + esc(r.score) + '/10</span></div>';
+    const f = friends.user(r.user);
+    const av = f ? avatar(f, 38) : '<span class="avatar">' + esc(r.initials) + '</span>';
+    const nCom = RV.comments(r.id).length;
+    const head = '<div class="who">' + av + '<div style="line-height:1.3"><a class="user-link" href="' + userHref(r.user) + '"><b>' + esc(r.user) + '</b></a>' + (f && friends.rel(f.user) === 'friend' ? ' <span class="badge badge-friend">AMIGO</span>' : '') + '<br><span class="muted xs">' +
+      (opts && opts.showGame && g ? 'sobre ' + esc(g.short) + ' · ' : '') + esc(r.hours) + ' h jugadas</span></div><span class="score-pill" style="margin-left:auto">' + esc(r.score) + '<small>/10</small></span></div>';
     const body = r.spoiler
       ? '<div class="spoiler"><span class="muted">Esta reseña tiene spoilers.</span><button class="btn btn-secondary btn-sm" data-reveal>Mostrar de todas formas</button></div><p hidden>' + esc(r.text) + '</p>'
       : '<p>' + esc(r.text) + '</p>';
-    return '<article class="review">' + head + body + '<div class="row small muted"><button class="btn btn-secondary btn-sm" data-useful>Útil · <span>' + fmt(r.useful || 0) + '</span></button><span>Dificultad que votó: ' + esc(r.diff) + '/10</span></div></article>';
+    return '<article class="review' + (g ? '" style="--c:' + g.color : '') + '">' + head + body + '<div class="row small muted" style="gap:10px"><button class="btn btn-secondary btn-sm" data-useful>Útil · <span>' + fmt(r.useful || 0) + '</span></button><span>♥ ' + fmt(r.likes || 0) + '</span><span>' + nCom + (nCom === 1 ? ' comentario' : ' comentarios') + '</span>' +
+      (r.id ? '<a class="link-strong" style="margin-left:auto" href="' + ssRuta('detalle-resena.html') + '?id=' + encodeURIComponent(r.id) + '">Leer y comentar →</a>' : '') + '</div></article>';
   }
   function bindReviewActions(root) {
     $$('[data-reveal]', root).forEach((b) => b.addEventListener('click', () => { const box = b.closest('.spoiler'); box.nextElementSibling.hidden = false; box.remove(); }));
@@ -508,7 +582,7 @@ window.SS_PAGES = window.SS_PAGES || {};
     const games = await API.searchGames({});
     const top = games.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 6);
     $('#top-games').innerHTML = top.map((g, i) => gameTile(g, i + 1)).join('');
-    const all = DATA.reviews.filter((r) => !r.spoiler).concat(userReviews());
+    const all = DATA.reviews.filter((r) => !r.spoiler);
     $('#reviews').innerHTML = all.slice(0, 3).map((r) => reviewCard(r, { showGame: true })).join('');
     bindReviewActions($('#reviews'));
     const feat = DATA.events.find((e) => e.featured);
@@ -520,23 +594,23 @@ window.SS_PAGES = window.SS_PAGES || {};
     if (rv.length && $('#recent-wrap')) { $('#recent-wrap').hidden = false; $('#recent-games').innerHTML = rv.map((g) => gameTile(g)).join(''); }
     if (!seen) setTimeout(() => modal({
       icon: 'trophy', title: feat.title, text: 'Evento del mes. Arma tu equipo y compite. ' + feat.when + ' · ' + feat.slots + ' de ' + feat.max + ' cupos ocupados.',
-      actions: [{ label: 'Ver evento', href: '' + ssRuta('detalle-evento.html') + '?id=' + feat.id, primary: true }, { label: 'Ahora no' }]
+      actions: [{ label: 'Ver evento', href: '' + ssRuta('detalle-evento.html') + '?id=' + feat.id, primary: true }]
     }), 900);
   };
 
   // ---------- Eventos ----------
   function eventFeature(e) {
-    return '<a class="card card-link" href="' + ssRuta('detalle-evento.html') + '?id=' + e.id + '" style="flex:2 1 520px;background:#1A3157;border-color:#3DA9F5;padding:28px;gap:12px">' +
+    return '<a class="card card-link event-feature" href="' + ssRuta('detalle-evento.html') + '?id=' + e.id + '" style="flex:2 1 520px;padding:28px;gap:12px;--c:' + e.color + '">' +
       '<span class="row" style="gap:8px"><span class="badge badge-accent">' + e.type.toUpperCase() + '</span><span class="badge badge-outline" style="color:#E6EBF1;border-color:#9AD4FB">EVENTO DEL MES</span></span>' +
       '<b style="font-size:30px;line-height:1.1">' + esc(e.title) + '</b><span class="soft">' + esc(e.when) + ' · Organiza: ' + esc(e.org) + '</span>' +
-      '<span class="row"><span class="btn btn-primary">Ver e inscribirme</span><span class="soft small">' + e.slots + ' de ' + e.max + ' cupos ocupados</span></span></a>';
+      '<span class="row"><span class="btn btn-primary">Ver evento</span><span class="soft small">' + e.slots + ' de ' + e.max + ' cupos ocupados</span></span></a>';
   }
   function eventCard(e) {
     const g = e.game ? gameById(e.game) : null;
     const badge = e.type === 'Torneo' ? 'badge-accent' : 'badge-good';
     const slots = e.max ? e.slots + ' / ' + e.max : (e.slots ? fmt(e.slots) + ' participantes' : 'Sin límite');
     return '<a class="card card-link" href="' + ssRuta('detalle-evento.html') + '?id=' + e.id + '" style="padding:0;overflow:hidden;gap:0;flex:1 1 300px">' +
-      '<div style="height:110px;padding:12px;background:' + e.color + '"><span class="badge ' + badge + '">' + e.type.toUpperCase() + '</span></div>' +
+      '<div class="event-art" style="--c:' + e.color + '"><span class="badge ' + badge + '">' + e.type.toUpperCase() + '</span></div>' +
       '<div style="padding:18px;display:flex;flex-direction:column;gap:6px;flex:1"><span class="muted xs">' + esc(g ? g.short : 'Cualquier tienda') + '</span><b style="font-size:19px;line-height:1.2">' + esc(e.title) + '</b>' +
       '<span class="soft small">' + esc(e.when) + '</span><span class="muted xs">' + esc(e.org) + '</span>' +
       '<div class="row between small" style="margin-top:auto;padding-top:10px;border-top:1px solid var(--line)"><span>' + slots + '</span><b style="color:var(--accent-text)">' + esc(e.cost) + '</b></div></div></a>';
@@ -590,7 +664,7 @@ window.SS_PAGES = window.SS_PAGES || {};
       (paidOnly ? '<div class="card" style="border-color:#E0A23B"><b>Este torneo solo admite inscripción de pago.</b><span class="small soft">Mientras conectamos los pagos, mira los eventos gratuitos.</span><a class="link-strong small" href="' + ssRuta('eventos.html') + '">Ver eventos gratis</a></div>' : '') +
       '</fieldset>' +
       '<label class="check"><input type="checkbox" id="terms"><span>Acepto el reglamento y la política de reembolsos.</span></label><span class="error-text" id="terms-err" hidden>Debes aceptar el reglamento para continuar.</span>' +
-      '<button class="btn btn-primary btn-block" type="submit"' + (paidOnly ? ' disabled' : '') + '>' + (isT ? 'Inscribirme' : 'Confirmar participación') + '</button>';
+      '<button class="btn btn-primary btn-block" type="submit"' + (paidOnly ? ' disabled' : '') + '>' + (isT ? 'Inscribirme' : 'Participar') + '</button>';
 
     $('#join-form').addEventListener('submit', async (ev) => {
       ev.preventDefault();
@@ -609,7 +683,7 @@ window.SS_PAGES = window.SS_PAGES || {};
         pr.xp -= 300; profile.save(pr);
       } else { profile.addXP(100); }
       const j = store.get('joined', []); if (!j.includes(e.id)) j.push(e.id); store.set('joined', j);
-      modal({ icon: 'check', title: isT ? '¡Estás inscrito!' : '¡Ya participas!', text: isT ? 'Tu equipo tiene cupo. Recibirás el recordatorio del check-in.' : 'Te avisaremos por correo si ganas.', actions: [{ label: 'Ver en mi perfil', href: '' + ssRuta('perfil.html') + '', primary: true }, { label: 'Seguir explorando', href: '' + ssRuta('eventos.html') + '' }] });
+      modal({ icon: 'check', title: isT ? '¡Estás inscrito!' : '¡Ya participas!', text: isT ? 'Tu equipo tiene cupo. Recibirás el recordatorio del check-in y lo verás en Mis eventos de tu perfil.' : 'Te avisaremos por correo si ganas. Lo verás en Mis eventos de tu perfil.', actions: [{ label: 'Listo', primary: true, onClick: () => location.reload() }] });
     });
   };
 
@@ -639,7 +713,7 @@ window.SS_PAGES = window.SS_PAGES || {};
     }
     function resultRow(g) {
       return '<a class="card card-link" href="' + ssRuta('detalle-juego.html') + '?id=' + encodeURIComponent(g.id) + '" style="flex-direction:row;align-items:center;gap:18px;flex-wrap:wrap;padding:14px">' +
-        '<span class="cover cover-sm" style="--c:' + g.color + ';width:64px;height:86px"></span>' +
+        '<span class="cover cover-sm" style="--c:' + g.color + ';width:64px;height:86px' + (g.image ? ';background-image:url(' + g.image + ');background-size:cover;background-position:center' : '') + '"></span>' +
         '<span class="grow" style="display:flex;flex-direction:column;gap:4px;flex:1 1 240px"><b style="font-size:19px">' + esc(g.name) + '</b><span class="muted small">' + esc(g.genres.join(', ')) + ' · ' + (g.year || '') + ' · ' + esc(g.platforms.join(', ')) + '</span>' + (g.type ? '<span><span class="badge badge-outline">' + esc(g.type) + '</span></span>' : '') + '</span>' +
         '<span style="display:grid;grid-template-columns:repeat(3,auto);gap:2px 24px;font-size:13px;color:var(--muted);text-align:right"><span>Nota</span><span>Historia</span><span>Dificultad</span><b class="score" style="font-size:16px">' + score10(g.rating) + '</b><b style="font-size:16px;color:var(--fg)">' + (g.hoursMain ? g.hoursMain + ' h' : 'Online') + '</b><b style="font-size:16px;color:var(--fg)">' + (g.difficulty ? g.difficulty + '/10' : '—') + '</b></span></a>';
     }
@@ -731,13 +805,22 @@ window.SS_PAGES = window.SS_PAGES || {};
     if (!g) { location.replace('' + ssRuta('404.html') + ''); return; }
     let kind = params.get('tipo') === 'guia' ? 'guia' : (params.get('tipo') === 'clip' ? 'clip' : 'resena');
     let score = 8, diff = g.difficulty || 5, like = false;
-    $('#r-cover').outerHTML = '<span class="cover cover-sm" style="--c:' + g.color + ';width:64px;height:86px" aria-hidden="true"></span>';
+    $('#r-cover').outerHTML = '<span class="cover cover-sm" style="--c:' + g.color + ';width:64px;height:86px' + (g.image ? ';background-image:url(' + g.image + ');background-size:cover;background-position:center' : '') + '" aria-hidden="true"></span>';
     $('#r-title').textContent = g.name;
     $('#cancel').href = '' + ssRuta('detalle-juego.html') + '?id=' + g.id;
     $('#fecha').value = new Date().toISOString().slice(0, 10);
     $('#fecha').max = $('#fecha').value;
     const draftKey = 'draft.' + g.id;
-    const draft = store.get(draftKey, null);
+    const editId = params.get('editar');
+    const editing = editId ? RV.raw().find((r) => r.id === editId && r.game === g.id) : null;
+    const draft = editing ? null : store.get(draftKey, null);
+    if (editing) {
+      score = editing.score; diff = editing.diff || diff;
+      $('#txt').value = editing.text; $('#horas').value = editing.hours || ''; $('#spoiler').checked = !!editing.spoiler;
+      if (editing.state) $('#estado').value = editing.state; if (editing.date) $('#fecha').value = editing.date;
+      $('#kind').hidden = true; $('#save-draft').hidden = true; $('#cancel').href = '' + ssRuta('historial-resenas.html') + '';
+      $('#review-form button[type="submit"]').textContent = 'Guardar cambios';
+    }
     if (draft) { $('#txt').value = draft.text || ''; $('#tit').value = draft.title || ''; $('#saved').hidden = false; }
 
     function scoreButtons(el, cur, cls, label) {
@@ -764,6 +847,7 @@ window.SS_PAGES = window.SS_PAGES || {};
     }
     $('#kind').addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) setKind(b.dataset.k); });
     setKind(kind);
+    if (editing) $('#eyebrow').textContent = 'Editar reseña';
 
     const txt = $('#txt');
     const count = () => {
@@ -783,17 +867,24 @@ window.SS_PAGES = window.SS_PAGES || {};
       txt.setAttribute('aria-invalid', bad); $('#txt-err').hidden = !bad;
       if (bad) { txt.focus(); return; }
       if (!auth.require('publicar tu ' + (kind === 'guia' ? 'guía' : 'reseña'))) return;
-      const u = auth.user();
+      const fields = { hours: Number($('#horas').value) || 0, score: score, diff: diff, spoiler: $('#spoiler').checked, text: txt.value.trim(), state: $('#estado').value, date: $('#fecha').value };
+      if (editing) {
+        await busy($('#review-form button[type="submit"]'), 'Guardando…', 400);
+        const list = RV.raw(); const i = list.findIndex((r) => r.id === editing.id); Object.assign(list[i], fields, { edited: true }); RV.save(list);
+        modal({ icon: 'check', title: 'Reseña actualizada', text: 'Los cambios ya se ven en tu historial y en la página del juego.', actions: [{ label: 'Ver reseña', href: '' + ssRuta('detalle-resena.html') + '?id=' + editing.id, primary: true }, { label: 'Ir al historial', href: '' + ssRuta('historial-resenas.html') + '' }] });
+        return;
+      }
       await busy($('#review-form button[type="submit"]'), 'Publicando…', 500);
+      let newId = null;
       if (kind === 'resena') {
-        const list = store.get('reviews', []);
-        list.unshift({ game: g.id, user: u.user, initials: u.initials, hours: Number($('#horas').value) || 0, score: score, diff: diff, useful: 0, spoiler: $('#spoiler').checked, text: txt.value.trim() });
-        store.set('reviews', list);
+        const list = RV.raw(); newId = 'u' + Date.now();
+        list.unshift(Object.assign({ id: newId, game: g.id, useful: 0, likes: 0 }, fields));
+        RV.save(list);
       }
       diary.add({ game: g.id, date: $('#fecha').value, state: $('#estado').value, hours: Number($('#horas').value) || 0, score: score, like: like, review: kind === 'resena' });
       store.set(draftKey, null);
       const pr = profile.addXP(50);
-      modal({ icon: 'check', title: (kind === 'guia' ? 'Guía' : 'Reseña') + ' publicada', text: 'Ganaste 50 XP. Vas en ' + fmt(pr.xp) + ' / 1.500 XP del nivel ' + pr.level + '.', actions: [{ label: 'Ver en el juego', href: '' + ssRuta('detalle-juego.html') + '?id=' + g.id, primary: true }, { label: 'Ver mi diario', href: '' + ssRuta('diario.html') + '' }] });
+      modal({ icon: 'check', title: (kind === 'guia' ? 'Guía' : 'Reseña') + ' publicada', text: 'Ganaste 50 XP. Vas en ' + fmt(pr.xp) + ' / 1.500 XP del nivel ' + pr.level + '.', actions: newId ? [{ label: 'Ver mi reseña', href: '' + ssRuta('detalle-resena.html') + '?id=' + newId, primary: true }, { label: 'Ir al historial', href: '' + ssRuta('historial-resenas.html') + '' }] : [{ label: 'Ver en el juego', href: '' + ssRuta('detalle-juego.html') + '?id=' + g.id, primary: true }, { label: 'Ver mi diario', href: '' + ssRuta('diario.html') + '' }] });
     });
   };
 
@@ -802,11 +893,12 @@ window.SS_PAGES = window.SS_PAGES || {};
     let tab = 'rev', sort = 'utiles';
     function render() {
       $$('#com-tabs [role="tab"]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === tab));
-      $('#com-sort-wrap').hidden = tab !== 'rev';
-      if (tab === 'rev') {
-        const all = userReviews().concat(DATA.reviews);
-        if (sort === 'utiles') all.sort((a, b) => (b.useful || 0) - (a.useful || 0));
-        $('#com-list').innerHTML = all.map((r) => reviewCard(r, { showGame: true })).join('');
+      $('#com-sort-wrap').hidden = tab === 'gui';
+      if (tab !== 'gui') {
+        let all = userReviews().concat(DATA.reviews);
+        if (tab === 'ami') all = DATA.reviews.filter((r) => friends.rel(r.user) === 'friend');
+        all.sort(sort === 'utiles' ? (a, b) => (b.useful || 0) - (a.useful || 0) : (a, b) => String(b.date).localeCompare(String(a.date)));
+        $('#com-list').innerHTML = all.map((r) => reviewCard(r, { showGame: true })).join('') || '<div class="empty">Tus amigos todavía no publican reseñas. <a class="link-strong" href="' + ssRuta('amigos.html') + '">Busca amigos</a></div>';
         bindReviewActions($('#com-list'));
       } else {
         $('#com-list').innerHTML = DATA.guides.map((x) => { const g = gameById(x.game); return '<a class="card card-link" href="' + ssRuta('detalle-juego.html') + '?id=' + g.id + '"><span class="xs muted">' + esc(g.short.toUpperCase()) + ' · ' + x.mins + ' MIN</span><b style="font-size:18px">' + esc(x.title) + '</b><span class="ok-text">' + x.useful + '% la marcó como útil</span></a>'; }).join('');
@@ -821,8 +913,8 @@ window.SS_PAGES = window.SS_PAGES || {};
   P.logros = function () {
     let plat = 'Todas';
     const rows = [
-      { game: 'zelda-totk', got: 86, total: 139, plat: 'Nintendo' }, { game: 'fnaf-into-the-pit', got: 24, total: 38, plat: 'Steam' },
-      { game: 'nier-automata', got: 17, total: 47, plat: 'Steam' }, { game: 'rocket-league', got: 16, total: 88, plat: 'Steam' }, { game: 'hollow-knight', got: 41, total: 63, plat: 'Steam' }
+      { game: 'zelda-totk', got: 86, total: 139, plat: 'Nintendo' }, { game: 'fnaf-into-the-pit', got: 24, total: 24, plat: 'Steam' },
+      { game: 'nier-automata', got: 17, total: 50, plat: 'Steam' }, { game: 'rocket-league', got: 16, total: 88, plat: 'Steam' }, { game: 'hollow-knight', got: 41, total: 63, plat: 'Steam' }
     ];
     function render() {
       const list = rows.filter((r) => plat === 'Todas' || r.plat === plat);
@@ -944,8 +1036,8 @@ window.SS_PAGES = window.SS_PAGES || {};
       (p.accounts[k] ? '<span class="ok-text xs">Verificada</span>' : '<a class="xs link-strong" href="' + ssRuta('editar-perfil.html') + '#cuentas">Vincular</a>') + '</div>').join('');
 
     const thisYear = d.filter((x) => x.date.slice(0, 4) === String(new Date().getFullYear()));
-    const reviews = store.get('reviews', []).filter((r) => r.user === u.user);
-    $('#stats').innerHTML = [['Juegos', d.length, '' + ssRuta('diario.html') + ''], ['Este año', thisYear.length, '' + ssRuta('diario.html') + ''], ['Reseñas', reviews.length + d.filter((x) => x.review).length, '' + ssRuta('diario.html') + ''], ['Logros', '1.912', '' + ssRuta('logros.html') + ''], ['Lista de deseos', p.wishlist.length, '#deseos']]
+    const reviews = SS.reviews.mine();
+    $('#stats').innerHTML = [['Juegos', d.length, '' + ssRuta('diario.html') + ''], ['Este año', thisYear.length, '' + ssRuta('diario.html') + ''], ['Reseñas', reviews.length, '' + ssRuta('historial-resenas.html') + ''], ['Logros', '1.912', '' + ssRuta('logros.html') + ''], ['Lista de deseos', p.wishlist.length, '#deseos']]
       .map((s) => '<a href="' + s[2] + '" class="stat card-link" style="text-align:center;border-radius:0;border:0;border-right:1px solid var(--line)"><b>' + s[1] + '</b><span>' + s[0] + '</span></a>').join('');
 
     $('#favorites').innerHTML = p.favorites.slice(0, 4).map((id) => { const g = gameById(id); return g ? '<a class="game-tile" href="' + ssRuta('detalle-juego.html') + '?id=' + g.id + '">' + cover(g) + '</a>' : ''; }).join('') +
@@ -1033,7 +1125,7 @@ window.SS_PAGES = window.SS_PAGES || {};
       if (!l) return;
       l.disabled = true; l.textContent = 'Conectando…';
       try { await API.linkPlatform(l.dataset.link); p.accounts[l.dataset.link] = u.user + '_' + l.dataset.link.toLowerCase(); renderAccounts(); toast(l.dataset.link + ' vinculada (demo) · +100 XP'); profile.addXP(100); p.xp = profile.get().xp; p.level = profile.get().level; }
-      catch (err) { /* api.js ya redirige a ' + ssRuta('404.html') + ' */ }
+      catch (err) { /* api.js ya redirige a 404.html */ }
     });
     renderAccounts();
 
@@ -1228,5 +1320,282 @@ window.SS_PAGES = window.SS_PAGES || {};
       ['Cuentas y actividad del usuario', 'Navegador (local)', st('Modo demo', 'demo')]
     ];
     $('#status').innerHTML = rows.map((r) => '<tr' + (svc && (r[0].includes(svc) || r[1].includes(svc)) ? ' style="background:#202834"' : '') + '><td><b>' + esc(r[0]) + '</b></td><td class="muted">' + esc(r[1]) + '</td><td>' + r[2] + '</td></tr>').join('');
+  };
+})(window.SS_PAGES);
+
+/* ===================== pages-social.js ===================== */
+/* SaveSlot — amigos, perfil público, historial de reseñas y detalle de reseña. */
+window.SS_PAGES = window.SS_PAGES || {};
+(function (P) {
+  const { $, $$, esc, params, store, auth, profile, diary, reviews: RV, friends, avatar, STATUS_TXT, userHref, toast, busy, modal, cover, gameById, fmt, DATA } = window.SS;
+  const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const dateTxt = (d) => { if (!d) return ''; const [y, m, dd] = d.split('-'); return Number(dd) + ' ' + MONTHS[Number(m) - 1] + ' ' + y; };
+  const me = () => auth.user() || { name: 'Invitado', user: 'invitado', initials: 'TÚ' };
+  const myScores = () => { const m = {}; diary.all().forEach((x) => { if (x.score && !(x.game in m)) m[x.game] = x.score; }); return m; };
+  const common = (f) => { const mine = myScores(); return Object.keys(f.played || {}).filter((id) => id in mine); };
+  const bannerFor = (ids) => { const c = ids.map(gameById).filter(Boolean).map((g) => g.color); while (c.length < 3) c.push('#1F4A8A'); return 'linear-gradient(115deg,' + c[0] + ' 0%,' + c[1] + ' 45%,' + c[2] + ' 100%)'; };
+  const statusLine = (f) => '<span class="status st-' + f.status + '">' + esc(STATUS_TXT(f)) + '</span>';
+
+  // ---------- Perfil propio: amigos y banner ----------
+  const basePerfil = P.perfil;
+  P.perfil = function () {
+    basePerfil();
+    if (!auth.user()) return;
+    const p = profile.get();
+    $('#banner').style.background = bannerFor(p.favorites);
+    const list = friends.list('friend').sort((a, b) => ['playing', 'online', 'offline'].indexOf(a.status) - ['playing', 'online', 'offline'].indexOf(b.status));
+    $('#fr-count').textContent = '· ' + list.length;
+    $('#friends-mini').innerHTML = list.slice(0, 8).map((f) => '<a href="' + userHref(f.user) + '" title="' + esc(f.name + ' · ' + STATUS_TXT(f)) + '">' + avatar(f, 44) + '</a>').join('') || '<span class="muted small">Aún no tienes amigos. <a class="link-strong" href="' + ssRuta('amigos.html') + '#sugerencias">Ver sugerencias</a></span>';
+    const req = friends.list('in');
+    if (req.length) { const r = $('#fr-req'); r.hidden = false; r.innerHTML = avatar(req[0], 32) + '<span class="small"><b>' + req.length + ' solicitudes</b> de amistad pendientes</span><span style="margin-left:auto" aria-hidden="true">→</span>'; }
+  };
+
+  // ---------- Lista de amigos ----------
+  P.amigos = function () {
+    if (!auth.user()) { location.replace('' + ssRuta('iniciar-sesion.html') + '?volver=amigos.html'); return; }
+    let tab = ({ '#solicitudes': 'in', '#sugerencias': 'none', '#en-linea': 'on' })[location.hash] || 'all';
+    let q = '';
+    $('#my-handle').textContent = '@' + me().user;
+    $('#copy-handle').addEventListener('click', () => { const t = '@' + me().user; if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast('Usuario copiado'), () => toast(t)); else toast(t); });
+
+    function stats() {
+      const fr = friends.list('friend');
+      $('#f-stats').innerHTML = [[fr.length, 'Amigos'], [fr.filter((f) => f.status !== 'offline').length, 'En línea'], [fr.filter((f) => f.status === 'playing').length, 'Jugando ahora']]
+        .map((s) => '<div class="hs"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>').join('');
+    }
+    function card(f) {
+      const rel = friends.rel(f.user);
+      const g = f.status === 'playing' ? gameById(f.game) : null;
+      const cm = common(f);
+      const commons = cm.slice(0, 4).map((id) => { const x = gameById(id); return x ? cover(x, { small: true }) : ''; }).join('');
+      let actions = '';
+      if (rel === 'friend') actions = '<a class="btn btn-secondary btn-sm" href="' + userHref(f.user) + '">Ver perfil</a><button class="btn btn-secondary btn-sm" data-msg="' + f.user + '">Mensaje<span class="soon">Pronto</span></button><button class="btn btn-ghost btn-sm" data-rm="' + f.user + '" aria-label="Eliminar a ' + esc(f.name) + ' de tus amigos">Eliminar</button>';
+      else if (rel === 'in') actions = '<button class="btn btn-primary btn-sm" data-accept="' + f.user + '">Aceptar</button><button class="btn btn-secondary btn-sm" data-reject="' + f.user + '">Rechazar</button><a class="btn btn-ghost btn-sm" href="' + userHref(f.user) + '">Ver perfil</a>';
+      else if (rel === 'out') actions = '<span class="badge badge-outline">SOLICITUD ENVIADA</span><button class="btn btn-ghost btn-sm" data-cancel="' + f.user + '">Cancelar</button>';
+      else actions = '<button class="btn btn-primary btn-sm" data-add="' + f.user + '">+ Agregar</button><a class="btn btn-ghost btn-sm" href="' + userHref(f.user) + '">Ver perfil</a>';
+      return '<article class="friend-card' + (g ? ' is-playing" style="--c:' + g.color : '') + '">' +
+        '<div class="row" style="flex-wrap:nowrap;gap:14px">' + avatar(f, 56) + '<div class="grow" style="line-height:1.35"><a class="user-link" href="' + userHref(f.user) + '"><b style="font-size:17px">' + esc(f.name) + '</b></a><br><span class="xs muted">@' + esc(f.user) + ' · Nivel ' + f.level + '</span><br>' + statusLine(f) + '</div></div>' +
+        (g ? '<a class="now-playing" href="' + ssRuta('detalle-juego.html') + '?id=' + g.id + '">' + cover(g, { small: true }) + '<span><span class="xs" style="color:var(--good);font-weight:800;letter-spacing:.06em">EN JUEGO</span><br><b>' + esc(g.short) + '</b></span></a>' : '') +
+        (rel === 'none' || rel === 'in' ? '<span class="xs muted">' + (f.mutual || 0) + ' amigos en común · ' + cm.length + ' juegos en común</span>' : cm.length ? '<div class="row" style="gap:8px"><span class="commons">' + commons + '</span><span class="xs muted">' + cm.length + ' juegos en común</span></div>' : '<span class="xs muted">Sin juegos en común todavía</span>') +
+        '<div class="row" style="gap:6px;margin-top:auto">' + actions + '</div></article>';
+    }
+    function render() {
+      stats();
+      const counts = { all: friends.list('friend').length, on: friends.list('friend').filter((f) => f.status !== 'offline').length, in: friends.list('in').length, none: friends.list('none').length + friends.list('out').length };
+      $('#f-tabs').innerHTML = [['all', 'Todos'], ['on', 'En línea'], ['in', 'Solicitudes'], ['none', 'Sugerencias']].map((t) =>
+        '<button role="tab" aria-selected="' + (t[0] === tab) + '" data-tab="' + t[0] + '">' + t[1] + '<span class="count' + (t[0] === 'in' && counts.in ? ' count-hot' : '') + '">' + counts[t[0]] + '</span></button>').join('');
+      let list = tab === 'all' ? friends.list('friend') : tab === 'on' ? friends.list('friend').filter((f) => f.status !== 'offline') : tab === 'in' ? friends.list('in') : friends.list('none').concat(friends.list('out'));
+      const order = ['playing', 'online', 'offline'];
+      list = list.sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
+      if (q) list = list.filter((f) => (f.name + ' ' + f.user).toLowerCase().includes(q));
+      const empty = { all: 'Aún no tienes amigos. Revisa las sugerencias.', on: 'Ninguno de tus amigos está en línea ahora.', in: 'No tienes solicitudes pendientes.', none: 'No hay más sugerencias por ahora.' }[tab];
+      $('#f-list').innerHTML = list.map(card).join('') || '<div class="empty" style="grid-column:1/-1">' + (q ? 'Nadie coincide con “' + esc(q) + '”. <button class="btn btn-secondary btn-sm" id="clear-q">Limpiar búsqueda</button>' : esc(empty)) + '</div>';
+      const cq = $('#clear-q'); if (cq) cq.addEventListener('click', () => { q = ''; $('#f-q').value = ''; render(); });
+    }
+    $('#f-tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
+    $('#f-q').addEventListener('input', (e) => { q = e.target.value.trim().toLowerCase().replace(/^@/, ''); render(); });
+    $('#f-list').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      const u = b.dataset.rm || b.dataset.accept || b.dataset.reject || b.dataset.add || b.dataset.cancel || b.dataset.msg; if (!u) return;
+      const f = friends.user(u), prev = friends.rel(u);
+      const undo = () => { friends.set(u, prev); render(); };
+      if (b.dataset.msg) { toast('Los mensajes directos llegarán en una próxima versión'); return; }
+      if (b.dataset.rm) { friends.set(u, 'none'); toast(f.name + ' ya no está en tus amigos', { action: 'Deshacer', onAction: undo }); }
+      if (b.dataset.accept) { friends.set(u, 'friend'); profile.addXP(10); toast('Ahora eres amigo de ' + f.name + ' · +10 XP'); }
+      if (b.dataset.reject) { friends.set(u, 'none'); toast('Solicitud rechazada', { action: 'Deshacer', onAction: undo }); }
+      if (b.dataset.add) { friends.set(u, 'out'); toast('Solicitud enviada a ' + f.name, { action: 'Deshacer', onAction: undo }); }
+      if (b.dataset.cancel) { friends.set(u, 'none'); toast('Solicitud cancelada'); }
+      render();
+    });
+    $('#add-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const inp = $('#add-u'), err = $('#add-err'); const v = inp.value.trim().replace(/^@/, '').toLowerCase();
+      const show = (m) => { err.textContent = m; err.hidden = !m; inp.setAttribute('aria-invalid', !!m); };
+      if (!v) { show('Escribe el usuario de tu amigo, por ejemplo @feli_fps.'); inp.focus(); return; }
+      if (v === me().user) { show('Ese es tu propio usuario.'); return; }
+      const f = friends.user(v);
+      if (!f) { show('No encontramos a @' + v + '. Revisa que esté bien escrito; también puedes ver la pestaña Sugerencias.'); return; }
+      const rel = friends.rel(v);
+      if (rel === 'friend') { show('@' + v + ' ya está en tus amigos.'); return; }
+      show('');
+      await busy($('#add-form button[type="submit"]'), 'Enviando…', 400);
+      if (rel === 'in') { friends.set(v, 'friend'); toast('Tenía una solicitud tuya pendiente: ahora son amigos'); }
+      else { friends.set(v, 'out'); toast('Solicitud enviada a ' + f.name); }
+      inp.value = ''; tab = rel === 'in' ? 'all' : 'none'; render();
+    });
+
+    // Actividad reciente de amigos
+    const feed = DATA.reviews.filter((r) => friends.rel(r.user) === 'friend').slice(0, 5).map((r) => { const f = friends.user(r.user), g = gameById(r.game); return '<a class="feed-item" href="' + ssRuta('detalle-resena.html') + '?id=' + r.id + '">' + avatar(f, 32) + '<span class="small"><b>' + esc(f.name.split(' ')[0]) + '</b> reseñó <b>' + esc(g.short) + '</b> <span class="score">' + r.score + '/10</span><br><span class="xs muted">' + dateTxt(r.date) + '</span></span></a>'; });
+    const playing = friends.list('friend').filter((f) => f.status === 'playing').map((f) => { const g = gameById(f.game); return '<a class="feed-item" href="' + ssRuta('detalle-juego.html') + '?id=' + g.id + '">' + avatar(f, 32) + '<span class="small"><b>' + esc(f.name.split(' ')[0]) + '</b> está jugando <b>' + esc(g.short) + '</b><br><span class="xs" style="color:var(--good)">Ahora</span></span></a>'; });
+    $('#feed').innerHTML = playing.concat(feed).join('') || '<span class="muted small">Sin actividad reciente.</span>';
+    render();
+  };
+
+  // ---------- Perfil público de otra persona ----------
+  P.usuario = function () {
+    const f = friends.user(params.get('u'));
+    if (!f) { location.replace('' + ssRuta('404.html') + ''); return; }
+    if (auth.user() && auth.user().user === f.user) { location.replace('' + ssRuta('perfil.html') + ''); return; }
+    document.title = f.name + ' · SaveSlot';
+    $('#banner').style.background = bannerFor(f.favorites);
+    $('#u-avatar').innerHTML = avatar(f, 124);
+    $('#u-name').textContent = f.name;
+    $('#u-handle').textContent = '@' + f.user;
+    $('#u-badges').innerHTML = '<span class="badge badge-accent">NIVEL ' + f.level + '</span>' + statusLine(f);
+    $('#u-bio').textContent = f.bio;
+    $('#u-since').textContent = 'Miembro desde ' + new Date(f.since + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    function actions() {
+      const rel = friends.rel(f.user);
+      $('#u-actions').innerHTML = rel === 'friend' ? '<span class="badge badge-friend" style="padding:8px 12px">✓ AMIGOS</span><button class="btn btn-secondary" data-act="msg">Mensaje<span class="soon">Pronto</span></button><button class="btn btn-ghost" data-act="rm">Eliminar amigo</button>'
+        : rel === 'in' ? '<button class="btn btn-primary" data-act="accept">Aceptar solicitud</button><button class="btn btn-secondary" data-act="reject">Rechazar</button>'
+          : rel === 'out' ? '<span class="badge badge-outline" style="padding:8px 12px">SOLICITUD ENVIADA</span><button class="btn btn-ghost" data-act="cancel">Cancelar</button>'
+            : '<button class="btn btn-primary" data-act="add">+ Agregar amigo</button>';
+    }
+    actions();
+    $('#u-actions').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-act]'); if (!b) return;
+      if (!auth.require('agregar amigos')) return;
+      const prev = friends.rel(f.user), a = b.dataset.act;
+      if (a === 'msg') { toast('Los mensajes directos llegarán en una próxima versión'); return; }
+      const next = { rm: 'none', accept: 'friend', reject: 'none', cancel: 'none', add: 'out' }[a];
+      friends.set(f.user, next); actions();
+      toast({ rm: 'Eliminado de tus amigos', accept: 'Ahora son amigos', reject: 'Solicitud rechazada', cancel: 'Solicitud cancelada', add: 'Solicitud enviada' }[a], a === 'rm' || a === 'add' ? { action: 'Deshacer', onAction: () => { friends.set(f.user, prev); actions(); } } : {});
+    });
+
+    const g = f.status === 'playing' ? gameById(f.game) : null;
+    $('#u-activity').innerHTML = g ? '<a class="now-playing" style="--c:' + g.color + '" href="' + ssRuta('detalle-juego.html') + '?id=' + g.id + '">' + cover(g, { small: true }) + '<span><span class="xs" style="color:var(--good);font-weight:800">● JUGANDO AHORA</span><br><b>' + esc(g.short) + '</b></span></a>' : '<span class="muted small">' + esc(STATUS_TXT(f)) + '</span>';
+
+    const mutual = friends.list('friend').filter((x) => x.user !== f.user).slice(0, f.mutual || 3);
+    $('#u-mutual-n').textContent = mutual.length;
+    $('#u-mutual').innerHTML = mutual.map((x) => '<a href="' + userHref(x.user) + '" title="' + esc(x.name) + '">' + avatar(x, 40) + '</a>').join('') || '<span class="muted small">Ninguno</span>';
+
+    const revs = DATA.reviews.filter((r) => r.user === f.user);
+    const cm = common(f);
+    $('#u-stats').innerHTML = [[Object.keys(f.played).length + 18, 'Juegos'], [revs.length, 'Reseñas'], [cm.length, 'En común'], [f.mutual || mutual.length, 'Amigos en común']].map((s) => '<div class="stat"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>').join('');
+    $('#u-favs').innerHTML = f.favorites.map((id) => { const x = gameById(id); return x ? '<a class="game-tile" href="' + ssRuta('detalle-juego.html') + '?id=' + x.id + '">' + cover(x) + '</a>' : ''; }).join('');
+    const mine = myScores();
+    $('#u-common').innerHTML = cm.length ? cm.map((id) => { const x = gameById(id), a = f.played[id], b = mine[id];
+      return '<a class="compare-row" href="' + ssRuta('detalle-juego.html') + '?id=' + x.id + '">' + cover(x, { small: true }) + '<b class="grow">' + esc(x.short) + '</b>' +
+        '<span class="cmp"><span class="xs muted">' + esc(f.name.split(' ')[0]) + '</span><span class="meter" style="width:90px"><i style="width:' + a * 10 + '%"></i></span><b>' + a + '</b></span>' +
+        '<span class="cmp"><span class="xs muted">Tú</span><span class="meter good" style="width:90px"><i style="width:' + b * 10 + '%"></i></span><b>' + b + '</b></span></a>'; }).join('')
+      : '<div class="empty">Todavía no tienen juegos en común en el diario.</div>';
+    $('#u-reviews').innerHTML = revs.map((r) => { const x = gameById(r.game); return '<a class="card card-link" href="' + ssRuta('detalle-resena.html') + '?id=' + r.id + '" style="--c:' + x.color + '"><div class="row" style="flex-wrap:nowrap">' + cover(x, { small: true }) + '<span class="grow"><b>' + esc(x.short) + '</b><br><span class="xs muted">' + dateTxt(r.date) + '</span></span><span class="score-pill">' + r.score + '<small>/10</small></span></div><p class="soft small clamp-3">' + esc(r.spoiler ? 'Contiene spoilers. Ábrela para leerla.' : r.text) + '</p><span class="xs muted">♥ ' + r.likes + ' · Útil ' + r.useful + '</span></a>'; }).join('') || '<div class="empty">Aún no publica reseñas.</div>';
+  };
+
+  // ---------- Historial de reseñas ----------
+  P.historial = function () {
+    if (!auth.user()) { location.replace('' + ssRuta('iniciar-sesion.html') + '?volver=historial-resenas.html'); return; }
+    let q = '', band = 'all', sort = 'recientes';
+    function summary() {
+      const all = RV.mine();
+      const avg = all.length ? all.reduce((a, r) => a + r.score, 0) / all.length : 0;
+      $('#h-stats').innerHTML = [[all.length, 'Reseñas'], [fmt(all.reduce((a, r) => a + (r.likes || 0), 0)), 'Me gusta recibidos'], [fmt(all.reduce((a, r) => a + (r.useful || 0), 0)), 'Votos de “útil”'], [avg.toFixed(1).replace('.', ','), 'Nota promedio']]
+        .map((s) => '<div class="stat"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>').join('');
+    }
+    function row(r) {
+      const g = gameById(r.game); if (!g) return '';
+      const nC = RV.comments(r.id).length;
+      return '<article class="history-row" style="--c:' + g.color + '" data-id="' + r.id + '">' +
+        '<a href="' + ssRuta('detalle-juego.html') + '?id=' + g.id + '" class="hr-cover" tabindex="-1" aria-hidden="true">' + cover(g, { noTitle: true }) + '</a>' +
+        '<div class="hr-body"><div class="row between" style="gap:8px"><div><a class="user-link" href="' + ssRuta('detalle-resena.html') + '?id=' + r.id + '"><b style="font-size:18px">' + esc(g.short) + '</b></a><br><span class="xs muted">' + dateTxt(r.date) + ' · ' + esc(r.state || 'Terminado') + ' · ' + (r.hours || 0) + ' h' + (r.edited ? ' · Editada' : '') + '</span></div><span class="score-pill">' + r.score + '<small>/10</small></span></div>' +
+        '<p class="soft clamp-2">' + (r.spoiler ? '<span class="badge badge-outline" style="margin-right:6px">SPOILER</span>' : '') + esc(r.text) + '</p>' +
+        '<div class="row between" style="gap:8px"><span class="xs muted">♥ ' + (r.likes || 0) + ' · Útil ' + (r.useful || 0) + ' · ' + nC + (nC === 1 ? ' comentario' : ' comentarios') + '</span>' +
+        '<span class="row" style="gap:4px"><a class="btn btn-secondary btn-sm" href="' + ssRuta('detalle-resena.html') + '?id=' + r.id + '">Ver</a><a class="btn btn-secondary btn-sm" href="' + ssRuta('escribir-resena.html') + '?id=' + g.id + '&editar=' + r.id + '">Editar</a><button class="btn btn-ghost btn-sm" data-del="' + r.id + '" aria-label="Eliminar reseña de ' + esc(g.short) + '">Eliminar</button></span></div></div></article>';
+    }
+    function render() {
+      summary();
+      const all = RV.mine();
+      let list = all.filter((r) => { const g = gameById(r.game); return (!q || (g.name + ' ' + r.text).toLowerCase().includes(q)) && (band === 'all' || (band === '9' ? r.score >= 9 : band === '7' ? r.score >= 7 && r.score <= 8 : r.score <= 6)); });
+      const by = { recientes: (a, b) => b.date.localeCompare(a.date), antiguas: (a, b) => a.date.localeCompare(b.date), nota: (a, b) => b.score - a.score, utiles: (a, b) => (b.useful || 0) - (a.useful || 0) }[sort];
+      list.sort(by);
+      $('#h-count').textContent = 'Mostrando ' + list.length + ' de ' + all.length + ' reseñas';
+      $('#h-list').innerHTML = list.map(row).join('') || (all.length
+        ? '<div class="empty">Ninguna reseña coincide con los filtros. <button class="btn btn-secondary btn-sm" id="h-clear">Limpiar filtros</button></div>'
+        : '<div class="empty"><b style="color:var(--fg)">Aún no escribes reseñas.</b><span>Cuenta qué te pareció el último juego que terminaste.</span><a class="btn btn-primary btn-sm" href="' + ssRuta('buscar-juegos.html') + '">Escribir mi primera reseña</a></div>');
+      const c = $('#h-clear'); if (c) c.addEventListener('click', () => { q = ''; band = 'all'; $('#h-q').value = ''; $$('#h-score [data-s]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.s === 'all')); render(); });
+    }
+    $('#h-q').addEventListener('input', (e) => { q = e.target.value.trim().toLowerCase(); render(); });
+    $('#h-score').addEventListener('click', (e) => { const b = e.target.closest('[data-s]'); if (!b) return; band = b.dataset.s; $$('#h-score [data-s]').forEach((x) => x.setAttribute('aria-pressed', x === b)); render(); });
+    $('#h-sort').addEventListener('change', (e) => { sort = e.target.value; render(); });
+    $('#h-list').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-del]'); if (!b) return;
+      const list = RV.raw(), i = list.findIndex((r) => r.id === b.dataset.del); if (i < 0) return;
+      const [gone] = list.splice(i, 1); RV.save(list); render();
+      toast('Reseña eliminada', { action: 'Deshacer', onAction: () => { const l = RV.raw(); l.splice(i, 0, gone); RV.save(l); render(); } });
+    });
+    render();
+  };
+
+  // ---------- Detalle de una reseña ----------
+  P.verresena = function () {
+    const r = RV.byId(params.get('id'));
+    if (!r) { location.replace('' + ssRuta('404.html') + ''); return; }
+    const g = gameById(r.game);
+    const f = r.mine ? null : friends.user(r.user);
+    const author = r.mine ? Object.assign({ status: 'online', color: '#1F4A8A', name: me().name, level: profile.get().level }, { user: r.user, initials: r.initials }) : (f || { user: r.user, initials: r.initials, name: r.user, status: 'offline', color: '#2E3A4A', level: '—' });
+    document.title = 'Reseña de ' + g.short + ' · SaveSlot';
+    $('#band').style.setProperty('--band', 'color-mix(in srgb,' + g.color + ' 60%, #12161D)');
+    $('#crumb-game').textContent = g.short; $('#crumb-game').href = '' + ssRuta('detalle-juego.html') + '?id=' + g.id;
+    $('#v-cover').outerHTML = '<a href="' + ssRuta('detalle-juego.html') + '?id=' + g.id + '" class="game-tile" style="width:160px;flex:none">' + cover(g) + '</a>';
+    $('#v-eyebrow').textContent = 'Reseña · ' + g.genres.join(' · ');
+    $('#v-title').textContent = g.name;
+    $('#v-author').innerHTML = avatar(author, 40) + '<span style="line-height:1.3"><a class="user-link" href="' + userHref(r.user) + '"><b>' + esc(author.name) + '</b></a> <span class="muted small">@' + esc(r.user) + '</span><br><span class="xs soft">' + dateTxt(r.date) + (r.edited ? ' · editada' : '') + '</span></span>';
+    $('#v-score').innerHTML = '<b>' + r.score + '</b><span>/10</span>';
+    $('#v-score').style.setProperty('--p', r.score * 10);
+    $('#v-body').innerHTML = r.spoiler ? '<div class="spoiler"><span class="muted">Esta reseña tiene spoilers.</span><button class="btn btn-secondary btn-sm" id="reveal">Mostrar de todas formas</button></div><p hidden id="v-txt"></p>' : '<p id="v-txt"></p>';
+    $('#v-txt').textContent = r.text;
+    const rv = $('#reveal'); if (rv) rv.addEventListener('click', () => { rv.closest('.spoiler').remove(); $('#v-txt').hidden = false; });
+
+    let liked = false, useful = false;
+    function acts() {
+      $('#v-actions').innerHTML = '<button class="btn btn-secondary like-btn" aria-pressed="' + liked + '" id="a-like">♥ Me gusta · ' + fmt((r.likes || 0) + (liked ? 1 : 0)) + '</button>' +
+        '<button class="btn btn-secondary" aria-pressed="' + useful + '" id="a-useful">Útil · ' + fmt((r.useful || 0) + (useful ? 1 : 0)) + '</button><button class="btn btn-secondary" id="a-share">Compartir</button>' +
+        (r.mine ? '<a class="btn btn-secondary" href="' + ssRuta('escribir-resena.html') + '?id=' + g.id + '&editar=' + r.id + '" style="margin-left:auto">Editar</a><a class="btn btn-ghost" href="' + ssRuta('historial-resenas.html') + '">Ir a mi historial</a>' : '');
+    }
+    acts();
+    $('#v-actions').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.id === 'a-share') { const u = location.href; if (navigator.clipboard) navigator.clipboard.writeText(u).then(() => toast('Enlace copiado'), () => toast(u)); else toast(u); return; }
+      if (!auth.require(b.id === 'a-like' ? 'dar me gusta' : 'votar reseñas')) return;
+      if (r.mine) { toast('No puedes votar tu propia reseña'); return; }
+      if (b.id === 'a-like') liked = !liked; else useful = !useful;
+      acts();
+    });
+
+    $('#v-facts').innerHTML = [['Estado', r.state || 'Terminado'], ['Horas jugadas', (r.hours || 0) + ' h'], ['Dificultad votada', (r.diff || '—') + '/10'], ['Nota de la comunidad', SS.score10(g.rating) + '/10']].map((x) => '<dt class="muted">' + x[0] + '</dt><dd style="margin:0">' + esc(x[1]) + '</dd>').join('');
+    const rel = r.mine ? 'me' : friends.rel(r.user);
+    $('#v-about').innerHTML = '<h2 class="panel-title">Sobre quien escribe</h2><a class="row" style="flex-wrap:nowrap;color:var(--fg)" href="' + userHref(r.user) + '">' + avatar(author, 52) + '<span style="line-height:1.35"><b>' + esc(author.name) + '</b><br><span class="xs muted">Nivel ' + author.level + '</span><br>' + (f ? statusLine(f) : '') + '</span></a>' +
+      (f && f.bio ? '<p class="small soft">' + esc(f.bio) + '</p>' : '') +
+      (rel === 'none' && f ? '<button class="btn btn-secondary btn-sm" id="v-add">+ Agregar amigo</button>' : rel === 'friend' ? '<span class="badge badge-friend" style="align-self:flex-start">✓ AMIGOS</span>' : '');
+    const va = $('#v-add'); if (va) va.addEventListener('click', () => { if (!auth.require('agregar amigos')) return; friends.set(f.user, 'out'); va.outerHTML = '<span class="badge badge-outline" style="align-self:flex-start">SOLICITUD ENVIADA</span>'; toast('Solicitud enviada a ' + f.name); });
+    const more = RV.all().filter((x) => x.game === g.id && x.id !== r.id).slice(0, 3);
+    $('#v-more').innerHTML = more.map((x) => '<a class="feed-item" href="' + ssRuta('detalle-resena.html') + '?id=' + x.id + '"><span class="avatar" style="width:32px;height:32px;font-size:12px">' + esc(x.initials) + '</span><span class="small"><b>@' + esc(x.user) + '</b> <span class="score">' + x.score + '/10</span><br><span class="xs muted clamp-2">' + esc(x.spoiler ? 'Contiene spoilers' : x.text) + '</span></span></a>').join('') || '<span class="muted small">Es la única reseña de este juego.</span><a class="link-strong small" href="' + ssRuta('escribir-resena.html') + '?id=' + g.id + '">Escribe la tuya</a>';
+
+    // Comentarios
+    const key = 'comments.' + r.id;
+    const u = auth.user();
+    $('#c-av').textContent = u ? u.initials : '?';
+    function renderC() {
+      const list = RV.comments(r.id);
+      $('#c-count').textContent = '· ' + list.length;
+      $('#c-list').innerHTML = list.map((c, i) => { const cf = friends.user(c.user); return '<div class="comment">' + (cf ? avatar(cf, 36) : '<span class="avatar">' + esc(c.initials) + '</span>') + '<div class="grow"><div class="row" style="gap:8px"><a class="user-link" href="' + userHref(c.user) + '"><b class="small">@' + esc(c.user) + '</b></a><span class="xs muted">' + esc(c.when) + '</span>' + (u && c.user === u.user ? '<button class="help-link" style="margin-left:auto" data-cdel="' + i + '">Eliminar</button>' : '') + '</div><p class="small" style="margin-top:2px"></p></div></div>'; }).join('') || '<div class="empty">Sé la primera persona en comentar.</div>';
+      $$('#c-list .comment p').forEach((p, i) => { p.textContent = list[i].text; });
+    }
+    renderC();
+    $('#c-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const t = $('#c-txt').value.trim();
+      if (!t) { $('#c-txt').focus(); toast('Escribe algo antes de comentar'); return; }
+      if (!auth.require('comentar')) return;
+      await busy($('#c-form button[type="submit"]'), 'Enviando…', 350);
+      const list = RV.comments(r.id).slice(); list.push({ review: r.id, user: auth.user().user, initials: auth.user().initials, when: 'ahora', text: t });
+      store.set(key, list); $('#c-txt').value = ''; renderC();
+    });
+    $('#c-list').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-cdel]'); if (!b) return;
+      const list = RV.comments(r.id).slice(), i = Number(b.dataset.cdel); const [gone] = list.splice(i, 1); store.set(key, list); renderC();
+      toast('Comentario eliminado', { action: 'Deshacer', onAction: () => { const l = RV.comments(r.id).slice(); l.splice(i, 0, gone); store.set(key, l); renderC(); } });
+    });
   };
 })(window.SS_PAGES);

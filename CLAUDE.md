@@ -56,35 +56,50 @@ Digitales 3. Más contexto en README.md.
 8. Al terminar cada pantalla, actualiza su fila en pantallas.md.
 
 ## Componentes disponibles
-Definidos en css/components.css; se ven todos en componentes.html.
+Definidos en css/components.css (estilo v3); se ven todos en componentes.html.
 Cada pantalla enlaza primero css/tokens.css y después css/components.css.
+Las portadas de juegos usan siempre su imagen de assets/; el color del juego (--c) es solo respaldo.
 
-- `.boton` (+ `--secundario`, `--fantasma`, `--peligro`, `--sm`, `--bloque`, `--icono`):
+- `.antetitulo` y `.titulo-pagina` (+ `--grande`):
+  `<span class="antetitulo">Tu gente</span><h1 class="titulo-pagina">Amigos</h1>`
+- `.encabezado-seccion` con `__titulo` y `__enlace`:
+  `<div class="encabezado-seccion"><h2 class="encabezado-seccion__titulo">Mejores juegos</h2><a class="encabezado-seccion__enlace" href="…">Ver todo</a></div>`
+- `.boton` (+ `--secundario`, `--fantasma`, `--peligro`, `--sm`, `--bloque`, `--icono`; presionado con `aria-pressed="true"`):
   `<button class="boton boton--secundario" type="button">Cancelar</button>`
 - `.grupo-campo` con `.grupo-campo__etiqueta`, `__ayuda`, `__error`, y `.campo` (+ `--error`, `--sm`) para input, select y textarea:
   `<div class="grupo-campo"><label class="grupo-campo__etiqueta" for="c">Correo</label><input class="campo" id="c" type="email"></div>`
 - `.buscador` con `.buscador__campo`:
   `<form class="buscador" role="search"><input class="buscador__campo" type="search" aria-label="Buscar juegos"><button class="boton">Buscar</button></form>`
-- `.etiqueta` (+ `--primario`, `--exito`, `--error`, `--aviso`, `--ia`, `--contorno`):
-  `<span class="etiqueta etiqueta--exito">Logro</span>`
+- `.etiqueta` (+ `--primario`, `--exito`, `--error`, `--aviso`, `--ia`, `--amigo`, `--contorno`):
+  `<span class="etiqueta etiqueta--amigo">Amigo</span>`
+- `.contador` (+ `--destacado`):
+  `<span class="contador contador--destacado">3</span>`
 - `.chip` (activo con `aria-pressed="true"` o `.chip--activo`):
   `<button class="chip" type="button" aria-pressed="false">Torneos</button>`
-- `.tarjeta` (+ `--enlace`, `--destacada`) con `.tarjeta__titulo` y `.tarjeta__texto`:
-  `<article class="tarjeta"><h3 class="tarjeta__titulo">Hades</h3><p class="tarjeta__texto">…</p></article>`
+- `.nota` (+ `--texto`) y `.nota-anillo` (se llena con `--p`, de 0 a 100):
+  `<span class="nota">9<small>/10</small></span>` · `<div class="nota-anillo" style="--p:90"><b>9</b><span>de 10</span></div>`
+- `.estado` (+ `--jugando`, `--en-linea`, `--desconectado`):
+  `<span class="estado estado--jugando">Jugando Hades</span>`
+- `.tarjeta` (+ `--enlace`, `--destacada`, `--resena` con `--c`) con `.tarjeta__titulo` y `.tarjeta__texto`:
+  `<article class="tarjeta tarjeta--resena" style="--c:#8A2B2B"><h3 class="tarjeta__titulo">Hades</h3><p class="tarjeta__texto">…</p></article>`
+- `.tarjeta-amigo` (+ `--jugando` con `--c`) con `__cabeza` y `__nombre`:
+  `<article class="tarjeta-amigo"><div class="tarjeta-amigo__cabeza"><span class="avatar avatar--md avatar--en-linea">JV</span><h3 class="tarjeta-amigo__nombre">juanvi</h3></div></article>`
+- `.fila` (comentario; + `--comparacion`, `--actividad`, `--jugando`):
+  `<a class="fila fila--actividad" href="…"><span class="avatar avatar--sm">JV</span><span>juanvi reseñó Hades</span></a>`
 - `.panel` con `.panel__titulo`:
   `<section class="panel"><h2 class="panel__titulo">Actividad</h2>…</section>`
 - `.dato` con `.dato__etiqueta` y `.dato__valor`:
   `<div class="dato"><span class="dato__etiqueta">Logros</span><span class="dato__valor">1.912</span></div>`
-- `.pestanas` con `.pestanas__boton` (activa con `aria-selected="true"`):
-  `<div class="pestanas" role="tablist"><button class="pestanas__boton" role="tab" aria-selected="true">Reseñas</button></div>`
+- `.pestanas` con `.pestanas__boton` (activa con `aria-selected="true"`; número con `.contador`):
+  `<div class="pestanas" role="tablist"><button class="pestanas__boton" role="tab" aria-selected="true">Reseñas <span class="contador">12</span></button></div>`
 - `.segmentado` con `.segmentado__opcion` (activa con `aria-selected="true"`):
   `<div class="segmentado" role="tablist"><button class="segmentado__opcion" role="tab" aria-selected="true">Iniciar sesión</button></div>`
 - `.navegacion` con `__contenido`, `__logo`, `__enlaces`, `__enlace` (actual con `aria-current="page"`) y `__acciones`. En celular los enlaces bajan a una barra fija: la pantalla debe dejar espacio abajo.
   `<header class="navegacion"><div class="navegacion__contenido"><a class="navegacion__logo" href="index.html">SaveSlot</a>…</div></header>`
-- `.portada` (+ `--enlace`, `--sm`) con `.portada__titulo` y `.portada__ranking`; la imagen siempre desde assets/:
-  `<a class="portada portada--enlace" href="…" style="background-image:url(assets/portada-hades.jpg)"><b class="portada__titulo">Hades</b></a>`
-- `.avatar` (+ `--lg`):
-  `<span class="avatar">SL</span>`
+- `.portada` (+ `--enlace`, `--sm`) con `.portada__titulo` y `.portada__ranking`; la imagen siempre desde assets/ y `--c` de respaldo:
+  `<a class="portada portada--enlace" href="…" style="--c:#8A2B2B;background-image:url(assets/portada-hades.jpg)"><b class="portada__titulo">Hades</b></a>`
+- `.avatar` (+ `--sm` 32, normal 40, `--md` 56, `--lg` 128, `--ia`; anillo `--jugando`, `--en-linea`, `--desconectado` con `.avatar__punto` opcional):
+  `<span class="avatar avatar--md avatar--jugando">SL<span class="avatar__punto"></span></span>`
 - `.medidor` (+ `--exito`, `--aviso`) con `.medidor__barra`:
   `<div class="medidor"><span class="medidor__barra" style="width:62%"></span></div>`
 - `.modal-fondo` > `.modal` con `__titulo`, `__texto`, `__cerrar` y `__acciones`:

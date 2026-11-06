@@ -1,9 +1,10 @@
 /* ==========================================================================
-   SaveSlot · components.css
+   SaveSlot · components.css (estilo v3)
    Cada componente se define una sola vez y usa SOLO variables de tokens.css.
    Enlazar siempre después de tokens.css.
-   Única excepción: el corte de pantalla de los @media (700px), porque el CSS
-   no permite usar variables dentro de una media query.
+   Excepciones: el corte de pantalla de los @media (700px), porque el CSS no
+   permite variables dentro de una media query, y los colores de cada juego
+   (variable --c que pone la pantalla), que son contenido y no diseño.
    ========================================================================== */
 
 /* ---------- Base ---------- */
@@ -15,12 +16,27 @@
 
 body {
   margin: 0;
-  background: var(--color-fondo);
+  background: var(--fondo-pagina);
+  background-color: var(--color-fondo);
+  background-repeat: no-repeat;
   color: var(--color-texto);
   font-family: var(--fuente-texto);
   font-size: var(--texto-base);
   font-weight: var(--peso-normal);
   line-height: var(--interlineado-texto);
+}
+
+/* Trama de puntos del fondo, que se desvanece hacia abajo */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--textura-puntos);
+  background-size: var(--textura-puntos-tamano) var(--textura-puntos-tamano);
+  -webkit-mask-image: linear-gradient(180deg, var(--color-fondo) 0%, transparent 75%);
+  mask-image: linear-gradient(180deg, var(--color-fondo) 0%, transparent 75%);
 }
 
 h1,
@@ -46,11 +62,77 @@ a:hover {
 }
 
 /* ==========================================================================
+   Títulos de página
+   .antetitulo (texto pequeño en azul, encima del título) · .titulo-pagina · --grande
+   ========================================================================== */
+.antetitulo {
+  display: inline-block;
+  background: var(--degradado-primario);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+  text-transform: uppercase;
+}
+
+.titulo-pagina {
+  margin: 0;
+  background: var(--degradado-titulo);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: var(--texto-2xl);
+}
+
+.titulo-pagina--grande {
+  font-size: var(--texto-3xl);
+}
+
+/* ==========================================================================
+   Encabezado de sección: título con marca de color y enlace opcional
+   ========================================================================== */
+.encabezado-seccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+}
+
+.encabezado-seccion__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  margin: 0;
+  font-size: var(--texto-xl);
+}
+
+.encabezado-seccion__titulo::before {
+  content: "";
+  flex: none;
+  width: calc(var(--espacio-1) + var(--borde-fino));
+  height: var(--texto-lg);
+  border-radius: var(--radio-total);
+  background: var(--degradado-primario);
+  box-shadow: var(--halo-primario);
+}
+
+.encabezado-seccion__enlace {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-fuerte);
+  text-decoration: none;
+}
+
+/* ==========================================================================
    Botón
    .boton (principal) · --secundario · --fantasma · --peligro
    Tamaños: --sm · Forma: --bloque (ancho completo) · --icono (cuadrado)
    ========================================================================== */
 .boton {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -59,7 +141,8 @@ a:hover {
   padding: var(--espacio-3) var(--espacio-5);
   border: var(--borde-fino) solid transparent;
   border-radius: var(--radio-sm);
-  background: var(--color-primario);
+  background: var(--degradado-primario);
+  box-shadow: var(--sombra-boton-primario);
   color: var(--color-texto-sobre-primario);
   font-family: inherit;
   font-size: var(--texto-base);
@@ -67,12 +150,27 @@ a:hover {
   line-height: var(--interlineado-titulos);
   text-decoration: none;
   cursor: pointer;
-  transition: background-color var(--transicion), border-color var(--transicion), color var(--transicion), transform var(--transicion);
+  transition: transform var(--transicion), box-shadow var(--transicion), border-color var(--transicion), color var(--transicion);
+}
+
+/* Reflejo que cruza el botón al pasar el mouse */
+.boton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--brillo);
+  transform: translateX(-120%);
+  transition: transform var(--duracion-lenta) var(--curva);
 }
 
 .boton:hover {
-  background: var(--color-primario-hover);
   color: var(--color-texto-sobre-primario);
+  transform: translateY(calc(var(--borde-grueso) * -1));
+}
+
+.boton:hover::after {
+  transform: translateX(120%);
 }
 
 .boton:active {
@@ -86,9 +184,9 @@ a:hover {
   transform: none;
 }
 
-.boton:disabled:hover,
-.boton[aria-disabled="true"]:hover {
-  background: var(--color-primario);
+.boton:disabled::after,
+.boton[aria-disabled="true"]::after {
+  display: none;
 }
 
 .boton svg {
@@ -97,38 +195,50 @@ a:hover {
   flex: none;
 }
 
-.boton--secundario,
-.boton--secundario:hover,
-.boton--secundario:disabled:hover {
-  background: var(--color-superficie-elevada);
-  color: var(--color-texto);
+.boton--secundario {
+  background: var(--degradado-superficie-elevada);
   border-color: var(--color-borde);
+  box-shadow: inset 0 var(--borde-fino) 0 var(--velo);
+  color: var(--color-texto);
 }
 
 .boton--secundario:hover {
-  border-color: var(--color-primario);
+  background: var(--degradado-superficie-hover);
+  border-color: var(--color-borde-hover);
+  color: var(--color-texto);
 }
 
-.boton--fantasma,
-.boton--fantasma:disabled:hover {
+.boton--fantasma {
   background: transparent;
+  box-shadow: none;
   color: var(--color-primario);
 }
 
+.boton--fantasma::after {
+  display: none;
+}
+
 .boton--fantasma:hover {
-  background: var(--color-superficie-elevada);
+  background: var(--color-primario-tinte);
   color: var(--color-primario-hover);
 }
 
-.boton--peligro,
-.boton--peligro:disabled:hover {
+.boton--peligro {
   background: color-mix(in srgb, var(--color-error) 15%, var(--color-superficie));
-  color: var(--color-texto);
   border-color: var(--color-error);
+  box-shadow: none;
+  color: var(--color-texto);
 }
 
 .boton--peligro:hover {
   background: color-mix(in srgb, var(--color-error) 30%, var(--color-superficie));
+  color: var(--color-texto);
+}
+
+/* Presionado (por ejemplo "Me gusta" o "Útil" ya marcado) */
+.boton[aria-pressed="true"] {
+  background: var(--color-primario-tinte);
+  border-color: var(--color-primario);
   color: var(--color-texto);
 }
 
@@ -183,11 +293,11 @@ a:hover {
   padding: var(--espacio-3);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-sm);
-  background: var(--color-fondo);
+  background: var(--vidrio);
   color: var(--color-texto);
   font-family: inherit;
   font-size: var(--texto-base);
-  transition: border-color var(--transicion);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
 }
 
 .campo::placeholder {
@@ -195,17 +305,22 @@ a:hover {
 }
 
 .campo:hover {
-  border-color: var(--color-texto-suave);
+  border-color: var(--color-borde-hover);
 }
 
 .campo:focus-visible {
   outline: none;
   border-color: var(--color-primario);
+  box-shadow: var(--anillo-foco);
 }
 
 .campo:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+select.campo option {
+  background: var(--color-superficie);
 }
 
 textarea.campo {
@@ -236,12 +351,14 @@ textarea.campo {
   padding: var(--espacio-1) var(--espacio-1) var(--espacio-1) var(--espacio-4);
   border: var(--borde-grueso) solid var(--color-primario);
   border-radius: var(--radio-md);
-  background: var(--color-superficie);
+  background: var(--vidrio-fuerte);
   color: var(--color-texto-suave);
+  transition: box-shadow var(--transicion), border-color var(--transicion);
 }
 
 .buscador:focus-within {
   border-color: var(--color-primario-hover);
+  box-shadow: var(--anillo-foco);
 }
 
 .buscador svg {
@@ -271,10 +388,11 @@ textarea.campo {
 
 /* ==========================================================================
    Etiqueta (badge)
-   .etiqueta (neutra) · --primario · --exito · --error · --aviso · --ia · --contorno
+   .etiqueta (neutra) · --primario · --exito · --error · --aviso · --ia · --amigo · --contorno
    ========================================================================== */
 .etiqueta {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
   gap: var(--espacio-1);
   padding: var(--espacio-1) var(--espacio-2);
@@ -288,12 +406,12 @@ textarea.campo {
 }
 
 .etiqueta--primario {
-  background: var(--color-primario);
+  background: var(--degradado-primario);
   color: var(--color-texto-sobre-primario);
 }
 
 .etiqueta--exito {
-  background: var(--color-exito);
+  background: var(--degradado-exito);
   color: var(--color-texto-sobre-primario);
 }
 
@@ -308,15 +426,42 @@ textarea.campo {
 }
 
 .etiqueta--ia {
-  background: color-mix(in srgb, var(--color-secundario) 18%, var(--color-superficie));
-  color: var(--color-secundario);
+  background: var(--color-secundario-tinte);
   border-color: var(--color-secundario);
+  color: var(--color-secundario);
+}
+
+.etiqueta--amigo {
+  background: var(--color-exito-tinte);
+  border-color: var(--color-exito-linea);
+  color: var(--color-exito-texto);
 }
 
 .etiqueta--contorno {
   background: transparent;
-  color: var(--color-texto-suave);
   border-color: var(--color-borde);
+  color: var(--color-texto-suave);
+}
+
+/* ==========================================================================
+   Contador (número pequeño en píldora, por ejemplo junto a una pestaña)
+   .contador · --destacado
+   ========================================================================== */
+.contador {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--espacio-2);
+  border-radius: var(--radio-total);
+  background: var(--velo-fuerte);
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+}
+
+.contador--destacado {
+  background: var(--color-exito);
+  color: var(--color-texto-sobre-primario);
+  font-weight: var(--peso-titulos);
 }
 
 /* ==========================================================================
@@ -331,23 +476,25 @@ textarea.campo {
   padding: var(--espacio-2) var(--espacio-4);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-total);
-  background: var(--color-superficie-elevada);
+  background: var(--degradado-superficie-elevada);
   color: var(--color-texto);
   font-family: inherit;
   font-size: var(--texto-sm);
   text-decoration: none;
   cursor: pointer;
-  transition: border-color var(--transicion), background-color var(--transicion), color var(--transicion);
+  transition: transform var(--transicion), border-color var(--transicion), box-shadow var(--transicion);
 }
 
 .chip:hover {
-  border-color: var(--color-primario);
+  border-color: var(--color-borde-hover);
+  box-shadow: var(--anillo-foco);
   color: var(--color-texto);
+  transform: translateY(calc(var(--borde-fino) * -1));
 }
 
 .chip[aria-pressed="true"],
 .chip--activo {
-  background: var(--color-texto);
+  background: var(--degradado-claro);
   border-color: var(--color-texto);
   color: var(--color-fondo);
   font-weight: var(--peso-fuerte);
@@ -356,23 +503,29 @@ textarea.campo {
 .chip:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* ==========================================================================
-   Tarjeta · --enlace (toda la tarjeta es un link) · --destacada
+   Tarjeta · --enlace (toda la tarjeta es un link) · --destacada · --resena
+   La reseña usa el color del juego en la variable --c (style="--c:#2F6B4F").
    ========================================================================== */
 .tarjeta {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--espacio-3);
   padding: var(--espacio-4);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie);
+  background: var(--degradado-superficie);
+  box-shadow: var(--sombra-reposo);
   color: var(--color-texto);
 }
 
 .tarjeta__titulo {
+  margin: 0;
   font-size: var(--texto-lg);
   font-weight: var(--peso-fuerte);
 }
@@ -388,17 +541,242 @@ textarea.campo {
   transition: transform var(--transicion), border-color var(--transicion), box-shadow var(--transicion);
 }
 
+/* Reflejo suave que cruza la tarjeta */
+.tarjeta--enlace::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  pointer-events: none;
+  background: var(--brillo-suave);
+  transform: skewX(-15deg);
+  transition: left var(--duracion-lenta) var(--curva);
+}
+
 .tarjeta--enlace:hover {
-  color: var(--color-texto);
-  border-color: var(--color-primario);
+  border-color: var(--color-borde-hover);
   box-shadow: var(--sombra-suave);
+  color: var(--color-texto);
   transform: translateY(calc(var(--espacio-1) * -1));
+}
+
+.tarjeta--enlace:hover::after {
+  left: 120%;
 }
 
 .tarjeta--destacada {
   padding: var(--espacio-7);
-  border-color: var(--color-primario);
+  border-color: var(--color-borde-activo);
   background: color-mix(in srgb, var(--color-primario) 15%, var(--color-superficie));
+}
+
+.tarjeta--resena {
+  transition: transform var(--transicion), border-color var(--transicion), box-shadow var(--transicion);
+}
+
+/* Franja con el color del juego a la izquierda */
+.tarjeta--resena::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--borde-fino) * 3);
+  background: linear-gradient(180deg, var(--c, var(--color-primario)), transparent);
+}
+
+.tarjeta--resena:hover {
+  border-color: color-mix(in srgb, var(--c, var(--color-primario)) 60%, var(--color-primario-hover));
+  box-shadow: var(--sombra-reposo);
+  transform: translateY(calc(var(--espacio-1) * -1));
+}
+
+/* ==========================================================================
+   Tarjeta de amigo · --jugando (borde verde y fondo con el color del juego --c)
+   ========================================================================== */
+.tarjeta-amigo {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  padding: var(--espacio-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--degradado-superficie);
+  color: var(--color-texto);
+  transition: transform var(--transicion), border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.tarjeta-amigo:hover {
+  border-color: var(--color-borde-hover);
+  box-shadow: var(--sombra-suave);
+  transform: translateY(calc(var(--espacio-1) * -1));
+}
+
+.tarjeta-amigo__cabeza {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+
+.tarjeta-amigo__nombre {
+  margin: 0;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-fuerte);
+}
+
+.tarjeta-amigo--jugando {
+  border-color: var(--color-exito-linea);
+  background:
+    radial-gradient(farthest-corner at 100% 0%, color-mix(in srgb, var(--c, var(--color-exito)) 45%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-exito) 10%, var(--color-superficie)), var(--color-superficie) 70%);
+}
+
+.tarjeta-amigo--jugando:hover {
+  border-color: var(--color-exito);
+  box-shadow: var(--halo-exito);
+}
+
+/* ==========================================================================
+   Fila (elemento de una lista)
+   .fila (comentario) · --comparacion · --actividad · --jugando
+   ========================================================================== */
+.fila {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--velo);
+  color: var(--color-texto);
+  text-decoration: none;
+  transition: transform var(--transicion), border-color var(--transicion), background-color var(--transicion);
+}
+
+.fila:hover {
+  border-color: var(--color-borde-hover);
+  color: var(--color-texto);
+}
+
+.fila--comparacion {
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--degradado-superficie);
+}
+
+.fila--comparacion:hover,
+.fila--actividad:hover,
+.fila--jugando:hover {
+  transform: translateX(var(--espacio-1));
+}
+
+.fila--actividad {
+  align-items: center;
+  padding: var(--espacio-2);
+  border-color: transparent;
+  background: transparent;
+}
+
+.fila--actividad:hover {
+  border-color: transparent;
+  background: var(--velo-fuerte);
+}
+
+.fila--jugando {
+  align-items: center;
+  border-color: var(--color-exito-linea);
+  background: linear-gradient(90deg, var(--color-exito-tinte), transparent);
+}
+
+.fila--jugando:hover {
+  border-color: var(--color-exito);
+}
+
+/* ==========================================================================
+   Estado de una persona: texto de color
+   .estado--jugando · --en-linea · --desconectado
+   ========================================================================== */
+.estado {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+}
+
+.estado--jugando {
+  color: var(--color-exito-texto);
+}
+
+.estado--en-linea {
+  color: var(--color-primario);
+}
+
+.estado--desconectado {
+  color: var(--color-texto-suave);
+  font-weight: var(--peso-normal);
+}
+
+/* ==========================================================================
+   Nota (calificación de 1 a 10)
+   .nota (pastilla verde) · --texto (solo el número) · .nota-anillo (círculo grande)
+   El anillo se llena con la variable --p (de 0 a 100): style="--p:90"
+   ========================================================================== */
+.nota {
+  display: inline-flex;
+  flex: none;
+  align-items: baseline;
+  padding: var(--espacio-1) var(--espacio-3);
+  border-radius: var(--radio-total);
+  background: var(--degradado-exito);
+  box-shadow: var(--sombra-nota);
+  color: var(--color-texto-sobre-primario);
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-titulos);
+  line-height: var(--interlineado-titulos);
+}
+
+.nota small {
+  font-size: var(--texto-xs);
+  opacity: 0.75;
+}
+
+.nota--texto {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--color-exito);
+  font-size: var(--texto-base);
+}
+
+.nota-anillo {
+  --p: 80;
+  display: grid;
+  flex: none;
+  place-items: center;
+  align-content: center;
+  width: calc(var(--espacio-8) * 2 + var(--espacio-7));
+  height: calc(var(--espacio-8) * 2 + var(--espacio-7));
+  border-radius: var(--radio-total);
+  background:
+    radial-gradient(closest-side, var(--color-fondo) 78%, transparent 80% 100%),
+    conic-gradient(var(--color-exito) calc(var(--p) * 1%), var(--velo-fuerte) 0);
+  box-shadow: var(--halo-exito);
+}
+
+.nota-anillo b {
+  background: var(--degradado-exito);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: var(--texto-2xl);
+  line-height: 1;
+}
+
+.nota-anillo span {
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xs);
 }
 
 /* ==========================================================================
@@ -411,13 +789,18 @@ textarea.campo {
   padding: var(--espacio-6);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-lg);
-  background: var(--color-superficie);
+  background: var(--degradado-superficie);
+  box-shadow: var(--sombra-reposo);
 }
 
 .panel__titulo {
+  margin: 0;
+  background: var(--degradado-etiqueta);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   font-size: var(--texto-xs);
   font-weight: var(--peso-titulos);
-  color: var(--color-texto-suave);
   text-transform: uppercase;
 }
 
@@ -431,7 +814,8 @@ textarea.campo {
   padding: var(--espacio-4);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie);
+  background: var(--degradado-superficie);
+  box-shadow: var(--sombra-reposo);
 }
 
 .dato__etiqueta {
@@ -442,6 +826,10 @@ textarea.campo {
 }
 
 .dato__valor {
+  background: var(--degradado-numero);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   font-size: var(--texto-xl);
   font-weight: var(--peso-titulos);
   line-height: var(--interlineado-titulos);
@@ -449,7 +837,7 @@ textarea.campo {
 
 /* ==========================================================================
    Pestañas (subrayadas)
-   Activa: aria-selected="true"
+   Activa: aria-selected="true". Número opcional con .contador.
    ========================================================================== */
 .pestanas {
   display: flex;
@@ -459,28 +847,34 @@ textarea.campo {
 }
 
 .pestanas__boton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
   min-height: var(--alto-control);
   margin-bottom: calc(var(--borde-fino) * -1);
   padding: var(--espacio-3) var(--espacio-4);
   border: 0;
-  border-bottom: var(--borde-grueso) solid transparent;
+  border-radius: var(--radio-sm) var(--radio-sm) 0 0;
   background: none;
   color: var(--color-texto-suave);
   font-family: inherit;
   font-size: var(--texto-base);
   white-space: nowrap;
   cursor: pointer;
-  transition: color var(--transicion);
+  transition: color var(--transicion), background-color var(--transicion);
 }
 
 .pestanas__boton:hover {
+  background: var(--velo);
   color: var(--color-texto);
 }
 
 .pestanas__boton[aria-selected="true"] {
+  background:
+    linear-gradient(var(--color-primario), var(--color-primario)) bottom / 100% var(--borde-grueso) no-repeat,
+    linear-gradient(180deg, transparent, var(--color-primario-tinte));
   color: var(--color-texto);
   font-weight: var(--peso-fuerte);
-  border-bottom-color: var(--color-primario);
 }
 
 .pestanas__boton:disabled {
@@ -500,7 +894,7 @@ textarea.campo {
   padding: var(--espacio-1);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie);
+  background: var(--vidrio);
 }
 
 .segmentado__opcion {
@@ -523,24 +917,37 @@ textarea.campo {
 }
 
 .segmentado__opcion[aria-selected="true"] {
-  background: var(--color-superficie-elevada);
+  background: var(--degradado-superficie-elevada);
+  box-shadow: inset 0 var(--borde-fino) 0 var(--velo-fuerte), var(--sombra-portada);
   color: var(--color-texto);
   font-weight: var(--peso-fuerte);
 }
 
 /* ==========================================================================
    Navegación
-   Escritorio: barra fija arriba. Celular: los enlaces pasan a una barra
-   fija abajo (la pantalla debe dejar espacio abajo para no taparla).
-   Página actual: aria-current="page"
+   Escritorio: barra de vidrio fija arriba, con línea de luz abajo.
+   Celular: los enlaces pasan a una barra fija abajo (la pantalla debe dejar
+   espacio abajo para no taparla). Página actual: aria-current="page"
    ========================================================================== */
 .navegacion {
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: var(--borde-fino) solid var(--color-borde);
-  background: color-mix(in srgb, var(--color-fondo) 92%, transparent);
-  backdrop-filter: blur(var(--espacio-2));
+  background: linear-gradient(180deg, var(--vidrio-fuerte), var(--vidrio));
+  backdrop-filter: blur(var(--desenfoque)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--desenfoque)) saturate(150%);
+}
+
+/* Línea de luz azul → morado */
+.navegacion::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--borde-fino);
+  background: linear-gradient(90deg, transparent, var(--color-primario) 25%, var(--color-secundario) 70%, transparent);
+  opacity: 0.7;
 }
 
 .navegacion__contenido {
@@ -570,6 +977,11 @@ textarea.campo {
 .navegacion__logo img {
   width: var(--espacio-7);
   height: var(--espacio-7);
+  transition: transform var(--duracion-media) var(--curva);
+}
+
+.navegacion__logo:hover img {
+  transform: rotate(-8deg) scale(1.1);
 }
 
 .navegacion__enlaces {
@@ -581,6 +993,7 @@ textarea.campo {
 }
 
 .navegacion__enlace {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--espacio-2);
@@ -593,10 +1006,33 @@ textarea.campo {
   transition: background-color var(--transicion), color var(--transicion);
 }
 
-.navegacion__enlace:hover,
-.navegacion__enlace[aria-current="page"] {
-  background: var(--color-superficie-elevada);
+/* Subrayado de luz */
+.navegacion__enlace::after {
+  content: "";
+  position: absolute;
+  right: var(--espacio-3);
+  bottom: var(--espacio-1);
+  left: var(--espacio-3);
+  height: var(--borde-grueso);
+  border-radius: var(--radio-total);
+  background: var(--degradado-primario);
+  transform: scaleX(0);
+  transition: transform var(--transicion);
+}
+
+.navegacion__enlace:hover {
+  background: var(--velo);
   color: var(--color-texto);
+}
+
+.navegacion__enlace[aria-current="page"] {
+  background: linear-gradient(180deg, var(--color-primario-tinte), var(--velo));
+  color: var(--color-texto);
+}
+
+.navegacion__enlace:hover::after,
+.navegacion__enlace[aria-current="page"]::after {
+  transform: scaleX(1);
 }
 
 .navegacion__enlace svg {
@@ -615,6 +1051,7 @@ textarea.campo {
   /* Sin desenfoque: si no, la barra fija de abajo queda atrapada dentro del header */
   .navegacion {
     backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     background: var(--color-fondo);
   }
 
@@ -639,8 +1076,7 @@ textarea.campo {
     gap: 0;
     padding: var(--espacio-1) var(--espacio-1) calc(var(--espacio-1) + env(safe-area-inset-bottom, 0px));
     border-top: var(--borde-fino) solid var(--color-borde);
-    background: color-mix(in srgb, var(--color-fondo) 96%, transparent);
-    backdrop-filter: blur(var(--espacio-3));
+    background: linear-gradient(180deg, var(--color-superficie), var(--color-fondo));
   }
 
   .navegacion__enlace {
@@ -652,19 +1088,25 @@ textarea.campo {
     font-size: var(--texto-xs);
   }
 
-  .navegacion__enlace:hover {
+  .navegacion__enlace::after {
+    top: 0;
+    bottom: auto;
+  }
+
+  .navegacion__enlace:hover,
+  .navegacion__enlace[aria-current="page"] {
     background: none;
   }
 
   .navegacion__enlace[aria-current="page"] {
-    background: none;
     color: var(--color-primario);
   }
 }
 
 /* ==========================================================================
    Portada de juego
-   La imagen va en style="background-image:url(assets/portada-....jpg)"
+   La imagen va en style="background-image:url(assets/portada-....jpg)".
+   El color del juego (--c) es solo respaldo mientras carga o si falta.
    .portada (tamaño fluido, 3:4) · --sm (48 px, sin título) · --enlace
    ========================================================================== */
 .portada {
@@ -674,21 +1116,37 @@ textarea.campo {
   aspect-ratio: 3 / 4;
   padding: var(--espacio-3);
   overflow: hidden;
-  border: var(--borde-fino) solid var(--color-borde);
+  border: var(--borde-fino) solid var(--velo-fuerte);
   border-radius: var(--radio-md);
-  background-color: var(--color-superficie-elevada);
+  background-color: var(--c, var(--color-superficie-elevada));
+  background-image:
+    var(--textura-lineas),
+    linear-gradient(160deg, color-mix(in srgb, var(--c, var(--color-superficie-elevada)) 78%, var(--color-texto)), var(--c, var(--color-superficie-elevada)) 42%, color-mix(in srgb, var(--c, var(--color-superficie-elevada)) 50%, var(--color-fondo)));
   background-position: center;
   background-size: cover;
   color: var(--color-texto);
   text-decoration: none;
-  transition: transform var(--transicion), box-shadow var(--transicion);
+  transition: transform var(--duracion-media) var(--curva), box-shadow var(--duracion-media) var(--curva);
 }
 
+/* Degradado oscuro abajo, para que el título se lea sobre la imagen */
 .portada::after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(to top, color-mix(in srgb, var(--color-fondo) 85%, transparent), transparent 55%);
+}
+
+/* Reflejo que cruza la portada al pasar el mouse */
+.portada::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: var(--brillo);
+  transform: translateX(-110%);
+  transition: transform var(--duracion-lenta) var(--curva);
 }
 
 .portada__titulo {
@@ -697,6 +1155,7 @@ textarea.campo {
   font-size: var(--texto-base);
   font-weight: var(--peso-fuerte);
   line-height: var(--interlineado-titulos);
+  text-shadow: 0 var(--borde-grueso) var(--espacio-3) var(--color-fondo);
 }
 
 .portada__ranking {
@@ -714,8 +1173,12 @@ textarea.campo {
 
 .portada--enlace:hover {
   color: var(--color-texto);
-  box-shadow: 0 0 0 var(--borde-grueso) var(--color-primario), var(--sombra-suave);
-  transform: translateY(calc(var(--espacio-1) * -1));
+  box-shadow: 0 0 0 var(--borde-grueso) var(--color-borde-activo), var(--sombra-suave);
+  transform: translateY(calc(var(--espacio-1) * -1)) scale(1.02);
+}
+
+.portada--enlace:hover::before {
+  transform: translateX(110%);
 }
 
 .portada--sm {
@@ -723,6 +1186,7 @@ textarea.campo {
   width: calc(var(--espacio-8) + var(--espacio-2));
   padding: 0;
   border-radius: var(--radio-sm);
+  box-shadow: var(--sombra-portada);
 }
 
 .portada--sm::after {
@@ -730,15 +1194,19 @@ textarea.campo {
 }
 
 /* ==========================================================================
-   Avatar (persona) · --lg
+   Avatar (persona)
+   Tamaños: --sm (32) · normal (40) · --md (56) · --lg (128) · --ia (MatchPlay)
+   Anillo de estado opcional: --jugando · --en-linea · --desconectado,
+   con un punto opcional <span class="avatar__punto"></span>
    ========================================================================== */
 .avatar {
+  --anillo: transparent;
+  position: relative;
   display: inline-grid;
   flex: none;
   place-items: center;
   width: var(--espacio-8);
   height: var(--espacio-8);
-  overflow: hidden;
   border-radius: var(--radio-total);
   background: var(--color-superficie-elevada);
   color: var(--color-primario);
@@ -749,14 +1217,65 @@ textarea.campo {
 .avatar img {
   width: 100%;
   height: 100%;
+  border-radius: inherit;
   object-fit: cover;
 }
 
+.avatar--sm {
+  width: var(--espacio-7);
+  height: var(--espacio-7);
+  font-size: var(--texto-xs);
+}
+
+.avatar--md {
+  width: calc(var(--espacio-8) + var(--espacio-4));
+  height: calc(var(--espacio-8) + var(--espacio-4));
+  font-size: var(--texto-lg);
+}
+
 .avatar--lg {
-  width: calc(var(--espacio-8) * 2);
-  height: calc(var(--espacio-8) * 2);
-  border: var(--borde-grueso) solid var(--color-primario);
-  font-size: var(--texto-xl);
+  width: calc(var(--espacio-8) * 3 + var(--espacio-2));
+  height: calc(var(--espacio-8) * 3 + var(--espacio-2));
+  font-size: var(--texto-2xl);
+}
+
+/* Avatar de la IA (MatchPlay): morado en degradado con halo */
+.avatar--ia {
+  background: var(--degradado-secundario);
+  box-shadow: var(--halo-secundario);
+  color: var(--color-texto-sobre-primario);
+}
+
+/* Anillo: 2 px del fondo + 2 px del color del estado */
+.avatar--jugando,
+.avatar--en-linea,
+.avatar--desconectado {
+  box-shadow: 0 0 0 var(--borde-grueso) var(--color-fondo), 0 0 0 calc(var(--borde-grueso) * 2) var(--anillo);
+}
+
+.avatar--jugando {
+  --anillo: var(--color-estado-jugando);
+}
+
+.avatar--en-linea {
+  --anillo: var(--color-estado-en-linea);
+}
+
+.avatar--desconectado {
+  --anillo: var(--color-estado-desconectado);
+}
+
+.avatar__punto {
+  position: absolute;
+  right: calc(var(--borde-fino) * -1);
+  bottom: calc(var(--borde-fino) * -1);
+  width: 30%;
+  height: 30%;
+  min-width: var(--espacio-3);
+  min-height: var(--espacio-3);
+  border: var(--borde-grueso) solid var(--color-fondo);
+  border-radius: var(--radio-total);
+  background: var(--anillo);
 }
 
 /* ==========================================================================
@@ -767,22 +1286,25 @@ textarea.campo {
   height: var(--espacio-2);
   overflow: hidden;
   border-radius: var(--radio-total);
-  background: var(--color-superficie-elevada);
+  background: var(--velo-fuerte);
 }
 
 .medidor__barra {
   display: block;
   height: 100%;
   border-radius: var(--radio-total);
-  background: var(--color-primario);
+  background: var(--degradado-primario);
+  box-shadow: var(--halo-primario);
 }
 
 .medidor--exito .medidor__barra {
-  background: var(--color-exito);
+  background: var(--degradado-exito);
+  box-shadow: var(--halo-exito);
 }
 
 .medidor--aviso .medidor__barra {
   background: var(--color-aviso);
+  box-shadow: none;
 }
 
 /* ==========================================================================
@@ -798,6 +1320,8 @@ textarea.campo {
   place-items: center;
   padding: var(--espacio-4);
   background: color-mix(in srgb, var(--color-fondo) 75%, transparent);
+  backdrop-filter: blur(calc(var(--desenfoque) / 2));
+  -webkit-backdrop-filter: blur(calc(var(--desenfoque) / 2));
 }
 
 .modal {
@@ -808,13 +1332,27 @@ textarea.campo {
   width: 100%;
   max-width: var(--ancho-modal);
   padding: var(--espacio-7);
-  border: var(--borde-fino) solid var(--color-borde);
+  border: var(--borde-fino) solid var(--color-borde-hover);
   border-radius: var(--radio-lg);
-  background: var(--color-superficie);
+  background: var(--degradado-superficie-elevada);
   box-shadow: var(--sombra-media);
 }
 
+/* Línea de luz arriba */
+.modal::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--borde-fino) * -1);
+  right: 20%;
+  left: 20%;
+  height: var(--borde-grueso);
+  border-radius: var(--radio-total);
+  background: var(--degradado-primario);
+  box-shadow: var(--halo-primario);
+}
+
 .modal__titulo {
+  margin: 0;
   font-size: var(--texto-xl);
 }
 
@@ -865,7 +1403,7 @@ textarea.campo {
   max-width: calc(100% - var(--espacio-7));
   padding: var(--espacio-3) var(--espacio-4);
   border-radius: var(--radio-md);
-  background: var(--color-texto);
+  background: var(--degradado-claro);
   color: var(--color-fondo);
   font-weight: var(--peso-fuerte);
   box-shadow: var(--sombra-media);
@@ -900,16 +1438,35 @@ textarea.campo {
   align-items: center;
   gap: var(--espacio-3);
   padding: var(--espacio-7);
-  border: var(--borde-fino) dashed var(--color-borde);
+  border: var(--borde-fino) dashed var(--color-borde-hover);
   border-radius: var(--radio-md);
   color: var(--color-texto-suave);
   text-align: center;
+}
+
+/* ---------- Pantallas táctiles: sin desplazamientos al "pasar el mouse" ---------- */
+@media (hover: none) {
+  .tarjeta--enlace:hover,
+  .tarjeta--resena:hover,
+  .tarjeta-amigo:hover,
+  .fila:hover,
+  .chip:hover,
+  .portada--enlace:hover,
+  .boton:hover {
+    transform: none;
+  }
 }
 
 /* ---------- Movimiento reducido ---------- */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
+  }
+
+  .boton::after,
+  .tarjeta--enlace::after,
+  .portada::before {
+    display: none;
   }
 }
 
@@ -921,5 +1478,10 @@ textarea.campo {
   .tarjeta--destacada,
   .vacio {
     padding: var(--espacio-6);
+  }
+
+  .nota-anillo {
+    width: calc(var(--espacio-8) * 2 + var(--espacio-1));
+    height: calc(var(--espacio-8) * 2 + var(--espacio-1));
   }
 }

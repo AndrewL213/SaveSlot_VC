@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Reseña · SaveSlot</title>
+<meta name="description" content="Reseña de un juego, con comentarios de la comunidad.">
+<meta name="theme-color" content="#12161D">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../css/prototipo.css">
+</head>
+<body data-page="verresena" data-section="comunidad">
+
+<main>
+  <div class="hero-band" id="band">
+    <div class="container">
+      <nav class="crumbs" aria-label="Ruta"><a href="comunidad.html">Comunidad</a><span aria-hidden="true">/</span><a id="crumb-game" href="buscar-juegos.html">Juego</a><span aria-hidden="true">/</span><span style="color:var(--fg)">Reseña</span></nav>
+      <div class="row" style="gap:28px;align-items:flex-end">
+        <div id="v-cover" class="skeleton" style="width:160px;aspect-ratio:3/4"></div>
+        <div class="stack grow" style="flex:999 1 420px;gap:12px">
+          <span class="eyebrow" id="v-eyebrow">Reseña</span>
+          <h1 style="font-size:clamp(28px,3.6vw,42px);letter-spacing:-.02em" id="v-title">…</h1>
+          <div class="row" style="gap:12px" id="v-author"></div>
+        </div>
+        <div class="score-ring" id="v-score" aria-label="Calificación"></div>
+      </div>
+    </div>
+  </div>
+  <div class="container page" style="gap:28px">
+    <div class="split">
+      <div class="main" style="gap:20px">
+        <article class="panel review-full" id="v-body"></article>
+        <div class="row" id="v-actions"></div>
+        <section class="section" id="comments"><div class="section-head"><h2 style="font-size:22px">Comentarios <span class="muted" id="c-count"></span></h2></div>
+          <form class="comment-form" id="c-form" novalidate><span class="avatar" id="c-av">SL</span><label class="sr-only" for="c-txt">Escribe un comentario</label><textarea class="textarea grow" id="c-txt" rows="2" maxlength="400" placeholder="Escribe un comentario respetuoso"></textarea><button class="btn btn-primary" type="submit">Comentar</button></form>
+          <div class="stack" style="gap:10px" id="c-list"></div>
+        </section>
+      </div>
+      <aside class="side">
+        <section class="panel" id="v-about"></section>
+        <section class="panel"><h2 class="panel-title">Datos de la partida</h2><dl id="v-facts" style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px"></dl></section>
+        <section class="panel"><h2 class="panel-title">Más reseñas de este juego</h2><div class="stack" style="gap:10px" id="v-more"></div></section>
+      </aside>
+    </div>
+  </div>
+</main>
+<script src="../js/prototipo.js"></script>
+</body>
+</html>

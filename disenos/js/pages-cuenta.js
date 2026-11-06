@@ -17,7 +17,7 @@ window.SS_PAGES = window.SS_PAGES || {};
   // ---------- Login ----------
   P.login = function () {
     if (auth.user()) { location.replace(safeBack(params.get('volver')) || 'perfil.html'); return; }
-    $('#to-signup').href = 'crear-cuenta.html' + location.search;
+    $('#to-signup').href = 'registro.html' + location.search;
     $('#toggle-pw').addEventListener('click', () => { const i = $('#pw'); i.type = i.type === 'password' ? 'text' : 'password'; $('#toggle-pw').setAttribute('aria-label', i.type === 'password' ? 'Mostrar contraseña' : 'Ocultar contraseña'); });
     $$('[data-oauth]').forEach((b) => b.addEventListener('click', () => toast('Entrar con ' + b.dataset.oauth + ' estará disponible pronto. Por ahora usa tu correo.')));
     $('#login-form').addEventListener('submit', async (e) => {
@@ -28,7 +28,7 @@ window.SS_PAGES = window.SS_PAGES || {};
       if (!a || !b) return;
       const accounts = store.get('accounts', {});
       const acc = accounts[em.value.toLowerCase()];
-      if (!acc) { setError(em, $('#em-err'), 'x'); $('#em-err').innerHTML = 'No hay una cuenta con ' + esc(em.value) + '. Revisa si está bien escrito o <a href="crear-cuenta.html' + esc(location.search) + '">crea una cuenta</a>.'; return; }
+      if (!acc) { setError(em, $('#em-err'), 'x'); $('#em-err').innerHTML = 'No hay una cuenta con ' + esc(em.value) + '. Revisa si está bien escrito o <a href="registro.html' + esc(location.search) + '">crea una cuenta</a>.'; return; }
       await busyBtn($('#login-form button[type="submit"]'), 'Entrando…', 400);
       auth.login({ name: acc.name, user: acc.user, initials: initialsOf(acc.name), email: em.value.toLowerCase() });
       location.href = safeBack(params.get('volver')) || 'perfil.html';
@@ -42,7 +42,7 @@ window.SS_PAGES = window.SS_PAGES || {};
   // ---------- Registro ----------
   P.registro = function () {
     if (auth.user()) { location.replace('perfil.html'); return; }
-    $('#to-login').href = 'iniciar-sesion.html' + location.search;
+    $('#to-login').href = 'login.html' + location.search;
     $$('[data-oauth]').forEach((b) => b.addEventListener('click', () => toast('Registrarte con ' + b.dataset.oauth + ' estará disponible pronto. Por ahora usa tu correo.')));
     const pw = $('#pw');
     pw.addEventListener('input', () => {
@@ -77,7 +77,7 @@ window.SS_PAGES = window.SS_PAGES || {};
   // ---------- Perfil ----------
   P.perfil = function () {
     const u = auth.user();
-    if (!u) { location.replace('iniciar-sesion.html?volver=perfil.html'); return; }
+    if (!u) { location.replace('login.html?volver=perfil.html'); return; }
     const p = profile.get();
     const d = diary.all();
     const since = new Date(p.since + 'T12:00:00');
@@ -94,7 +94,7 @@ window.SS_PAGES = window.SS_PAGES || {};
 
     const playing = p.playing ? gameById(p.playing) : null;
     $('#activity').innerHTML = playing
-      ? '<a class="row card-link" style="flex-wrap:nowrap;background:var(--bg);border-radius:10px;padding:12px;color:var(--fg)" href="detalle-juego.html?id=' + playing.id + '">' + cover(playing, { small: true }) + '<span style="line-height:1.35"><span class="xs" style="color:var(--good);font-weight:700">● Jugando ahora</span><br><b>' + esc(playing.short) + '</b><br><span class="xs muted">Dato de Steam (demo)</span></span></a>'
+      ? '<a class="row card-link" style="flex-wrap:nowrap;background:var(--bg);border-radius:10px;padding:12px;color:var(--fg)" href="juego.html?id=' + playing.id + '">' + cover(playing, { small: true }) + '<span style="line-height:1.35"><span class="xs" style="color:var(--good);font-weight:700">● Jugando ahora</span><br><b>' + esc(playing.short) + '</b><br><span class="xs muted">Dato de Steam (demo)</span></span></a>'
       : '<span class="muted small">No está jugando nada en este momento.</span>';
     $('#status-dot').hidden = !playing;
 
@@ -102,15 +102,15 @@ window.SS_PAGES = window.SS_PAGES || {};
       (p.accounts[k] ? '<span class="ok-text xs">Verificada</span>' : '<a class="xs link-strong" href="editar-perfil.html#cuentas">Vincular</a>') + '</div>').join('');
 
     const thisYear = d.filter((x) => x.date.slice(0, 4) === String(new Date().getFullYear()));
-    const reviews = store.get('reviews', []).filter((r) => r.user === u.user);
-    $('#stats').innerHTML = [['Juegos', d.length, 'diario.html'], ['Este año', thisYear.length, 'diario.html'], ['Reseñas', reviews.length + d.filter((x) => x.review).length, 'diario.html'], ['Logros', '1.912', 'logros.html'], ['Lista de deseos', p.wishlist.length, '#deseos']]
+    const reviews = SS.reviews.mine();
+    $('#stats').innerHTML = [['Juegos', d.length, 'diario.html'], ['Este año', thisYear.length, 'diario.html'], ['Reseñas', reviews.length, 'historial.html'], ['Logros', '1.912', 'logros.html'], ['Lista de deseos', p.wishlist.length, '#deseos']]
       .map((s) => '<a href="' + s[2] + '" class="stat card-link" style="text-align:center;border-radius:0;border:0;border-right:1px solid var(--line)"><b>' + s[1] + '</b><span>' + s[0] + '</span></a>').join('');
 
-    $('#favorites').innerHTML = p.favorites.slice(0, 4).map((id) => { const g = gameById(id); return g ? '<a class="game-tile" href="detalle-juego.html?id=' + g.id + '">' + cover(g) + '</a>' : ''; }).join('') +
+    $('#favorites').innerHTML = p.favorites.slice(0, 4).map((id) => { const g = gameById(id); return g ? '<a class="game-tile" href="juego.html?id=' + g.id + '">' + cover(g) + '</a>' : ''; }).join('') +
       Array.from({ length: Math.max(0, 4 - p.favorites.length) }, () => '<a class="empty" href="editar-perfil.html#favoritos" style="aspect-ratio:3/4">+ Elegir favorito</a>').join('');
     $('#fav-count').textContent = Math.min(4, p.favorites.length) + ' de 4';
 
-    $('#recent').innerHTML = d.slice(0, 6).map((x) => { const g = gameById(x.game); if (!g) return ''; return '<a class="game-tile" href="detalle-juego.html?id=' + g.id + '">' + cover(g, { noTitle: true }) + '<span class="xs" style="font-weight:700;color:' + (x.state === 'Abandonado' ? 'var(--bad)' : 'var(--good)') + '">' + (x.state === 'Abandonado' ? 'Abandonado' : x.score + '/10') + (x.like ? ' <span style="color:var(--bad)">♥</span>' : '') + '</span></a>'; }).join('') || '<div class="empty">Aún no registras juegos. <a class="link-strong" href="buscar-juegos.html">Busca uno</a></div>';
+    $('#recent').innerHTML = d.slice(0, 6).map((x) => { const g = gameById(x.game); if (!g) return ''; return '<a class="game-tile" href="juego.html?id=' + g.id + '">' + cover(g, { noTitle: true }) + '<span class="xs" style="font-weight:700;color:' + (x.state === 'Abandonado' ? 'var(--bad)' : 'var(--good)') + '">' + (x.state === 'Abandonado' ? 'Abandonado' : x.score + '/10') + (x.like ? ' <span style="color:var(--bad)">♥</span>' : '') + '</span></a>'; }).join('') || '<div class="empty">Aún no registras juegos. <a class="link-strong" href="buscar.html">Busca uno</a></div>';
 
     // Géneros más jugados: horas del diario por género
     const hours = {};
@@ -129,7 +129,7 @@ window.SS_PAGES = window.SS_PAGES || {};
     $('#hist').setAttribute('aria-label', 'Distribución de tus calificaciones. Promedio ' + avg.toFixed(1));
     $('#avg').textContent = avg.toFixed(1).replace('.', ',') + ' · ' + n + ' juegos';
 
-    $('#wishlist').innerHTML = p.wishlist.map((id) => { const g = gameById(id); return g ? '<div class="card" style="flex-direction:row;align-items:center;gap:12px">' + cover(g, { small: true }) + '<a class="grow" style="color:var(--fg)" href="detalle-juego.html?id=' + g.id + '"><b>' + esc(g.short) + '</b><br><span class="xs muted">' + esc(g.platforms.join(', ')) + '</span></a><button class="btn btn-ghost btn-sm" data-rm="' + g.id + '" aria-label="Quitar ' + esc(g.short) + ' de la lista">Quitar</button></div>' : ''; }).join('') || '<div class="empty">Tu lista de deseos está vacía. Agrega juegos desde su página.</div>';
+    $('#wishlist').innerHTML = p.wishlist.map((id) => { const g = gameById(id); return g ? '<div class="card" style="flex-direction:row;align-items:center;gap:12px">' + cover(g, { small: true }) + '<a class="grow" style="color:var(--fg)" href="juego.html?id=' + g.id + '"><b>' + esc(g.short) + '</b><br><span class="xs muted">' + esc(g.platforms.join(', ')) + '</span></a><button class="btn btn-ghost btn-sm" data-rm="' + g.id + '" aria-label="Quitar ' + esc(g.short) + ' de la lista">Quitar</button></div>' : ''; }).join('') || '<div class="empty">Tu lista de deseos está vacía. Agrega juegos desde su página.</div>';
     $('#wishlist').addEventListener('click', (e) => {
       const b = e.target.closest('[data-rm]'); if (!b) return;
       const id = b.dataset.rm, card = b.closest('.card'), pr = profile.get(), pos = pr.wishlist.indexOf(id);
@@ -140,7 +140,7 @@ window.SS_PAGES = window.SS_PAGES || {};
     const joined = store.get('joined', []);
     function renderEvents() {
       const j = store.get('joined', []);
-      $('#my-events').innerHTML = j.length ? j.map((id) => { const ev = DATA.events.find((x) => x.id === id); return ev ? '<div class="card" style="gap:6px"><a href="detalle-evento.html?id=' + ev.id + '" style="color:var(--fg)"><b>' + esc(ev.title) + '</b></a><span class="muted small">' + esc(ev.when) + '</span><button type="button" class="help-link" data-leave="' + ev.id + '">Cancelar inscripción</button></div>' : ''; }).join('') : '<span class="muted small">No estás inscrito en eventos. <a class="link-strong" href="eventos.html">Ver eventos</a></span>';
+      $('#my-events').innerHTML = j.length ? j.map((id) => { const ev = DATA.events.find((x) => x.id === id); return ev ? '<div class="card" style="gap:6px"><a href="evento.html?id=' + ev.id + '" style="color:var(--fg)"><b>' + esc(ev.title) + '</b></a><span class="muted small">' + esc(ev.when) + '</span><button type="button" class="help-link" data-leave="' + ev.id + '">Cancelar inscripción</button></div>' : ''; }).join('') : '<span class="muted small">No estás inscrito en eventos. <a class="link-strong" href="eventos.html">Ver eventos</a></span>';
     }
     renderEvents();
     $('#my-events').addEventListener('click', (e) => {
@@ -154,7 +154,7 @@ window.SS_PAGES = window.SS_PAGES || {};
   // ---------- Editar perfil ----------
   P.editar = function () {
     const u = auth.user();
-    if (!u) { location.replace('iniciar-sesion.html?volver=editar-perfil.html'); return; }
+    if (!u) { location.replace('login.html?volver=editar-perfil.html'); return; }
     let p = profile.get();
     if (params.get('nuevo')) $('#welcome').hidden = false;
     $('#nm').value = u.name; $('#us').value = u.user; $('#bio').value = p.bio || '';
@@ -183,7 +183,7 @@ window.SS_PAGES = window.SS_PAGES || {};
     function renderAccounts() {
       $('#accounts').innerHTML = Object.keys(p.accounts).map((k) => '<div class="row" style="background:var(--surface-2);border-radius:10px;padding:14px;' + (p.accounts[k] ? '' : 'border:1px dashed var(--line)') + '"><span class="grow"><b>' + k + '</b><br><span class="xs muted">' + NOTES[k] + '</span></span>' +
         (p.accounts[k] ? '<span class="ok-text small">Vinculada · ' + esc(p.accounts[k]) + '</span><button type="button" class="btn btn-secondary btn-sm" data-unlink="' + k + '">Desvincular</button>'
-                       : (NOAPI.includes(k) ? '<a class="btn btn-secondary btn-sm" href="buscar-juegos.html" title="' + k + ' no ofrece API pública: registra tus juegos en el diario">Registrar a mano</a>' : '<button type="button" class="btn btn-primary btn-sm" data-link="' + k + '">Vincular</button>')) + '</div>').join('');
+                       : (NOAPI.includes(k) ? '<a class="btn btn-secondary btn-sm" href="buscar.html" title="' + k + ' no ofrece API pública: registra tus juegos en el diario">Registrar a mano</a>' : '<button type="button" class="btn btn-primary btn-sm" data-link="' + k + '">Vincular</button>')) + '</div>').join('');
     }
     $('#accounts').addEventListener('click', async (e) => {
       const l = e.target.closest('[data-link]'), ul = e.target.closest('[data-unlink]');
@@ -209,7 +209,7 @@ window.SS_PAGES = window.SS_PAGES || {};
 
   // ---------- Diario ----------
   P.diario = function () {
-    if (!auth.user()) { location.replace('iniciar-sesion.html?volver=diario.html'); return; }
+    if (!auth.user()) { location.replace('login.html?volver=diario.html'); return; }
     let state = 'Todos';
     const years = Array.from(new Set(diary.all().map((x) => x.date.slice(0, 4)))).sort().reverse();
     $('#yr').innerHTML = years.map((y) => '<option>' + y + '</option>').join('');
@@ -227,11 +227,11 @@ window.SS_PAGES = window.SS_PAGES || {};
         const m = MONTHS[Number(x.date.slice(5, 7)) - 1]; const show = m !== prevMonth; prevMonth = m;
         return '<tr><td style="width:90px">' + (show ? '<span style="display:inline-flex;flex-direction:column;align-items:center;background:var(--bg);border-radius:8px;padding:6px 10px;line-height:1.1"><b style="font-size:13px;letter-spacing:.06em">' + m + '</b><span class="xs muted">' + y + '</span></span>' : '') + '</td>' +
           '<td style="font-size:22px;font-weight:800;color:var(--muted);width:60px">' + x.date.slice(8, 10) + '</td>' +
-          '<td><a class="row" style="flex-wrap:nowrap;color:var(--fg)" href="detalle-juego.html?id=' + g.id + '">' + cover(g, { small: true }) + '<span style="line-height:1.3"><b>' + esc(g.short) + '</b><br><span class="xs muted">' + esc(g.platforms[0]) + '</span></span></a></td>' +
+          '<td><a class="row" style="flex-wrap:nowrap;color:var(--fg)" href="juego.html?id=' + g.id + '">' + cover(g, { small: true }) + '<span style="line-height:1.3"><b>' + esc(g.short) + '</b><br><span class="xs muted">' + esc(g.platforms[0]) + '</span></span></a></td>' +
           '<td><span style="font-size:13px;font-weight:700;border:1px solid ' + COL[x.state] + ';color:' + COL[x.state] + ';border-radius:999px;padding:3px 10px;white-space:nowrap">' + esc(x.state) + '</span></td>' +
           '<td class="soft">' + (x.hours || 0) + ' h</td><td class="score">' + (x.score ? x.score + '/10' : '—') + '</td>' +
           '<td style="text-align:center;font-size:18px;color:' + (x.like ? 'var(--bad)' : 'var(--line)') + '" aria-label="' + (x.like ? 'Te gustó' : 'Sin me gusta') + '">♥</td>' +
-          '<td style="text-align:center">' + (x.review ? '<a href="detalle-juego.html?id=' + g.id + '" class="btn btn-secondary btn-sm" aria-label="Leer reseña" style="min-height:36px;padding:6px 10px">Leer</a>' : '') + '</td></tr>';
+          '<td style="text-align:center">' + (x.review ? '<a href="juego.html?id=' + g.id + '" class="btn btn-secondary btn-sm" aria-label="Leer reseña" style="min-height:36px;padding:6px 10px">Leer</a>' : '') + '</td></tr>';
       }).join('') || '<tr><td colspan="8"><div class="empty">No hay registros con este filtro.</div></td></tr>';
     }
     $$('[data-state]').forEach((b) => b.addEventListener('click', () => { state = b.dataset.state; $$('[data-state]').forEach((x) => x.setAttribute('aria-pressed', x === b)); render(); }));
@@ -346,10 +346,10 @@ window.SS_PAGES = window.SS_PAGES || {};
       credenciales: { code: 'API-401', title: 'No pudimos conectarnos con ' + S, text: 'La clave de acceso de SaveSlot para este servicio no es válida o venció (por ejemplo, la clave de desarrollo de Riot expira cada 24 horas).', tips: ['No es un problema de tu cuenta.', 'El equipo debe renovar la clave del servicio.'], retry: false },
       mantenimiento: { code: 'API-503', title: S + ' está en mantenimiento', text: 'El servicio avisó que está en mantenimiento. Volverá a funcionar cuando termine.', tips: ['Intenta de nuevo más tarde.'], retry: true },
       'sin-conexion': { code: 'NET-0', title: 'No hay conexión a internet', text: 'Tu dispositivo está sin conexión, así que no podemos cargar información nueva.', tips: ['Revisa el wifi o los datos móviles.', 'Cuando vuelva la conexión, pulsa “Reintentar”.'], retry: true },
-      plataforma: { code: 'LIM-PLAT', title: svc ? svc + ' todavía no se puede vincular' : 'Esta plataforma no se puede vincular', text: (svc || 'Esta plataforma') + ' no ofrece una API pública para que webs como SaveSlot lean tus juegos, logros o actividad. No vamos a usar métodos no oficiales que pidan tus credenciales.', tips: ['Registra tus juegos a mano en tu diario.', 'Vincula Steam o Xbox, que sí están disponibles.', 'Te avisaremos si la plataforma abre su API.'], retry: false, cta: ['Registrar en mi diario', 'buscar-juegos.html'] },
+      plataforma: { code: 'LIM-PLAT', title: svc ? svc + ' todavía no se puede vincular' : 'Esta plataforma no se puede vincular', text: (svc || 'Esta plataforma') + ' no ofrece una API pública para que webs como SaveSlot lean tus juegos, logros o actividad. No vamos a usar métodos no oficiales que pidan tus credenciales.', tips: ['Registra tus juegos a mano en tu diario.', 'Vincula Steam o Xbox, que sí están disponibles.', 'Te avisaremos si la plataforma abre su API.'], retry: false, cta: ['Registrar en mi diario', 'buscar.html'] },
       pagos: { code: 'LIM-PAY', title: 'Los pagos aún no están disponibles', text: 'SaveSlot es un prototipo académico y no tiene una pasarela de pagos conectada. Ningún cobro se realizó.', tips: ['Usa la opción gratis con XP cuando el evento la tenga.', 'Revisa los eventos gratuitos en la pestaña “Gratis”.'], retry: false, cta: ['Ver eventos gratis', 'eventos.html'] },
       funcion: { code: 'LIM-FEAT', title: S + ' aún no está disponible', text: 'Esta función depende de una API que el equipo todavía está solicitando. Por ahora no la puedes usar.', tips: ['Usa la alternativa disponible (correo y contraseña, o subir texto).', 'Revisa el estado de los servicios abajo.'], retry: false },
-      demo: { code: 'DEMO', title: 'Estás viendo el prototipo de SaveSlot', text: 'Mientras conectamos las APIs (catálogo de juegos, cuentas e IA), la web usa datos de ejemplo y guarda tu actividad solo en este navegador.', tips: ['Puedes crear una cuenta, reseñar, llenar tu diario y chatear con MatchPlay en modo demo.', 'Borrar los datos del navegador borra tu actividad.'], retry: false, cta: ['Explorar juegos', 'buscar-juegos.html'] },
+      demo: { code: 'DEMO', title: 'Estás viendo el prototipo de SaveSlot', text: 'Mientras conectamos las APIs (catálogo de juegos, cuentas e IA), la web usa datos de ejemplo y guarda tu actividad solo en este navegador.', tips: ['Puedes crear una cuenta, reseñar, llenar tu diario y chatear con MatchPlay en modo demo.', 'Borrar los datos del navegador borra tu actividad.'], retry: false, cta: ['Explorar juegos', 'buscar.html'] },
       estado: { code: 'STATUS', title: 'Estado de los servicios', text: 'Qué partes de SaveSlot están conectadas a servicios reales y cuáles funcionan en modo demo.', tips: [], retry: false }
     };
     const t = T[tipo] || T.api;

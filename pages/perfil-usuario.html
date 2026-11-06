@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Perfil · SaveSlot</title>
+<meta name="description" content="Perfil público de un jugador: favoritos, reseñas y juegos en común.">
+<meta name="theme-color" content="#12161D">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../css/prototipo.css">
+</head>
+<body data-page="usuario" data-section="perfil">
+
+<main>
+  <div class="container" style="padding-top:24px">
+    <div class="profile-banner" id="banner" style="height:170px;border-radius:16px 16px 0 0"></div>
+    <div class="panel profile-head" style="border-top:0;border-radius:0 0 16px 16px;flex-direction:row;flex-wrap:wrap;align-items:flex-end;gap:20px;padding:0 28px 24px">
+      <div style="margin-top:-60px;flex:none" id="u-avatar"></div>
+      <div class="stack grow" style="flex:999 1 320px;gap:6px;padding-top:14px">
+        <div class="row" style="align-items:baseline"><h1 style="font-size:30px" id="u-name">…</h1><span class="muted" id="u-handle"></span></div>
+        <div class="row" style="gap:8px" id="u-badges"></div>
+      </div>
+      <div class="row" id="u-actions"></div>
+    </div>
+  </div>
+  <div class="container page" style="padding-top:24px">
+    <div class="split">
+      <aside class="side">
+        <section class="panel"><h2 class="panel-title">Actividad</h2><div id="u-activity"></div></section>
+        <section class="panel"><h2 class="panel-title">Sobre</h2><p id="u-bio" style="font-size:15px"></p><span class="xs muted" id="u-since"></span></section>
+        <section class="panel"><div class="row between"><h2 class="panel-title">Amigos en común</h2><span class="xs muted" id="u-mutual-n"></span></div><div class="friend-mini" id="u-mutual"></div></section>
+      </aside>
+      <div class="main" style="gap:28px">
+        <section class="stat-strip" id="u-stats" aria-label="Estadísticas"></section>
+        <section class="section"><div class="section-head"><h2 style="font-size:22px">Juegos favoritos</h2></div><div class="grid g-4" id="u-favs"></div></section>
+        <section class="section"><div class="section-head"><h2 style="font-size:22px">Juegos en común</h2><span class="small muted">Su nota frente a la tuya</span></div><div class="stack" style="gap:10px" id="u-common"></div></section>
+        <section class="section"><div class="section-head"><h2 style="font-size:22px">Reseñas recientes</h2></div><div class="grid g-auto-300" id="u-reviews"></div></section>
+      </div>
+    </div>
+  </div>
+</main>
+<script src="../js/prototipo.js"></script>
+</body>
+</html>

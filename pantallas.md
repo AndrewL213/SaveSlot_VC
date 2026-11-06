@@ -1,10 +1,10 @@
 # Pantallas de SaveSlot
 
-Avance de cada pantalla de spec.md, por tramo del flujo.
+Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de los diseños v3 (disenos/).
 
 - **Separada**: tiene su propia página (o vive dentro de la página indicada, si es una ventana).
 - **Con kit**: usa solo css/tokens.css y css/components.css, ya no el andamio (css/prototipo.css y js/prototipo.js).
-- **Datos en data.js**: sus datos simulados salen de js/data.js, separados del diseño.
+- **Datos en data.js**: sus datos simulados salen de js/data.js, separados del diseño (o de Supabase/RAWG, si son Real).
 - **Revisada vs spec**: cumple todos sus criterios de «Está lista cuando» en spec.md.
 
 ## Descubrir
@@ -26,38 +26,43 @@ Avance de cada pantalla de spec.md, por tramo del flujo.
 | 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ⬜ | ⬜ | ⬜ |
 | 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ⬜ | ⬜ | ⬜ |
 | 11. Comunidad | `pages/comunidad.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ⬜ | ⬜ | ⬜ |
 
 ## Eventos
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
 | 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 12. Eventos | `pages/eventos.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 13. Detalle de evento | `pages/detalle-evento.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 14. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 13. Eventos | `pages/eventos.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ⬜ | ⬜ | ⬜ |
 
-## Cuenta y perfil
+## Cuenta, perfil y amigos
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 15. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 16. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 17. Perfil | `pages/perfil.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 18. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 19. Editar perfil | `pages/editar-perfil.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 20. Diario | `pages/diario.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 21. Logros | `pages/logros.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 22. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ⬜ | ⬜ | ⬜ |
+| 16. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 18. Perfil | `pages/perfil.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 21. Diario | `pages/diario.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 23. Logros | `pages/logros.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 24. Amigos | `pages/amigos.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ⬜ | ⬜ | ⬜ |
 
 ## Ayuda
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 23. Contáctanos | `pages/contacto.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 24. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 25. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ⬜ | ⬜ | ⬜ |
+| 27. Contáctanos | `pages/contacto.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ⬜ | ⬜ | ⬜ |
 
 ## Pendientes para la revisión vs spec
 - **404.html**: cuando un juego o evento no existe, muestra el texto por defecto («Un servicio externo no está respondiendo»), porque el diseño no tiene un texto para "no encontrado".
 - **Contáctanos**: todavía muestra la tarjeta de correo y redes, que la spec quita del MVP.
-- Los elementos que la spec marca como **Después** (clips, pagos, Google y Discord, foto de perfil, etc.) siguen visibles como en el diseño.
+- **Mensaje (Amigos y Perfil de otro usuario)**, clips, pagos, Google y Discord y foto de perfil: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
+- **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).

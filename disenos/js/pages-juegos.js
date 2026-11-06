@@ -1,20 +1,24 @@
 /* SaveSlot — páginas de juegos, búsqueda, eventos y reseñas. */
 window.SS_PAGES = window.SS_PAGES || {};
 (function (P) {
-  const { $, $$, esc, params, store, auth, profile, diary, toast, busy, score10, recent, modal, cover, gameTile, skulls, gameById, fmt, DATA } = window.SS;
+  const { $, $$, esc, params, store, auth, profile, diary, reviews: RV, friends, avatar, userHref, toast, busy, score10, recent, modal, cover, gameTile, skulls, gameById, fmt, DATA } = window.SS;
   const API = window.SS_API;
 
   function skeletonTiles(n) { return Array.from({ length: n }, () => '<div class="skeleton" style="aspect-ratio:3/4"></div>').join(''); }
-  function userReviews() { return store.get('reviews', []); }
+  function userReviews() { return RV.mine(); }
 
   function reviewCard(r, opts) {
     const g = gameById(r.game);
-    const head = '<div class="who"><span class="avatar">' + esc(r.initials) + '</span><div style="line-height:1.3"><b>' + esc(r.user) + '</b><br><span class="muted xs">' +
-      (opts && opts.showGame && g ? 'sobre ' + esc(g.short) + ' · ' : '') + esc(r.hours) + ' h jugadas</span></div><span class="score" style="margin-left:auto;font-size:18px">' + esc(r.score) + '/10</span></div>';
+    const f = friends.user(r.user);
+    const av = f ? avatar(f, 38) : '<span class="avatar">' + esc(r.initials) + '</span>';
+    const nCom = RV.comments(r.id).length;
+    const head = '<div class="who">' + av + '<div style="line-height:1.3"><a class="user-link" href="' + userHref(r.user) + '"><b>' + esc(r.user) + '</b></a>' + (f && friends.rel(f.user) === 'friend' ? ' <span class="badge badge-friend">AMIGO</span>' : '') + '<br><span class="muted xs">' +
+      (opts && opts.showGame && g ? 'sobre ' + esc(g.short) + ' · ' : '') + esc(r.hours) + ' h jugadas</span></div><span class="score-pill" style="margin-left:auto">' + esc(r.score) + '<small>/10</small></span></div>';
     const body = r.spoiler
       ? '<div class="spoiler"><span class="muted">Esta reseña tiene spoilers.</span><button class="btn btn-secondary btn-sm" data-reveal>Mostrar de todas formas</button></div><p hidden>' + esc(r.text) + '</p>'
       : '<p>' + esc(r.text) + '</p>';
-    return '<article class="review">' + head + body + '<div class="row small muted"><button class="btn btn-secondary btn-sm" data-useful>Útil · <span>' + fmt(r.useful || 0) + '</span></button><span>Dificultad que votó: ' + esc(r.diff) + '/10</span></div></article>';
+    return '<article class="review' + (g ? '" style="--c:' + g.color : '') + '">' + head + body + '<div class="row small muted" style="gap:10px"><button class="btn btn-secondary btn-sm" data-useful>Útil · <span>' + fmt(r.useful || 0) + '</span></button><span>♥ ' + fmt(r.likes || 0) + '</span><span>' + nCom + (nCom === 1 ? ' comentario' : ' comentarios') + '</span>' +
+      (r.id ? '<a class="link-strong" style="margin-left:auto" href="ver-resena.html?id=' + encodeURIComponent(r.id) + '">Leer y comentar →</a>' : '') + '</div></article>';
   }
   function bindReviewActions(root) {
     $$('[data-reveal]', root).forEach((b) => b.addEventListener('click', () => { const box = b.closest('.spoiler'); box.nextElementSibling.hidden = false; box.remove(); }));
@@ -30,7 +34,7 @@ window.SS_PAGES = window.SS_PAGES || {};
     const games = await API.searchGames({});
     const top = games.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 6);
     $('#top-games').innerHTML = top.map((g, i) => gameTile(g, i + 1)).join('');
-    const all = DATA.reviews.filter((r) => !r.spoiler).concat(userReviews());
+    const all = DATA.reviews.filter((r) => !r.spoiler);
     $('#reviews').innerHTML = all.slice(0, 3).map((r) => reviewCard(r, { showGame: true })).join('');
     bindReviewActions($('#reviews'));
     const feat = DATA.events.find((e) => e.featured);
@@ -42,23 +46,23 @@ window.SS_PAGES = window.SS_PAGES || {};
     if (rv.length && $('#recent-wrap')) { $('#recent-wrap').hidden = false; $('#recent-games').innerHTML = rv.map((g) => gameTile(g)).join(''); }
     if (!seen) setTimeout(() => modal({
       icon: 'trophy', title: feat.title, text: 'Evento del mes. Arma tu equipo y compite. ' + feat.when + ' · ' + feat.slots + ' de ' + feat.max + ' cupos ocupados.',
-      actions: [{ label: 'Ver evento', href: 'detalle-evento.html?id=' + feat.id, primary: true }, { label: 'Ahora no' }]
+      actions: [{ label: 'Ver evento', href: 'evento.html?id=' + feat.id, primary: true }]
     }), 900);
   };
 
   // ---------- Eventos ----------
   function eventFeature(e) {
-    return '<a class="card card-link" href="detalle-evento.html?id=' + e.id + '" style="flex:2 1 520px;background:#1A3157;border-color:#3DA9F5;padding:28px;gap:12px">' +
+    return '<a class="card card-link event-feature" href="evento.html?id=' + e.id + '" style="flex:2 1 520px;padding:28px;gap:12px;--c:' + e.color + '">' +
       '<span class="row" style="gap:8px"><span class="badge badge-accent">' + e.type.toUpperCase() + '</span><span class="badge badge-outline" style="color:#E6EBF1;border-color:#9AD4FB">EVENTO DEL MES</span></span>' +
       '<b style="font-size:30px;line-height:1.1">' + esc(e.title) + '</b><span class="soft">' + esc(e.when) + ' · Organiza: ' + esc(e.org) + '</span>' +
-      '<span class="row"><span class="btn btn-primary">Ver e inscribirme</span><span class="soft small">' + e.slots + ' de ' + e.max + ' cupos ocupados</span></span></a>';
+      '<span class="row"><span class="btn btn-primary">Ver evento</span><span class="soft small">' + e.slots + ' de ' + e.max + ' cupos ocupados</span></span></a>';
   }
   function eventCard(e) {
     const g = e.game ? gameById(e.game) : null;
     const badge = e.type === 'Torneo' ? 'badge-accent' : 'badge-good';
     const slots = e.max ? e.slots + ' / ' + e.max : (e.slots ? fmt(e.slots) + ' participantes' : 'Sin límite');
-    return '<a class="card card-link" href="detalle-evento.html?id=' + e.id + '" style="padding:0;overflow:hidden;gap:0;flex:1 1 300px">' +
-      '<div style="height:110px;padding:12px;background:' + e.color + '"><span class="badge ' + badge + '">' + e.type.toUpperCase() + '</span></div>' +
+    return '<a class="card card-link" href="evento.html?id=' + e.id + '" style="padding:0;overflow:hidden;gap:0;flex:1 1 300px">' +
+      '<div class="event-art" style="--c:' + e.color + '"><span class="badge ' + badge + '">' + e.type.toUpperCase() + '</span></div>' +
       '<div style="padding:18px;display:flex;flex-direction:column;gap:6px;flex:1"><span class="muted xs">' + esc(g ? g.short : 'Cualquier tienda') + '</span><b style="font-size:19px;line-height:1.2">' + esc(e.title) + '</b>' +
       '<span class="soft small">' + esc(e.when) + '</span><span class="muted xs">' + esc(e.org) + '</span>' +
       '<div class="row between small" style="margin-top:auto;padding-top:10px;border-top:1px solid var(--line)"><span>' + slots + '</span><b style="color:var(--accent-text)">' + esc(e.cost) + '</b></div></div></a>';
@@ -112,7 +116,7 @@ window.SS_PAGES = window.SS_PAGES || {};
       (paidOnly ? '<div class="card" style="border-color:#E0A23B"><b>Este torneo solo admite inscripción de pago.</b><span class="small soft">Mientras conectamos los pagos, mira los eventos gratuitos.</span><a class="link-strong small" href="eventos.html">Ver eventos gratis</a></div>' : '') +
       '</fieldset>' +
       '<label class="check"><input type="checkbox" id="terms"><span>Acepto el reglamento y la política de reembolsos.</span></label><span class="error-text" id="terms-err" hidden>Debes aceptar el reglamento para continuar.</span>' +
-      '<button class="btn btn-primary btn-block" type="submit"' + (paidOnly ? ' disabled' : '') + '>' + (isT ? 'Inscribirme' : 'Confirmar participación') + '</button>';
+      '<button class="btn btn-primary btn-block" type="submit"' + (paidOnly ? ' disabled' : '') + '>' + (isT ? 'Inscribirme' : 'Participar') + '</button>';
 
     $('#join-form').addEventListener('submit', async (ev) => {
       ev.preventDefault();
@@ -131,7 +135,7 @@ window.SS_PAGES = window.SS_PAGES || {};
         pr.xp -= 300; profile.save(pr);
       } else { profile.addXP(100); }
       const j = store.get('joined', []); if (!j.includes(e.id)) j.push(e.id); store.set('joined', j);
-      modal({ icon: 'check', title: isT ? '¡Estás inscrito!' : '¡Ya participas!', text: isT ? 'Tu equipo tiene cupo. Recibirás el recordatorio del check-in.' : 'Te avisaremos por correo si ganas.', actions: [{ label: 'Ver en mi perfil', href: 'perfil.html', primary: true }, { label: 'Seguir explorando', href: 'eventos.html' }] });
+      modal({ icon: 'check', title: isT ? '¡Estás inscrito!' : '¡Ya participas!', text: isT ? 'Tu equipo tiene cupo. Recibirás el recordatorio del check-in y lo verás en Mis eventos de tu perfil.' : 'Te avisaremos por correo si ganas. Lo verás en Mis eventos de tu perfil.', actions: [{ label: 'Listo', primary: true, onClick: () => location.reload() }] });
     });
   };
 
@@ -160,7 +164,7 @@ window.SS_PAGES = window.SS_PAGES || {};
         : '<div class="empty"><b style="color:var(--fg)">No encontramos juegos con esos filtros.</b><span>Revisa la ortografía o quita algún filtro. También puedes preguntarle a MatchPlay.</span><a class="btn btn-secondary btn-sm" href="matchplay.html?q=' + encodeURIComponent(f.q || 'Recomiéndame un juego') + '">Preguntar a MatchPlay</a></div>';
     }
     function resultRow(g) {
-      return '<a class="card card-link" href="detalle-juego.html?id=' + encodeURIComponent(g.id) + '" style="flex-direction:row;align-items:center;gap:18px;flex-wrap:wrap;padding:14px">' +
+      return '<a class="card card-link" href="juego.html?id=' + encodeURIComponent(g.id) + '" style="flex-direction:row;align-items:center;gap:18px;flex-wrap:wrap;padding:14px">' +
         '<span class="cover cover-sm" style="--c:' + g.color + ';width:64px;height:86px"></span>' +
         '<span class="grow" style="display:flex;flex-direction:column;gap:4px;flex:1 1 240px"><b style="font-size:19px">' + esc(g.name) + '</b><span class="muted small">' + esc(g.genres.join(', ')) + ' · ' + (g.year || '') + ' · ' + esc(g.platforms.join(', ')) + '</span>' + (g.type ? '<span><span class="badge badge-outline">' + esc(g.type) + '</span></span>' : '') + '</span>' +
         '<span style="display:grid;grid-template-columns:repeat(3,auto);gap:2px 24px;font-size:13px;color:var(--muted);text-align:right"><span>Nota</span><span>Historia</span><span>Dificultad</span><b class="score" style="font-size:16px">' + score10(g.rating) + '</b><b style="font-size:16px;color:var(--fg)">' + (g.hoursMain ? g.hoursMain + ' h' : 'Online') + '</b><b style="font-size:16px;color:var(--fg)">' + (g.difficulty ? g.difficulty + '/10' : '—') + '</b></span></a>';
@@ -181,7 +185,7 @@ window.SS_PAGES = window.SS_PAGES || {};
       $('#pick').innerHTML = cover(g, { style: 'width:220px;max-width:100%;flex:none' }) +
         '<div class="stack grow" style="flex:999 1 340px;gap:12px"><span class="eyebrow">Tu juego random de ' + esc(genre.toLowerCase()) + '</span><h2 style="font-size:34px">' + esc(g.name) + '</h2><p class="soft">' + esc(g.desc) + '</p>' +
         '<div class="row"><span class="badge badge-outline" style="font-size:14px">Historia: ' + (g.hoursMain ? g.hoursMain + ' h' : 'Online') + '</span><span class="badge badge-outline" style="font-size:14px">Dificultad: ' + g.difficulty + '/10</span><span class="badge badge-outline" style="font-size:14px">Nota: ' + score10(g.rating) + '/10</span></div>' +
-        '<div class="row"><a class="btn btn-primary" href="detalle-juego.html?id=' + g.id + '">Ver juego</a><button class="btn btn-secondary" id="reroll"' + (pool.length < 2 ? ' disabled title="Solo hay un juego de este género por ahora"' : '') + '>Dame otro</button></div></div>';
+        '<div class="row"><a class="btn btn-primary" href="juego.html?id=' + g.id + '">Ver juego</a><button class="btn btn-secondary" id="reroll"' + (pool.length < 2 ? ' disabled title="Solo hay un juego de este género por ahora"' : '') + '>Dame otro</button></div></div>';
       const r = $('#reroll'); if (r) r.addEventListener('click', () => { idx++; render(); });
     }
     box.addEventListener('click', (e) => { const b = e.target.closest('[data-g]'); if (!b) return; genre = b.dataset.g; idx = Math.floor(Math.random() * 3); render(); });
@@ -198,14 +202,14 @@ window.SS_PAGES = window.SS_PAGES || {};
     const p = profile.get();
     $('#band').style.setProperty('--band', 'color-mix(in srgb,' + g.color + ' 55%, #12161D)');
     $('#crumb-genre').textContent = g.genres[0] || 'Juegos';
-    $('#crumb-genre').href = 'buscar-juegos.html?genero=' + encodeURIComponent(g.genres[0] || '');
+    $('#crumb-genre').href = 'buscar.html?genero=' + encodeURIComponent(g.genres[0] || '');
     $('#crumb-title').textContent = g.short;
     $('#g-cover').outerHTML = cover(g, { style: 'width:220px;max-width:100%;flex:none' });
     $('#g-eyebrow').textContent = g.genres.join(' · ') + (g.year ? ' · ' + g.year : '');
     $('#g-title').textContent = g.name;
     $('#g-plats').innerHTML = g.platforms.map((x) => '<span class="badge badge-outline" style="color:#E6EBF1;border-color:rgba(255,255,255,.3)">' + esc(x.toUpperCase()) + '</span>').join('') +
       (g.rating ? '<span style="margin-left:8px"><b class="score">' + score10(g.rating) + '/10</b> <span class="soft small">· nota de la comunidad · ' + fmt(g.votes) + ' calificaciones</span></span>' : '');
-    $('#write').href = 'escribir-resena.html?id=' + g.id;
+    $('#write').href = 'resena.html?id=' + g.id;
     $('#ask').href = 'matchplay.html?q=' + encodeURIComponent('Dame consejos para ' + g.short);
     const wish = $('#wish');
     const inWish = () => profile.get().wishlist.includes(g.id);
@@ -222,7 +226,7 @@ window.SS_PAGES = window.SS_PAGES || {};
       '<div class="fact"><span class="k">Dificultad</span><span class="v">' + (g.difficulty || '—') + '<span class="muted" style="font-size:18px">/10</span></span>' + (g.difficulty ? skulls(g.difficulty) : '') + '<span class="xs muted">Votada por la comunidad</span><button type="button" class="help-link" id="diff-help">¿Cómo se calcula?</button></div>' +
       '<div class="fact"><span class="k">Historia principal</span><span class="v">' + (g.hoursMain ? g.hoursMain + ' h' : 'Online') + '</span><span class="xs muted">Promedio de jugadores</span></div>' +
       '<div class="fact"><span class="k">Completar 100%</span><span class="v">' + (g.hours100 ? g.hours100 + ' h' : '—') + '</span><span class="xs muted">Promedio de jugadores</span></div>' +
-      '<div class="fact" style="border-color:var(--accent)"><span class="k" style="color:var(--accent-text)">Tu progreso</span>' + (auth.user() && mine.length ? '<span class="v">' + mine[0].hours + ' h</span><span class="xs muted">' + esc(mine[0].state) + ' · ' + mine[0].score + '/10</span>' : '<span class="soft small">Vincula tu cuenta o regístralo en tu diario.</span><a class="link-strong small" href="escribir-resena.html?id=' + g.id + '">Registrar juego</a>') + '</div>';
+      '<div class="fact" style="border-color:var(--accent)"><span class="k" style="color:var(--accent-text)">Tu progreso</span>' + (auth.user() && mine.length ? '<span class="v">' + mine[0].hours + ' h</span><span class="xs muted">' + esc(mine[0].state) + ' · ' + mine[0].score + '/10</span>' : '<span class="soft small">Vincula tu cuenta o regístralo en tu diario.</span><a class="link-strong small" href="resena.html?id=' + g.id + '">Registrar juego</a>') + '</div>';
 
     const dh = $('#diff-help');
     if (dh) dh.addEventListener('click', () => modal({ title: 'Dificultad de 1 a 10', text: 'Es el promedio de lo que votan los jugadores al reseñar: 1 es relajado y 10 es brutal. Las horas son el promedio de quienes registraron el juego en su diario.', actions: [{ label: 'Entendido', primary: true }] }));
@@ -231,8 +235,8 @@ window.SS_PAGES = window.SS_PAGES || {};
     const guides = DATA.guides.filter((x) => x.game === g.id);
     const ach = DATA.achievements.filter((x) => x.game === g.id);
     const panels = {
-      rev: () => reviews.length ? reviews.map((r) => reviewCard(r)).join('') : '<div class="empty"><b style="color:var(--fg)">Todavía no hay reseñas.</b><span>Sé la primera persona en reseñar este juego.</span><a class="btn btn-primary btn-sm" href="escribir-resena.html?id=' + g.id + '">Escribir reseña</a></div>',
-      gui: () => guides.length ? guides.map((x) => '<div class="card"><div class="row between"><b>' + esc(x.title) + '</b><span class="muted small">' + x.mins + ' min</span></div><span class="ok-text">' + x.useful + '% la marcó como útil</span></div>').join('') : '<div class="empty">Aún no hay guías. <a class="link-strong" href="escribir-resena.html?id=' + g.id + '&tipo=guia">Escribir la primera</a></div>',
+      rev: () => reviews.length ? reviews.map((r) => reviewCard(r)).join('') : '<div class="empty"><b style="color:var(--fg)">Todavía no hay reseñas.</b><span>Sé la primera persona en reseñar este juego.</span><a class="btn btn-primary btn-sm" href="resena.html?id=' + g.id + '">Escribir reseña</a></div>',
+      gui: () => guides.length ? guides.map((x) => '<div class="card"><div class="row between"><b>' + esc(x.title) + '</b><span class="muted small">' + x.mins + ' min</span></div><span class="ok-text">' + x.useful + '% la marcó como útil</span></div>').join('') : '<div class="empty">Aún no hay guías. <a class="link-strong" href="resena.html?id=' + g.id + '&tipo=guia">Escribir la primera</a></div>',
       cli: () => '<div class="empty"><b style="color:var(--fg)">Los clips llegarán con la API de Twitch.</b><span>Mientras tanto puedes subir el tuyo desde “Escribir reseña › Clip”.</span></div>',
       ach: () => ach.length ? ach.map((a) => '<div class="card" style="flex-direction:row;align-items:center;gap:12px"><span class="avatar" style="border-radius:8px;width:44px;height:44px;background:' + (a.got ? 'var(--accent)' : 'var(--surface-2)') + ';color:' + (a.got ? 'var(--accent-ink)' : 'var(--muted)') + '">' + (a.got ? '✓' : '?') + '</span><span class="grow"><b>' + esc(a.name) + '</b><br><span class="small muted">' + esc(a.desc) + '</span></span><span class="small muted">' + String(a.pct).replace('.', ',') + '% lo tiene</span></div>').join('') : '<div class="empty">No hay logros registrados para este juego.</div>'
     };
@@ -244,7 +248,7 @@ window.SS_PAGES = window.SS_PAGES || {};
 
     $('#ficha').innerHTML = [['Desarrolla', g.dev || '—'], ['Lanzamiento', g.year || '—'], ['Género', g.genres.join(', ')], ['Tipo', g.type || '—'], ['Plataformas', g.platforms.join(', ')]].map((r) => '<dt class="muted">' + r[0] + '</dt><dd style="margin:0">' + esc(r[1]) + '</dd>').join('');
     const similar = DATA.games.filter((x) => x.id !== g.id && x.genres.some((y) => g.genres.includes(y))).slice(0, 3);
-    $('#similar').innerHTML = similar.map((s) => '<a class="row" style="color:var(--fg);flex-wrap:nowrap" href="detalle-juego.html?id=' + s.id + '">' + cover(s, { small: true }) + '<span style="line-height:1.3"><b>' + esc(s.short) + '</b><br><span class="small muted">' + esc(s.genres.join(', ')) + '</span></span></a>').join('') || '<span class="muted small">Sin sugerencias por ahora.</span>';
+    $('#similar').innerHTML = similar.map((s) => '<a class="row" style="color:var(--fg);flex-wrap:nowrap" href="juego.html?id=' + s.id + '">' + cover(s, { small: true }) + '<span style="line-height:1.3"><b>' + esc(s.short) + '</b><br><span class="small muted">' + esc(s.genres.join(', ')) + '</span></span></a>').join('') || '<span class="muted small">Sin sugerencias por ahora.</span>';
   };
 
   // ---------- Escribir reseña / guía / clip ----------
@@ -255,11 +259,20 @@ window.SS_PAGES = window.SS_PAGES || {};
     let score = 8, diff = g.difficulty || 5, like = false;
     $('#r-cover').outerHTML = '<span class="cover cover-sm" style="--c:' + g.color + ';width:64px;height:86px" aria-hidden="true"></span>';
     $('#r-title').textContent = g.name;
-    $('#cancel').href = 'detalle-juego.html?id=' + g.id;
+    $('#cancel').href = 'juego.html?id=' + g.id;
     $('#fecha').value = new Date().toISOString().slice(0, 10);
     $('#fecha').max = $('#fecha').value;
     const draftKey = 'draft.' + g.id;
-    const draft = store.get(draftKey, null);
+    const editId = params.get('editar');
+    const editing = editId ? RV.raw().find((r) => r.id === editId && r.game === g.id) : null;
+    const draft = editing ? null : store.get(draftKey, null);
+    if (editing) {
+      score = editing.score; diff = editing.diff || diff;
+      $('#txt').value = editing.text; $('#horas').value = editing.hours || ''; $('#spoiler').checked = !!editing.spoiler;
+      if (editing.state) $('#estado').value = editing.state; if (editing.date) $('#fecha').value = editing.date;
+      $('#kind').hidden = true; $('#save-draft').hidden = true; $('#cancel').href = 'historial.html';
+      $('#review-form button[type="submit"]').textContent = 'Guardar cambios';
+    }
     if (draft) { $('#txt').value = draft.text || ''; $('#tit').value = draft.title || ''; $('#saved').hidden = false; }
 
     function scoreButtons(el, cur, cls, label) {
@@ -286,6 +299,7 @@ window.SS_PAGES = window.SS_PAGES || {};
     }
     $('#kind').addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (b) setKind(b.dataset.k); });
     setKind(kind);
+    if (editing) $('#eyebrow').textContent = 'Editar reseña';
 
     const txt = $('#txt');
     const count = () => {
@@ -305,17 +319,24 @@ window.SS_PAGES = window.SS_PAGES || {};
       txt.setAttribute('aria-invalid', bad); $('#txt-err').hidden = !bad;
       if (bad) { txt.focus(); return; }
       if (!auth.require('publicar tu ' + (kind === 'guia' ? 'guía' : 'reseña'))) return;
-      const u = auth.user();
+      const fields = { hours: Number($('#horas').value) || 0, score: score, diff: diff, spoiler: $('#spoiler').checked, text: txt.value.trim(), state: $('#estado').value, date: $('#fecha').value };
+      if (editing) {
+        await busy($('#review-form button[type="submit"]'), 'Guardando…', 400);
+        const list = RV.raw(); const i = list.findIndex((r) => r.id === editing.id); Object.assign(list[i], fields, { edited: true }); RV.save(list);
+        modal({ icon: 'check', title: 'Reseña actualizada', text: 'Los cambios ya se ven en tu historial y en la página del juego.', actions: [{ label: 'Ver reseña', href: 'ver-resena.html?id=' + editing.id, primary: true }, { label: 'Ir al historial', href: 'historial.html' }] });
+        return;
+      }
       await busy($('#review-form button[type="submit"]'), 'Publicando…', 500);
+      let newId = null;
       if (kind === 'resena') {
-        const list = store.get('reviews', []);
-        list.unshift({ game: g.id, user: u.user, initials: u.initials, hours: Number($('#horas').value) || 0, score: score, diff: diff, useful: 0, spoiler: $('#spoiler').checked, text: txt.value.trim() });
-        store.set('reviews', list);
+        const list = RV.raw(); newId = 'u' + Date.now();
+        list.unshift(Object.assign({ id: newId, game: g.id, useful: 0, likes: 0 }, fields));
+        RV.save(list);
       }
       diary.add({ game: g.id, date: $('#fecha').value, state: $('#estado').value, hours: Number($('#horas').value) || 0, score: score, like: like, review: kind === 'resena' });
       store.set(draftKey, null);
       const pr = profile.addXP(50);
-      modal({ icon: 'check', title: (kind === 'guia' ? 'Guía' : 'Reseña') + ' publicada', text: 'Ganaste 50 XP. Vas en ' + fmt(pr.xp) + ' / 1.500 XP del nivel ' + pr.level + '.', actions: [{ label: 'Ver en el juego', href: 'detalle-juego.html?id=' + g.id, primary: true }, { label: 'Ver mi diario', href: 'diario.html' }] });
+      modal({ icon: 'check', title: (kind === 'guia' ? 'Guía' : 'Reseña') + ' publicada', text: 'Ganaste 50 XP. Vas en ' + fmt(pr.xp) + ' / 1.500 XP del nivel ' + pr.level + '.', actions: newId ? [{ label: 'Ver mi reseña', href: 'ver-resena.html?id=' + newId, primary: true }, { label: 'Ir al historial', href: 'historial.html' }] : [{ label: 'Ver en el juego', href: 'juego.html?id=' + g.id, primary: true }, { label: 'Ver mi diario', href: 'diario.html' }] });
     });
   };
 
@@ -324,14 +345,15 @@ window.SS_PAGES = window.SS_PAGES || {};
     let tab = 'rev', sort = 'utiles';
     function render() {
       $$('#com-tabs [role="tab"]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === tab));
-      $('#com-sort-wrap').hidden = tab !== 'rev';
-      if (tab === 'rev') {
-        const all = userReviews().concat(DATA.reviews);
-        if (sort === 'utiles') all.sort((a, b) => (b.useful || 0) - (a.useful || 0));
-        $('#com-list').innerHTML = all.map((r) => reviewCard(r, { showGame: true })).join('');
+      $('#com-sort-wrap').hidden = tab === 'gui';
+      if (tab !== 'gui') {
+        let all = userReviews().concat(DATA.reviews);
+        if (tab === 'ami') all = DATA.reviews.filter((r) => friends.rel(r.user) === 'friend');
+        all.sort(sort === 'utiles' ? (a, b) => (b.useful || 0) - (a.useful || 0) : (a, b) => String(b.date).localeCompare(String(a.date)));
+        $('#com-list').innerHTML = all.map((r) => reviewCard(r, { showGame: true })).join('') || '<div class="empty">Tus amigos todavía no publican reseñas. <a class="link-strong" href="amigos.html">Busca amigos</a></div>';
         bindReviewActions($('#com-list'));
       } else {
-        $('#com-list').innerHTML = DATA.guides.map((x) => { const g = gameById(x.game); return '<a class="card card-link" href="detalle-juego.html?id=' + g.id + '"><span class="xs muted">' + esc(g.short.toUpperCase()) + ' · ' + x.mins + ' MIN</span><b style="font-size:18px">' + esc(x.title) + '</b><span class="ok-text">' + x.useful + '% la marcó como útil</span></a>'; }).join('');
+        $('#com-list').innerHTML = DATA.guides.map((x) => { const g = gameById(x.game); return '<a class="card card-link" href="juego.html?id=' + g.id + '"><span class="xs muted">' + esc(g.short.toUpperCase()) + ' · ' + x.mins + ' MIN</span><b style="font-size:18px">' + esc(x.title) + '</b><span class="ok-text">' + x.useful + '% la marcó como útil</span></a>'; }).join('');
       }
     }
     $('#com-tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
@@ -343,14 +365,14 @@ window.SS_PAGES = window.SS_PAGES || {};
   P.logros = function () {
     let plat = 'Todas';
     const rows = [
-      { game: 'zelda-totk', got: 86, total: 139, plat: 'Nintendo' }, { game: 'fnaf-into-the-pit', got: 24, total: 38, plat: 'Steam' },
-      { game: 'nier-automata', got: 17, total: 47, plat: 'Steam' }, { game: 'rocket-league', got: 16, total: 88, plat: 'Steam' }, { game: 'hollow-knight', got: 41, total: 63, plat: 'Steam' }
+      { game: 'zelda-totk', got: 86, total: 139, plat: 'Nintendo' }, { game: 'fnaf-into-the-pit', got: 24, total: 24, plat: 'Steam' },
+      { game: 'nier-automata', got: 17, total: 50, plat: 'Steam' }, { game: 'rocket-league', got: 16, total: 88, plat: 'Steam' }, { game: 'hollow-knight', got: 41, total: 63, plat: 'Steam' }
     ];
     function render() {
       const list = rows.filter((r) => plat === 'Todas' || r.plat === plat);
       $('#by-game').innerHTML = list.length ? list.map((r) => {
         const g = gameById(r.game); const pct = Math.round(r.got / r.total * 100);
-        return '<a class="card card-link" href="detalle-juego.html?id=' + g.id + '" style="flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap">' + cover(g, { small: true }) +
+        return '<a class="card card-link" href="juego.html?id=' + g.id + '" style="flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap">' + cover(g, { small: true }) +
           '<span class="grow" style="flex:1 1 220px;display:flex;flex-direction:column;gap:6px"><b style="font-size:18px">' + esc(g.short) + '</b><span class="meter' + (pct === 100 ? ' good' : '') + '" style="max-width:420px"><i style="width:' + pct + '%"></i></span></span>' +
           '<span>' + (pct === 100 ? '<b class="score">100%</b> · ' : '') + '<b>' + r.got + '</b> <span class="muted">/ ' + r.total + '</span></span><span class="badge badge-outline">' + r.plat.toUpperCase() + '</span></a>';
       }).join('') : '<div class="empty">No tienes logros sincronizados de ' + esc(plat) + '. <a class="link-strong" href="editar-perfil.html#cuentas">Vincular cuenta</a></div>';

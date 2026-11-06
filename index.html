@@ -19,7 +19,8 @@
 <body data-page="inicio" data-section="inicio">
 
 <main class="container page">
-  <section class="stack" style="gap:18px;align-items:flex-start">
+  <section class="home-hero">
+   <div class="stack" style="gap:18px;align-items:flex-start;position:relative;z-index:1">
     <span class="eyebrow">Tu solución gamer</span>
     <h1 style="font-size:clamp(34px,5vw,52px);letter-spacing:-.02em;max-width:820px">Todo sobre tus juegos y sus comunidades, en un solo lugar.</h1>
     <form class="search-big" action="pages/buscar-juegos.html" role="search">
@@ -33,6 +34,12 @@
       <a class="chip" href="pages/matchplay.html?q=Recomi%C3%A9ndame%20algo%20corto%20para%20el%20finde">Recomiéndame algo corto</a>
       <a class="chip" href="pages/eventos.html">Torneos de esta semana</a>
     </div>
+   </div>
+   <div class="hero-art" aria-hidden="true">
+     <div class="cover" style="--c:#2F6B4F;background-image:url(assets/portada-zelda-totk.jpg);background-size:cover;background-position:center"><b>Zelda: TOTK</b></div>
+     <div class="cover" style="--c:#8A2B2B;background-image:url(assets/portada-hades.jpg);background-size:cover;background-position:center"><b>Hades</b></div>
+     <div class="cover" style="--c:#2B3A55;background-image:url(assets/portada-hollow-knight.jpg);background-size:cover;background-position:center"><b>Hollow Knight</b></div>
+   </div>
   </section>
 
   <section class="section" id="recent-wrap" hidden>

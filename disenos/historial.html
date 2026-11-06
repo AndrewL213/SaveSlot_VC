@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Historial de reseñas · SaveSlot</title>
+<meta name="description" content="Todas tus reseñas: filtra, edita o elimina y mira cómo las recibió la comunidad.">
+<meta name="theme-color" content="#12161D">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-page="historial" data-section="perfil">
+
+<main>
+  <section class="page-hero" style="--c:#2F6B4F">
+    <div class="container">
+      <nav class="crumbs" aria-label="Ruta"><a href="perfil.html">Mi perfil</a><span aria-hidden="true">/</span><span style="color:var(--fg)">Historial de reseñas</span></nav>
+      <div class="row between" style="align-items:flex-end;gap:24px">
+        <div class="stack" style="gap:8px"><span class="eyebrow">Lo que escribiste</span><h1 class="page-title">Historial de reseñas</h1><p class="soft" style="max-width:56ch">Todas tus reseñas en un solo lugar. Edítalas, elimínalas o mira cómo las recibió la comunidad.</p></div>
+        <a class="btn btn-primary" href="buscar.html">+ Escribir reseña</a>
+      </div>
+      <div class="stat-strip" id="h-stats" aria-label="Resumen"></div>
+    </div>
+  </section>
+  <div class="container page" style="padding-top:28px;gap:20px">
+    <div class="filter-bar" role="search">
+      <label class="header-search field-search" style="flex:1 1 240px;min-height:44px"><span class="sr-only">Buscar por juego o texto</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA8B8" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="h-q" type="search" placeholder="Buscar por juego o texto"></label>
+      <div class="row chips-scroll" style="gap:6px" id="h-score" role="group" aria-label="Filtrar por nota">
+        <button class="chip" data-s="all" aria-pressed="true">Todas</button><button class="chip" data-s="9" aria-pressed="false">9–10</button><button class="chip" data-s="7" aria-pressed="false">7–8</button><button class="chip" data-s="0" aria-pressed="false">6 o menos</button>
+      </div>
+      <div class="row"><label for="h-sort" class="small muted">Ordenar</label><select class="select" id="h-sort" style="min-height:44px;padding:8px 12px;background:var(--surface)"><option value="recientes">Más recientes</option><option value="nota">Mejor nota</option><option value="utiles">Más útiles</option><option value="antiguas">Más antiguas</option></select></div>
+    </div>
+    <span class="small muted" id="h-count" aria-live="polite"></span>
+    <div class="stack" style="gap:14px" id="h-list"></div>
+  </div>
+</main>
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pages-juegos.js"></script>
+<script src="js/pages-cuenta.js"></script>
+<script src="js/pages-social.js"></script>
+</body>
+</html>

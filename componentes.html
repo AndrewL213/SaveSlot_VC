@@ -79,6 +79,11 @@
   <section class="cat-seccion" id="colores">
     <h2>Colores</h2>
     <div class="cat-rejilla" id="muestras-colores"></div>
+    <div class="cat-componente">
+      <h3>Degradados, brillos y texturas</h3>
+      <p>El fondo de la página usa <code>--fondo-pagina</code> (dos luces y un degradado de arriba hacia abajo) y la trama <code>--textura-puntos</code>: es el fondo de este catálogo.</p>
+      <div class="cat-rejilla" id="muestras-degradados"></div>
+    </div>
   </section>
 
   <!-- ============ TIPOGRAFÍA ============ -->
@@ -122,8 +127,20 @@
     <div class="cat-componente">
       <h3>Sombras</h3>
       <div class="cat-ejemplo">
+        <div class="tarjeta" style="box-shadow: var(--sombra-reposo)"><code>--sombra-reposo</code>Relieve de tarjetas y paneles</div>
         <div class="tarjeta" style="box-shadow: var(--sombra-suave)"><code>--sombra-suave</code>Hover de tarjetas y portadas</div>
         <div class="tarjeta" style="box-shadow: var(--sombra-media)"><code>--sombra-media</code>Modales y avisos flotantes</div>
+        <div class="tarjeta" style="box-shadow: var(--sombra-boton-primario)"><code>--sombra-boton-primario</code>Botón principal</div>
+        <div class="tarjeta" style="box-shadow: var(--sombra-nota)"><code>--sombra-nota</code>Nota en pastilla</div>
+        <div class="tarjeta" style="box-shadow: var(--anillo-foco)"><code>--anillo-foco</code>Campos con foco</div>
+      </div>
+    </div>
+    <div class="cat-componente">
+      <h3>Halos</h3>
+      <div class="cat-ejemplo">
+        <span class="cat-caja" style="border-radius: var(--radio-total); background: var(--color-primario); box-shadow: var(--halo-primario)"></span><code>--halo-primario</code>
+        <span class="cat-caja" style="border-radius: var(--radio-total); background: var(--color-exito); box-shadow: var(--halo-exito)"></span><code>--halo-exito</code>
+        <span class="cat-caja" style="border-radius: var(--radio-total); background: var(--color-secundario); box-shadow: var(--halo-secundario)"></span><code>--halo-secundario</code>
       </div>
     </div>
   </section>
@@ -133,6 +150,25 @@
     <h2>Componentes</h2>
 
     <div class="cat-componente">
+      <h3>Títulos de página · <code>.antetitulo</code> y <code>.titulo-pagina</code></h3>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <span class="antetitulo">Tu gente</span>
+        <h1 class="titulo-pagina">Amigos</h1>
+        <h1 class="titulo-pagina titulo-pagina--grande">Todo sobre tus juegos</h1>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Encabezado de sección · <code>.encabezado-seccion</code></h3>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="encabezado-seccion">
+          <h2 class="encabezado-seccion__titulo">Mejores juegos de la semana</h2>
+          <a class="encabezado-seccion__enlace" href="#componentes">Ver ranking completo</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
       <h3>Botón · <code>.boton</code></h3>
       <p>Principal, secundario, fantasma y peligro, en tamaño normal (48 px) y pequeño (40 px).</p>
       <div class="cat-ejemplo" data-codigo>
@@ -140,6 +176,7 @@
         <button class="boton boton--secundario" type="button">Secundario</button>
         <button class="boton boton--fantasma" type="button">Fantasma</button>
         <button class="boton boton--peligro" type="button">Desvincular</button>
+        <button class="boton boton--secundario" type="button" aria-pressed="true">Útil · presionado</button>
       </div>
       <div class="cat-ejemplo" data-codigo>
         <button class="boton boton--sm" type="button">Principal pequeño</button>
@@ -217,7 +254,36 @@
         <span class="etiqueta etiqueta--error">Sin conexión</span>
         <span class="etiqueta etiqueta--aviso">Pendiente</span>
         <span class="etiqueta etiqueta--ia">IA</span>
+        <span class="etiqueta etiqueta--amigo">Amigo</span>
         <span class="etiqueta etiqueta--contorno">PC</span>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Contador · <code>.contador</code></h3>
+      <p>Número pequeño en píldora. El destacado marca algo nuevo (por ejemplo, solicitudes pendientes).</p>
+      <div class="cat-ejemplo" data-codigo>
+        <span class="contador">12</span>
+        <span class="contador contador--destacado">3</span>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Nota · <code>.nota</code> y <code>.nota-anillo</code></h3>
+      <p>Pastilla en listas y tarjetas, solo el número en texto, y el anillo grande del detalle de una reseña (se llena con <code>--p</code>, de 0 a 100).</p>
+      <div class="cat-ejemplo" data-codigo>
+        <span class="nota">9<small>/10</small></span>
+        <span class="nota nota--texto">8,6</span>
+        <div class="nota-anillo" style="--p: 90" role="img" aria-label="Nota 9 de 10"><b>9</b><span>de 10</span></div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Estado de una persona · <code>.estado</code></h3>
+      <div class="cat-ejemplo" data-codigo>
+        <span class="estado estado--jugando">Jugando Hades</span>
+        <span class="estado estado--en-linea">En línea</span>
+        <span class="estado estado--desconectado">Desconectado</span>
       </div>
     </div>
 
@@ -244,12 +310,51 @@
           <p class="tarjeta__texto">Se eleva al pasar el mouse.</p>
         </a>
       </div>
+      <p>Reseña: la franja de la izquierda toma el color del juego (<code>--c</code>).</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <article class="tarjeta tarjeta--resena" style="--c: #8A2B2B">
+          <div class="tarjeta-amigo__cabeza"><span class="avatar avatar--sm">KV</span><b>kenvel</b><span class="nota" style="margin-left: auto">9<small>/10</small></span></div>
+          <p class="tarjeta__texto">Cada intento enseña algo nuevo. El mejor roguelike para empezar.</p>
+        </article>
+      </div>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
         <article class="tarjeta tarjeta--destacada">
           <span class="etiqueta etiqueta--primario">Evento del mes</span>
           <h3 class="tarjeta__titulo">Copa SaveSlot de Rocket League 2v2</h3>
           <p class="tarjeta__texto">Sábado 17 de octubre · 3:00 p. m.</p>
         </article>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Tarjeta de amigo · <code>.tarjeta-amigo</code></h3>
+      <p>Normal y jugando: la que está jugando toma un tinte del color del juego (<code>--c</code>).</p>
+      <div class="cat-ejemplo" data-codigo>
+        <article class="tarjeta-amigo">
+          <div class="tarjeta-amigo__cabeza">
+            <span class="avatar avatar--md avatar--en-linea">JV<span class="avatar__punto"></span></span>
+            <div><h3 class="tarjeta-amigo__nombre">juanvi</h3><span class="estado estado--en-linea">En línea</span></div>
+          </div>
+          <a class="boton boton--secundario boton--sm" href="#componentes">Ver perfil</a>
+        </article>
+        <article class="tarjeta-amigo tarjeta-amigo--jugando" style="--c: #2B3A55">
+          <div class="tarjeta-amigo__cabeza">
+            <span class="avatar avatar--md avatar--jugando">KV<span class="avatar__punto"></span></span>
+            <div><h3 class="tarjeta-amigo__nombre">kenvel</h3><span class="estado estado--jugando">Jugando Hollow Knight</span></div>
+          </div>
+          <a class="boton boton--secundario boton--sm" href="#componentes">Ver perfil</a>
+        </article>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Fila · <code>.fila</code></h3>
+      <p>Elemento de una lista: comentario (normal), comparación de notas, actividad y "jugando ahora".</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="fila"><span class="avatar avatar--sm">ML</span><div><b>mlopez</b><p class="tarjeta__texto">Totalmente de acuerdo con lo del final.</p></div></div>
+        <a class="fila fila--comparacion" href="#componentes"><span class="portada portada--sm" style="background-image: url(assets/portada-hades.jpg)" aria-hidden="true"></span><b>Hades</b><span class="nota" style="margin-left: auto">9<small>/10</small></span><span class="nota nota--texto">8</span></a>
+        <a class="fila fila--actividad" href="#componentes"><span class="avatar avatar--sm">JV</span><span>juanvi reseñó <b>Rocket League</b></span></a>
+        <a class="fila fila--jugando" href="#componentes"><span class="portada portada--sm" style="background-image: url(assets/portada-hollow-knight.jpg)" aria-hidden="true"></span><span><span class="estado estado--jugando">Jugando ahora</span><br><b>Hollow Knight</b></span></a>
       </div>
     </div>
 
@@ -276,9 +381,9 @@
       <p>La activa lleva <code>aria-selected="true"</code>. Haz clic para probar.</p>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
         <div class="pestanas" role="tablist">
-          <button class="pestanas__boton" role="tab" aria-selected="true">Reseñas</button>
-          <button class="pestanas__boton" role="tab" aria-selected="false">Guías</button>
-          <button class="pestanas__boton" role="tab" aria-selected="false">Logros</button>
+          <button class="pestanas__boton" role="tab" aria-selected="true">Reseñas <span class="contador">12</span></button>
+          <button class="pestanas__boton" role="tab" aria-selected="false">Guías <span class="contador">4</span></button>
+          <button class="pestanas__boton" role="tab" aria-selected="false">Solicitudes <span class="contador contador--destacado">2</span></button>
         </div>
       </div>
     </div>
@@ -317,7 +422,7 @@
         <div class="cat-portadas">
           <a class="portada portada--enlace" href="#componentes" style="background-image: url(assets/portada-hollow-knight.jpg)"><span class="portada__ranking">#1</span><b class="portada__titulo">Hollow Knight</b></a>
           <a class="portada portada--enlace" href="#componentes" style="background-image: url(assets/portada-hades.jpg)"><span class="portada__ranking">#2</span><b class="portada__titulo">Hades</b></a>
-          <div class="portada"><b class="portada__titulo">Sin imagen</b></div>
+          <div class="portada" style="--c: #5B3F96"><b class="portada__titulo">Respaldo: sin imagen todavía</b></div>
         </div>
       </div>
       <div class="cat-ejemplo" data-codigo>
@@ -328,15 +433,29 @@
 
     <div class="cat-componente">
       <h3>Avatar · <code>.avatar</code></h3>
-      <p>Con iniciales, cuando la persona no tiene foto:</p>
+      <p>Cuatro tamaños: 32, 40, 56 y 128 px. Con iniciales, cuando la persona no tiene foto:</p>
       <div class="cat-ejemplo" data-codigo>
+        <span class="avatar avatar--sm">SL</span>
         <span class="avatar">SL</span>
+        <span class="avatar avatar--md">SL</span>
         <span class="avatar avatar--lg">SL</span>
       </div>
       <p>Con foto de perfil (se recorta en círculo sin deformarse). El <code>alt</code> dice de quién es la foto:</p>
       <div class="cat-ejemplo" data-codigo>
+        <span class="avatar avatar--sm"><img src="assets/avatar-prueba.jpg" alt="Foto de perfil de samluq"></span>
         <span class="avatar"><img src="assets/avatar-prueba.jpg" alt="Foto de perfil de samluq"></span>
+        <span class="avatar avatar--md"><img src="assets/avatar-prueba.jpg" alt="Foto de perfil de samluq"></span>
         <span class="avatar avatar--lg"><img src="assets/avatar-prueba.jpg" alt="Foto de perfil de samluq"></span>
+      </div>
+      <p>Con anillo de estado y punto opcional: jugando, en línea y desconectado.</p>
+      <div class="cat-ejemplo" data-codigo>
+        <span class="avatar avatar--md avatar--jugando"><img src="assets/avatar-prueba.jpg" alt="samluq, jugando"><span class="avatar__punto"></span></span>
+        <span class="avatar avatar--md avatar--en-linea">JV<span class="avatar__punto"></span></span>
+        <span class="avatar avatar--md avatar--desconectado">ML<span class="avatar__punto"></span></span>
+      </div>
+      <p>Avatar de la IA de MatchPlay:</p>
+      <div class="cat-ejemplo" data-codigo>
+        <span class="avatar avatar--ia" aria-label="MatchPlay">IA</span>
       </div>
     </div>
 
@@ -401,12 +520,23 @@
   function valor(nombre) { return raiz.getPropertyValue(nombre).trim(); }
 
   var colores = ['--color-primario', '--color-primario-hover', '--color-secundario', '--color-texto-sobre-primario',
-    '--color-fondo', '--color-superficie', '--color-superficie-elevada', '--color-borde',
-    '--color-texto', '--color-texto-suave', '--color-exito', '--color-error', '--color-aviso'];
-  document.getElementById('muestras-colores').innerHTML = colores.map(function (c) {
-    return '<div class="cat-muestra"><div class="cat-muestra__color" style="background: var(' + c + ')"></div>' +
+    '--color-fondo', '--color-fondo-arriba', '--color-fondo-medio', '--color-superficie', '--color-superficie-elevada',
+    '--color-borde', '--color-borde-hover', '--color-borde-activo',
+    '--color-texto', '--color-texto-suave', '--color-exito', '--color-exito-texto', '--color-error', '--color-aviso',
+    '--color-estado-jugando', '--color-estado-en-linea', '--color-estado-desconectado',
+    '--color-primario-tinte', '--color-exito-tinte', '--color-exito-linea', '--color-secundario-tinte',
+    '--velo', '--velo-fuerte', '--vidrio', '--vidrio-fuerte'];
+  var degradados = ['--degradado-primario', '--degradado-exito', '--degradado-secundario', '--degradado-superficie',
+    '--degradado-superficie-elevada', '--degradado-superficie-hover', '--degradado-claro', '--degradado-titulo',
+    '--degradado-numero', '--degradado-etiqueta', '--brillo', '--brillo-suave', '--textura-lineas'];
+  // Las transparencias se muestran sobre el fondo de la página para que se vean como en la app.
+  function muestra(c, esDegradado) {
+    var capa = esDegradado ? 'var(' + c + ')' : 'linear-gradient(var(' + c + '), var(' + c + '))';
+    return '<div class="cat-muestra"><div class="cat-muestra__color" style="background: ' + capa + ', var(--color-fondo)"></div>' +
       '<div class="cat-muestra__info"><b>' + c + '</b><code>' + valor(c) + '</code></div></div>';
-  }).join('');
+  }
+  document.getElementById('muestras-colores').innerHTML = colores.map(function (c) { return muestra(c, false); }).join('');
+  document.getElementById('muestras-degradados').innerHTML = degradados.map(function (c) { return muestra(c, true); }).join('');
 
   var tamanos = [['--texto-3xl', 'Título grande'], ['--texto-2xl', 'Título de página'], ['--texto-xl', 'Título de sección'],
     ['--texto-lg', 'Texto destacado'], ['--texto-base', 'Texto de párrafo'], ['--texto-sm', 'Texto pequeño'], ['--texto-xs', 'Nota']];

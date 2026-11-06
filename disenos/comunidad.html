@@ -19,15 +19,15 @@
 <body data-page="comunidad" data-section="comunidad">
 
 <main class="container page" style="gap:24px">
-  <div class="stack" style="gap:8px"><h1 class="page-title">Comunidad</h1><p class="muted" style="font-size:17px">Reseñas y guías escritas por jugadores. Vota las que te sirvan.</p></div>
+  <div class="stack page-intro" style="gap:8px"><span class="eyebrow">Reseñas · guías · amigos</span><h1 class="page-title">Comunidad</h1><p class="muted" style="font-size:17px">Reseñas y guías escritas por jugadores. Vota las que te sirvan.</p></div>
   <div class="row between">
     <div class="tabs" role="tablist" aria-label="Contenido de la comunidad" id="com-tabs" style="border:0">
-      <button role="tab" data-tab="rev" aria-selected="true">Reseñas</button><button role="tab" data-tab="gui" aria-selected="false">Guías</button>
+      <button role="tab" data-tab="rev" aria-selected="true">Reseñas</button><button role="tab" data-tab="ami" aria-selected="false">De tus amigos</button><button role="tab" data-tab="gui" aria-selected="false">Guías</button>
     </div>
     <div class="row" id="com-sort-wrap"><label for="com-sort" class="small muted">Ordenar</label><select class="select" id="com-sort" style="min-height:44px;padding:8px 12px;background:var(--surface)"><option value="utiles">Más útiles</option><option value="recientes">Más recientes</option></select></div>
   </div>
   <div class="grid g-auto-300" id="com-list" aria-live="polite"></div>
-  <a class="btn btn-primary" href="buscar-juegos.html" style="align-self:flex-start">Escribir una reseña</a>
+  <div class="row"><a class="btn btn-primary" href="buscar.html">Escribir una reseña</a><a class="btn btn-secondary" href="historial.html">Mi historial de reseñas</a><a class="btn btn-secondary" href="amigos.html">Mis amigos</a></div>
 </main>
 <script src="js/config.js"></script>
 <script src="js/data.js"></script>
@@ -35,5 +35,6 @@
 <script src="js/app.js"></script>
 <script src="js/pages-juegos.js"></script>
 <script src="js/pages-cuenta.js"></script>
+<script src="js/pages-social.js"></script>
 </body>
 </html>
