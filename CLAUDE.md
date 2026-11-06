@@ -73,6 +73,8 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<div class="grupo-campo"><label class="grupo-campo__etiqueta" for="c">Correo</label><input class="campo" id="c" type="email"></div>`
 - `.escala` (+ `--dificultad`) con `.escala__opcion` (elegida con `aria-pressed="true"`; en dificultad, las anteriores con `--llena`):
   `<div class="escala" role="group" aria-label="Tu calificación"><button class="escala__opcion" type="button" aria-pressed="false">1</button>…</div>`
+- `.opcion` (+ `--desactivada`) con `.opcion__texto` (radio dentro de una tarjeta):
+  `<label class="opcion"><input type="radio" name="modo" value="xp"><span class="opcion__texto"><b>Gratis</b></span></label>`
 - `.casilla` (checkbox con su texto; se agrupan en `fieldset.grupo-campo` con `legend.grupo-campo__etiqueta`):
   `<label class="casilla"><input type="checkbox" name="genero" value="RPG">RPG</label>`
 - `.buscador` (+ `--ia`, borde morado para escribirle a MatchPlay) con `.buscador__campo`:
@@ -87,7 +89,7 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<span class="nota">9<small>/10</small></span>` · `<div class="nota-anillo" style="--p:90"><b>9</b><span>de 10</span></div>`
 - `.estado` (+ `--jugando`, `--en-linea`, `--desconectado`):
   `<span class="estado estado--jugando">Jugando Hades</span>`
-- `.tarjeta` (+ `--enlace`, `--destacada` con `--c`, `--resena` con `--c`) con `.tarjeta__titulo`, `.tarjeta__texto` y `.tarjeta__banda` (banda de color arriba, con `--c`):
+- `.tarjeta` (+ `--enlace`, `--destacada` con `--c`, `--resena` con `--c`, `--exito` y `--aviso` con borde de color) con `.tarjeta__titulo`, `.tarjeta__texto`, `.tarjeta__pie` (línea arriba y valor en azul) y `.tarjeta__banda` (banda de color arriba, con `--c`):
   `<article class="tarjeta tarjeta--resena" style="--c:#8A2B2B"><h3 class="tarjeta__titulo">Hades</h3><p class="tarjeta__texto">…</p></article>`
 - `.tarjeta-amigo` (+ `--jugando` con `--c`) con `__cabeza` y `__nombre`:
   `<article class="tarjeta-amigo"><div class="tarjeta-amigo__cabeza"><span class="avatar avatar--md avatar--en-linea">JV</span><h3 class="tarjeta-amigo__nombre">juanvi</h3></div></article>`

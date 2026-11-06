@@ -435,6 +435,58 @@ legend.grupo-campo__etiqueta {
 }
 
 /* ==========================================================================
+   Opción (radio en una tarjeta, para elegir una entre varias)
+   <label class="opcion"><input type="radio" name="modo" value="xp"><span class="opcion__texto"><b>Gratis</b><br><span class="tarjeta__texto">…</span></span></label>
+   --desactivada: no se puede elegir (y su input lleva disabled)
+   ========================================================================== */
+.opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+  padding: var(--espacio-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--degradado-superficie-elevada);
+  cursor: pointer;
+  transition: border-color var(--transicion), box-shadow var(--transicion), transform var(--transicion);
+}
+
+.opcion:hover {
+  border-color: var(--color-borde-hover);
+  box-shadow: var(--sombra-suave);
+  transform: translateY(calc(var(--borde-grueso) * -1));
+}
+
+.opcion:has(input:checked) {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 var(--borde-fino) var(--color-primario);
+}
+
+.opcion input {
+  flex: none;
+  width: var(--espacio-5);
+  height: var(--espacio-5);
+  margin: calc(var(--espacio-1) / 2) 0 0;
+  accent-color: var(--color-primario);
+}
+
+.opcion__texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.opcion--desactivada {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.opcion--desactivada:hover {
+  border-color: var(--color-borde);
+  box-shadow: none;
+  transform: none;
+}
+
+/* ==========================================================================
    Casilla (checkbox con su texto)
    <label class="casilla"><input type="checkbox">Aventura</label>
    ========================================================================== */
@@ -705,6 +757,32 @@ legend.grupo-campo__etiqueta {
   background:
     radial-gradient(farthest-corner at 100% 0%, var(--color-secundario-tinte), transparent 70%),
     linear-gradient(135deg, color-mix(in srgb, var(--c, var(--color-primario)) 85%, var(--color-primario)), var(--color-fondo-arriba));
+}
+
+/* Pie de la tarjeta: línea arriba, dato a la izquierda y valor destacado a la derecha */
+.tarjeta__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+  margin: auto 0 0;
+  padding-top: var(--espacio-3);
+  border-top: var(--borde-fino) solid var(--color-borde);
+  font-size: var(--texto-sm);
+}
+
+.tarjeta__pie b {
+  color: var(--color-primario-hover);
+}
+
+/* Con borde verde (algo que salió bien) o amarillo (un aviso) */
+.tarjeta--exito {
+  border-color: var(--color-exito);
+}
+
+.tarjeta--aviso {
+  border-color: var(--color-aviso);
 }
 
 /* Banda de color arriba de la tarjeta (evento): ocupa todo el ancho, color en --c */

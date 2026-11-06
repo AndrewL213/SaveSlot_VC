@@ -258,6 +258,18 @@
     </div>
 
     <div class="cat-componente">
+      <h3>Opción · <code>.opcion</code></h3>
+      <p>Un radio dentro de una tarjeta, para elegir una forma entre varias. La desactivada (<code>--desactivada</code>) lleva <code>disabled</code> en su input.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <fieldset class="grupo-campo">
+          <legend class="grupo-campo__etiqueta">Cómo participar</legend>
+          <label class="opcion"><input type="radio" name="ej-modo" value="xp" checked><span class="opcion__texto"><b>Gratis con 300 XP</b><br><span class="tarjeta__texto">Tienes 1.240 XP. Te quedarán 940.</span></span></label>
+          <label class="opcion opcion--desactivada"><input type="radio" name="ej-modo" value="pago" disabled><span class="opcion__texto"><b>Participación de pago</b><br><span class="tarjeta__texto">No disponible todavía.</span></span><b>[VALOR]</b></label>
+        </fieldset>
+      </div>
+    </div>
+
+    <div class="cat-componente">
       <h3>Casilla · <code>.casilla</code></h3>
       <p>Para elegir varias opciones, por ejemplo los filtros. Agrupadas en un <code>fieldset.grupo-campo</code> con su <code>legend</code>.</p>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
@@ -372,6 +384,9 @@
           <h3 class="tarjeta__titulo">Reseña de Hades</h3>
           <p class="tarjeta__texto">Cada intento enseña algo nuevo.</p>
         </article>
+        <article class="tarjeta"><h3 class="tarjeta__titulo">Con pie (<code>.tarjeta__pie</code>)</h3><p class="tarjeta__texto">Vie 30 oct · 6:00 p. m.</p><p class="tarjeta__pie"><span>58 / 100</span><b>Gratis</b></p></article>
+        <div class="tarjeta tarjeta--exito"><b>Ya estás inscrito en este evento.</b><a href="#componentes">Ver en mi perfil</a></div>
+        <div class="tarjeta tarjeta--aviso"><b>Este torneo solo admite inscripción de pago.</b><span class="tarjeta__texto">Mientras conectamos los pagos, mira los eventos gratuitos.</span></div>
         <a class="tarjeta tarjeta--enlace" href="#componentes">
           <h3 class="tarjeta__titulo">Toda la tarjeta es un enlace</h3>
           <p class="tarjeta__texto">Se eleva al pasar el mouse.</p>

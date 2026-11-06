@@ -451,6 +451,37 @@ body {
   }
 }
 
+/* ---------- Eventos ---------- */
+/* Lista con viñetas (reglas) */
+.lista-puntos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  margin: 0;
+  padding-left: var(--espacio-5);
+  color: var(--color-texto-suave);
+}
+
+/* ---------- Detalle de evento ---------- */
+.datos-evento {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--espacio-8) * 4 + var(--espacio-3)), 1fr));
+  gap: var(--espacio-3);
+  max-width: calc(var(--espacio-8) * 22 + var(--espacio-5));
+}
+
+.formulario-evento {
+  gap: var(--espacio-4);
+}
+
+.cronograma {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  margin: 0;
+  padding-left: var(--espacio-5);
+}
+
 /* ---------- MatchPlay ---------- */
 .chat {
   display: flex;

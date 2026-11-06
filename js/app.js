@@ -455,6 +455,40 @@ function activarResenas(contenedor) {
   });
 }
 
+function enlaceEvento(evento) {
+  return rutaPagina('detalle-evento.html') + '?id=' + encodeURIComponent(evento.id);
+}
+
+// "41 / 64", "1.284 participantes" o "Sin límite"
+function textoCupos(evento) {
+  if (evento.cuposMaximos) return evento.cuposOcupados + ' / ' + evento.cuposMaximos;
+  return evento.cuposOcupados ? formatearNumero(evento.cuposOcupados) + ' participantes' : 'Sin límite';
+}
+
+// Tarjeta grande del evento del mes
+function htmlEventoDestacado(evento) {
+  return '<a class="tarjeta tarjeta--enlace tarjeta--destacada" href="' + enlaceEvento(evento) + '"' + atributoColor(evento.color) + '>' +
+    '<span class="en-fila">' + etiquetaTipoEvento(evento) + '<span class="etiqueta etiqueta--contorno">EVENTO DEL MES</span></span>' +
+    '<h3 class="titulo-pagina">' + escapar(evento.titulo) + '</h3>' +
+    '<p class="tarjeta__texto">' + escapar(evento.fechaHora) + ' · Organiza: ' + escapar(evento.organizador) + '</p>' +
+    '<span class="en-fila"><span class="boton">Ver evento</span><span class="tarjeta__texto">' + escapar(evento.cuposOcupados) + ' de ' + escapar(evento.cuposMaximos) + ' cupos ocupados</span></span>' +
+  '</a>';
+}
+
+// Tarjeta de evento con banda de color
+function htmlEvento(evento) {
+  var juego = evento.juego ? buscarPorId('juegos', evento.juego) : null;
+  return '<a class="tarjeta tarjeta--enlace" href="' + enlaceEvento(evento) + '">' +
+    '<div class="tarjeta__banda"' + atributoColor(evento.color) + '>' + etiquetaTipoEvento(evento) + '</div>' +
+    '<div class="tarjeta__cuerpo">' +
+      '<span class="tarjeta__texto">' + escapar(juego ? juego.nombreCorto : 'Cualquier tienda') + '</span>' +
+      '<h3 class="tarjeta__titulo">' + escapar(evento.titulo) + '</h3>' +
+      '<p class="tarjeta__texto">' + escapar(evento.fechaHora) + '<br>' + escapar(evento.organizador) + '</p>' +
+      '<p class="tarjeta__pie"><span>' + escapar(textoCupos(evento)) + '</span><b>' + escapar(evento.costo) + '</b></p>' +
+    '</div>' +
+  '</a>';
+}
+
 function etiquetaTipoEvento(evento) {
   return evento.tipo === 'torneo'
     ? '<span class="etiqueta etiqueta--primario">TORNEO</span>'
@@ -500,30 +534,7 @@ function pantallaIndex() {
   var eventos = obtenerDatos('eventos');
   var delMes = eventos.find(function (e) { return e.destacado; });
   var sorteo = eventos.find(function (e) { return e.tipo === 'sorteo'; });
-  var htmlEventos = '';
-  if (delMes) {
-    htmlEventos +=
-      '<a class="tarjeta tarjeta--enlace tarjeta--destacada" href="' + rutaPagina('detalle-evento.html') + '?id=' + encodeURIComponent(delMes.id) + '"' + atributoColor(delMes.color) + '>' +
-        '<span class="en-fila">' + etiquetaTipoEvento(delMes) + '<span class="etiqueta etiqueta--contorno">EVENTO DEL MES</span></span>' +
-        '<h3 class="titulo-pagina">' + escapar(delMes.titulo) + '</h3>' +
-        '<p class="tarjeta__texto">' + escapar(delMes.fechaHora) + ' · Organiza: ' + escapar(delMes.organizador) + '</p>' +
-        '<span class="en-fila"><span class="boton">Ver evento</span><span class="tarjeta__texto">' + escapar(delMes.cuposOcupados) + ' de ' + escapar(delMes.cuposMaximos) + ' cupos ocupados</span></span>' +
-      '</a>';
-  }
-  if (sorteo) {
-    var juegoSorteo = sorteo.juego ? buscarPorId('juegos', sorteo.juego) : null;
-    var cupos = sorteo.cuposMaximos ? sorteo.cuposOcupados + ' / ' + sorteo.cuposMaximos : formatearNumero(sorteo.cuposOcupados) + ' participantes';
-    htmlEventos +=
-      '<a class="tarjeta tarjeta--enlace" href="' + rutaPagina('detalle-evento.html') + '?id=' + encodeURIComponent(sorteo.id) + '">' +
-        '<div class="tarjeta__banda"' + atributoColor(sorteo.color) + '>' + etiquetaTipoEvento(sorteo) + '</div>' +
-        '<div class="tarjeta__cuerpo">' +
-          '<span class="tarjeta__texto">' + escapar(juegoSorteo ? juegoSorteo.nombreCorto : 'Cualquier tienda') + '</span>' +
-          '<h3 class="tarjeta__titulo">' + escapar(sorteo.titulo) + '</h3>' +
-          '<p class="tarjeta__texto">' + escapar(sorteo.fechaHora) + ' · ' + escapar(sorteo.organizador) + '</p>' +
-          '<p class="en-fila en-fila--entre tarjeta__texto"><span>' + escapar(cupos) + '</span><b>' + escapar(sorteo.costo) + '</b></p>' +
-        '</div>' +
-      '</a>';
-  }
+  var htmlEventos = (delMes ? htmlEventoDestacado(delMes) : '') + (sorteo ? htmlEvento(sorteo) : '');
   document.getElementById('eventos-inicio').innerHTML = htmlEventos;
   aplicarColores(document);
 
@@ -1607,6 +1618,198 @@ function pantallaResena() {
   aplicarColores(document);
 }
 
+// 13. Eventos
+function pantallaEventos() {
+  var eventos = obtenerDatos('eventos');
+  var filtro = 'todos';
+  var organiza = '';
+  var lista = document.getElementById('lista-eventos');
+  var cajaFiltros = document.getElementById('filtro-tipo');
+  var selectorOrganiza = document.getElementById('organiza');
+
+  var delMes = eventos.find(function (e) { return e.destacado; });
+  document.getElementById('evento-destacado').innerHTML = delMes ? htmlEventoDestacado(delMes) : '';
+
+  function mostrar() {
+    cajaFiltros.querySelectorAll('[data-filtro]').forEach(function (chip) {
+      chip.setAttribute('aria-pressed', String(chip.dataset.filtro === filtro));
+    });
+    var elegidos = eventos.filter(function (e) {
+      var porTipo = filtro === 'todos' || e.tipo === filtro || (filtro === 'gratis' && e.gratis);
+      return porTipo && (!organiza || e.tipoOrganizador === organiza);
+    });
+    lista.innerHTML = elegidos.length
+      ? elegidos.map(htmlEvento).join('')
+      : '<div class="vacio"><b>No hay eventos con estos filtros.</b><button class="boton boton--secundario boton--sm" type="button" id="ver-todos">Ver todos</button></div>';
+    aplicarColores(document);
+  }
+
+  cajaFiltros.addEventListener('click', function (e) {
+    var chip = e.target.closest('[data-filtro]');
+    if (!chip) return;
+    filtro = chip.dataset.filtro;
+    mostrar();
+  });
+  selectorOrganiza.addEventListener('change', function () {
+    organiza = selectorOrganiza.value;
+    mostrar();
+  });
+  lista.addEventListener('click', function (e) {
+    if (!e.target.closest('#ver-todos')) return;
+    filtro = 'todos';
+    organiza = '';
+    selectorOrganiza.value = '';
+    mostrar();
+  });
+
+  mostrar();
+}
+
+// Inscripciones propias (hasta conectar Supabase). "joined" es la lista de ids
+// que usa el Perfil del prototipo en "Mis eventos".
+var XP_SORTEO = 300;
+var XP_POR_TORNEO = 100;
+
+function estaInscrito(idEvento) {
+  return leerMemoria('joined', []).indexOf(idEvento) !== -1;
+}
+
+function guardarInscripcion(inscripcion) {
+  var inscripciones = leerMemoria('inscripciones', []);
+  inscripciones.push(inscripcion);
+  guardarMemoria('inscripciones', inscripciones);
+  var ids = leerMemoria('joined', []);
+  if (ids.indexOf(inscripcion.evento) === -1) ids.push(inscripcion.evento);
+  guardarMemoria('joined', ids);
+}
+
+// 14. Detalle de evento (y 15. Ventana: Inscripción confirmada)
+function pantallaEvento() {
+  var evento = buscarPorId('eventos', new URLSearchParams(location.search).get('id'));
+  if (!evento) { location.replace(rutaPagina('404.html') + '?tipo=evento'); return; }
+  var esTorneo = evento.tipo === 'torneo';
+  var juego = evento.juego ? buscarPorId('juegos', evento.juego) : null;
+  var xp = leerPerfil().xp;
+
+  document.title = evento.titulo + ' · SaveSlot';
+
+  // Cabecera: tipo, juego, organizador y datos
+  document.getElementById('cabecera').dataset.color = evento.color;
+  var miga = document.getElementById('miga-tipo');
+  miga.textContent = esTorneo ? 'Torneos' : 'Sorteos';
+  document.getElementById('miga-evento').textContent = evento.titulo;
+  document.getElementById('etiquetas-evento').innerHTML = etiquetaTipoEvento(evento) +
+    (juego ? '<span class="etiqueta etiqueta--contorno">' + escapar(juego.nombreCorto.toUpperCase()) + '</span>' : '') +
+    '<span class="etiqueta etiqueta--contorno">ORGANIZA ' + escapar(evento.organizador.toUpperCase()) + '</span>';
+  document.getElementById('titulo-evento').textContent = evento.titulo;
+  document.getElementById('datos-evento').innerHTML = [
+    ['Fecha', evento.fechaHora],
+    [esTorneo ? 'Cupos' : 'Participantes', evento.cuposMaximos ? evento.cuposOcupados + ' / ' + evento.cuposMaximos : (evento.cuposOcupados ? formatearNumero(evento.cuposOcupados) : 'Sin límite')],
+    ['Costo', evento.costo],
+    ['Premio', evento.premio || '—']
+  ].map(function (d) {
+    return '<div class="dato"><span class="dato__etiqueta">' + d[0] + '</span><b>' + escapar(d[1]) + '</b></div>';
+  }).join('');
+
+  // Sobre el evento, cronograma y reglas
+  document.getElementById('sobre-evento').innerHTML =
+    '<h2 class="encabezado-seccion__titulo">' + (esTorneo ? 'Sobre el torneo' : 'Sobre el sorteo') + '</h2>' +
+    '<p class="tarjeta__texto">' + escapar(evento.descripcion) + '</p>' +
+    (evento.cronograma.length
+      ? '<h2 class="encabezado-seccion__titulo">Cronograma</h2><ol class="cronograma">' + evento.cronograma.map(function (c) {
+        return '<li><b>' + escapar(c.paso) + '</b> <span class="tarjeta__texto">' + escapar(c.cuando) + '</span></li>';
+      }).join('') + '</ol>'
+      : '');
+  document.getElementById('reglas-evento').innerHTML = evento.reglas.map(function (r) { return '<li>' + escapar(r) + '</li>'; }).join('');
+
+  // Formulario de inscripción
+  var formulario = document.getElementById('formulario-inscripcion');
+  var soloPago = !evento.gratis;
+  var faltaXp = !esTorneo && xp < XP_SORTEO;
+  var opcionGratis = evento.gratis
+    ? '<label class="opcion' + (faltaXp ? ' opcion--desactivada' : '') + '"><input type="radio" name="forma" value="xp"' + (faltaXp ? ' disabled' : ' checked') + '>' +
+        '<span class="opcion__texto"><b>Gratis' + (esTorneo ? '' : ' con ' + XP_SORTEO + ' XP') + '</b><br><span class="tarjeta__texto">' +
+        (esTorneo ? 'Sin costo de inscripción.' : (faltaXp
+          ? 'Tienes ' + formatearNumero(xp) + ' XP: te faltan ' + formatearNumero(XP_SORTEO - xp) + '. Gánalos reseñando juegos.'
+          : 'Tienes ' + formatearNumero(xp) + ' XP. Te quedarán ' + formatearNumero(xp - XP_SORTEO) + '.')) +
+        '</span></span></label>'
+    : '';
+  // Pagos: llegan después. Se muestran desactivados, como en el diseño.
+  var opcionPago = esTorneo && evento.gratis ? '' :
+    '<label class="opcion opcion--desactivada"><input type="radio" name="forma" value="pago" disabled>' +
+      '<span class="opcion__texto"><b>' + (esTorneo ? 'Pagar inscripción' : 'Participación de pago') + '</b><br>' +
+      '<span class="tarjeta__texto">No disponible todavía: los pagos aún no están conectados. No se te cobrará nada.</span></span><b>' + escapar(evento.costo) + '</b></label>';
+
+  formulario.innerHTML =
+    '<h2 class="encabezado-seccion__titulo" id="titulo-inscripcion">' + (esTorneo ? 'Inscribe a tu equipo' : 'Participa') + '</h2>' +
+    (estaInscrito(evento.id) ? '<div class="tarjeta tarjeta--exito"><b>Ya estás inscrito en este evento.</b><a href="perfil.html#mis-eventos">Ver en mi perfil</a></div>' : '') +
+    (esTorneo
+      ? '<div class="grupo-campo"><label class="grupo-campo__etiqueta" for="equipo">Nombre del equipo</label>' +
+          '<input class="campo" id="equipo" maxlength="40" placeholder="Ej. Los Salvados" aria-describedby="error-equipo">' +
+          '<span class="grupo-campo__error" id="error-equipo" hidden>Escribe el nombre de tu equipo.</span></div>' +
+        '<div class="grupo-campo"><label class="grupo-campo__etiqueta" for="companero">Compañero de equipo</label>' +
+          '<input class="campo" id="companero" maxlength="40" placeholder="Usuario de SaveSlot">' +
+          '<span class="grupo-campo__ayuda">Le enviaremos una invitación para confirmar.</span></div>'
+      : '') +
+    '<fieldset class="grupo-campo"><legend class="grupo-campo__etiqueta">Cómo participar</legend>' + opcionGratis + opcionPago +
+      (soloPago ? '<div class="tarjeta tarjeta--aviso"><b>Este torneo solo admite inscripción de pago.</b><span class="tarjeta__texto">Mientras conectamos los pagos, mira los eventos gratuitos.</span><a href="eventos.html"><b>Ver eventos gratis</b></a></div>' : '') +
+    '</fieldset>' +
+    '<label class="casilla"><input type="checkbox" id="reglamento" aria-describedby="error-reglamento"><span>Acepto el reglamento y la política de reembolsos.</span></label>' +
+    '<span class="grupo-campo__error" id="error-reglamento" hidden>Debes aceptar el reglamento para continuar.</span>' +
+    '<button class="boton boton--bloque" type="submit" id="inscribirme"' + (soloPago ? ' disabled' : '') + '>' + (esTorneo ? 'Inscribirme' : 'Participar') + '</button>';
+
+  formulario.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!obtenerSesion()) { pedirCuenta('inscribirte en eventos'); return; }
+    var valido = true;
+    var equipo = document.getElementById('equipo');
+    if (equipo) {
+      var sinEquipo = !equipo.value.trim();
+      equipo.classList.toggle('campo--error', sinEquipo);
+      equipo.setAttribute('aria-invalid', String(sinEquipo));
+      document.getElementById('error-equipo').hidden = !sinEquipo;
+      if (sinEquipo) { valido = false; equipo.focus(); }
+    }
+    var reglamento = document.getElementById('reglamento');
+    document.getElementById('error-reglamento').hidden = reglamento.checked;
+    if (!reglamento.checked) valido = false;
+    if (!valido) return;
+    var forma = formulario.querySelector('input[name="forma"]:checked');
+    if (!forma) { mostrarAviso('Elige cómo participar'); return; }
+
+    var boton = document.getElementById('inscribirme');
+    boton.disabled = true;
+    boton.textContent = 'Inscribiendo…';
+    setTimeout(function () {
+      if (esTorneo) {
+        sumarXp(XP_POR_TORNEO);
+      } else {
+        var perfil = leerPerfil();
+        perfil.xp -= XP_SORTEO;
+        guardarMemoria('profile', perfil);
+      }
+      guardarInscripcion({
+        usuario: usuarioActual(), evento: evento.id, equipo: equipo ? equipo.value.trim() : null,
+        companero: esTorneo ? document.getElementById('companero').value.trim() || null : null, forma: 'xp', fecha: hoy()
+      });
+
+      // 15. Ventana: Inscripción confirmada
+      abrirModal({
+        titulo: esTorneo ? '¡Estás inscrito!' : '¡Ya participas!',
+        texto: esTorneo
+          ? 'Tu equipo tiene cupo y ganaste ' + XP_POR_TORNEO + ' XP. Recibirás el recordatorio del check-in y lo verás en Mis eventos de tu perfil.'
+          : 'Usaste ' + XP_SORTEO + ' XP. Te avisaremos por correo si ganas. Lo verás en Mis eventos de tu perfil.',
+        acciones: [
+          { texto: 'Ver mis eventos', href: 'perfil.html#mis-eventos', principal: true },
+          { texto: 'Listo', alTocar: function () { location.reload(); } }
+        ]
+      });
+    }, 600);
+  });
+
+  aplicarColores(document);
+}
+
 /* ---------- Arranque ---------- */
 
 var PANTALLAS = {
@@ -1617,7 +1820,9 @@ var PANTALLAS = {
   juego: pantallaJuego,
   escribir: pantallaEscribir,
   comunidad: pantallaComunidad,
-  resena: pantallaResena
+  resena: pantallaResena,
+  eventos: pantallaEventos,
+  evento: pantallaEvento
 };
 
 document.addEventListener('DOMContentLoaded', function () {

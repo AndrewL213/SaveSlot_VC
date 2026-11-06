@@ -1033,8 +1033,31 @@ const DATOS = {
       cuposMaximos: 64,
       costo: "[VALOR]",
       gratis: false,
-      premio: null,
-      reglas: [],
+      premio: "[PREMIO]",
+      descripcion: "Torneo abierto para cualquier rango. Las partidas se juegan en servidores de Sudamérica y los resultados se reportan aquí mismo.",
+      cronograma: [
+        {
+          paso: "Inscripciones",
+          cuando: "hasta el día anterior, 11:59 p. m."
+        },
+        {
+          paso: "Check-in",
+          cuando: "30 minutos antes"
+        },
+        {
+          paso: "Llaves",
+          cuando: "a la hora del evento"
+        },
+        {
+          paso: "Final transmitida",
+          cuando: "en el canal del organizador"
+        }
+      ],
+      reglas: [
+        "Todos los jugadores deben tener su cuenta de juego vinculada en SaveSlot.",
+        "Si no haces check-in, pierdes el cupo y se reembolsa la inscripción.",
+        "El organizador puede cambiar la hora avisando con 24 h."
+      ],
       color: "#1F4A8A",
       destacado: true
     },
@@ -1050,8 +1073,31 @@ const DATOS = {
       cuposMaximos: null,
       costo: "Gratis",
       gratis: true,
-      premio: null,
-      reglas: [],
+      premio: "[PREMIO]",
+      descripcion: "Torneo abierto para cualquier rango. Las partidas se juegan en servidores de Sudamérica y los resultados se reportan aquí mismo.",
+      cronograma: [
+        {
+          paso: "Inscripciones",
+          cuando: "hasta el día anterior, 11:59 p. m."
+        },
+        {
+          paso: "Check-in",
+          cuando: "30 minutos antes"
+        },
+        {
+          paso: "Llaves",
+          cuando: "a la hora del evento"
+        },
+        {
+          paso: "Final transmitida",
+          cuando: "en el canal del organizador"
+        }
+      ],
+      reglas: [
+        "Todos los jugadores deben tener su cuenta de juego vinculada en SaveSlot.",
+        "Si no haces check-in, pierdes el cupo y se reembolsa la inscripción.",
+        "El organizador puede cambiar la hora avisando con 24 h."
+      ],
       color: "#2456C4",
       destacado: false
     },
@@ -1067,8 +1113,31 @@ const DATOS = {
       cuposMaximos: 32,
       costo: "[VALOR]",
       gratis: false,
-      premio: null,
-      reglas: [],
+      premio: "[PREMIO]",
+      descripcion: "Torneo abierto para cualquier rango. Las partidas se juegan en servidores de Sudamérica y los resultados se reportan aquí mismo.",
+      cronograma: [
+        {
+          paso: "Inscripciones",
+          cuando: "hasta el día anterior, 11:59 p. m."
+        },
+        {
+          paso: "Check-in",
+          cuando: "30 minutos antes"
+        },
+        {
+          paso: "Llaves",
+          cuando: "a la hora del evento"
+        },
+        {
+          paso: "Final transmitida",
+          cuando: "en el canal del organizador"
+        }
+      ],
+      reglas: [
+        "Todos los jugadores deben tener su cuenta de juego vinculada en SaveSlot.",
+        "Si no haces check-in, pierdes el cupo y se reembolsa la inscripción.",
+        "El organizador puede cambiar la hora avisando con 24 h."
+      ],
       color: "#5B3F96",
       destacado: false
     },
@@ -1084,8 +1153,14 @@ const DATOS = {
       cuposMaximos: null,
       costo: "300 XP o [VALOR]",
       gratis: true,
-      premio: null,
-      reglas: [],
+      premio: "El indicado",
+      descripcion: "El ganador se elige al azar al cierre y se anuncia aquí y por correo. Tiene 7 días para reclamar el premio.",
+      cronograma: [],
+      reglas: [
+        "Una participación gratis y una de pago por persona.",
+        "Sin suscripción ni cargos recurrentes.",
+        "El organizador puede cambiar la hora avisando con 24 h."
+      ],
       color: "#2B5A3F",
       destacado: false
     },
@@ -1101,8 +1176,31 @@ const DATOS = {
       cuposMaximos: 100,
       costo: "Gratis",
       gratis: true,
-      premio: null,
-      reglas: [],
+      premio: "[PREMIO]",
+      descripcion: "Torneo abierto para cualquier rango. Las partidas se juegan en servidores de Sudamérica y los resultados se reportan aquí mismo.",
+      cronograma: [
+        {
+          paso: "Inscripciones",
+          cuando: "hasta el día anterior, 11:59 p. m."
+        },
+        {
+          paso: "Check-in",
+          cuando: "30 minutos antes"
+        },
+        {
+          paso: "Llaves",
+          cuando: "a la hora del evento"
+        },
+        {
+          paso: "Final transmitida",
+          cuando: "en el canal del organizador"
+        }
+      ],
+      reglas: [
+        "Todos los jugadores deben tener su cuenta de juego vinculada en SaveSlot.",
+        "Si no haces check-in, pierdes el cupo y se reembolsa la inscripción.",
+        "El organizador puede cambiar la hora avisando con 24 h."
+      ],
       color: "#6B3A1E",
       destacado: false
     },
@@ -1118,8 +1216,14 @@ const DATOS = {
       cuposMaximos: null,
       costo: "300 XP",
       gratis: true,
-      premio: null,
-      reglas: [],
+      premio: "El indicado",
+      descripcion: "El ganador se elige al azar al cierre y se anuncia aquí y por correo. Tiene 7 días para reclamar el premio.",
+      cronograma: [],
+      reglas: [
+        "Una participación gratis y una de pago por persona.",
+        "Sin suscripción ni cargos recurrentes.",
+        "El organizador puede cambiar la hora avisando con 24 h."
+      ],
       color: "#B8343E",
       destacado: false
     }

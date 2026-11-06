@@ -33,9 +33,9 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
 | 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ✅ | ✅ | ⬜ |
-| 13. Eventos | `pages/eventos.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 13. Eventos | `pages/eventos.html` | ✅ | ✅ | ✅ | ⬜ |
+| 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ✅ | ✅ | ⬜ |
+| 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ✅ | ✅ | ⬜ |
 
 ## Cuenta, perfil y amigos
 
@@ -67,5 +67,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 - **Mensaje (Amigos y Perfil de otro usuario)**, clips, pagos, Google y Discord y foto de perfil: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
 - **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).
 - **Necesitas una cuenta**: la vuelta a la página donde estaba se prueba cuando existan Iniciar sesión y Crear cuenta (16 y 17).
-- **Datos fuera de spec.md** (agregarlos a la sección Datos): meGusta, destacado, destacadosInicio, porcentajeUtil de las guías, horasAtras de los chats de ejemplo, respuestasMatchplay, y en las reseñas propias estadoPartida (estado de la partida) y editada.
+- **Datos fuera de spec.md** (agregarlos a la sección Datos): meGusta, destacado, destacadosInicio, porcentajeUtil de las guías, horasAtras de los chats de ejemplo, respuestasMatchplay, en las reseñas propias estadoPartida (estado de la partida) y editada, y en los eventos descripcion y cronograma.
 - **Comunidad, pestaña Guías**: cada guía abre su juego (como en el diseño), no un Detalle de reseña; las guías de ejemplo no tienen texto completo.
+- **Detalle de evento**: la banda usa el color de cada evento (el diseño usa azul fijo para torneos y verde para sorteos). Premio, costo y organizadores siguen con los textos entre corchetes del diseño hasta tener los datos reales en Supabase.
+- **"Al inscribirse, el evento aparece en Mis eventos del Perfil"**: la inscripción ya se guarda; se comprueba cuando se construya el Perfil (18).
