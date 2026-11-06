@@ -249,6 +249,38 @@
     </div>
 
     <div class="cat-componente">
+      <h3>Contraseña · <code>.campo-clave</code> y <code>.fuerza-clave</code></h3>
+      <p>Campo con botón para mostrar u ocultar la contraseña, y las 4 barras de fuerza (<code>data-nivel</code> de 0 a 4).</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="grupo-campo">
+          <label class="grupo-campo__etiqueta" for="ej-clave">Contraseña</label>
+          <div class="campo-clave"><input class="campo-clave__campo" id="ej-clave" type="password" value="Saveslot2026"><button class="boton boton--fantasma boton--icono boton--sm" type="button" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+          <div class="fuerza-clave" data-nivel="3"><i></i><i></i><i></i><i></i></div>
+          <span class="grupo-campo__ayuda">Buena. Agrega un símbolo para hacerla fuerte.</span>
+        </div>
+        <div class="fuerza-clave" data-nivel="1"><i></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Separador · <code>.separador</code></h3>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <p class="separador">o con tu correo</p>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Pasos · <code>.pasos</code></h3>
+      <p>El paso actual lleva <code>aria-current="step"</code>.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <ol class="pasos">
+          <li class="pasos__paso" aria-current="step"><span class="pasos__numero">1</span><span><b>Tus datos</b><br><span class="tarjeta__texto">Correo, usuario y contraseña</span></span></li>
+          <li class="pasos__paso"><span class="pasos__numero">2</span><span><b>Tus plataformas</b><br><span class="tarjeta__texto">Vincula Steam o Xbox</span></span></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="cat-componente">
       <h3>Escala del 1 al 10 · <code>.escala</code></h3>
       <p>Calificación (la elegida en azul) y dificultad (<code>--dificultad</code>, barras rojas hasta la elegida).</p>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
@@ -499,6 +531,44 @@
     </div>
 
     <div class="cat-componente">
+      <h3>Cabecera de perfil · <code>.cabecera-perfil</code></h3>
+      <p>La banda toma los colores de los juegos favoritos en <code>--c1</code>, <code>--c2</code> y <code>--c3</code>.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <section class="cabecera-perfil" aria-label="Ejemplo de cabecera de perfil">
+          <div class="cabecera-perfil__banda" style="--c1:#7C7566;--c2:#2F6B4F;--c3:#2B3A55"></div>
+          <div class="cabecera-perfil__contenido">
+            <span class="avatar avatar--lg avatar--jugando cabecera-perfil__avatar">SL<span class="avatar__punto"></span></span>
+            <div class="cabecera-perfil__texto"><h2 class="titulo-pagina">Samuel D Luq</h2><span class="en-fila"><span class="etiqueta etiqueta--primario">NIVEL 12</span><span class="etiqueta etiqueta--contorno">FUNDADOR BETA</span></span></div>
+            <div class="cabecera-perfil__acciones"><a class="boton boton--secundario" href="#componentes">Editar perfil</a></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Histograma · <code>.histograma</code></h3>
+      <p>10 barras; la altura de cada una va en <code>--h</code>, de 0 a 100.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="histograma" role="img" aria-label="Distribución de calificaciones"><span class="histograma__barra" style="--h:0"></span><span class="histograma__barra" style="--h:0"></span><span class="histograma__barra" style="--h:0"></span><span class="histograma__barra" style="--h:0"></span><span class="histograma__barra" style="--h:10"></span><span class="histograma__barra" style="--h:20"></span><span class="histograma__barra" style="--h:30"></span><span class="histograma__barra" style="--h:90"></span><span class="histograma__barra" style="--h:100"></span><span class="histograma__barra" style="--h:40"></span></div>
+        <div class="histograma__numeros" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Tabla · <code>.tabla</code></h3>
+      <p>En celular cada fila se vuelve una tarjeta: las celdas <code>.tabla__solo-escritorio</code> se esconden y <code>.tabla__ancha</code> ocupa el renglón.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="tabla"><table>
+          <thead><tr><th>Mes</th><th>Día</th><th>Juego</th><th>Estado</th><th class="tabla__centro">Me gusta</th></tr></thead>
+          <tbody>
+            <tr><td class="tabla__solo-escritorio"><span class="tabla__mes"><b>oct</b><span>2026</span></span></td><td class="tabla__dia">07</td><td class="tabla__ancha"><b>Zelda: TOTK</b></td><td><span class="etiqueta etiqueta--exito">Terminado</span></td><td class="tabla__centro tabla__solo-escritorio"><span class="tabla__me-gusta tabla__me-gusta--activo" aria-label="Te gustó">♥</span></td></tr>
+            <tr><td class="tabla__solo-escritorio"></td><td class="tabla__dia">04</td><td class="tabla__ancha"><b>FNAF: Into the Pit</b></td><td><span class="etiqueta etiqueta--error">Abandonado</span></td><td class="tabla__centro tabla__solo-escritorio"><span class="tabla__me-gusta" aria-label="Sin me gusta">♥</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
       <h3>Ficha · <code>.ficha</code></h3>
       <div class="cat-ejemplo" data-codigo>
         <dl class="ficha"><dt>Desarrolla</dt><dd>Nintendo EPD</dd><dt>Lanzamiento</dt><dd>2023</dd><dt>Tipo</dt><dd>AAA</dd></dl>
@@ -556,6 +626,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           <input class="navegacion__buscar-campo" type="search" aria-label="Buscar juegos" placeholder="Buscar juegos">
         </form>
+        <div class="navegacion__acciones"><button class="boton boton--secundario boton--icono" type="button" aria-label="Notificaciones, 3 nuevas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span class="contador contador--destacado navegacion__contador" aria-hidden="true">3</span></button></div>
         <a class="navegacion__usuario" href="#componentes"><span class="avatar avatar--sm">SL</span><span><span class="navegacion__nombre">Samuel</span><span class="navegacion__nivel">Nivel 12</span></span></a>
       </div>
     </div>
@@ -624,6 +695,10 @@
       <div class="cat-ejemplo" data-codigo>
         <span class="portada portada--sm"><img class="portada__imagen" src="assets/portada-inside.jpg" alt="Portada de Inside"></span>
         <span>Inside · versión pequeña para listas</span>
+      </div>
+      <p>Con botón encima (<code>.portada__accion</code>), por ejemplo para quitar un favorito:</p>
+      <div class="cat-ejemplo" data-codigo>
+        <div class="portada" style="width:160px"><img class="portada__imagen" src="assets/portada-hades.jpg" alt="Portada de Hades"><b class="portada__titulo">Hades</b><button class="portada__accion" type="button" aria-label="Quitar Hades"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       </div>
     </div>
 

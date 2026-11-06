@@ -3,34 +3,120 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Diario · SaveSlot</title>
-<meta name="description" content="Tu diario de juegos: fecha, estado, horas y calificación.">
+<meta name="description" content="Los juegos que jugaste, por fecha, con su estado y tu calificación.">
 <meta name="theme-color" content="#12161D">
+<link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="../css/prototipo.css">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/styles.css">
 </head>
-<body data-page="diario" data-section="perfil">
+<body data-pantalla="diario">
 
-<main class="container page" style="gap:28px">
-  <nav class="crumbs" aria-label="Ruta" style="color:var(--muted)"><a href="perfil.html" style="color:var(--muted)">Mi perfil</a><span aria-hidden="true">/</span><span style="color:var(--fg)">Diario</span></nav>
-  <div class="row between" style="align-items:flex-end">
-    <div class="stack" style="gap:6px"><h1 class="page-title">Diario de juegos</h1><p class="muted">Cada juego que terminas, abandonas o rejuegas, con su fecha y tu calificación.</p></div>
-    <a class="btn btn-primary" href="buscar-juegos.html">+ Registrar juego</a>
+<header class="navegacion">
+  <div class="navegacion__contenido">
+    <a class="navegacion__logo" href="../index.html"><img src="../assets/favicon.svg" alt="">SaveSlot</a>
+    <nav aria-label="Principal">
+      <ul class="navegacion__enlaces">
+        <li><a class="navegacion__enlace" href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li>
+        <li><a class="navegacion__enlace" href="buscar-juegos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4M15.5 12h.01M18 14h.01"/></svg><span>Juegos</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--escritorio" href="comunidad.html"><span>Comunidad</span></a></li>
+        <li><a class="navegacion__enlace" href="eventos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Eventos</span></a></li>
+        <li><a class="navegacion__enlace" href="matchplay.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>MatchPlay</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--movil" href="iniciar-sesion.html" data-enlace-cuenta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span data-texto>Entrar</span></a></li>
+      </ul>
+    </nav>
+    <form class="navegacion__buscar" role="search" action="buscar-juegos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="solo-lectores" for="buscar-encabezado">Buscar juegos</label>
+      <input class="navegacion__buscar-campo" id="buscar-encabezado" name="q" type="search" placeholder="Buscar juegos">
+    </form>
+    <div class="navegacion__acciones" data-acciones-sesion>
+      <a class="boton boton--secundario boton--sm navegacion__ocultar-movil" href="iniciar-sesion.html">Iniciar sesión</a>
+      <a class="boton boton--sm" href="crear-cuenta.html">Crear cuenta</a>
+    </div>
   </div>
-  <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))" id="summary" aria-label="Resumen del año"></section>
-  <div class="row" style="gap:8px">
-    <label for="yr" class="small muted">Año</label><select class="select" id="yr" style="min-height:44px;padding:8px 12px;background:var(--surface)"></select>
-    <button class="chip" data-state="Todos" aria-pressed="true">Todos</button><button class="chip" data-state="Terminado" aria-pressed="false">Terminados</button><button class="chip" data-state="Rejugado" aria-pressed="false">Rejugados</button><button class="chip" data-state="Abandonado" aria-pressed="false">Abandonados</button><button class="chip" data-state="Con reseña" aria-pressed="false">Con reseña</button>
+</header>
+
+<div class="franja" data-franja role="region" aria-label="Aviso del prototipo">
+  <span>Prototipo académico: los datos de juegos son de ejemplo hasta conectar las APIs. <a class="franja__enlace" href="../404.html?tipo=demo">Más información</a></span>
+  <button class="boton boton--fantasma boton--icono boton--sm" type="button" data-cerrar-franja aria-label="Ocultar aviso del prototipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+
+<main class="contenedor contenedor--junto">
+
+  <nav class="migas" aria-label="Ruta"><a href="perfil.html">Mi perfil</a><span aria-hidden="true">/</span><span aria-current="page">Diario</span></nav>
+
+  <div class="en-fila en-fila--entre">
+    <div class="seccion seccion--junta">
+      <h1 class="titulo-pagina">Diario de juegos</h1>
+      <p class="bajada">Cada juego que terminas, abandonas o rejuegas, con su fecha y tu calificación.</p>
+    </div>
+    <a class="boton" href="buscar-juegos.html">+ Registrar juego</a>
   </div>
-  <div class="table-wrap"><table class="diary-table" style="min-width:880px"><thead><tr><th>Mes</th><th>Día</th><th>Juego</th><th>Estado</th><th>Horas</th><th>Calificación</th><th style="text-align:center">Me gusta</th><th style="text-align:center">Reseña</th></tr></thead><tbody id="rows"></tbody></table></div>
+
+  <section class="datos-resumen" id="resumen-diario" aria-label="Resumen del año"></section>
+
+  <div class="en-fila">
+    <div class="en-fila en-fila--fija orden">
+      <label class="grupo-campo__ayuda" for="anio-diario">Año</label>
+      <select class="campo campo--sm" id="anio-diario"></select>
+    </div>
+    <div class="en-fila en-fila--desliza" role="group" aria-label="Estado" id="filtro-diario">
+      <button class="chip" type="button" data-estado="Todos" aria-pressed="true">Todos</button>
+      <button class="chip" type="button" data-estado="Terminado" aria-pressed="false">Terminados</button>
+      <button class="chip" type="button" data-estado="Rejugado" aria-pressed="false">Rejugados</button>
+      <button class="chip" type="button" data-estado="Abandonado" aria-pressed="false">Abandonados</button>
+      <button class="chip" type="button" data-estado="Con reseña" aria-pressed="false">Con reseña</button>
+    </div>
+  </div>
+
+  <div class="tabla">
+    <table>
+      <caption class="solo-lectores">Juegos registrados en el diario</caption>
+      <thead><tr><th>Mes</th><th>Día</th><th>Juego</th><th>Estado</th><th>Horas</th><th>Calificación</th><th class="tabla__centro">Me gusta</th><th class="tabla__centro">Reseña</th></tr></thead>
+      <tbody id="filas-diario" aria-live="polite"></tbody>
+    </table>
+  </div>
+
 </main>
-<script src="../js/prototipo.js"></script>
+
+<footer class="pie">
+  <div class="pie__contenido">
+    <div class="pie__marca">
+      <a class="pie__logo" href="../index.html">SaveSlot</a>
+      <p class="pie__frase">Tu solución gamer. Todos tus juegos y sus comunidades en un solo lugar.</p>
+    </div>
+    <nav class="pie__columnas" aria-label="Pie de página">
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Explora</h2>
+        <a class="pie__enlace" href="buscar-juegos.html">Juegos</a>
+        <a class="pie__enlace" href="juego-random.html">Juego random</a>
+        <a class="pie__enlace" href="eventos.html">Eventos</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Cuenta</h2>
+        <a class="pie__enlace" href="perfil.html">Mi perfil</a>
+        <a class="pie__enlace" href="amigos.html">Amigos</a>
+        <a class="pie__enlace" href="historial-resenas.html">Historial de reseñas</a>
+        <a class="pie__enlace" href="diario.html">Diario</a>
+        <a class="pie__enlace" href="logros.html">Logros</a>
+        <a class="pie__enlace" href="iniciar-sesion.html" data-pie-sesion>Iniciar sesión</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Ayuda</h2>
+        <a class="pie__enlace" href="contacto.html">Contáctanos</a>
+        <a class="pie__enlace" href="../404.html?tipo=estado">Estado de servicios</a>
+        <a class="pie__enlace" href="eventos.html#reglas">Reglas de eventos</a>
+      </div>
+    </nav>
+    <p class="pie__creditos">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos, marcas y portadas pertenecen a sus dueños; portadas tomadas de Steam y Wikipedia. Datos de juegos: ejemplo.</p>
+  </div>
+</footer>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
 </body>
 </html>

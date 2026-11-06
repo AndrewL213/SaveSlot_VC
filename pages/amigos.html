@@ -3,56 +3,132 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Amigos · SaveSlot</title>
-<meta name="description" content="Tu lista de amigos: quién está en línea, qué están jugando, solicitudes y sugerencias.">
+<meta name="description" content="Quién está en línea, a qué juegan tus amigos y nuevas personas para agregar.">
 <meta name="theme-color" content="#12161D">
+<link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="../css/prototipo.css">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/styles.css">
 </head>
-<body data-page="amigos" data-section="perfil">
+<body data-pantalla="amigos">
+
+<header class="navegacion">
+  <div class="navegacion__contenido">
+    <a class="navegacion__logo" href="../index.html"><img src="../assets/favicon.svg" alt="">SaveSlot</a>
+    <nav aria-label="Principal">
+      <ul class="navegacion__enlaces">
+        <li><a class="navegacion__enlace" href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li>
+        <li><a class="navegacion__enlace" href="buscar-juegos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4M15.5 12h.01M18 14h.01"/></svg><span>Juegos</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--escritorio" href="comunidad.html"><span>Comunidad</span></a></li>
+        <li><a class="navegacion__enlace" href="eventos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Eventos</span></a></li>
+        <li><a class="navegacion__enlace" href="matchplay.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>MatchPlay</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--movil" href="iniciar-sesion.html" data-enlace-cuenta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span data-texto>Entrar</span></a></li>
+      </ul>
+    </nav>
+    <form class="navegacion__buscar" role="search" action="buscar-juegos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="solo-lectores" for="buscar-encabezado">Buscar juegos</label>
+      <input class="navegacion__buscar-campo" id="buscar-encabezado" name="q" type="search" placeholder="Buscar juegos">
+    </form>
+    <div class="navegacion__acciones" data-acciones-sesion>
+      <a class="boton boton--secundario boton--sm navegacion__ocultar-movil" href="iniciar-sesion.html">Iniciar sesión</a>
+      <a class="boton boton--sm" href="crear-cuenta.html">Crear cuenta</a>
+    </div>
+  </div>
+</header>
+
+<div class="franja" data-franja role="region" aria-label="Aviso del prototipo">
+  <span>Prototipo académico: los datos de juegos son de ejemplo hasta conectar las APIs. <a class="franja__enlace" href="../404.html?tipo=demo">Más información</a></span>
+  <button class="boton boton--fantasma boton--icono boton--sm" type="button" data-cerrar-franja aria-label="Ocultar aviso del prototipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
 
 <main>
-  <section class="page-hero" style="--c:#1F4A8A">
-    <div class="container">
-      <nav class="crumbs" aria-label="Ruta"><a href="perfil.html">Mi perfil</a><span aria-hidden="true">/</span><span style="color:var(--fg)">Amigos</span></nav>
-      <div class="row between" style="align-items:flex-end;gap:24px">
-        <div class="stack" style="gap:8px"><span class="eyebrow">Tu gente</span><h1 class="page-title">Amigos</h1><p class="soft" style="max-width:56ch">Mira quién está en línea, a qué están jugando y qué juegos tienen en común contigo.</p></div>
-        <div class="hero-stats" id="f-stats"></div>
+
+  <section class="cabecera-juego" data-color="#1F4A8A" aria-labelledby="titulo-amigos-pagina">
+    <div class="cabecera-juego__contenido">
+      <nav class="migas" aria-label="Ruta"><a href="perfil.html">Mi perfil</a><span aria-hidden="true">/</span><span aria-current="page">Amigos</span></nav>
+      <div class="en-fila en-fila--entre">
+        <div class="seccion seccion--junta">
+          <span class="antetitulo">Tu gente</span>
+          <h1 class="titulo-pagina" id="titulo-amigos-pagina">Amigos</h1>
+          <p class="bajada">Mira quién está en línea, a qué están jugando y qué juegos tienen en común contigo.</p>
+        </div>
+        <div class="en-fila resumen-cabecera" id="resumen-amigos" aria-label="Resumen"></div>
       </div>
     </div>
   </section>
-  <div class="container page" style="padding-top:28px">
-    <div class="split">
-      <div class="main" style="gap:18px">
-        <div class="row between" style="gap:12px">
-          <div class="tabs" role="tablist" aria-label="Lista de amigos" id="f-tabs" style="border:0"></div>
-          <label class="header-search field-search" style="flex:0 1 280px;min-height:44px"><span class="sr-only">Filtrar amigos</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA8B8" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="f-q" type="search" list="sin-sugerencias" autocomplete="off" placeholder="Buscar por nombre o @usuario"></label>
+
+  <div class="contenedor">
+    <div class="division">
+      <div class="division__principal">
+        <div class="en-fila en-fila--entre">
+          <div class="pestanas" role="tablist" aria-label="Lista de amigos" id="pestanas-amigos"></div>
+          <div class="grupo-campo barra-filtros__busqueda">
+            <label class="solo-lectores" for="buscar-amigos">Buscar por nombre o @usuario</label>
+            <input class="campo campo--sm" id="buscar-amigos" type="search" autocomplete="off" placeholder="Buscar por nombre o @usuario">
+          </div>
         </div>
-        <div class="grid g-auto-300" id="f-list" aria-live="polite"></div>
+        <div class="rejilla-tarjetas" id="lista-amigos" role="tabpanel" aria-live="polite"></div>
       </div>
-      <aside class="side">
-        <section class="panel">
-          <h2 class="panel-title">Agregar amigo</h2>
-          <form id="add-form" class="stack" style="gap:10px" novalidate>
-            <label class="sr-only" for="add-u">Usuario</label>
-            <input class="input" id="add-u" placeholder="@usuario" autocomplete="off">
-            <span class="error-text" id="add-err" hidden></span>
-            <button class="btn btn-primary" type="submit">Enviar solicitud</button>
+
+      <aside class="division__lateral pila">
+        <section class="panel" aria-labelledby="titulo-agregar">
+          <h2 class="panel__titulo" id="titulo-agregar">Agregar amigo</h2>
+          <form class="pila pila--junta" id="formulario-agregar" novalidate>
+            <label class="solo-lectores" for="usuario-amigo">Usuario</label>
+            <input class="campo" id="usuario-amigo" placeholder="@usuario" autocomplete="off" aria-describedby="error-agregar">
+            <span class="grupo-campo__error" id="error-agregar" hidden></span>
+            <button class="boton" type="submit">Enviar solicitud</button>
           </form>
-          <span class="xs muted">Tu usuario es <b class="soft" id="my-handle">@samluq</b> · <button type="button" class="help-link" id="copy-handle">Copiar</button></span>
+          <span class="tarjeta__texto">Tu usuario es <b id="mi-usuario"></b> · <button class="dato__ayuda" type="button" id="copiar-usuario">Copiar</button></span>
         </section>
-        <section class="panel"><h2 class="panel-title">Actividad de amigos</h2><div class="feed" id="feed"></div></section>
+        <section class="panel" aria-labelledby="titulo-actividad-amigos">
+          <h2 class="panel__titulo" id="titulo-actividad-amigos">Actividad de amigos</h2>
+          <div class="pila pila--minima" id="actividad-amigos"></div>
+        </section>
       </aside>
     </div>
   </div>
+
 </main>
-<script src="../js/prototipo.js"></script>
+
+<footer class="pie">
+  <div class="pie__contenido">
+    <div class="pie__marca">
+      <a class="pie__logo" href="../index.html">SaveSlot</a>
+      <p class="pie__frase">Tu solución gamer. Todos tus juegos y sus comunidades en un solo lugar.</p>
+    </div>
+    <nav class="pie__columnas" aria-label="Pie de página">
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Explora</h2>
+        <a class="pie__enlace" href="buscar-juegos.html">Juegos</a>
+        <a class="pie__enlace" href="juego-random.html">Juego random</a>
+        <a class="pie__enlace" href="eventos.html">Eventos</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Cuenta</h2>
+        <a class="pie__enlace" href="perfil.html">Mi perfil</a>
+        <a class="pie__enlace" href="amigos.html">Amigos</a>
+        <a class="pie__enlace" href="historial-resenas.html">Historial de reseñas</a>
+        <a class="pie__enlace" href="diario.html">Diario</a>
+        <a class="pie__enlace" href="logros.html">Logros</a>
+        <a class="pie__enlace" href="iniciar-sesion.html" data-pie-sesion>Iniciar sesión</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Ayuda</h2>
+        <a class="pie__enlace" href="contacto.html">Contáctanos</a>
+        <a class="pie__enlace" href="../404.html?tipo=estado">Estado de servicios</a>
+        <a class="pie__enlace" href="eventos.html#reglas">Reglas de eventos</a>
+      </div>
+    </nav>
+    <p class="pie__creditos">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos, marcas y portadas pertenecen a sus dueños; portadas tomadas de Steam y Wikipedia. Datos de juegos: ejemplo.</p>
+  </div>
+</footer>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
 </body>
 </html>

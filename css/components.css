@@ -385,6 +385,136 @@ legend.grupo-campo__etiqueta {
 }
 
 /* ==========================================================================
+   Campo de contraseña con botón para mostrarla u ocultarla
+   <div class="campo-clave"><input class="campo-clave__campo" type="password"><button class="boton boton--fantasma boton--icono boton--sm" type="button" aria-label="Mostrar contraseña">…</button></div>
+   ========================================================================== */
+.campo-clave {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  padding-right: var(--espacio-1);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-sm);
+  background: var(--vidrio);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.campo-clave:hover {
+  border-color: var(--color-borde-hover);
+}
+
+.campo-clave:focus-within {
+  border-color: var(--color-primario);
+  box-shadow: var(--anillo-foco);
+}
+
+.campo-clave--error,
+.campo-clave--error:hover {
+  border-color: var(--color-error);
+}
+
+.campo-clave__campo {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--alto-control);
+  padding: var(--espacio-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--texto-base);
+}
+
+.campo-clave__campo:focus-visible {
+  outline: none;
+}
+
+/* ==========================================================================
+   Fuerza de la contraseña: 4 barras que se llenan
+   <div class="fuerza-clave" data-nivel="2"><i></i><i></i><i></i><i></i></div>
+   data-nivel de 0 a 4: 1-2 en amarillo, 3-4 en verde
+   ========================================================================== */
+.fuerza-clave {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--espacio-1);
+}
+
+.fuerza-clave i {
+  height: var(--espacio-1);
+  border-radius: var(--radio-total);
+  background: var(--color-borde);
+  transition: background-color var(--transicion);
+}
+
+.fuerza-clave[data-nivel="1"] i:nth-child(-n + 1),
+.fuerza-clave[data-nivel="2"] i:nth-child(-n + 2) {
+  background: var(--color-aviso);
+}
+
+.fuerza-clave[data-nivel="3"] i:nth-child(-n + 3),
+.fuerza-clave[data-nivel="4"] i {
+  background: var(--color-exito);
+}
+
+/* ==========================================================================
+   Separador con texto ("o con tu correo")
+   <p class="separador">o con tu correo</p>
+   ========================================================================== */
+.separador {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.separador::before,
+.separador::after {
+  content: "";
+  flex: 1;
+  height: var(--borde-fino);
+  background: var(--color-borde);
+}
+
+/* ==========================================================================
+   Pasos numerados (el actual con aria-current="step")
+   <ol class="pasos"><li class="pasos__paso" aria-current="step"><span class="pasos__numero">1</span><span><b>Tus datos</b><br><span class="tarjeta__texto">…</span></span></li></ol>
+   ========================================================================== */
+.pasos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pasos__paso {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+
+.pasos__numero {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--espacio-8);
+  height: var(--espacio-8);
+  border-radius: var(--radio-total);
+  background: var(--degradado-superficie-elevada);
+  font-weight: var(--peso-titulos);
+}
+
+.pasos__paso[aria-current="step"] .pasos__numero {
+  background: var(--degradado-primario);
+  box-shadow: var(--halo-primario);
+  color: var(--color-texto-sobre-primario);
+}
+
+/* ==========================================================================
    Escala del 1 al 10 (calificación y dificultad)
    <div class="escala" role="group" aria-label="Tu calificación"><button class="escala__opcion" type="button" aria-pressed="false">1</button>…</div>
    La elegida lleva aria-pressed="true". --dificultad: barras rojas que se llenan hasta la elegida
@@ -1176,6 +1306,221 @@ legend.grupo-campo__etiqueta {
 }
 
 /* ==========================================================================
+   Cabecera de perfil: banda de color (los colores de sus favoritos en --c1, --c2, --c3),
+   avatar grande que sobresale, nombre, insignias y acciones
+   <section class="cabecera-perfil"><div class="cabecera-perfil__banda"></div>
+     <div class="cabecera-perfil__contenido"><span class="avatar avatar--lg cabecera-perfil__avatar">SL</span>
+     <div class="cabecera-perfil__texto">…</div><div class="cabecera-perfil__acciones">…</div></div></section>
+   ========================================================================== */
+.cabecera-perfil {
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--degradado-superficie);
+  box-shadow: var(--sombra-reposo);
+}
+
+.cabecera-perfil__banda {
+  position: relative;
+  height: calc(var(--espacio-8) * 4 + var(--espacio-5));
+  background: linear-gradient(115deg, var(--c1, var(--color-primario)) 0%, var(--c2, var(--color-secundario)) 45%, var(--c3, var(--color-fondo-arriba)) 100%);
+}
+
+.cabecera-perfil__banda::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(500px 220px at 80% 0%, rgba(255, 255, 255, 0.25), transparent 65%),
+    var(--textura-lineas);
+}
+
+.cabecera-perfil__contenido {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--espacio-5);
+  padding: 0 var(--espacio-7) var(--espacio-6);
+}
+
+.avatar.cabecera-perfil__avatar {
+  margin-top: calc(var(--espacio-8) * -1 - var(--espacio-6));
+  border: calc(var(--espacio-1) + var(--borde-grueso)) solid var(--color-superficie);
+  background: var(--degradado-primario);
+  color: var(--color-texto-sobre-primario);
+}
+
+.cabecera-perfil__texto {
+  flex: 999 1 calc(var(--espacio-8) * 8);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  padding-top: var(--espacio-3);
+}
+
+.cabecera-perfil__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+
+@media (max-width: 700px) {
+  .cabecera-perfil__banda {
+    height: calc(var(--espacio-8) * 2 + var(--espacio-6));
+  }
+
+  .cabecera-perfil__contenido {
+    padding: 0 var(--espacio-4) var(--espacio-4);
+  }
+
+  .avatar.cabecera-perfil__avatar {
+    width: calc(var(--espacio-8) * 2 + var(--espacio-4));
+    height: calc(var(--espacio-8) * 2 + var(--espacio-4));
+    margin-top: calc(var(--espacio-8) * -1);
+    font-size: var(--texto-xl);
+  }
+}
+
+/* ==========================================================================
+   Histograma: 10 barras (calificaciones del 1 al 10); la altura va en --h (0 a 100)
+   <div class="histograma" role="img" aria-label="…"><span class="histograma__barra" data-h="40"></span>…</div>
+   ========================================================================== */
+.histograma {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  align-items: end;
+  gap: var(--espacio-1);
+  height: calc(var(--espacio-8) * 2 + var(--espacio-1));
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.histograma__barra {
+  height: calc(var(--h, 0) * 1%);
+  min-height: var(--borde-grueso);
+  border-radius: calc(var(--radio-sm) / 2) calc(var(--radio-sm) / 2) 0 0;
+  background: var(--degradado-exito);
+}
+
+.histograma__numeros {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: var(--espacio-1);
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xs);
+  text-align: center;
+}
+
+/* ==========================================================================
+   Tabla (por ejemplo el Diario). En celular cada fila se vuelve una tarjeta:
+   las celdas con .tabla__solo-escritorio se esconden y .tabla__ancha ocupa el renglón.
+   <div class="tabla"><table><thead><tr><th>…</th></tr></thead><tbody><tr><td>…</td></tr></tbody></table></div>
+   ========================================================================== */
+.tabla {
+  overflow-x: auto;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--degradado-superficie);
+  box-shadow: var(--sombra-reposo);
+}
+
+.tabla table {
+  width: 100%;
+  min-width: calc(var(--espacio-8) * 22);
+  border-collapse: collapse;
+}
+
+.tabla th {
+  padding: var(--espacio-3) var(--espacio-4);
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.tabla td {
+  padding: var(--espacio-3) var(--espacio-4);
+  border-top: var(--borde-fino) solid var(--color-borde);
+  vertical-align: middle;
+}
+
+.tabla__centro {
+  text-align: center !important;
+}
+
+/* Mes y año en una cajita (la primera fila de cada mes) */
+.tabla__mes {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--espacio-1) var(--espacio-3);
+  border-radius: var(--radio-sm);
+  background: var(--color-fondo);
+  line-height: var(--interlineado-titulos);
+}
+
+.tabla__mes b {
+  font-size: var(--texto-xs);
+  text-transform: uppercase;
+}
+
+.tabla__mes span {
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xs);
+}
+
+.tabla__dia {
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-titulos);
+}
+
+/* Corazón de "me gusta": rojo si está marcado */
+.tabla__me-gusta {
+  color: var(--color-borde);
+  font-size: var(--texto-lg);
+}
+
+.tabla__me-gusta--activo {
+  color: var(--color-error);
+}
+
+@media (max-width: 640px) {
+  .tabla table {
+    min-width: 0;
+  }
+
+  .tabla thead,
+  .tabla__solo-escritorio {
+    display: none;
+  }
+
+  .tabla tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espacio-1) var(--espacio-3);
+    padding: var(--espacio-3) var(--espacio-4);
+    border-top: var(--borde-fino) solid var(--color-borde);
+  }
+
+  .tabla tbody tr:first-child {
+    border-top: 0;
+  }
+
+  .tabla td {
+    padding: 0;
+    border: 0;
+  }
+
+  .tabla__ancha {
+    flex: 1 1 60%;
+    min-width: 0;
+  }
+}
+
+/* ==========================================================================
    Ficha (lista de datos: término y valor)
    <dl class="ficha"><dt>Desarrolla</dt><dd>Nintendo EPD</dd></dl>
    ========================================================================== */
@@ -1481,6 +1826,20 @@ legend.grupo-campo__etiqueta {
   margin-left: auto;
 }
 
+/* Número de avisos sobre un botón de la barra (la campana): el botón lleva position relativa */
+.navegacion__acciones .boton--icono {
+  position: relative;
+}
+
+.navegacion__contador {
+  position: absolute;
+  top: calc(var(--espacio-1) * -1);
+  right: calc(var(--espacio-1) * -1);
+  min-width: var(--espacio-5);
+  justify-content: center;
+  box-shadow: 0 0 0 var(--borde-grueso) var(--color-fondo);
+}
+
 /* Pastilla del usuario con sesión: avatar, nombre y nivel */
 .navegacion__usuario {
   display: inline-flex;
@@ -1680,6 +2039,35 @@ legend.grupo-campo__etiqueta {
 
 .portada--enlace:hover::before {
   transform: translateX(110%);
+}
+
+/* Botón sobre la portada, arriba a la derecha (por ejemplo, quitar un favorito) */
+.portada__accion {
+  position: absolute;
+  top: var(--espacio-2);
+  right: var(--espacio-2);
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: calc(var(--espacio-8) - var(--espacio-1));
+  height: calc(var(--espacio-8) - var(--espacio-1));
+  padding: 0;
+  border: var(--borde-fino) solid var(--velo-fuerte);
+  border-radius: var(--radio-total);
+  background: var(--vidrio-fuerte);
+  color: var(--color-texto);
+  cursor: pointer;
+  transition: background-color var(--transicion), border-color var(--transicion);
+}
+
+.portada__accion:hover {
+  border-color: var(--color-error);
+  background: var(--color-error);
+}
+
+.portada__accion svg {
+  width: var(--espacio-4);
+  height: var(--espacio-4);
 }
 
 .portada--sm {

@@ -3,50 +3,152 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Editar perfil · SaveSlot</title>
-<meta name="description" content="Edita tu perfil, tus 4 juegos favoritos y tus cuentas vinculadas.">
+<meta name="description" content="Personaliza tu perfil, tus favoritos y tus cuentas vinculadas.">
 <meta name="theme-color" content="#12161D">
+<link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="../css/prototipo.css">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/styles.css">
 </head>
-<body data-page="editar" data-section="perfil">
+<body data-pantalla="editar">
 
-<main class="container page" style="max-width:1080px">
-  <div class="card" id="welcome" hidden style="border-color:var(--good)"><b>¡Cuenta creada!</b><span class="soft small">Paso 2 y 3: vincula tus plataformas y elige tus 4 favoritos. Puedes hacerlo después.</span></div>
-  <div class="split">
-    <nav class="side" aria-label="Ajustes" style="flex:1 1 220px;gap:4px">
-      <a class="chip" href="#datos">Perfil público</a><a class="chip" href="#favoritos">Juegos favoritos</a><a class="chip" href="#generos">Géneros favoritos</a><a class="chip" href="#cuentas">Cuentas vinculadas</a>
+<header class="navegacion">
+  <div class="navegacion__contenido">
+    <a class="navegacion__logo" href="../index.html"><img src="../assets/favicon.svg" alt="">SaveSlot</a>
+    <nav aria-label="Principal">
+      <ul class="navegacion__enlaces">
+        <li><a class="navegacion__enlace" href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li>
+        <li><a class="navegacion__enlace" href="buscar-juegos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4M15.5 12h.01M18 14h.01"/></svg><span>Juegos</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--escritorio" href="comunidad.html"><span>Comunidad</span></a></li>
+        <li><a class="navegacion__enlace" href="eventos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Eventos</span></a></li>
+        <li><a class="navegacion__enlace" href="matchplay.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>MatchPlay</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--movil" href="iniciar-sesion.html" data-enlace-cuenta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span data-texto>Entrar</span></a></li>
+      </ul>
     </nav>
-    <form class="main" id="edit-form" novalidate>
-      <h1 class="page-title">Editar perfil</h1>
-      <section class="panel" id="datos">
-        <div class="row"><span class="avatar" id="avatar" style="width:84px;height:84px;border-radius:18px;font-size:32px;border:2px solid var(--accent)">S</span><span class="small muted">La foto de perfil llegará con el almacenamiento de archivos.</span></div>
-        <div class="form-grid">
-          <div class="field"><label for="nm">Nombre visible</label><input class="input" id="nm"><span class="error-text" id="nm-err" hidden></span></div>
-          <div class="field"><label for="us">Usuario</label><input class="input" id="us" disabled><span class="hint">El usuario no se puede cambiar.</span></div>
+    <form class="navegacion__buscar" role="search" action="buscar-juegos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="solo-lectores" for="buscar-encabezado">Buscar juegos</label>
+      <input class="navegacion__buscar-campo" id="buscar-encabezado" name="q" type="search" placeholder="Buscar juegos">
+    </form>
+    <div class="navegacion__acciones" data-acciones-sesion>
+      <a class="boton boton--secundario boton--sm navegacion__ocultar-movil" href="iniciar-sesion.html">Iniciar sesión</a>
+      <a class="boton boton--sm" href="crear-cuenta.html">Crear cuenta</a>
+    </div>
+  </div>
+</header>
+
+<div class="franja" data-franja role="region" aria-label="Aviso del prototipo">
+  <span>Prototipo académico: los datos de juegos son de ejemplo hasta conectar las APIs. <a class="franja__enlace" href="../404.html?tipo=demo">Más información</a></span>
+  <button class="boton boton--fantasma boton--icono boton--sm" type="button" data-cerrar-franja aria-label="Ocultar aviso del prototipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+
+<main class="contenedor contenedor--angosto">
+
+  <div class="tarjeta tarjeta--exito" id="bienvenida" role="status" hidden><b>¡Cuenta creada!</b><span class="tarjeta__texto">Paso 2 y 3: vincula tus plataformas y elige tus 4 favoritos. Puedes hacerlo después.</span></div>
+
+  <div class="division">
+    <nav class="division__lateral pila pila--minima menu-ajustes" aria-label="Ajustes">
+      <a class="chip" href="#datos">Perfil público</a>
+      <a class="chip" href="#favoritos">Juegos favoritos</a>
+      <a class="chip" href="#generos">Géneros favoritos</a>
+      <a class="chip" href="#cuentas">Cuentas vinculadas</a>
+    </nav>
+
+    <form class="division__principal" id="formulario-perfil" novalidate>
+      <h1 class="titulo-pagina">Editar perfil</h1>
+
+      <section class="panel" id="datos" aria-label="Perfil público">
+        <div class="en-fila"><span class="avatar avatar--md" id="avatar-editar" aria-hidden="true"></span><span class="tarjeta__texto">La foto de perfil llegará con el almacenamiento de archivos.</span></div>
+        <div class="rejilla-dos rejilla-dos--campos">
+          <div class="grupo-campo">
+            <label class="grupo-campo__etiqueta" for="nombre-visible">Nombre visible</label>
+            <input class="campo" id="nombre-visible" maxlength="40" aria-describedby="error-nombre">
+            <span class="grupo-campo__error" id="error-nombre" hidden></span>
+          </div>
+          <div class="grupo-campo">
+            <label class="grupo-campo__etiqueta" for="usuario-fijo">Usuario</label>
+            <input class="campo" id="usuario-fijo" disabled aria-describedby="ayuda-usuario">
+            <span class="grupo-campo__ayuda" id="ayuda-usuario">El usuario no se puede cambiar.</span>
+          </div>
         </div>
-        <div class="field"><label for="bio">Sobre mí <span class="muted" style="font-weight:400">(opcional)</span></label><textarea class="textarea" id="bio" rows="3" maxlength="190"></textarea></div>
-        <div class="field"><label for="playing">¿Qué estás jugando ahora?</label><select class="select" id="playing"></select><span class="hint">Cuando vincules Steam, esto se actualizará solo.</span></div>
+        <div class="grupo-campo">
+          <label class="grupo-campo__etiqueta" for="sobre-mi">Sobre mí <span class="tarjeta__texto">(opcional)</span></label>
+          <textarea class="campo" id="sobre-mi" rows="3" maxlength="190"></textarea>
+        </div>
+        <div class="grupo-campo">
+          <label class="grupo-campo__etiqueta" for="jugando-ahora">¿Qué estás jugando ahora?</label>
+          <select class="campo" id="jugando-ahora" aria-describedby="ayuda-jugando"></select>
+          <span class="grupo-campo__ayuda" id="ayuda-jugando">Cuando vincules Steam, esto se actualizará solo.</span>
+        </div>
       </section>
-      <section class="panel" id="favoritos">
-        <div class="row between"><h2 style="font-size:22px">Juegos favoritos</h2><span class="small muted">Máximo 4</span></div>
-        <div class="grid g-4" id="favs"></div>
-        <div class="row" style="flex-wrap:nowrap"><label class="sr-only" for="fav-select">Agregar favorito</label><select class="select grow" id="fav-select"></select><button type="button" class="btn btn-secondary" id="fav-add">Agregar</button></div>
-        <span class="small muted" id="fav-hint" aria-live="polite"></span>
+
+      <section class="panel" id="favoritos" aria-labelledby="titulo-favoritos-editar">
+        <div class="en-fila en-fila--entre"><h2 class="tarjeta__titulo" id="titulo-favoritos-editar">Juegos favoritos</h2><span class="tarjeta__texto">Máximo 4</span></div>
+        <div class="rejilla-cuatro" id="favoritos-editar"></div>
+        <div class="en-fila en-fila--fija">
+          <label class="solo-lectores" for="elegir-favorito">Agregar favorito</label>
+          <select class="campo" id="elegir-favorito" aria-describedby="pista-favoritos"></select>
+          <button class="boton boton--secundario" type="button" id="agregar-favorito">Agregar</button>
+        </div>
+        <span class="grupo-campo__ayuda" id="pista-favoritos" aria-live="polite"></span>
       </section>
-      <section class="panel" id="generos"><h2 style="font-size:22px">Géneros favoritos</h2><div class="row" style="gap:8px" id="genre-chips"></div></section>
-      <section class="panel" id="cuentas"><div class="row between"><h2 style="font-size:22px">Cuentas vinculadas</h2><span class="small muted">+100 XP por cada una</span></div><div class="stack" style="gap:10px" id="accounts"></div></section>
-      <div class="row" style="justify-content:flex-end"><a class="btn btn-secondary" href="perfil.html">Cancelar</a><button class="btn btn-primary" type="submit">Guardar cambios</button></div>
+
+      <section class="panel" id="generos" aria-labelledby="titulo-generos-editar">
+        <h2 class="tarjeta__titulo" id="titulo-generos-editar">Géneros favoritos</h2>
+        <div class="en-fila" id="generos-editar" role="group" aria-labelledby="titulo-generos-editar"></div>
+      </section>
+
+      <section class="panel" id="cuentas" aria-labelledby="titulo-cuentas">
+        <div class="en-fila en-fila--entre"><h2 class="tarjeta__titulo" id="titulo-cuentas">Cuentas vinculadas</h2><span class="tarjeta__texto">+100 XP por cada una</span></div>
+        <div class="pila pila--junta" id="cuentas-editar"></div>
+      </section>
+
+      <div class="en-fila al-derecha">
+        <a class="boton boton--secundario" href="perfil.html">Cancelar</a>
+        <button class="boton" type="submit">Guardar cambios</button>
+      </div>
     </form>
   </div>
+
 </main>
-<script src="../js/prototipo.js"></script>
+
+<footer class="pie">
+  <div class="pie__contenido">
+    <div class="pie__marca">
+      <a class="pie__logo" href="../index.html">SaveSlot</a>
+      <p class="pie__frase">Tu solución gamer. Todos tus juegos y sus comunidades en un solo lugar.</p>
+    </div>
+    <nav class="pie__columnas" aria-label="Pie de página">
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Explora</h2>
+        <a class="pie__enlace" href="buscar-juegos.html">Juegos</a>
+        <a class="pie__enlace" href="juego-random.html">Juego random</a>
+        <a class="pie__enlace" href="eventos.html">Eventos</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Cuenta</h2>
+        <a class="pie__enlace" href="perfil.html">Mi perfil</a>
+        <a class="pie__enlace" href="amigos.html">Amigos</a>
+        <a class="pie__enlace" href="historial-resenas.html">Historial de reseñas</a>
+        <a class="pie__enlace" href="diario.html">Diario</a>
+        <a class="pie__enlace" href="logros.html">Logros</a>
+        <a class="pie__enlace" href="iniciar-sesion.html" data-pie-sesion>Iniciar sesión</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Ayuda</h2>
+        <a class="pie__enlace" href="contacto.html">Contáctanos</a>
+        <a class="pie__enlace" href="../404.html?tipo=estado">Estado de servicios</a>
+        <a class="pie__enlace" href="eventos.html#reglas">Reglas de eventos</a>
+      </div>
+    </nav>
+    <p class="pie__creditos">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos, marcas y portadas pertenecen a sus dueños; portadas tomadas de Steam y Wikipedia. Datos de juegos: ejemplo.</p>
+  </div>
+</footer>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
 </body>
 </html>

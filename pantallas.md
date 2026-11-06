@@ -41,17 +41,17 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 16. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 18. Perfil | `pages/perfil.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 21. Diario | `pages/diario.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 23. Logros | `pages/logros.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 24. Amigos | `pages/amigos.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ⬜ | ⬜ | ⬜ |
+| 16. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ✅ | ✅ | ⬜ |
+| 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ✅ | ✅ | ⬜ |
+| 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ | ⬜ |
+| 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ | ⬜ |
+| 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ | ⬜ |
+| 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ | ⬜ |
+| 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ | ⬜ |
+| 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ | ⬜ |
+| 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ | ⬜ |
+| 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ | ⬜ |
+| 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ✅ | ✅ | ⬜ |
 
 ## Ayuda
 
@@ -66,8 +66,9 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 - **Contáctanos**: todavía muestra la tarjeta de correo y redes, que la spec quita del MVP.
 - **Mensaje (Amigos y Perfil de otro usuario)**, clips, pagos, Google y Discord y foto de perfil: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
 - **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).
-- **Necesitas una cuenta**: la vuelta a la página donde estaba se prueba cuando existan Iniciar sesión y Crear cuenta (16 y 17).
 - **Datos fuera de spec.md** (agregarlos a la sección Datos): meGusta, destacado, destacadosInicio, porcentajeUtil de las guías, horasAtras de los chats de ejemplo, respuestasMatchplay, en las reseñas propias estadoPartida (estado de la partida) y editada, y en los eventos descripcion y cronograma.
 - **Comunidad, pestaña Guías**: cada guía abre su juego (como en el diseño), no un Detalle de reseña; las guías de ejemplo no tienen texto completo.
 - **Detalle de evento**: la banda usa el color de cada evento (el diseño usa azul fijo para torneos y verde para sorteos). Premio, costo y organizadores siguen con los textos entre corchetes del diseño hasta tener los datos reales en Supabase.
-- **"Al inscribirse, el evento aparece en Mis eventos del Perfil"**: la inscripción ya se guarda; se comprueba cuando se construya el Perfil (18).
+- **Notificaciones**: no muestra el aviso de comentarios del diseño («Kenneth y Daniela comentaron…»), porque la spec solo define avisos de votos «útil» y de cierre de inscripciones; las ventanas del kit no llevan el ícono de arriba del diseño.
+- **Avatares**: los de amigos no llevan el color de fondo de cada persona como en el diseño (el avatar del kit no tiene esa opción).
+- **Perfil de otro usuario**: «Juegos» cuenta los juegos que la persona calificó (el diseño suma un número fijo); el avatar grande es azul y no del color de la persona.

@@ -725,6 +725,7 @@ const DATOS = {
       xp: 1240,
       generosFavoritos: ["Aventura", "RPG", "Terror"],
       listaDeseos: ["hades-ii", "ghost-of-tsushima", "elden-ring"],
+      cuentasVinculadas: [{ plataforma: "Steam", nombre: "samluq_steam", estado: "verificada" }],
       insignias: [
         "Fundador beta"
       ],
@@ -748,7 +749,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#7C7566",
-      id: "kenvel"
+      id: "kenvel",
+      notas: {"nier-automata": 9, "hades": 10, "zelda-totk": 9, "hollow-knight": 8, "inside": 8},
+      ultimaConexion: null,
+      amigosEnComun: 0
     },
     {
       usuario: "juanvi",
@@ -767,7 +771,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#2456C4",
-      id: "juanvi"
+      id: "juanvi",
+      notas: {"rocket-league": 8, "valorant": 7, "zelda-totk": 9, "nier-automata": 10},
+      ultimaConexion: null,
+      amigosEnComun: 0
     },
     {
       usuario: "d4ni",
@@ -786,7 +793,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#2B3A55",
-      id: "d4ni"
+      id: "d4ni",
+      notas: {"hollow-knight": 10, "elden-ring": 10, "hades": 9, "zelda-totk": 8},
+      ultimaConexion: null,
+      amigosEnComun: 0
     },
     {
       usuario: "mlopez",
@@ -805,7 +815,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#2F6B4F",
-      id: "mlopez"
+      id: "mlopez",
+      notas: {"zelda-totk": 8, "pokemon-legends-za": 9, "inside": 9},
+      ultimaConexion: null,
+      amigosEnComun: 0
     },
     {
       usuario: "lau_plays",
@@ -824,7 +837,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#3A3F45",
-      id: "lau_plays"
+      id: "lau_plays",
+      notas: {"inside": 9, "fnaf-into-the-pit": 8, "hollow-knight": 9},
+      ultimaConexion: null,
+      amigosEnComun: 0
     },
     {
       usuario: "valer1a",
@@ -843,7 +859,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#7A2E2E",
-      id: "valer1a"
+      id: "valer1a",
+      notas: {"zelda-totk": 9, "ghost-of-tsushima": 10, "hades": 8},
+      ultimaConexion: "hace 2 h",
+      amigosEnComun: 0
     },
     {
       usuario: "nico.gg",
@@ -862,7 +881,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#5B3F96",
-      id: "nico.gg"
+      id: "nico.gg",
+      notas: {"valorant": 8, "rocket-league": 7},
+      ultimaConexion: "hace 1 día",
+      amigosEnComun: 0
     },
     {
       usuario: "tatan",
@@ -881,7 +903,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#2456C4",
-      id: "tatan"
+      id: "tatan",
+      notas: {"rocket-league": 8, "zelda-totk": 10},
+      ultimaConexion: null,
+      amigosEnComun: 2
     },
     {
       usuario: "cami.rpg",
@@ -900,7 +925,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#B8343E",
-      id: "cami.rpg"
+      id: "cami.rpg",
+      notas: {"nier-automata": 10, "elden-ring": 9},
+      ultimaConexion: "hace 3 h",
+      amigosEnComun: 3
     },
     {
       usuario: "feli_fps",
@@ -919,7 +947,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#5B3F96",
-      id: "feli_fps"
+      id: "feli_fps",
+      notas: {"valorant": 9, "rocket-league": 8},
+      ultimaConexion: null,
+      amigosEnComun: 4
     },
     {
       usuario: "ana.indie",
@@ -938,7 +969,10 @@ const DATOS = {
       ],
       insignias: [],
       color: "#5A2D6B",
-      id: "ana.indie"
+      id: "ana.indie",
+      notas: {"hollow-knight": 9, "inside": 10, "hades": 9},
+      ultimaConexion: "hace 5 h",
+      amigosEnComun: 2
     },
     {
       usuario: "andresh",
@@ -1234,14 +1268,16 @@ const DATOS = {
       usuario: "samluq",
       tipo: "voto-util",
       texto: "Tu reseña de NieR: Automata recibió 12 votos de “útil”.",
-      fecha: null
+      enlace: "historial-resenas.html",
+      fecha: "2026-10-08"
     },
     {
       id: "n2",
       usuario: "samluq",
       tipo: "cierre-inscripciones",
       texto: "La Copa SaveSlot 2v2 cierra inscripciones el viernes.",
-      fecha: null
+      enlace: "detalle-evento.html?id=copa-2v2",
+      fecha: "2026-10-07"
     }
   ],
   destacadosInicio: [
@@ -1525,6 +1561,58 @@ const DATOS = {
       calificacion: 9,
       meGusta: true,
       tieneResena: true
+    }
+  ],
+  progresoLogros: [
+    {
+      id: "p1",
+      usuario: "samluq",
+      juego: "zelda-totk",
+      obtenidos: 86,
+      totales: 139,
+      plataforma: "Nintendo"
+    },
+    {
+      id: "p2",
+      usuario: "samluq",
+      juego: "fnaf-into-the-pit",
+      obtenidos: 24,
+      totales: 24,
+      plataforma: "Steam"
+    },
+    {
+      id: "p3",
+      usuario: "samluq",
+      juego: "nier-automata",
+      obtenidos: 17,
+      totales: 50,
+      plataforma: "Steam"
+    },
+    {
+      id: "p4",
+      usuario: "samluq",
+      juego: "rocket-league",
+      obtenidos: 16,
+      totales: 88,
+      plataforma: "Steam"
+    },
+    {
+      id: "p5",
+      usuario: "samluq",
+      juego: "hollow-knight",
+      obtenidos: 41,
+      totales: 63,
+      plataforma: "Steam"
+    }
+  ],
+  resumenLogros: [
+    {
+      id: "rl1",
+      usuario: "samluq",
+      desbloqueados: 1912,
+      promedio: 38,
+      juegosCompletos: 7,
+      raros: 24
     }
   ]
 };

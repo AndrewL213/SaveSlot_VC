@@ -71,6 +71,11 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<button class="boton boton--secundario" type="button">Cancelar</button>`
 - `.grupo-campo` con `.grupo-campo__etiqueta`, `__ayuda` (+ `--listo`, en verde), `__error`, y `.campo` (+ `--error`, `--sm`) para input, select y textarea:
   `<div class="grupo-campo"><label class="grupo-campo__etiqueta" for="c">Correo</label><input class="campo" id="c" type="email"></div>`
+- `.campo-clave` (+ `--error`) con `__campo` y un `.boton--icono` para mostrar u ocultar; `.fuerza-clave` con 4 `<i>` y `data-nivel` de 0 a 4:
+  `<div class="campo-clave"><input class="campo-clave__campo" type="password"><button class="boton boton--fantasma boton--icono boton--sm" aria-label="Mostrar contraseña">…</button></div>`
+- `.separador` (línea con texto en medio): `<p class="separador">o con tu correo</p>`
+- `.pasos` con `__paso` (actual con `aria-current="step"`) y `__numero`:
+  `<ol class="pasos"><li class="pasos__paso" aria-current="step"><span class="pasos__numero">1</span><span><b>Tus datos</b></span></li></ol>`
 - `.escala` (+ `--dificultad`) con `.escala__opcion` (elegida con `aria-pressed="true"`; en dificultad, las anteriores con `--llena`):
   `<div class="escala" role="group" aria-label="Tu calificación"><button class="escala__opcion" type="button" aria-pressed="false">1</button>…</div>`
 - `.opcion` (+ `--desactivada`) con `.opcion__texto` (radio dentro de una tarjeta):
@@ -105,6 +110,11 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<nav class="migas" aria-label="Ruta"><a href="…">Inicio</a><span aria-hidden="true">/</span><span aria-current="page">Zelda</span></nav>`
 - `.cabecera-juego` con `__contenido` (banda con el color del juego en `data-color`):
   `<section class="cabecera-juego" data-color="#2F6B4F"><div class="cabecera-juego__contenido">…</div></section>`
+- `.cabecera-perfil` con `__banda` (colores en `--c1`, `--c2`, `--c3`), `__contenido`, `__avatar` (en un `.avatar--lg`), `__texto` y `__acciones`:
+  `<section class="cabecera-perfil"><div class="cabecera-perfil__banda"></div><div class="cabecera-perfil__contenido"><span class="avatar avatar--lg cabecera-perfil__avatar">SL</span>…</div></section>`
+- `.histograma` con `__barra` (altura en `--h`, de 0 a 100; en pantallas va en `data-h`) y `.histograma__numeros`.
+- `.tabla` (envuelve un <table>; en celular las filas se vuelven tarjetas) con `__solo-escritorio`, `__ancha`, `__centro`, `__mes`, `__dia` y `__me-gusta` (+ `--activo`):
+  `<div class="tabla"><table><thead>…</thead><tbody><tr><td class="tabla__dia">07</td><td class="tabla__ancha">…</td></tr></tbody></table></div>`
 - `.ficha` (lista de datos con dt y dd):
   `<dl class="ficha"><dt>Desarrolla</dt><dd>Nintendo EPD</dd></dl>`
 - `.spoiler` (tapa una reseña con spoilers):
@@ -117,9 +127,9 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<div class="pestanas" role="tablist"><button class="pestanas__boton" role="tab" aria-selected="true">Reseñas <span class="contador">12</span></button></div>`
 - `.segmentado` con `.segmentado__opcion` (activa con `aria-selected="true"`):
   `<div class="segmentado" role="tablist"><button class="segmentado__opcion" role="tab" aria-selected="true">Iniciar sesión</button></div>`
-- `.navegacion` con `__contenido`, `__logo`, `__enlaces`, `__enlace` (actual con `aria-current="page"`; `--escritorio` solo en computador, `--movil` solo en celular), `__buscar` con `__buscar-campo`, `__acciones` (`navegacion__ocultar-movil` para ocultar un botón en celular) y `__usuario` con `__nombre` y `__nivel`. En celular los enlaces bajan a una barra fija (con íconos): la pantalla debe dejar espacio abajo.
+- `.navegacion` con `__contenido`, `__logo`, `__enlaces`, `__enlace` (actual con `aria-current="page"`; `--escritorio` solo en computador, `--movil` solo en celular), `__buscar` con `__buscar-campo`, `__acciones` (`navegacion__ocultar-movil` para ocultar un botón en celular) `__usuario` con `__nombre` y `__nivel`, y `__contador` (un `.contador contador--destacado` sobre la campana). En celular los enlaces bajan a una barra fija (con íconos): la pantalla debe dejar espacio abajo.
   `<header class="navegacion"><div class="navegacion__contenido"><a class="navegacion__logo" href="index.html">SaveSlot</a>…</div></header>`
-- `.portada` (+ `--enlace`, `--sm`) con `.portada__imagen` (img con alt, de assets/), `.portada__titulo` y `.portada__ranking`; `--c` de respaldo:
+- `.portada` (+ `--enlace`, `--sm`) con `.portada__imagen` (img con alt, de assets/), `.portada__titulo`, `.portada__ranking` y `.portada__accion` (botón arriba a la derecha); `--c` de respaldo:
   `<a class="portada portada--enlace" href="…" data-color="#8A2B2B"><img class="portada__imagen" src="assets/portada-hades.jpg" alt="Portada de Hades"><b class="portada__titulo">Hades</b></a>`
 - `.avatar` (+ `--sm` 32, normal 40, `--md` 56, `--lg` 128, `--ia`; anillo `--jugando`, `--en-linea`, `--desconectado` con `.avatar__punto` opcional):
   `<span class="avatar avatar--md avatar--jugando">SL<span class="avatar__punto"></span></span>`
