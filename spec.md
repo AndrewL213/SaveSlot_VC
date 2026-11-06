@@ -17,8 +17,8 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
   - Base de datos: reseñas y borradores, comentarios, diario, perfil, amigos, eventos, inscripciones, notificaciones, chats de MatchPlay, tendencias, vistos recientemente y mensajes de contacto.
   - Presencia: quién está en línea.
   - Su clave pública va en el código; los datos se protegen con reglas de acceso en la base.
-- **RAWG**: catálogo de juegos (búsqueda, filtros, ficha). Su clave se guarda en Vercel y se usa solo desde una función en `api/`, nunca en el código del navegador.
-- Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros y la vinculación con Steam y Xbox, y el estado de los servicios.
+- **IGDB** (de Twitch): catálogo de juegos (búsqueda, filtros, ficha y tiempos para terminar). Sus claves (Client ID y Client Secret de Twitch) se guardan en Vercel y se usan solo desde una función en `api/`, que también renueva el token de acceso; nunca van en el código del navegador (IGDB tampoco acepta pedidos directos desde el navegador). Uso no comercial: si SaveSlot se vuelve comercial, hay que pedir permiso a Twitch.
+- Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros (también los logros totales de cada juego, que IGDB no da) y la vinculación con Steam y Xbox, y el estado de los servicios.
 
 ## Flujo
 
@@ -42,7 +42,8 @@ Se puede entrar y explorar sin cuenta. La cuenta se pide solo al escribir, comen
 
 Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale.
 
-- **juegos** (RAWG): id, nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie), horas de la historia, logros totales, descripción, portada (de `assets/`), color de respaldo
+- **juegos** (IGDB): id, nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie), horas de la historia, descripción, portada (de `assets/`), color de respaldo
+  - Datos de ejemplo: logros totales (IGDB no los da)
   - Calculados con nuestras reseñas (Supabase): dificultad promedio (1–10), calificación, número de votos, horas al 100 %
 - **reseñas** (Supabase): id, juego, autor, tipo (reseña o guía), estado (publicada o borrador), título (opcional), texto, calificación (1–10), dificultad (1–10), horas jugadas, minutos de lectura (guías), contiene spoilers, votos de "útil", fecha
 - **comentarios** (Supabase): reseña, autor, texto, fecha
@@ -73,7 +74,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   5. Reseñas destacadas
   6. Eventos: el evento del mes y un sorteo
 - **Qué funciona de verdad:**
-  - Buscador y Mejores juegos de la semana: Real (RAWG)
+  - Buscador y Mejores juegos de la semana: Real (IGDB)
   - Reseñas destacadas y votar "útil": Real (Supabase)
   - Vistos recientemente: Real (Supabase; sin sesión, en el navegador)
   - Eventos: Real (Supabase)
@@ -103,7 +104,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   4. Filtros: género, plataforma, tipo, duración de la historia, año
   5. Botones Juego random y Limpiar filtros
 - **Qué funciona de verdad:**
-  - Búsqueda y filtros: Real (RAWG)
+  - Búsqueda y filtros: Real (IGDB)
   - Sugerencias automáticas al escribir (del flujograma): Después
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con las portadas de assets/.
@@ -119,7 +120,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   1. Selector de género
   2. Juego sugerido (portada, datos y enlace a su página)
   3. Botón para pedir otro
-- **Qué funciona de verdad:** Sugerencia: Real (RAWG)
+- **Qué funciona de verdad:** Sugerencia: Real (IGDB)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con la portada de assets/.
   - Funciona en celular (375 px de ancho).
@@ -158,7 +159,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   5. Ficha del juego
   6. "Si te gusta, prueba"
 - **Qué funciona de verdad:**
-  - Ficha, datos y "Si te gusta, prueba": Real (RAWG)
+  - Ficha, datos y "Si te gusta, prueba": Real (IGDB)
   - Dificultad, calificación y horas al 100 %: Real (calculados con reseñas de Supabase)
   - Pestañas Reseñas y Guías, votar "útil": Real (Supabase)
   - Editar o eliminar mi reseña: Real (Supabase)

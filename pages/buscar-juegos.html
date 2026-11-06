@@ -3,62 +3,153 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Buscar juegos · SaveSlot</title>
 <meta name="description" content="Busca juegos y filtra por género, plataforma, tipo, duración y año.">
 <meta name="theme-color" content="#12161D">
+<link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="../css/prototipo.css">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/styles.css">
 </head>
-<body data-page="buscar" data-section="juegos">
+<body data-pantalla="buscar">
 
-<main class="container page" style="gap:24px">
-  <form class="search-big" id="search-form" role="search" style="max-width:none">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA8B8" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-    <label class="sr-only" for="sq">Buscar</label>
-    <input id="sq" type="search" placeholder="Nombre del juego o género">
-    <button class="btn btn-primary" type="submit">Buscar</button>
-  </form>
-  <div class="row between">
-    <h1 style="font-size:28px" id="count" aria-live="polite">Buscando…</h1>
-    <div class="row"><a class="btn btn-secondary btn-sm" href="juego-random.html">Juego random</a><button class="btn btn-ghost" id="clear-all" type="button">Limpiar filtros</button></div>
-  </div>
-  <button type="button" class="btn btn-secondary filters-toggle" id="filters-toggle" aria-expanded="false" aria-controls="filters">Filtros</button>
-  <div class="split">
-    <form class="side panel" id="filters" aria-label="Filtros" style="gap:22px">
-      <fieldset style="border:0;margin:0;padding:0" class="stack"><legend class="label" style="margin-bottom:8px">Género</legend>
-        <label class="check"><input type="checkbox" name="genre" value="Aventura">Aventura</label>
-        <label class="check"><input type="checkbox" name="genre" value="RPG">RPG</label>
-        <label class="check"><input type="checkbox" name="genre" value="Acción">Acción</label>
-        <label class="check"><input type="checkbox" name="genre" value="Terror">Terror</label>
-        <label class="check"><input type="checkbox" name="genre" value="Shooter">Shooter</label>
-        <label class="check"><input type="checkbox" name="genre" value="Deportes">Deportes</label>
-        <label class="check"><input type="checkbox" name="genre" value="Roguelike">Roguelike</label>
-      </fieldset>
-      <fieldset style="border:0;margin:0;padding:0" class="stack"><legend class="label" style="margin-bottom:8px">Plataforma</legend>
-        <label class="check"><input type="checkbox" name="plat" value="PC">PC</label>
-        <label class="check"><input type="checkbox" name="plat" value="PlayStation">PlayStation</label>
-        <label class="check"><input type="checkbox" name="plat" value="Xbox">Xbox</label>
-        <label class="check"><input type="checkbox" name="plat" value="Nintendo">Nintendo</label>
-      </fieldset>
-      <div class="stack" style="gap:8px"><span class="label">Tipo</span><div class="row" style="gap:6px">
-        <button type="button" class="chip" data-type="Todos" aria-pressed="true">Todos</button><button type="button" class="chip" data-type="AAA" aria-pressed="false">AAA</button><button type="button" class="chip" data-type="Indie" aria-pressed="false">Indie</button></div></div>
-      <div class="stack" style="gap:8px"><span class="label">Duración de la historia</span><div class="row" style="gap:6px">
-        <button type="button" class="chip" data-length="corto" aria-pressed="false">&lt; 10 h</button><button type="button" class="chip" data-length="medio" aria-pressed="false">10–40 h</button><button type="button" class="chip" data-length="largo" aria-pressed="false">40 h +</button></div></div>
-      <div class="stack" style="gap:8px"><span class="label">Año de lanzamiento</span><div class="row" style="flex-wrap:nowrap">
-        <label class="sr-only" for="y1">Desde</label><input class="input" id="y1" type="number" min="1970" max="2027" inputmode="numeric" placeholder="1970" style="width:100%;min-width:0">
-        <span class="muted">a</span>
-        <label class="sr-only" for="y2">Hasta</label><input class="input" id="y2" type="number" min="1970" max="2027" inputmode="numeric" placeholder="2026" style="width:100%;min-width:0"></div></div>
+<header class="navegacion">
+  <div class="navegacion__contenido">
+    <a class="navegacion__logo" href="../index.html"><img src="../assets/favicon.svg" alt="">SaveSlot</a>
+    <nav aria-label="Principal">
+      <ul class="navegacion__enlaces">
+        <li><a class="navegacion__enlace" href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li>
+        <li><a class="navegacion__enlace" href="buscar-juegos.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4M15.5 12h.01M18 14h.01"/></svg><span>Juegos</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--escritorio" href="comunidad.html"><span>Comunidad</span></a></li>
+        <li><a class="navegacion__enlace" href="eventos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Eventos</span></a></li>
+        <li><a class="navegacion__enlace" href="matchplay.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>MatchPlay</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--movil" href="iniciar-sesion.html" data-enlace-cuenta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span data-texto>Entrar</span></a></li>
+      </ul>
+    </nav>
+    <form class="navegacion__buscar" role="search" action="buscar-juegos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="solo-lectores" for="buscar-encabezado">Buscar juegos</label>
+      <input class="navegacion__buscar-campo" id="buscar-encabezado" name="q" type="search" placeholder="Buscar juegos">
     </form>
-    <div class="main" id="results" aria-live="polite"></div>
+    <div class="navegacion__acciones" data-acciones-sesion>
+      <a class="boton boton--secundario boton--sm navegacion__ocultar-movil" href="iniciar-sesion.html">Iniciar sesión</a>
+      <a class="boton boton--sm" href="crear-cuenta.html">Crear cuenta</a>
+    </div>
   </div>
+</header>
+
+<div class="franja" data-franja role="region" aria-label="Aviso del prototipo">
+  <span>Prototipo académico: los datos de juegos son de ejemplo hasta conectar las APIs. <a class="franja__enlace" href="../404.html?tipo=demo">Más información</a></span>
+  <button class="boton boton--fantasma boton--icono boton--sm" type="button" data-cerrar-franja aria-label="Ocultar aviso del prototipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+
+<main class="contenedor contenedor--junto">
+
+  <form class="buscador" id="formulario-busqueda" role="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <label class="solo-lectores" for="busqueda">Buscar por nombre o género</label>
+    <input class="buscador__campo" id="busqueda" name="q" type="search" placeholder="Nombre del juego o género">
+    <button class="boton" type="submit">Buscar</button>
+  </form>
+
+  <div class="en-fila en-fila--entre">
+    <h1 class="titulo-pagina" id="cantidad-resultados" aria-live="polite">Buscando…</h1>
+    <div class="en-fila">
+      <a class="boton boton--secundario boton--sm" href="juego-random.html">Juego random</a>
+      <button class="boton boton--fantasma" type="button" id="limpiar-filtros">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <button class="boton boton--secundario filtros-boton" type="button" id="boton-filtros" aria-expanded="false" aria-controls="filtros">Filtros</button>
+
+  <div class="division">
+    <form class="panel division__lateral filtros" id="filtros" aria-label="Filtros">
+      <fieldset class="grupo-campo">
+        <legend class="grupo-campo__etiqueta">Género</legend>
+        <label class="casilla"><input type="checkbox" name="genero" value="Aventura">Aventura</label>
+        <label class="casilla"><input type="checkbox" name="genero" value="RPG">RPG</label>
+        <label class="casilla"><input type="checkbox" name="genero" value="Acción">Acción</label>
+        <label class="casilla"><input type="checkbox" name="genero" value="Terror">Terror</label>
+        <label class="casilla"><input type="checkbox" name="genero" value="Shooter">Shooter</label>
+        <label class="casilla"><input type="checkbox" name="genero" value="Deportes">Deportes</label>
+        <label class="casilla"><input type="checkbox" name="genero" value="Roguelike">Roguelike</label>
+      </fieldset>
+      <fieldset class="grupo-campo">
+        <legend class="grupo-campo__etiqueta">Plataforma</legend>
+        <label class="casilla"><input type="checkbox" name="plataforma" value="PC">PC</label>
+        <label class="casilla"><input type="checkbox" name="plataforma" value="PlayStation">PlayStation</label>
+        <label class="casilla"><input type="checkbox" name="plataforma" value="Xbox">Xbox</label>
+        <label class="casilla"><input type="checkbox" name="plataforma" value="Nintendo">Nintendo</label>
+      </fieldset>
+      <fieldset class="grupo-campo">
+        <legend class="grupo-campo__etiqueta">Tipo</legend>
+        <div class="en-fila">
+          <button class="chip" type="button" data-tipo="" aria-pressed="true">Todos</button>
+          <button class="chip" type="button" data-tipo="AAA" aria-pressed="false">AAA</button>
+          <button class="chip" type="button" data-tipo="Indie" aria-pressed="false">Indie</button>
+        </div>
+      </fieldset>
+      <fieldset class="grupo-campo">
+        <legend class="grupo-campo__etiqueta">Duración de la historia</legend>
+        <div class="en-fila">
+          <button class="chip" type="button" data-duracion="corto" aria-pressed="false">&lt; 10 h</button>
+          <button class="chip" type="button" data-duracion="medio" aria-pressed="false">10–40 h</button>
+          <button class="chip" type="button" data-duracion="largo" aria-pressed="false">40 h +</button>
+        </div>
+      </fieldset>
+      <fieldset class="grupo-campo">
+        <legend class="grupo-campo__etiqueta">Año de lanzamiento</legend>
+        <div class="en-fila en-fila--fija">
+          <label class="solo-lectores" for="anio-desde">Desde</label>
+          <input class="campo" id="anio-desde" type="number" min="1970" max="2027" inputmode="numeric" placeholder="1970">
+          <span class="tarjeta__texto">a</span>
+          <label class="solo-lectores" for="anio-hasta">Hasta</label>
+          <input class="campo" id="anio-hasta" type="number" min="1970" max="2027" inputmode="numeric" placeholder="2026">
+        </div>
+      </fieldset>
+    </form>
+
+    <div class="division__principal" id="resultados" aria-live="polite"></div>
+  </div>
+
 </main>
-<script src="../js/prototipo.js"></script>
+
+<footer class="pie">
+  <div class="pie__contenido">
+    <div class="pie__marca">
+      <a class="pie__logo" href="../index.html">SaveSlot</a>
+      <p class="pie__frase">Tu solución gamer. Todos tus juegos y sus comunidades en un solo lugar.</p>
+    </div>
+    <nav class="pie__columnas" aria-label="Pie de página">
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Explora</h2>
+        <a class="pie__enlace" href="buscar-juegos.html">Juegos</a>
+        <a class="pie__enlace" href="juego-random.html">Juego random</a>
+        <a class="pie__enlace" href="eventos.html">Eventos</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Cuenta</h2>
+        <a class="pie__enlace" href="perfil.html">Mi perfil</a>
+        <a class="pie__enlace" href="amigos.html">Amigos</a>
+        <a class="pie__enlace" href="historial-resenas.html">Historial de reseñas</a>
+        <a class="pie__enlace" href="diario.html">Diario</a>
+        <a class="pie__enlace" href="logros.html">Logros</a>
+        <a class="pie__enlace" href="iniciar-sesion.html" data-pie-sesion>Iniciar sesión</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Ayuda</h2>
+        <a class="pie__enlace" href="contacto.html">Contáctanos</a>
+        <a class="pie__enlace" href="../404.html?tipo=estado">Estado de servicios</a>
+        <a class="pie__enlace" href="eventos.html#reglas">Reglas de eventos</a>
+      </div>
+    </nav>
+    <p class="pie__creditos">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos, marcas y portadas pertenecen a sus dueños; portadas tomadas de Steam y Wikipedia. Datos de juegos: ejemplo.</p>
+  </div>
+</footer>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
 </body>
 </html>

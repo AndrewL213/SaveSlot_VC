@@ -4,7 +4,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 - **Separada**: tiene su propia página (o vive dentro de la página indicada, si es una ventana).
 - **Con kit**: usa solo css/tokens.css y css/components.css, ya no el andamio (css/prototipo.css y js/prototipo.js).
-- **Datos en data.js**: sus datos simulados salen de js/data.js, separados del diseño (o de Supabase/RAWG, si son Real).
+- **Datos en data.js**: sus datos simulados salen de js/data.js, separados del diseño (o de Supabase/IGDB, si son Real).
 - **Revisada vs spec**: cumple todos sus criterios de «Está lista cuando» en spec.md.
 
 ## Descubrir
@@ -12,11 +12,11 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
 | 1. Inicio | `index.html` | ✅ | ✅ | ✅ | ⬜ |
-| 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 4. Juego random | `pages/juego-random.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 5. MatchPlay | `pages/matchplay.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 7. Ventana: Dificultad de 1 a 10 | dentro de `pages/detalle-juego.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ✅ | ✅ | ⬜ |
+| 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ | ⬜ |
+| 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ | ⬜ |
+| 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ | ⬜ |
+| 7. Ventana: Dificultad de 1 a 10 | dentro de `pages/detalle-juego.html` | ✅ | ✅ | ✅ | ⬜ |
 
 ## Opinar
 
@@ -66,3 +66,5 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 - **Contáctanos**: todavía muestra la tarjeta de correo y redes, que la spec quita del MVP.
 - **Mensaje (Amigos y Perfil de otro usuario)**, clips, pagos, Google y Discord y foto de perfil: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
 - **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).
+- **Detalle de juego**: todavía no muestra las reseñas propias ni deja editarlas o eliminarlas; llega con Escribir reseña (8).
+- **Datos fuera de spec.md** (agregarlos a la sección Datos): meGusta, destacado, destacadosInicio, porcentajeUtil de las guías, horasAtras de los chats de ejemplo y respuestasMatchplay.

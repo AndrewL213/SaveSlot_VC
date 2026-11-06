@@ -129,6 +129,360 @@ body {
   gap: var(--espacio-2);
 }
 
+/* Pantallas con menos aire entre bloques (Buscar juegos) */
+.contenedor--junto {
+  gap: var(--espacio-6);
+}
+
+/* Fila que no baja de renglón (por ejemplo, "1970 a 2026") */
+.en-fila--fija {
+  flex-wrap: nowrap;
+}
+
+.en-fila--fija .campo {
+  min-width: 0;
+}
+
+/* ---------- Dos columnas: principal y lateral ---------- */
+/* En pantallas angostas, la lateral baja; en anchas, va al lado */
+.division {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--espacio-7);
+}
+
+.division__principal {
+  flex: 999 1 calc(var(--espacio-8) * 14);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+}
+
+.division__lateral {
+  flex: 1 1 calc(var(--espacio-8) * 8);
+  min-width: 0;
+}
+
+/* ---------- Buscar juegos ---------- */
+.filtros {
+  gap: var(--espacio-6);
+}
+
+/* El botón "Filtros" solo aparece cuando los filtros no caben al lado */
+.filtros-boton {
+  display: none;
+}
+
+/* Resultado: portada, nombre y datos */
+.resultado {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-4);
+}
+
+.resultado .portada--sm {
+  width: calc(var(--espacio-8) + var(--espacio-6));
+}
+
+.resultado__nombre {
+  flex: 1 1 calc(var(--espacio-8) * 6);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-1);
+}
+
+.resultado__datos {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: var(--espacio-1) var(--espacio-6);
+  text-align: right;
+}
+
+/* ---------- Juego random ---------- */
+.contenedor--angosto {
+  max-width: calc(var(--espacio-8) * 27);
+}
+
+.seccion--junta {
+  gap: var(--espacio-2);
+}
+
+.sugerencia {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-7);
+}
+
+.sugerencia__portada {
+  flex: none;
+  width: calc(var(--espacio-8) * 5 + var(--espacio-5));
+  max-width: 100%;
+}
+
+.sugerencia__texto {
+  flex: 999 1 calc(var(--espacio-8) * 8 + var(--espacio-5));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+}
+
+.sugerencia__texto p {
+  margin: 0;
+}
+
+/* ---------- Columna de bloques ---------- */
+.pila {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+}
+
+.pila--junta {
+  gap: var(--espacio-3);
+}
+
+/* ---------- Detalle de juego ---------- */
+.juego-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--espacio-7);
+}
+
+.juego-encabezado__portada {
+  flex: none;
+  width: calc(var(--espacio-8) * 5 + var(--espacio-5));
+  max-width: 100%;
+}
+
+.juego-encabezado__texto {
+  flex: 999 1 calc(var(--espacio-8) * 12);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+}
+
+.juego-encabezado__acciones {
+  margin-top: var(--espacio-1);
+}
+
+.datos-clave {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--espacio-8) * 5), 1fr));
+  gap: var(--espacio-3);
+}
+
+/* Juego parecido: portada pequeña y nombre */
+.similar {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  color: var(--color-texto);
+  text-decoration: none;
+}
+
+.similar:hover b {
+  text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+  .juego-encabezado {
+    gap: var(--espacio-4);
+  }
+
+  .juego-encabezado__portada {
+    width: calc(var(--espacio-8) * 3);
+  }
+
+  .juego-encabezado__acciones {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .datos-clave {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- MatchPlay ---------- */
+.chat {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: calc(100vh - var(--alto-control) * 2.5);
+}
+
+.chat__biblioteca {
+  flex: 1 1 calc(var(--espacio-8) * 7);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  padding: var(--espacio-4);
+  border-right: var(--borde-fino) solid var(--color-borde);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-fondo) 85%, black), color-mix(in srgb, var(--color-fondo) 75%, black));
+}
+
+.chat__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+
+.chat__lista .panel__titulo {
+  padding: var(--espacio-3) var(--espacio-2) var(--espacio-1);
+}
+
+.chat__principal {
+  flex: 999 1 calc(var(--espacio-8) * 15);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat__boton-biblioteca {
+  display: none;
+}
+
+.chat__inicio {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-7);
+  padding: calc(var(--espacio-8) + var(--espacio-4)) var(--espacio-7) var(--espacio-6);
+}
+
+.chat__inicio[hidden],
+.chat__hilo[hidden] {
+  display: none;
+}
+
+.chat__saludo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-3);
+  text-align: center;
+}
+
+.chat__tendencias {
+  width: 100%;
+  max-width: calc(var(--espacio-8) * 20 + var(--espacio-5));
+}
+
+.rejilla-tendencias {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--espacio-8) * 6 + var(--espacio-5)), 1fr));
+  gap: var(--espacio-4);
+}
+
+/* Tarjeta de tendencia: es un botón que empieza un chat */
+.tendencia {
+  align-items: flex-start;
+  gap: var(--espacio-1);
+  font-family: inherit;
+  font-size: var(--texto-base);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat__hilo,
+.chat__compositor {
+  width: 100%;
+  max-width: calc(var(--espacio-8) * 22);
+  margin: 0 auto;
+}
+
+.chat__hilo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  padding: var(--espacio-7);
+}
+
+.chat__compositor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  padding: var(--espacio-4) var(--espacio-7) var(--espacio-6);
+}
+
+.chat__aviso {
+  text-align: center;
+}
+
+.chat__velo {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: color-mix(in srgb, var(--color-fondo) 60%, transparent);
+}
+
+/* Celular y tableta: la biblioteca es un panel que se desliza desde la izquierda */
+@media (max-width: 900px) {
+  .chat__biblioteca {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 60;
+    width: min(calc(var(--espacio-8) * 8), 86vw);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform var(--duracion-media) var(--curva);
+  }
+
+  .chat__biblioteca.chat__biblioteca--abierta {
+    transform: none;
+    box-shadow: var(--sombra-media);
+  }
+
+  .chat__boton-biblioteca {
+    display: inline-flex;
+    align-self: flex-start;
+    margin: var(--espacio-3) var(--espacio-4) 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .chat__inicio {
+    gap: var(--espacio-5);
+    padding: var(--espacio-6) var(--espacio-4);
+  }
+
+  .chat__hilo {
+    padding: var(--espacio-5) var(--espacio-4);
+  }
+
+  /* La caja de escribir queda pegada encima de la barra de navegación */
+  .chat__compositor {
+    position: sticky;
+    bottom: calc(var(--alto-control) + var(--espacio-4));
+    padding: var(--espacio-3) var(--espacio-4);
+    background: var(--color-fondo);
+  }
+}
+
+/* Filtros plegables cuando no caben al lado de los resultados */
+@media (max-width: 900px) {
+  .filtros-boton {
+    display: inline-flex;
+    align-self: flex-start;
+  }
+
+  .filtros:not(.filtros--abiertos) {
+    display: none;
+  }
+}
+
 /* Celular: deja espacio abajo para la barra de navegación fija */
 @media (max-width: 700px) {
   body {

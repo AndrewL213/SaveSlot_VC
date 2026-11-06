@@ -15,7 +15,7 @@ Digitales 3. Más contexto en README.md.
   React, Vue, Tailwind ni TypeScript) y sin paso de compilación: todo
   debe funcionar abriendo los archivos en el navegador.
 - La app se publicará en Vercel, conectada a este repositorio.
-- Cuentas y base de datos: Supabase. Catálogo de juegos: RAWG. Todo lo
+- Cuentas y base de datos: Supabase. Catálogo de juegos: IGDB (de Twitch). Todo lo
   demás usa datos simulados (ver spec.md).
 
 ## Estructura del proyecto
@@ -27,7 +27,7 @@ Digitales 3. Más contexto en README.md.
 - js/: código. app.js (comportamiento) y data.js (datos simulados,
   separados del diseño).
 - api/: funciones de Vercel que usan claves secretas (por ejemplo, la
-  consulta a RAWG). JavaScript sin paso de compilación.
+  consulta a IGDB). JavaScript sin paso de compilación.
 - index.html: la pantalla de inicio, la puerta de entrada de la app.
   Las demás pantallas van en la carpeta pages/.
 - 404.html: la página de error, también en la raíz (Vercel la usa para
@@ -47,7 +47,7 @@ Digitales 3. Más contexto en README.md.
 4. Nunca escribas claves, contraseñas ni tokens de acceso en el código:
    este repositorio es público. Única excepción: la clave pública (anon
    key) de Supabase, hecha para ir en el navegador; los datos se protegen
-   con reglas de acceso en la base. Las demás claves (como la de RAWG) van
+   con reglas de acceso en la base. Las demás claves (como las de Twitch para IGDB) van
    en las variables de entorno de Vercel y solo se usan desde api/.
 5. Si algo que te pedimos contradice spec.md, avísanos antes de hacerlo.
 6. Al terminar cada tarea, explica en lenguaje simple qué cambiaste y
@@ -63,13 +63,17 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
 
 - `.antetitulo` y `.titulo-pagina` (+ `--grande`):
   `<span class="antetitulo">Tu gente</span><h1 class="titulo-pagina">Amigos</h1>`
+- `.bajada` (párrafo bajo el título que explica la pantalla):
+  `<h1 class="titulo-pagina">Juego random</h1><p class="bajada">Elige un género…</p>`
 - `.encabezado-seccion` con `__titulo` y `__enlace`:
   `<div class="encabezado-seccion"><h2 class="encabezado-seccion__titulo">Mejores juegos</h2><a class="encabezado-seccion__enlace" href="…">Ver todo</a></div>`
 - `.boton` (+ `--secundario`, `--fantasma`, `--peligro`, `--sm`, `--bloque`, `--icono`; presionado con `aria-pressed="true"`):
   `<button class="boton boton--secundario" type="button">Cancelar</button>`
 - `.grupo-campo` con `.grupo-campo__etiqueta`, `__ayuda`, `__error`, y `.campo` (+ `--error`, `--sm`) para input, select y textarea:
   `<div class="grupo-campo"><label class="grupo-campo__etiqueta" for="c">Correo</label><input class="campo" id="c" type="email"></div>`
-- `.buscador` con `.buscador__campo`:
+- `.casilla` (checkbox con su texto; se agrupan en `fieldset.grupo-campo` con `legend.grupo-campo__etiqueta`):
+  `<label class="casilla"><input type="checkbox" name="genero" value="RPG">RPG</label>`
+- `.buscador` (+ `--ia`, borde morado para escribirle a MatchPlay) con `.buscador__campo`:
   `<form class="buscador" role="search"><input class="buscador__campo" type="search" aria-label="Buscar juegos"><button class="boton">Buscar</button></form>`
 - `.etiqueta` (+ `--primario`, `--exito`, `--error`, `--aviso`, `--ia`, `--amigo`, `--contorno`):
   `<span class="etiqueta etiqueta--amigo">Amigo</span>`
@@ -89,8 +93,22 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<a class="fila fila--actividad" href="…"><span class="avatar avatar--sm">JV</span><span>juanvi reseñó Hades</span></a>`
 - `.panel` con `.panel__titulo`:
   `<section class="panel"><h2 class="panel__titulo">Actividad</h2>…</section>`
-- `.dato` con `.dato__etiqueta` y `.dato__valor`:
+- `.dato` (+ `--destacado`) con `.dato__etiqueta`, `.dato__valor` y `.dato__ayuda` (botón que parece enlace):
   `<div class="dato"><span class="dato__etiqueta">Logros</span><span class="dato__valor">1.912</span></div>`
+- `.calaveras` con `.calaveras__marca` (+ `--encendida`), la dificultad en 10 marcas:
+  `<div class="calaveras" role="img" aria-label="Dificultad 6 de 10"><i class="calaveras__marca calaveras__marca--encendida"></i>…</div>`
+- `.migas` (ruta; la página actual con `aria-current="page"`):
+  `<nav class="migas" aria-label="Ruta"><a href="…">Inicio</a><span aria-hidden="true">/</span><span aria-current="page">Zelda</span></nav>`
+- `.cabecera-juego` con `__contenido` (banda con el color del juego en `data-color`):
+  `<section class="cabecera-juego" data-color="#2F6B4F"><div class="cabecera-juego__contenido">…</div></section>`
+- `.ficha` (lista de datos con dt y dd):
+  `<dl class="ficha"><dt>Desarrolla</dt><dd>Nintendo EPD</dd></dl>`
+- `.spoiler` (tapa una reseña con spoilers):
+  `<div class="spoiler"><span>Esta reseña tiene spoilers.</span><button class="boton boton--secundario boton--sm">Mostrar de todas formas</button></div>`
+- `.mensaje` (+ `--usuario`) con `.burbuja` (+ `--usuario`, `--ia`, `--error`; `__fuente` y `__votos`), para el chat de MatchPlay:
+  `<div class="mensaje"><span class="avatar avatar--sm avatar--ia">IA</span><div class="burbuja burbuja--ia">…</div></div>`
+- `.item-chat` (actual con `aria-current="true"`) con `__abrir` y `__borrar`:
+  `<div class="item-chat"><button class="item-chat__abrir">Terror corto</button><button class="item-chat__borrar" aria-label="Borrar chat">…</button></div>`
 - `.pestanas` con `.pestanas__boton` (activa con `aria-selected="true"`; número con `.contador`):
   `<div class="pestanas" role="tablist"><button class="pestanas__boton" role="tab" aria-selected="true">Reseñas <span class="contador">12</span></button></div>`
 - `.segmentado` con `.segmentado__opcion` (activa con `aria-selected="true"`):

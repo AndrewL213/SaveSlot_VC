@@ -2,7 +2,7 @@
    Datos simulados de la app, separados del diseño. Una lista por tipo de dato, con los
    nombres de la sección Datos de spec.md y un id en cada elemento.
    Las pantallas los leen solo con obtenerDatos("…") de js/app.js: cuando se conecten
-   Supabase y RAWG, cambia esa función y no este archivo ni las pantallas.
+   Supabase e IGDB, cambia esa función y no este archivo ni las pantallas.
    Origen: disenos/js/data.js (diseño v3). Portadas desde assets/. */
 
 const DATOS = {
@@ -485,6 +485,96 @@ const DATOS = {
       votosUtil: 45,
       meGusta: 22,
       fecha: "2026-08-02"
+    },
+    {
+      id: "g1",
+      juego: "zelda-totk",
+      autor: "cami.rpg",
+      tipo: "guia",
+      estado: "publicada",
+      titulo: "Las 4 regiones en el orden recomendado",
+      texto: null,
+      calificacion: null,
+      dificultad: null,
+      horas: null,
+      minutosLectura: 12,
+      spoiler: false,
+      votosUtil: null,
+      porcentajeUtil: 94,
+      meGusta: 0,
+      fecha: null
+    },
+    {
+      id: "g2",
+      juego: "zelda-totk",
+      autor: "kenvel",
+      tipo: "guia",
+      estado: "publicada",
+      titulo: "Cómo conseguir la armadura Zonai",
+      texto: null,
+      calificacion: null,
+      dificultad: null,
+      horas: null,
+      minutosLectura: 6,
+      spoiler: false,
+      votosUtil: null,
+      porcentajeUtil: 88,
+      meGusta: 0,
+      fecha: null
+    },
+    {
+      id: "g3",
+      juego: "valorant",
+      autor: "feli_fps",
+      tipo: "guia",
+      estado: "publicada",
+      titulo: "Agentes para empezar si vienes de CS",
+      texto: null,
+      calificacion: null,
+      dificultad: null,
+      horas: null,
+      minutosLectura: 8,
+      spoiler: false,
+      votosUtil: null,
+      porcentajeUtil: 89,
+      meGusta: 0,
+      fecha: null
+    },
+    {
+      id: "g4",
+      juego: "nier-automata",
+      autor: "kenvel",
+      tipo: "guia",
+      estado: "publicada",
+      titulo: "Todos los finales sin perderte ninguno",
+      texto: null,
+      calificacion: null,
+      dificultad: null,
+      horas: null,
+      minutosLectura: 15,
+      spoiler: false,
+      votosUtil: null,
+      porcentajeUtil: 91,
+      meGusta: 0,
+      fecha: null
+    },
+    {
+      id: "g5",
+      juego: "rocket-league",
+      autor: "juanvi",
+      tipo: "guia",
+      estado: "publicada",
+      titulo: "Aéreos básicos en 10 minutos",
+      texto: null,
+      calificacion: null,
+      dificultad: null,
+      horas: null,
+      minutosLectura: 10,
+      spoiler: false,
+      votosUtil: null,
+      porcentajeUtil: 86,
+      meGusta: 0,
+      fecha: null
     }
   ],
   comentarios: [
@@ -547,6 +637,9 @@ const DATOS = {
         "hollow-knight",
         "fnaf-into-the-pit"
       ],
+      xp: 1240,
+      generosFavoritos: ["Aventura", "RPG", "Terror"],
+      listaDeseos: ["hades-ii", "ghost-of-tsushima", "elden-ring"],
       insignias: [
         "Fundador beta"
       ],
@@ -974,6 +1067,275 @@ const DATOS = {
     {
       id: "d3",
       juego: "hollow-knight"
+    }
+  ],
+  logros: [
+    {
+      id: "l1",
+      juego: "zelda-totk",
+      nombre: "Primer santuario",
+      descripcion: "Completa tu primer santuario",
+      porcentaje: 92,
+      obtenido: true,
+      plataforma: null
+    },
+    {
+      id: "l2",
+      juego: "zelda-totk",
+      nombre: "Explorador del cielo",
+      descripcion: "Visita todas las islas del cielo",
+      porcentaje: 14,
+      obtenido: true,
+      plataforma: null
+    },
+    {
+      id: "l3",
+      juego: "zelda-totk",
+      nombre: "Maestro Zonai",
+      descripcion: "Fusiona 50 dispositivos distintos",
+      porcentaje: 8,
+      obtenido: false,
+      plataforma: null
+    },
+    {
+      id: "l4",
+      juego: "fnaf-into-the-pit",
+      nombre: "Sin un rasguño",
+      descripcion: "Termina sin recibir daño",
+      porcentaje: 3.1,
+      obtenido: true,
+      plataforma: null
+    },
+    {
+      id: "l5",
+      juego: "nier-automata",
+      nombre: "Final E",
+      descripcion: "Llega al final verdadero",
+      porcentaje: 22,
+      obtenido: true,
+      plataforma: null
+    }
+  ],
+  tendenciasMatchplay: [
+    {
+      id: "t1",
+      etiqueta: "En tendencia · Rocket League",
+      pregunta: "¿Cada cuánto hay torneos en Rocket League?",
+      preguntasHoy: 2100
+    },
+    {
+      id: "t2",
+      etiqueta: "Lanzamientos",
+      pregunta: "¿Qué juegos nuevos salen esta semana?",
+      preguntasHoy: 1600
+    },
+    {
+      id: "t3",
+      etiqueta: "En tendencia · Pokémon Legends Z-A",
+      pregunta: "¿Qué hago primero en Pokémon Legends Z-A?",
+      preguntasHoy: 1200
+    },
+    {
+      id: "t4",
+      etiqueta: "Guía",
+      pregunta: "¿Cuánto dura Hollow Knight al 100%?",
+      preguntasHoy: 860
+    }
+  ],
+  chatsMatchplay: [
+    {
+      id: "c1",
+      usuario: "samluq",
+      titulo: "Juegos parecidos a NieR",
+      horasAtras: 2,
+      mensajes: [
+        {
+          quien: "usuario",
+          texto: "Terminé NieR: Automata y quiero algo parecido. Tengo unas 30 horas este mes."
+        },
+        {
+          quien: "ia",
+          texto: "Si te gustó NieR: Automata, prueba Hades (≈22 h), Hollow Knight (≈27 h) o Ghost of Tsushima (≈25 h). Si eliges uno, empieza por Hades."
+        }
+      ]
+    },
+    {
+      id: "c2",
+      usuario: "samluq",
+      titulo: "Orden de regiones en TOTK",
+      horasAtras: 72,
+      mensajes: [
+        {
+          quien: "usuario",
+          texto: "¿En qué orden hago las regiones de Zelda: TOTK?"
+        },
+        {
+          quien: "ia",
+          texto: "La comunidad recomienda: Rito, Zora, Goron y Gerudo. Antes de Gerudo conviene tener al menos 8 corazones."
+        }
+      ]
+    },
+    {
+      id: "c3",
+      usuario: "samluq",
+      titulo: "Terror corto para el finde",
+      horasAtras: 288,
+      mensajes: [
+        {
+          quien: "usuario",
+          texto: "Un juego de terror corto para el fin de semana."
+        },
+        {
+          quien: "ia",
+          texto: "Inside (≈3 h) o FNAF: Into the Pit (≈6 h)."
+        }
+      ]
+    }
+  ],
+  respuestasMatchplay: [
+    {
+      id: "ia1",
+      palabras: [
+        "rocket"
+      ],
+      texto: "Los torneos oficiales de Rocket League se juegan varias veces al día desde el menú del juego. En SaveSlot tienes además la Copa 2v2 del sábado: revisa los cupos en Eventos."
+    },
+    {
+      id: "ia2",
+      palabras: [
+        "hollow",
+        "dura"
+      ],
+      texto: "Hollow Knight: unas 27 h la historia principal y unas 60 h al 100%, según los votos de la comunidad."
+    },
+    {
+      id: "ia3",
+      palabras: [
+        "pokémon",
+        "pokemon"
+      ],
+      texto: "En Pokémon Legends Z-A conviene completar las misiones secundarias temprano: dan dinero y objetos de evolución."
+    },
+    {
+      id: "ia4",
+      palabras: [
+        "nier",
+        "parecido"
+      ],
+      texto: "Si te gustó NieR: Automata, prueba Hades (≈22 h), Hollow Knight (≈27 h) o Ghost of Tsushima (≈25 h). Si eliges uno, empieza por Hades."
+    },
+    {
+      id: "ia5",
+      palabras: [
+        "corto",
+        "finde",
+        "terror"
+      ],
+      texto: "Para un fin de semana: Inside (≈3 h) o FNAF: Into the Pit (≈6 h). Los dos dan miedo sin depender de sustos baratos."
+    },
+    {
+      id: "ia6",
+      palabras: [
+        "nuevo",
+        "salen",
+        "lanzamiento"
+      ],
+      texto: "Cuando conectemos el catálogo de juegos te mostraré los lanzamientos de la semana en tus plataformas. Por ahora puedes ver los mejores juegos de la semana en Inicio."
+    },
+    {
+      id: "ia7",
+      palabras: [],
+      texto: "Buena pregunta. En modo demo respondo con ejemplos; cuando MatchPlay esté conectado a la IA revisaré tu biblioteca y las reseñas para darte una respuesta completa."
+    }
+  ],
+  diario: [
+    {
+      id: "dia1",
+      usuario: "samluq",
+      juego: "zelda-totk",
+      fecha: "2026-10-07",
+      estado: "Terminado",
+      horas: 48,
+      calificacion: 10,
+      meGusta: true,
+      tieneResena: true
+    },
+    {
+      id: "dia2",
+      usuario: "samluq",
+      juego: "fnaf-into-the-pit",
+      fecha: "2026-10-04",
+      estado: "Terminado",
+      horas: 6,
+      calificacion: 7,
+      meGusta: false,
+      tieneResena: true
+    },
+    {
+      id: "dia3",
+      usuario: "samluq",
+      juego: "nier-automata",
+      fecha: "2026-10-02",
+      estado: "Rejugado",
+      horas: 21,
+      calificacion: 9,
+      meGusta: true,
+      tieneResena: true
+    },
+    {
+      id: "dia4",
+      usuario: "samluq",
+      juego: "hades",
+      fecha: "2026-09-27",
+      estado: "Terminado",
+      horas: 24,
+      calificacion: 8,
+      meGusta: false,
+      tieneResena: false
+    },
+    {
+      id: "dia5",
+      usuario: "samluq",
+      juego: "valorant",
+      fecha: "2026-09-19",
+      estado: "Abandonado",
+      horas: 9,
+      calificacion: 5,
+      meGusta: false,
+      tieneResena: true
+    },
+    {
+      id: "dia6",
+      usuario: "samluq",
+      juego: "pokemon-legends-za",
+      fecha: "2026-09-08",
+      estado: "Terminado",
+      horas: 31,
+      calificacion: 8,
+      meGusta: true,
+      tieneResena: false
+    },
+    {
+      id: "dia7",
+      usuario: "samluq",
+      juego: "inside",
+      fecha: "2026-08-30",
+      estado: "Terminado",
+      horas: 3,
+      calificacion: 9,
+      meGusta: true,
+      tieneResena: false
+    },
+    {
+      id: "dia8",
+      usuario: "samluq",
+      juego: "hollow-knight",
+      fecha: "2026-08-12",
+      estado: "Rejugado",
+      horas: 27,
+      calificacion: 9,
+      meGusta: true,
+      tieneResena: true
     }
   ]
 };

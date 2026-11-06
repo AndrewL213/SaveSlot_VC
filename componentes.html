@@ -156,6 +156,11 @@
         <h1 class="titulo-pagina">Amigos</h1>
         <h1 class="titulo-pagina titulo-pagina--grande">Todo sobre tus juegos</h1>
       </div>
+      <p>Con bajada (<code>.bajada</code>), el párrafo que explica la pantalla:</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <h1 class="titulo-pagina">Juego random</h1>
+        <p class="bajada">Elige un género y te sugerimos un juego al azar.</p>
+      </div>
     </div>
 
     <div class="cat-componente">
@@ -235,6 +240,18 @@
     </div>
 
     <div class="cat-componente">
+      <h3>Casilla · <code>.casilla</code></h3>
+      <p>Para elegir varias opciones, por ejemplo los filtros. Agrupadas en un <code>fieldset.grupo-campo</code> con su <code>legend</code>.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <fieldset class="grupo-campo">
+          <legend class="grupo-campo__etiqueta">Plataforma</legend>
+          <label class="casilla"><input type="checkbox" name="ej-plat" value="PC" checked>PC</label>
+          <label class="casilla"><input type="checkbox" name="ej-plat" value="Nintendo">Nintendo</label>
+        </fieldset>
+      </div>
+    </div>
+
+    <div class="cat-componente">
       <h3>Buscador · <code>.buscador</code></h3>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
         <form class="buscador" role="search">
@@ -242,6 +259,38 @@
           <input class="buscador__campo" type="search" aria-label="Buscar juegos" placeholder="Busca un juego, por ejemplo Hollow Knight">
           <button class="boton" type="submit">Buscar</button>
         </form>
+      </div>
+      <p>Versión IA (<code>.buscador--ia</code>), la caja para escribirle a MatchPlay:</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <form class="buscador buscador--ia">
+          <input class="buscador__campo" aria-label="Escribe tu mensaje" placeholder="Pregunta lo que quieras sobre tus juegos">
+          <button class="boton boton--icono" type="submit" aria-label="Enviar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </form>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Mensaje de chat · <code>.mensaje</code> y <code>.burbuja</code></h3>
+      <p>Para MatchPlay: la persona a la derecha y la IA a la izquierda, con su fuente y votos.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="mensaje mensaje--usuario"><div class="burbuja burbuja--usuario">¿Cuánto dura Hollow Knight?</div></div>
+        <div class="mensaje">
+          <span class="avatar avatar--sm avatar--ia" aria-hidden="true">IA</span>
+          <div class="burbuja burbuja--ia">Unas 27 h la historia y 60 h al 100%.<span class="burbuja__fuente">Fuente: reseñas y guías de la comunidad.</span><span class="burbuja__votos"><button type="button" aria-pressed="true">Útil</button><button type="button" aria-pressed="false">No me sirve</button></span></div>
+        </div>
+        <div class="mensaje">
+          <span class="avatar avatar--sm avatar--ia" aria-hidden="true">IA</span>
+          <div class="burbuja burbuja--ia burbuja--error">No pude responder ahora: el servicio de IA no está disponible.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Chat en la biblioteca · <code>.item-chat</code></h3>
+      <p>El actual lleva <code>aria-current="true"</code>. El botón de borrar aparece al pasar el mouse (en celular siempre).</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="item-chat" aria-current="true"><button class="item-chat__abrir" type="button">Juegos parecidos a NieR</button><button class="item-chat__borrar" type="button" aria-label="Borrar chat Juegos parecidos a NieR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <div class="item-chat"><button class="item-chat__abrir" type="button">Terror corto para el finde</button><button class="item-chat__borrar" type="button" aria-label="Borrar chat Terror corto para el finde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       </div>
     </div>
 
@@ -381,6 +430,53 @@
       <div class="cat-ejemplo" data-codigo>
         <div class="dato"><span class="dato__etiqueta">Logros</span><span class="dato__valor">1.912</span></div>
         <div class="dato"><span class="dato__etiqueta">Horas</span><span class="dato__valor">27 h</span></div>
+      </div>
+      <p>Destacado (<code>.dato--destacado</code>) y con ayuda (<code>.dato__ayuda</code>, un botón que parece enlace):</p>
+      <div class="cat-ejemplo" data-codigo>
+        <div class="dato dato--destacado"><span class="dato__etiqueta">Tu progreso</span><span class="dato__valor">48 h</span><span class="tarjeta__texto">Terminado · 10/10</span></div>
+        <div class="dato"><span class="dato__etiqueta">Dificultad</span><span class="dato__valor">6/10</span><button class="dato__ayuda" type="button">¿Cómo se calcula?</button></div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Calaveras de dificultad · <code>.calaveras</code></h3>
+      <div class="cat-ejemplo" data-codigo>
+        <div class="calaveras" role="img" aria-label="Dificultad 6 de 10"><i class="calaveras__marca calaveras__marca--encendida"></i><i class="calaveras__marca calaveras__marca--encendida"></i><i class="calaveras__marca calaveras__marca--encendida"></i><i class="calaveras__marca calaveras__marca--encendida"></i><i class="calaveras__marca calaveras__marca--encendida"></i><i class="calaveras__marca calaveras__marca--encendida"></i><i class="calaveras__marca"></i><i class="calaveras__marca"></i><i class="calaveras__marca"></i><i class="calaveras__marca"></i></div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Migas · <code>.migas</code></h3>
+      <div class="cat-ejemplo" data-codigo>
+        <nav class="migas" aria-label="Ruta"><a href="#componentes">Inicio</a><span aria-hidden="true">/</span><a href="#componentes">Aventura</a><span aria-hidden="true">/</span><span aria-current="page">Zelda: TOTK</span></nav>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Cabecera de juego · <code>.cabecera-juego</code></h3>
+      <p>Banda con el color del juego (<code>--c</code>) que se funde con el fondo.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <section class="cabecera-juego" style="--c:#2F6B4F" aria-label="Ejemplo de cabecera de juego">
+          <div class="cabecera-juego__contenido">
+            <span class="antetitulo">Aventura · 2023</span>
+            <h2 class="titulo-pagina">The Legend of Zelda: Tears of the Kingdom</h2>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Ficha · <code>.ficha</code></h3>
+      <div class="cat-ejemplo" data-codigo>
+        <dl class="ficha"><dt>Desarrolla</dt><dd>Nintendo EPD</dd><dt>Lanzamiento</dt><dd>2023</dd><dt>Tipo</dt><dd>AAA</dd></dl>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Spoiler · <code>.spoiler</code></h3>
+      <p>Tapa el texto de una reseña con spoilers hasta que la persona decide verlo.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="spoiler"><span>Esta reseña tiene spoilers.</span><button class="boton boton--secundario boton--sm" type="button">Mostrar de todas formas</button></div>
       </div>
     </div>
 

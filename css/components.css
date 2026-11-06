@@ -14,6 +14,11 @@
   box-sizing: border-box;
 }
 
+/* Casillas, barras de desplazamiento y campos del navegador en versión oscura */
+html {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   background: var(--fondo-pagina);
@@ -89,6 +94,13 @@ a:hover {
 
 .titulo-pagina--grande {
   font-size: var(--texto-3xl);
+}
+
+/* Párrafo corto bajo el título que explica la pantalla */
+.bajada {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--texto-lg);
 }
 
 /* ==========================================================================
@@ -342,6 +354,45 @@ textarea.campo {
   font-size: var(--texto-sm);
 }
 
+/* .grupo-campo también puede ser un <fieldset> con <legend class="grupo-campo__etiqueta"> */
+fieldset.grupo-campo {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend.grupo-campo__etiqueta {
+  padding: 0;
+  margin-bottom: var(--espacio-2);
+}
+
+/* ==========================================================================
+   Casilla (checkbox con su texto)
+   <label class="casilla"><input type="checkbox">Aventura</label>
+   ========================================================================== */
+.casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+  font-size: var(--texto-base);
+  cursor: pointer;
+}
+
+.casilla input {
+  flex: none;
+  width: var(--espacio-5);
+  height: var(--espacio-5);
+  margin: calc(var(--espacio-1) / 2) 0 0;
+  accent-color: var(--color-primario);
+  cursor: pointer;
+}
+
+.casilla input:focus-visible {
+  outline: var(--borde-grueso) solid var(--color-primario);
+  outline-offset: var(--borde-grueso);
+}
+
 /* ==========================================================================
    Buscador (campo destacado con botón)
    ========================================================================== */
@@ -361,6 +412,18 @@ textarea.campo {
 .buscador:focus-within {
   border-color: var(--color-primario-hover);
   box-shadow: var(--anillo-foco);
+}
+
+/* Versión IA (caja para escribirle a MatchPlay): borde morado */
+.buscador--ia {
+  border-width: var(--borde-fino);
+  border-color: color-mix(in srgb, var(--color-secundario) 45%, transparent);
+  box-shadow: 0 18px 40px -26px var(--color-secundario);
+}
+
+.buscador--ia:focus-within {
+  border-color: var(--color-secundario);
+  box-shadow: 0 0 0 4px var(--color-secundario-tinte);
 }
 
 .buscador svg {
@@ -856,6 +919,152 @@ textarea.campo {
   font-size: var(--texto-xl);
   font-weight: var(--peso-titulos);
   line-height: var(--interlineado-titulos);
+}
+
+/* Destacado: borde azul (por ejemplo "Tu progreso") */
+.dato--destacado {
+  border-color: var(--color-primario);
+}
+
+.dato--destacado .dato__etiqueta {
+  color: var(--color-primario-hover);
+}
+
+/* Enlace con forma de texto dentro del dato ("¿Cómo se calcula?") */
+.dato__ayuda {
+  align-self: flex-start;
+  min-height: var(--espacio-6);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primario-hover);
+  font-family: inherit;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Calaveras de dificultad (10 marcas; las encendidas en rojo)
+   <div class="calaveras" aria-label="Dificultad 6 de 10"><i class="calaveras__marca calaveras__marca--encendida"></i>…</div>
+   ========================================================================== */
+.calaveras {
+  display: flex;
+  gap: var(--espacio-1);
+}
+
+.calaveras__marca {
+  width: calc(var(--espacio-3) + var(--borde-grueso));
+  height: calc(var(--espacio-4) + var(--borde-grueso));
+  border-radius: calc(var(--radio-sm) / 2);
+  background: var(--color-borde);
+}
+
+.calaveras__marca--encendida {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-error) 70%, white), var(--color-error));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-error) 50%, transparent);
+}
+
+/* ==========================================================================
+   Migas (ruta: Inicio / Aventura / Zelda)
+   <nav class="migas" aria-label="Ruta"><a href="…">Inicio</a><span aria-hidden="true">/</span><span aria-current="page">Zelda</span></nav>
+   ========================================================================== */
+.migas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+  color: var(--color-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.migas a {
+  color: var(--color-texto-suave);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  color: var(--color-texto);
+  text-decoration: underline;
+}
+
+.migas [aria-current="page"] {
+  color: var(--color-texto);
+}
+
+/* ==========================================================================
+   Cabecera de juego: banda con el color del juego (--c) que se funde con el fondo
+   <section class="cabecera-juego" data-color="#2F6B4F"><div class="cabecera-juego__contenido">…</div></section>
+   ========================================================================== */
+.cabecera-juego {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(800px 380px at 20% 0%, var(--velo-fuerte), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--c, var(--color-primario)) 55%, var(--color-fondo)) 0%, color-mix(in srgb, var(--c, var(--color-primario)) 30%, var(--color-fondo)) 70%, var(--color-fondo) 100%);
+}
+
+.cabecera-juego::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(120deg, var(--velo) 0 1px, transparent 1px 18px);
+}
+
+.cabecera-juego__contenido {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  max-width: var(--ancho-maximo);
+  margin: 0 auto;
+  padding: var(--espacio-5) var(--espacio-4) var(--espacio-6);
+}
+
+@media (min-width: 701px) {
+  .cabecera-juego__contenido {
+    padding: var(--espacio-7) var(--espacio-7) var(--espacio-8);
+  }
+}
+
+/* ==========================================================================
+   Ficha (lista de datos: término y valor)
+   <dl class="ficha"><dt>Desarrolla</dt><dd>Nintendo EPD</dd></dl>
+   ========================================================================== */
+.ficha {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--espacio-2) var(--espacio-4);
+  margin: 0;
+  font-size: var(--texto-sm);
+}
+
+.ficha dt {
+  color: var(--color-texto-suave);
+}
+
+.ficha dd {
+  margin: 0;
+}
+
+/* ==========================================================================
+   Spoiler: tapa el texto de una reseña hasta que se toca el botón
+   <div class="spoiler"><span>Esta reseña tiene spoilers.</span><button class="boton boton--secundario boton--sm">Mostrar de todas formas</button></div>
+   ========================================================================== */
+.spoiler {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+  padding: var(--espacio-4);
+  border: var(--borde-fino) dashed var(--color-borde-hover);
+  border-radius: var(--radio-sm);
+  background: var(--velo);
+  color: var(--color-texto-suave);
 }
 
 /* ==========================================================================
@@ -1787,6 +1996,165 @@ textarea.campo {
 
   .pie__columnas {
     gap: var(--espacio-7);
+  }
+}
+
+/* ==========================================================================
+   Mensaje de chat (MatchPlay)
+   .mensaje (+ --usuario a la derecha) con avatar opcional y .burbuja
+   .burbuja --usuario · --ia · --error, con __fuente y __votos (botones con aria-pressed)
+   ========================================================================== */
+.mensaje {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+}
+
+.mensaje--usuario {
+  justify-content: flex-end;
+}
+
+.burbuja {
+  max-width: 78%;
+  padding: var(--espacio-3) var(--espacio-4);
+  border: var(--borde-fino) solid transparent;
+  border-radius: var(--radio-lg);
+  line-height: var(--interlineado-texto);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.burbuja--usuario {
+  border-bottom-right-radius: var(--espacio-1);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primario) 32%, var(--color-fondo)), color-mix(in srgb, var(--color-primario) 18%, var(--color-fondo)));
+}
+
+.burbuja--ia {
+  border-color: color-mix(in srgb, var(--color-secundario) 30%, transparent);
+  border-bottom-left-radius: var(--espacio-1);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-secundario) 14%, var(--color-fondo)), color-mix(in srgb, var(--color-secundario) 6%, var(--color-fondo)));
+}
+
+.burbuja--error {
+  border-color: var(--color-error);
+}
+
+.burbuja__fuente {
+  display: block;
+  margin-top: var(--espacio-2);
+  color: var(--color-texto-suave);
+  font-size: var(--texto-xs);
+}
+
+.burbuja__votos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+  margin-top: var(--espacio-2);
+}
+
+.burbuja__votos button {
+  min-height: calc(var(--espacio-7));
+  padding: var(--espacio-1) var(--espacio-3);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-sm);
+  background: none;
+  color: var(--color-texto-suave);
+  font-family: inherit;
+  font-size: var(--texto-xs);
+  cursor: pointer;
+  transition: border-color var(--transicion), color var(--transicion);
+}
+
+.burbuja__votos button:hover {
+  border-color: var(--color-borde-hover);
+  color: var(--color-texto);
+}
+
+.burbuja__votos button[aria-pressed="true"] {
+  border-color: var(--color-primario);
+  color: var(--color-primario-hover);
+}
+
+@media (max-width: 640px) {
+  .burbuja {
+    max-width: 90%;
+  }
+}
+
+/* ==========================================================================
+   Chat en la biblioteca (MatchPlay)
+   .item-chat (actual con aria-current="true") con __abrir y __borrar
+   ========================================================================== */
+.item-chat {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-1);
+}
+
+.item-chat__abrir {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--alto-control-sm);
+  padding: var(--espacio-2) var(--espacio-3);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: none;
+  color: var(--color-texto-suave);
+  font-family: inherit;
+  font-size: var(--texto-sm);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--transicion), color var(--transicion);
+}
+
+.item-chat__abrir:hover {
+  background: var(--velo);
+  color: var(--color-texto);
+}
+
+.item-chat[aria-current="true"] .item-chat__abrir {
+  background: var(--velo-fuerte);
+  color: var(--color-texto);
+  font-weight: var(--peso-fuerte);
+}
+
+.item-chat__borrar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--espacio-7);
+  height: var(--espacio-7);
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: none;
+  color: var(--color-texto-suave);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity var(--transicion), background-color var(--transicion), color var(--transicion);
+}
+
+.item-chat__borrar svg {
+  width: var(--espacio-4);
+  height: var(--espacio-4);
+}
+
+.item-chat:hover .item-chat__borrar,
+.item-chat__borrar:focus-visible {
+  opacity: 1;
+}
+
+.item-chat__borrar:hover {
+  background: color-mix(in srgb, var(--color-error) 15%, transparent);
+  color: var(--color-error);
+}
+
+@media (hover: none), (max-width: 900px) {
+  .item-chat__borrar {
+    opacity: 1;
   }
 }
 
