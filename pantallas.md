@@ -3,7 +3,7 @@
 Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de los diseños v3 (disenos/).
 
 - **Separada**: tiene su propia página (o vive dentro de la página indicada, si es una ventana).
-- **Con kit**: usa solo css/tokens.css y css/components.css, ya no el andamio (css/prototipo.css y js/prototipo.js).
+- **Con kit**: usa solo css/tokens.css y css/components.css, sin el andamio del prototipo (css/prototipo.css y js/prototipo.js, ya borrados).
 - **Datos en data.js**: sus datos simulados salen de js/data.js, separados del diseño (o de Supabase/IGDB, si son Real).
 - **Revisada vs spec**: cumple todos sus criterios de «Está lista cuando» en spec.md.
 
@@ -57,16 +57,15 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 27. Contáctanos | `pages/contacto.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ⬜ | ⬜ | ⬜ |
+| 27. Contáctanos | `pages/contacto.html` | ✅ | ✅ | ✅ | ⬜ |
+| 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ✅ | ✅ | ⬜ |
+| 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ | ⬜ |
 
 ## Pendientes para la revisión vs spec
-- **404.html**: cuando un juego o evento no existe, muestra el texto por defecto («Un servicio externo no está respondiendo»), porque el diseño no tiene un texto para "no encontrado".
-- **Contáctanos**: todavía muestra la tarjeta de correo y redes, que la spec quita del MVP.
+- **404.html**: tiene 5 variantes nuevas de «no encontrado» (página, juego, evento, reseña y usuario) que el diseño no traía; la de página es la que sale por defecto. En Vercel, una línea en el <head> hace que los archivos se busquen desde la raíz del sitio.
 - **Mensaje (Amigos y Perfil de otro usuario)**, clips, pagos, Google y Discord y foto de perfil: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
 - **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).
-- **Datos fuera de spec.md** (agregarlos a la sección Datos): meGusta, destacado, destacadosInicio, porcentajeUtil de las guías, horasAtras de los chats de ejemplo, respuestasMatchplay, en las reseñas propias estadoPartida (estado de la partida) y editada, y en los eventos descripcion y cronograma.
+- **Datos fuera de spec.md** (agregarlos a la sección Datos): variantesError, estadoServicios, meGusta, destacado, destacadosInicio, porcentajeUtil de las guías, horasAtras de los chats de ejemplo, respuestasMatchplay, en las reseñas propias estadoPartida (estado de la partida) y editada, y en los eventos descripcion y cronograma.
 - **Comunidad, pestaña Guías**: cada guía abre su juego (como en el diseño), no un Detalle de reseña; las guías de ejemplo no tienen texto completo.
 - **Detalle de evento**: la banda usa el color de cada evento (el diseño usa azul fijo para torneos y verde para sorteos). Premio, costo y organizadores siguen con los textos entre corchetes del diseño hasta tener los datos reales en Supabase.
 - **Notificaciones**: no muestra el aviso de comentarios del diseño («Kenneth y Daniela comentaron…»), porque la spec solo define avisos de votos «útil» y de cierre de inscripciones; las ventanas del kit no llevan el ícono de arriba del diseño.

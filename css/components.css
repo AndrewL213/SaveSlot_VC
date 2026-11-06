@@ -1521,6 +1521,82 @@ legend.grupo-campo__etiqueta {
 }
 
 /* ==========================================================================
+   Preguntas frecuentes: cada una se abre y se cierra sola (<details>)
+   <div class="preguntas"><details class="preguntas__item"><summary>¿Qué es el XP?</summary><p>…</p></details></div>
+   ========================================================================== */
+.preguntas {
+  display: flex;
+  flex-direction: column;
+}
+
+.preguntas__item {
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.preguntas__item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+  min-height: var(--alto-control);
+  padding: var(--espacio-3) 0;
+  font-weight: var(--peso-fuerte);
+  list-style: none;
+  cursor: pointer;
+}
+
+.preguntas__item summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Signo + que gira a × al abrir */
+.preguntas__item summary::after {
+  content: "+";
+  flex: none;
+  color: var(--color-primario);
+  font-size: var(--texto-xl);
+  line-height: 1;
+  transition: transform var(--transicion);
+}
+
+.preguntas__item[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.preguntas__item summary:hover {
+  color: var(--color-primario-hover);
+}
+
+.preguntas__item summary:focus-visible {
+  outline: var(--borde-grueso) solid var(--color-primario);
+  outline-offset: var(--borde-grueso);
+}
+
+.preguntas__item p {
+  margin: 0 0 var(--espacio-4);
+  color: var(--color-texto-suave);
+}
+
+/* ==========================================================================
+   Ícono de alerta (error): triángulo rojo en un cuadro
+   <span class="icono-alerta" aria-hidden="true"><svg>…</svg></span>
+   ========================================================================== */
+.icono-alerta {
+  display: grid;
+  place-items: center;
+  width: calc(var(--espacio-8) + var(--espacio-4));
+  height: calc(var(--espacio-8) + var(--espacio-4));
+  border-radius: var(--radio-md);
+  background: color-mix(in srgb, var(--color-error) 15%, transparent);
+  color: var(--color-error);
+}
+
+.icono-alerta svg {
+  width: calc(var(--espacio-6) + var(--espacio-1));
+  height: calc(var(--espacio-6) + var(--espacio-1));
+}
+
+/* ==========================================================================
    Ficha (lista de datos: término y valor)
    <dl class="ficha"><dt>Desarrolla</dt><dd>Nintendo EPD</dd></dl>
    ========================================================================== */

@@ -5,8 +5,9 @@
      cuando se conecten Supabase e IGDB, solo cambia esa función.
    - Hay una función por pantalla. <body data-pantalla="…"> dice cuál se ejecuta.
    - Mientras no haya backend, lo que la spec marca como Real se guarda en la
-     memoria del navegador (las mismas claves que usan las páginas del prototipo,
-     para que la sesión y los "vistos recientemente" sigan al ir de una a otra).
+     memoria del navegador con claves ss.… (session, profile, myReviews, diary…),
+     heredadas del prototipo. Al conectar Supabase, esas lecturas y escrituras se
+     reemplazan por consultas a la base de datos.
    ========================================================================== */
 
 /* ---------- Datos ---------- */
@@ -108,9 +109,8 @@ function sonAmigos(usuario) {
 }
 
 /* ---------- Reseñas propias y comentarios (hasta conectar Supabase) ----------
-   Lo que la persona publica se guarda en el navegador con las mismas claves y
-   nombres que usan las páginas del prototipo (myReviews, diary, comments.…),
-   para que el Diario y el Historial, aún sin construir, también lo vean. */
+   Lo que la persona publica se guarda en el navegador (myReviews, diary,
+   comments.…) y lo leen el Diario, el Historial, el Perfil y el Detalle de juego. */
 
 function usuarioActual() {
   return (obtenerSesion() || { user: 'samluq' }).user;
@@ -987,8 +987,7 @@ function pantallaMatchplay() {
 }
 
 // Perfil propio guardado en el navegador (hasta conectar Supabase).
-// La primera vez se arma con los datos de samluq en data.js; usa los mismos nombres
-// que las páginas del prototipo para que el Perfil (aún sin construir) lo siga leyendo.
+// La primera vez se arma con los datos de samluq en data.js.
 function leerPerfil() {
   var guardado = leerMemoria('profile', null);
   if (guardado) return guardado;
@@ -1699,7 +1698,7 @@ function pantallaEventos() {
 }
 
 // Inscripciones propias (hasta conectar Supabase). "joined" es la lista de ids
-// que usa el Perfil del prototipo en "Mis eventos".
+// que muestra el Perfil en "Mis eventos".
 var XP_SORTEO = 300;
 var XP_POR_TORNEO = 100;
 
@@ -2837,6 +2836,119 @@ function pantallaUsuario() {
   aplicarColores(document);
 }
 
+// 27. Contáctanos (y 28. Ventana: Mensaje guardado)
+var TEMAS_CONTACTO = { cuenta: 'Problema con mi cuenta', eventos: 'Eventos y pagos', torneo: 'Quiero organizar un torneo', reporte: 'Otro' };
+
+function pantallaContacto() {
+  var formulario = document.getElementById('formulario-contacto');
+  var nombre = document.getElementById('nombre-contacto');
+  var correo = document.getElementById('correo-contacto');
+  var tema = document.getElementById('tema-contacto');
+  var mensaje = document.getElementById('mensaje-contacto');
+  var sesion = obtenerSesion();
+
+  // Lo que ya sabemos: el tema desde el enlace (?tema=torneo) y el nombre si hay sesión
+  var temaInicial = TEMAS_CONTACTO[new URLSearchParams(location.search).get('tema')];
+  if (temaInicial) tema.value = temaInicial;
+  if (sesion) {
+    nombre.value = sesion.name || '';
+    if (sesion.email && sesion.email.indexOf('@saveslot') === -1) correo.value = sesion.email;
+  }
+
+  formulario.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var resultados = [
+      [nombre, marcarError(nombre, document.getElementById('error-nombre-contacto'), nombre.value.trim() ? '' : 'Escribe tu nombre.')],
+      [correo, marcarError(correo, document.getElementById('error-correo-contacto'), correoValido(correo.value.trim()) ? '' : 'Revisa el correo. Ejemplo: tu@correo.com')],
+      [mensaje, marcarError(mensaje, document.getElementById('error-mensaje-contacto'), mensaje.value.trim().length >= 10 ? '' : 'Cuéntanos un poco más (mínimo 10 caracteres).')]
+    ];
+    var primero = resultados.find(function (r) { return !r[1]; });
+    if (primero) { primero[0].focus(); return; }
+
+    // Hasta conectar Supabase, el mensaje se guarda en el navegador
+    var guardados = leerMemoria('outbox', []);
+    guardados.push({ name: nombre.value.trim(), email: correo.value.trim(), topic: tema.value, msg: mensaje.value.trim(), at: new Date().toISOString() });
+    guardarMemoria('outbox', guardados);
+    formulario.reset();
+
+    // 28. Ventana: Mensaje guardado (el formulario queda vacío)
+    abrirModal({
+      titulo: 'Mensaje guardado',
+      texto: 'El prototipo todavía no tiene servidor de correo, así que tu mensaje quedó guardado en este navegador. Te responderemos cuando conectemos el servicio.',
+      acciones: [{ texto: 'Volver al inicio', href: rutaPagina('index.html'), principal: true }, { texto: 'Cerrar' }]
+    });
+  });
+}
+
+// 29. Error y estado de servicios (404.html)
+// ?tipo=… elige la variante; ?servicio=… dice qué falló; ?volver=… activa "Reintentar"; ?detalle=… da el detalle técnico.
+var ETIQUETA_SERVICIO = { conectado: 'etiqueta--exito', demo: 'etiqueta--ia', pendiente: 'etiqueta--aviso', 'no-disponible': 'etiqueta--error' };
+
+function pantallaError() {
+  var parametros = new URLSearchParams(location.search);
+  var variantes = obtenerDatos('variantesError');
+  var tipo = parametros.get('tipo') || (navigator.onLine === false ? 'sin-conexion' : 'no-encontrado');
+  var variante = variantes.find(function (v) { return v.id === tipo; }) || variantes.find(function (v) { return v.id === 'no-encontrado'; });
+  var servicio = (parametros.get('servicio') || '').slice(0, 60);
+  function conServicio(texto) {
+    return texto.replace(/\{servicio\}/g, servicio || variante.servicioPorDefecto || (texto.indexOf('{servicio}') === 0 ? 'Un servicio externo' : 'el servicio'));
+  }
+
+  var titulo = conServicio(variante.titulo);
+  document.title = titulo + ' · SaveSlot';
+  document.getElementById('titulo-error').textContent = titulo;
+  document.getElementById('texto-error').textContent = conServicio(variante.texto);
+  document.getElementById('codigo-error').textContent = 'Código ' + variante.codigo;
+  var detalle = parametros.get('detalle');
+  if (detalle) {
+    var cajaDetalle = document.getElementById('detalle-error');
+    cajaDetalle.hidden = false;
+    cajaDetalle.textContent = ' · Detalle técnico: ' + detalle.slice(0, 120);
+  }
+
+  // Qué puedes hacer
+  document.getElementById('lista-consejos').innerHTML = variante.consejos.map(function (c) { return '<li>' + escapar(c) + '</li>'; }).join('');
+  document.getElementById('consejos-error').hidden = !variante.consejos.length;
+
+  // Botón de la variante (por ejemplo "Ver eventos gratis")
+  if (variante.accion) {
+    var accion = document.getElementById('accion-error');
+    accion.hidden = false;
+    accion.textContent = variante.accion.texto;
+    accion.href = rutaPagina(variante.accion.pagina);
+  }
+
+  // Reintentar: vuelve a la página que falló; en "límite de consultas" espera antes
+  var volver = parametros.get('volver');
+  if (variante.reintentar && volver && /^[a-z0-9\-]+\.html(\?[^<>"'\s]*)?$/i.test(volver)) {
+    var reintentar = document.getElementById('reintentar');
+    reintentar.hidden = false;
+    reintentar.addEventListener('click', function () { location.href = rutaPagina(volver); });
+    if (variante.espera) {
+      var segundos = variante.espera;
+      reintentar.disabled = true;
+      reintentar.textContent = 'Reintentar en ' + segundos + ' s';
+      var reloj = setInterval(function () {
+        segundos--;
+        if (segundos > 0) { reintentar.textContent = 'Reintentar en ' + segundos + ' s'; return; }
+        clearInterval(reloj);
+        reintentar.disabled = false;
+        reintentar.textContent = 'Reintentar';
+      }, 1000);
+    }
+  }
+
+  // Estado de los servicios (simulado)
+  document.getElementById('estado-servicios').innerHTML = obtenerDatos('estadoServicios').map(function (s) {
+    // "Con fallas" solo cuando un servicio falló (no cuando una función no existe todavía)
+    var falla = /^API-/.test(variante.codigo);
+    var afectado = falla && servicio && (s.servicio.indexOf(servicio) !== -1 || s.proveedor.indexOf(servicio) !== -1);
+    return '<tr><td>' + (afectado ? '<b>' + escapar(s.servicio) + '</b> <span class="etiqueta etiqueta--error">Con fallas</span>' : '<b>' + escapar(s.servicio) + '</b>') + '</td>' +
+      '<td class="tarjeta__texto">' + escapar(s.proveedor) + '</td>' +
+      '<td><span class="etiqueta ' + (ETIQUETA_SERVICIO[s.estado] || 'etiqueta--contorno') + '">' + escapar(s.texto) + '</span></td></tr>';
+  }).join('');
+}
+
 /* ---------- Arranque ---------- */
 
 var PANTALLAS = {
@@ -2858,7 +2970,9 @@ var PANTALLAS = {
   historial: pantallaHistorial,
   logros: pantallaLogros,
   amigos: pantallaAmigos,
-  usuario: pantallaUsuario
+  usuario: pantallaUsuario,
+  contacto: pantallaContacto,
+  error: pantallaError
 };
 
 document.addEventListener('DOMContentLoaded', function () {

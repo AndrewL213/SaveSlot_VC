@@ -32,8 +32,6 @@ Digitales 3. Más contexto en README.md.
   Las demás pantallas van en la carpeta pages/.
 - 404.html: la página de error, también en la raíz (Vercel la usa para
   las direcciones que no existen). Todos los errores llevan ahí.
-- css/prototipo.css y js/prototipo.js: andamio temporal del prototipo;
-  no agregues nada ahí.
 - Nombres de archivos y carpetas: minúsculas, sin tildes, ñ ni
   espacios, con guiones.
 
@@ -115,6 +113,9 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
 - `.histograma` con `__barra` (altura en `--h`, de 0 a 100; en pantallas va en `data-h`) y `.histograma__numeros`.
 - `.tabla` (envuelve un <table>; en celular las filas se vuelven tarjetas) con `__solo-escritorio`, `__ancha`, `__centro`, `__mes`, `__dia` y `__me-gusta` (+ `--activo`):
   `<div class="tabla"><table><thead>…</thead><tbody><tr><td class="tabla__dia">07</td><td class="tabla__ancha">…</td></tr></tbody></table></div>`
+- `.preguntas` con `.preguntas__item` (un <details> con <summary> y <p>; se abre y se cierra solo):
+  `<div class="preguntas"><details class="preguntas__item"><summary>¿Qué es el XP?</summary><p>…</p></details></div>`
+- `.icono-alerta` (triángulo rojo de error): `<span class="icono-alerta" aria-hidden="true"><svg>…</svg></span>`
 - `.ficha` (lista de datos con dt y dd):
   `<dl class="ficha"><dt>Desarrolla</dt><dd>Nintendo EPD</dd></dl>`
 - `.spoiler` (tapa una reseña con spoilers):

@@ -827,6 +827,16 @@ body {
   min-width: 0;
 }
 
+/* ---------- Contáctanos ---------- */
+.formulario-contacto {
+  padding: var(--espacio-6);
+}
+
+/* ---------- Error ---------- */
+.contenedor--error {
+  max-width: calc(var(--espacio-8) * 22);
+}
+
 /* ---------- MatchPlay ---------- */
 .chat {
   display: flex;

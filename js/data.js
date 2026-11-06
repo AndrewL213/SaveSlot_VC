@@ -1614,5 +1614,285 @@ const DATOS = {
       juegosCompletos: 7,
       raros: 24
     }
+  ],
+  variantesError: [
+    {
+      id: "no-encontrado",
+      codigo: "404",
+      titulo: "No encontramos esta página",
+      texto: "La dirección que abriste no existe o cambió de lugar.",
+      consejos: [
+        "Revisa que la dirección esté bien escrita.",
+        "Vuelve al inicio o busca el juego que querías ver."
+      ],
+      reintentar: false,
+      accion: {
+        texto: "Buscar juegos",
+        pagina: "buscar-juegos.html"
+      }
+    },
+    {
+      id: "juego",
+      codigo: "404",
+      titulo: "No encontramos ese juego",
+      texto: "El juego que buscas no está en el catálogo o la dirección está incompleta.",
+      consejos: [
+        "Búscalo por su nombre en Buscar juegos.",
+        "Si llegaste desde un enlace, puede que esté roto: avísanos."
+      ],
+      reintentar: false,
+      accion: {
+        texto: "Buscar juegos",
+        pagina: "buscar-juegos.html"
+      }
+    },
+    {
+      id: "evento",
+      codigo: "404",
+      titulo: "No encontramos ese evento",
+      texto: "El evento ya terminó, se canceló o la dirección está incompleta.",
+      consejos: [
+        "Mira los eventos que siguen abiertos."
+      ],
+      reintentar: false,
+      accion: {
+        texto: "Ver eventos",
+        pagina: "eventos.html"
+      }
+    },
+    {
+      id: "resena",
+      codigo: "404",
+      titulo: "No encontramos esa reseña",
+      texto: "La reseña fue eliminada por su autor o la dirección está incompleta.",
+      consejos: [
+        "Lee otras reseñas en la Comunidad."
+      ],
+      reintentar: false,
+      accion: {
+        texto: "Ir a la Comunidad",
+        pagina: "comunidad.html"
+      }
+    },
+    {
+      id: "usuario",
+      codigo: "404",
+      titulo: "No encontramos a esa persona",
+      texto: "El usuario no existe o cambió su nombre de usuario.",
+      consejos: [
+        "Búscalo en Amigos por su @usuario."
+      ],
+      reintentar: false,
+      accion: {
+        texto: "Ir a Amigos",
+        pagina: "amigos.html"
+      }
+    },
+    {
+      id: "api",
+      codigo: "API-500",
+      titulo: "{servicio} no está respondiendo",
+      texto: "Intentamos traer la información pero el servicio externo no respondió como esperábamos. Suele ser algo temporal.",
+      consejos: [
+        "Vuelve a intentarlo en unos segundos.",
+        "Si sigue fallando, revisa el estado de los servicios abajo.",
+        "Mientras tanto puedes usar la búsqueda con los datos guardados."
+      ],
+      reintentar: true
+    },
+    {
+      id: "limite",
+      codigo: "API-429",
+      titulo: "Llegamos al límite de consultas",
+      texto: "Las APIs gratuitas que usa SaveSlot tienen un cupo de consultas por minuto, hora o día. {servicio} nos pidió esperar antes de seguir.",
+      consejos: [
+        "Espera un momento: el botón “Reintentar” se activa solo.",
+        "Las páginas que ya visitaste se cargan más rápido.",
+        "Si pasa seguido, avísanos desde Contáctanos."
+      ],
+      reintentar: true,
+      espera: 60
+    },
+    {
+      id: "tiempo",
+      codigo: "API-408",
+      titulo: "La respuesta tardó demasiado",
+      texto: "{servicio} tardó más de 8 segundos en responder, así que dejamos de esperar.",
+      consejos: [
+        "Revisa tu conexión.",
+        "Vuelve a intentarlo."
+      ],
+      reintentar: true
+    },
+    {
+      id: "credenciales",
+      codigo: "API-401",
+      titulo: "No pudimos conectarnos con {servicio}",
+      texto: "La clave de acceso de SaveSlot para este servicio no es válida o venció.",
+      consejos: [
+        "No es un problema de tu cuenta.",
+        "El equipo debe renovar la clave del servicio."
+      ],
+      reintentar: false
+    },
+    {
+      id: "mantenimiento",
+      codigo: "API-503",
+      titulo: "{servicio} está en mantenimiento",
+      texto: "El servicio avisó que está en mantenimiento. Volverá a funcionar cuando termine.",
+      consejos: [
+        "Intenta de nuevo más tarde."
+      ],
+      reintentar: true
+    },
+    {
+      id: "sin-conexion",
+      codigo: "NET-0",
+      titulo: "No hay conexión a internet",
+      texto: "Tu dispositivo está sin conexión, así que no podemos cargar información nueva.",
+      consejos: [
+        "Revisa el wifi o los datos móviles.",
+        "Cuando vuelva la conexión, pulsa “Reintentar”."
+      ],
+      reintentar: true
+    },
+    {
+      id: "plataforma",
+      servicioPorDefecto: "Esta plataforma",
+      codigo: "LIM-PLAT",
+      titulo: "{servicio} todavía no se puede vincular",
+      texto: "{servicio} no ofrece una API pública para que webs como SaveSlot lean tus juegos, logros o actividad. No vamos a usar métodos no oficiales que pidan tus credenciales.",
+      consejos: [
+        "Registra tus juegos a mano en tu diario.",
+        "Vincula Steam o Xbox, que sí están disponibles.",
+        "Te avisaremos si la plataforma abre su API."
+      ],
+      reintentar: false,
+      accion: {
+        texto: "Registrar en mi diario",
+        pagina: "buscar-juegos.html"
+      }
+    },
+    {
+      id: "pagos",
+      codigo: "LIM-PAY",
+      titulo: "Los pagos aún no están disponibles",
+      texto: "SaveSlot es un prototipo académico y no tiene una pasarela de pagos conectada. Ningún cobro se realizó.",
+      consejos: [
+        "Usa la opción gratis con XP cuando el evento la tenga.",
+        "Revisa los eventos gratuitos en la pestaña “Gratis”."
+      ],
+      reintentar: false,
+      accion: {
+        texto: "Ver eventos gratis",
+        pagina: "eventos.html"
+      }
+    },
+    {
+      id: "funcion",
+      codigo: "LIM-FEAT",
+      titulo: "{servicio} aún no está disponible",
+      texto: "Esta función depende de una API que el equipo todavía está solicitando. Por ahora no la puedes usar.",
+      consejos: [
+        "Usa la alternativa disponible (correo y contraseña, o subir texto).",
+        "Revisa el estado de los servicios abajo."
+      ],
+      reintentar: false
+    },
+    {
+      id: "demo",
+      codigo: "DEMO",
+      titulo: "Estás viendo el prototipo de SaveSlot",
+      texto: "Mientras conectamos los servicios (catálogo de juegos, cuentas e IA), la web usa datos de ejemplo y guarda tu actividad solo en este navegador.",
+      consejos: [
+        "Puedes crear una cuenta, reseñar, llenar tu diario y chatear con MatchPlay en modo demo.",
+        "Borrar los datos del navegador borra tu actividad."
+      ],
+      reintentar: false,
+      accion: {
+        texto: "Explorar juegos",
+        pagina: "buscar-juegos.html"
+      }
+    },
+    {
+      id: "estado",
+      codigo: "STATUS",
+      titulo: "Estado de los servicios",
+      texto: "Qué partes de SaveSlot están conectadas a servicios reales y cuáles funcionan en modo demo.",
+      consejos: [],
+      reintentar: false
+    }
+  ],
+  estadoServicios: [
+    {
+      id: "s1",
+      servicio: "Catálogo de juegos",
+      proveedor: "IGDB (Twitch)",
+      estado: "demo",
+      texto: "Modo demo"
+    },
+    {
+      id: "s2",
+      servicio: "Cuentas y actividad del usuario",
+      proveedor: "Supabase",
+      estado: "demo",
+      texto: "Modo demo (navegador)"
+    },
+    {
+      id: "s3",
+      servicio: "MatchPlay (IA)",
+      proveedor: "Por definir",
+      estado: "demo",
+      texto: "Modo demo"
+    },
+    {
+      id: "s4",
+      servicio: "Cuentas: Steam",
+      proveedor: "Steam Web API + OpenID",
+      estado: "pendiente",
+      texto: "Pendiente de clave"
+    },
+    {
+      id: "s5",
+      servicio: "Cuentas: Xbox",
+      proveedor: "OpenXBL (tercero)",
+      estado: "pendiente",
+      texto: "Pendiente de clave"
+    },
+    {
+      id: "s6",
+      servicio: "Cuentas: PlayStation",
+      proveedor: "—",
+      estado: "no-disponible",
+      texto: "Sin API pública"
+    },
+    {
+      id: "s7",
+      servicio: "Cuentas: Nintendo",
+      proveedor: "—",
+      estado: "no-disponible",
+      texto: "Sin API pública"
+    },
+    {
+      id: "s8",
+      servicio: "Inicio de sesión con Google / Discord",
+      proveedor: "OAuth2",
+      estado: "pendiente",
+      texto: "Pendiente"
+    },
+    {
+      id: "s9",
+      servicio: "Clips y transmisiones",
+      proveedor: "Twitch API",
+      estado: "pendiente",
+      texto: "Pendiente de clave"
+    },
+    {
+      id: "s10",
+      servicio: "Pagos de eventos",
+      proveedor: "Pasarela de pagos",
+      estado: "no-disponible",
+      texto: "No disponible"
+    }
   ]
 };
