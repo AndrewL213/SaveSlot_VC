@@ -67,10 +67,12 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<h1 class="titulo-pagina">Juego random</h1><p class="bajada">Elige un género…</p>`
 - `.encabezado-seccion` con `__titulo` y `__enlace`:
   `<div class="encabezado-seccion"><h2 class="encabezado-seccion__titulo">Mejores juegos</h2><a class="encabezado-seccion__enlace" href="…">Ver todo</a></div>`
-- `.boton` (+ `--secundario`, `--fantasma`, `--peligro`, `--sm`, `--bloque`, `--icono`; presionado con `aria-pressed="true"`):
+- `.boton` (+ `--secundario`, `--fantasma`, `--peligro`, `--me-gusta`, `--sm`, `--bloque`, `--icono`; presionado con `aria-pressed="true"`):
   `<button class="boton boton--secundario" type="button">Cancelar</button>`
-- `.grupo-campo` con `.grupo-campo__etiqueta`, `__ayuda`, `__error`, y `.campo` (+ `--error`, `--sm`) para input, select y textarea:
+- `.grupo-campo` con `.grupo-campo__etiqueta`, `__ayuda` (+ `--listo`, en verde), `__error`, y `.campo` (+ `--error`, `--sm`) para input, select y textarea:
   `<div class="grupo-campo"><label class="grupo-campo__etiqueta" for="c">Correo</label><input class="campo" id="c" type="email"></div>`
+- `.escala` (+ `--dificultad`) con `.escala__opcion` (elegida con `aria-pressed="true"`; en dificultad, las anteriores con `--llena`):
+  `<div class="escala" role="group" aria-label="Tu calificación"><button class="escala__opcion" type="button" aria-pressed="false">1</button>…</div>`
 - `.casilla` (checkbox con su texto; se agrupan en `fieldset.grupo-campo` con `legend.grupo-campo__etiqueta`):
   `<label class="casilla"><input type="checkbox" name="genero" value="RPG">RPG</label>`
 - `.buscador` (+ `--ia`, borde morado para escribirle a MatchPlay) con `.buscador__campo`:

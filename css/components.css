@@ -256,6 +256,17 @@ a:hover {
   color: var(--color-texto);
 }
 
+/* Me gusta: el corazón es rojo y, al marcarlo, todo el botón */
+.boton--me-gusta svg {
+  color: var(--color-error);
+}
+
+.boton--me-gusta[aria-pressed="true"] {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-error) 25%, transparent), color-mix(in srgb, var(--color-error) 8%, transparent));
+  border-color: var(--color-error);
+  color: color-mix(in srgb, var(--color-error) 30%, white);
+}
+
 .boton--sm {
   min-height: var(--alto-control-sm);
   padding: var(--espacio-2) var(--espacio-4);
@@ -294,6 +305,12 @@ a:hover {
 .grupo-campo__ayuda {
   font-size: var(--texto-sm);
   color: var(--color-texto-suave);
+}
+
+/* Ayuda en verde cuando el campo ya cumple ("✓ Listo para publicar") */
+.grupo-campo__ayuda--listo {
+  color: var(--color-exito);
+  font-weight: var(--peso-fuerte);
 }
 
 .grupo-campo__error {
@@ -365,6 +382,56 @@ fieldset.grupo-campo {
 legend.grupo-campo__etiqueta {
   padding: 0;
   margin-bottom: var(--espacio-2);
+}
+
+/* ==========================================================================
+   Escala del 1 al 10 (calificación y dificultad)
+   <div class="escala" role="group" aria-label="Tu calificación"><button class="escala__opcion" type="button" aria-pressed="false">1</button>…</div>
+   La elegida lleva aria-pressed="true". --dificultad: barras rojas que se llenan hasta la elegida
+   (las anteriores llevan .escala__opcion--llena).
+   ========================================================================== */
+.escala {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: calc(var(--espacio-1) + var(--borde-grueso));
+}
+
+.escala__opcion {
+  min-height: var(--alto-control);
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-sm);
+  background: var(--degradado-superficie-elevada);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-fuerte);
+  cursor: pointer;
+  transition: border-color var(--transicion), background-color var(--transicion), transform var(--transicion);
+}
+
+.escala__opcion:hover {
+  border-color: var(--color-borde-hover);
+}
+
+.escala__opcion[aria-pressed="true"] {
+  border-color: var(--color-primario);
+  background: var(--degradado-primario);
+  box-shadow: var(--sombra-boton-primario);
+  color: var(--color-texto-sobre-primario);
+}
+
+.escala--dificultad .escala__opcion {
+  min-height: var(--espacio-7);
+  border: 0;
+  background: var(--color-borde);
+  font-size: 0;
+}
+
+.escala--dificultad .escala__opcion--llena,
+.escala--dificultad .escala__opcion[aria-pressed="true"] {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-error) 70%, white), var(--color-error));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-error) 50%, transparent);
 }
 
 /* ==========================================================================

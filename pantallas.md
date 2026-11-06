@@ -22,11 +22,11 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ⬜ | ⬜ | ⬜ |
-| 11. Comunidad | `pages/comunidad.html` | ✅ | ⬜ | ⬜ | ⬜ |
-| 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ⬜ | ⬜ | ⬜ |
+| 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ | ⬜ |
+| 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ | ⬜ |
+| 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ✅ | ✅ | ⬜ |
+| 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ | ⬜ |
+| 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ✅ | ✅ | ⬜ |
 
 ## Eventos
 
@@ -66,5 +66,6 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 - **Contáctanos**: todavía muestra la tarjeta de correo y redes, que la spec quita del MVP.
 - **Mensaje (Amigos y Perfil de otro usuario)**, clips, pagos, Google y Discord y foto de perfil: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
 - **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).
-- **Detalle de juego**: todavía no muestra las reseñas propias ni deja editarlas o eliminarlas; llega con Escribir reseña (8).
-- **Datos fuera de spec.md** (agregarlos a la sección Datos): meGusta, destacado, destacadosInicio, porcentajeUtil de las guías, horasAtras de los chats de ejemplo y respuestasMatchplay.
+- **Necesitas una cuenta**: la vuelta a la página donde estaba se prueba cuando existan Iniciar sesión y Crear cuenta (16 y 17).
+- **Datos fuera de spec.md** (agregarlos a la sección Datos): meGusta, destacado, destacadosInicio, porcentajeUtil de las guías, horasAtras de los chats de ejemplo, respuestasMatchplay, y en las reseñas propias estadoPartida (estado de la partida) y editada.
+- **Comunidad, pestaña Guías**: cada guía abre su juego (como en el diseño), no un Detalle de reseña; las guías de ejemplo no tienen texto completo.

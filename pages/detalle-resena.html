@@ -3,54 +3,140 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Reseña · SaveSlot</title>
-<meta name="description" content="Reseña de un juego, con comentarios de la comunidad.">
+<meta name="description" content="Lee la reseña completa, vótala y comenta.">
 <meta name="theme-color" content="#12161D">
+<link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="../css/prototipo.css">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/styles.css">
 </head>
-<body data-page="verresena" data-section="comunidad">
+<body data-pantalla="resena">
 
-<main>
-  <div class="hero-band" id="band">
-    <div class="container">
-      <nav class="crumbs" aria-label="Ruta"><a href="comunidad.html">Comunidad</a><span aria-hidden="true">/</span><a id="crumb-game" href="buscar-juegos.html">Juego</a><span aria-hidden="true">/</span><span style="color:var(--fg)">Reseña</span></nav>
-      <div class="row" style="gap:28px;align-items:flex-end">
-        <div id="v-cover" class="skeleton" style="width:160px;aspect-ratio:3/4"></div>
-        <div class="stack grow" style="flex:999 1 420px;gap:12px">
-          <span class="eyebrow" id="v-eyebrow">Reseña</span>
-          <h1 style="font-size:clamp(28px,3.6vw,42px);letter-spacing:-.02em" id="v-title">…</h1>
-          <div class="row" style="gap:12px" id="v-author"></div>
-        </div>
-        <div class="score-ring" id="v-score" aria-label="Calificación"></div>
-      </div>
+<header class="navegacion">
+  <div class="navegacion__contenido">
+    <a class="navegacion__logo" href="../index.html"><img src="../assets/favicon.svg" alt="">SaveSlot</a>
+    <nav aria-label="Principal">
+      <ul class="navegacion__enlaces">
+        <li><a class="navegacion__enlace" href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li>
+        <li><a class="navegacion__enlace" href="buscar-juegos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4M15.5 12h.01M18 14h.01"/></svg><span>Juegos</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--escritorio" href="comunidad.html" aria-current="page"><span>Comunidad</span></a></li>
+        <li><a class="navegacion__enlace" href="eventos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Eventos</span></a></li>
+        <li><a class="navegacion__enlace" href="matchplay.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>MatchPlay</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--movil" href="iniciar-sesion.html" data-enlace-cuenta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span data-texto>Entrar</span></a></li>
+      </ul>
+    </nav>
+    <form class="navegacion__buscar" role="search" action="buscar-juegos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="solo-lectores" for="buscar-encabezado">Buscar juegos</label>
+      <input class="navegacion__buscar-campo" id="buscar-encabezado" name="q" type="search" placeholder="Buscar juegos">
+    </form>
+    <div class="navegacion__acciones" data-acciones-sesion>
+      <a class="boton boton--secundario boton--sm navegacion__ocultar-movil" href="iniciar-sesion.html">Iniciar sesión</a>
+      <a class="boton boton--sm" href="crear-cuenta.html">Crear cuenta</a>
     </div>
   </div>
-  <div class="container page" style="gap:28px">
-    <div class="split">
-      <div class="main" style="gap:20px">
-        <article class="panel review-full" id="v-body"></article>
-        <div class="row" id="v-actions"></div>
-        <section class="section" id="comments"><div class="section-head"><h2 style="font-size:22px">Comentarios <span class="muted" id="c-count"></span></h2></div>
-          <form class="comment-form" id="c-form" novalidate><span class="avatar" id="c-av">SL</span><label class="sr-only" for="c-txt">Escribe un comentario</label><textarea class="textarea grow" id="c-txt" rows="2" maxlength="400" placeholder="Escribe un comentario respetuoso"></textarea><button class="btn btn-primary" type="submit">Comentar</button></form>
-          <div class="stack" style="gap:10px" id="c-list"></div>
+</header>
+
+<div class="franja" data-franja role="region" aria-label="Aviso del prototipo">
+  <span>Prototipo académico: los datos de juegos son de ejemplo hasta conectar las APIs. <a class="franja__enlace" href="../404.html?tipo=demo">Más información</a></span>
+  <button class="boton boton--fantasma boton--icono boton--sm" type="button" data-cerrar-franja aria-label="Ocultar aviso del prototipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+
+<main>
+
+  <section class="cabecera-juego" id="cabecera" aria-labelledby="titulo-resena">
+    <div class="cabecera-juego__contenido">
+      <nav class="migas" aria-label="Ruta">
+        <a href="comunidad.html">Comunidad</a><span aria-hidden="true">/</span>
+        <a id="miga-juego" href="buscar-juegos.html">Juego</a><span aria-hidden="true">/</span>
+        <span aria-current="page">Reseña</span>
+      </nav>
+      <div class="resena-cabecera">
+        <a class="portada portada--enlace resena-cabecera__portada" id="portada-resena" href="detalle-juego.html"></a>
+        <div class="resena-cabecera__texto">
+          <span class="antetitulo" id="antetitulo-resena">Reseña</span>
+          <h1 class="titulo-pagina" id="titulo-resena">…</h1>
+          <div class="en-fila" id="autor-resena"></div>
+        </div>
+        <div class="nota-anillo" id="nota-resena" role="img"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="contenedor">
+    <div class="division">
+      <div class="division__principal">
+        <article class="panel resena-completa" id="cuerpo-resena"></article>
+        <div class="en-fila" id="acciones-resena"></div>
+
+        <section class="seccion" aria-labelledby="titulo-comentarios">
+          <div class="encabezado-seccion">
+            <h2 class="encabezado-seccion__titulo" id="titulo-comentarios">Comentarios <span class="tarjeta__texto" id="cantidad-comentarios"></span></h2>
+          </div>
+          <form class="comentario-nuevo" id="formulario-comentario" novalidate>
+            <span class="avatar" id="avatar-comentario" aria-hidden="true">?</span>
+            <label class="solo-lectores" for="texto-comentario">Escribe un comentario</label>
+            <textarea class="campo" id="texto-comentario" rows="2" maxlength="400" aria-describedby="error-comentario" placeholder="Escribe un comentario respetuoso"></textarea>
+            <button class="boton" type="submit">Comentar</button>
+          </form>
+          <span class="grupo-campo__error" id="error-comentario" hidden>Escribe algo antes de comentar.</span>
+          <div class="pila pila--junta" id="lista-comentarios"></div>
         </section>
       </div>
-      <aside class="side">
-        <section class="panel" id="v-about"></section>
-        <section class="panel"><h2 class="panel-title">Datos de la partida</h2><dl id="v-facts" style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px"></dl></section>
-        <section class="panel"><h2 class="panel-title">Más reseñas de este juego</h2><div class="stack" style="gap:10px" id="v-more"></div></section>
+
+      <aside class="division__lateral pila">
+        <section class="panel" id="sobre-autor" aria-labelledby="titulo-autor"></section>
+        <section class="panel" aria-labelledby="titulo-partida">
+          <h2 class="panel__titulo" id="titulo-partida">Datos de la partida</h2>
+          <dl class="ficha" id="datos-partida"></dl>
+        </section>
+        <section class="panel" aria-labelledby="titulo-mas">
+          <h2 class="panel__titulo" id="titulo-mas">Más reseñas de este juego</h2>
+          <div class="pila pila--junta mas-resenas" id="mas-resenas"></div>
+        </section>
       </aside>
     </div>
   </div>
+
 </main>
-<script src="../js/prototipo.js"></script>
+
+<footer class="pie">
+  <div class="pie__contenido">
+    <div class="pie__marca">
+      <a class="pie__logo" href="../index.html">SaveSlot</a>
+      <p class="pie__frase">Tu solución gamer. Todos tus juegos y sus comunidades en un solo lugar.</p>
+    </div>
+    <nav class="pie__columnas" aria-label="Pie de página">
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Explora</h2>
+        <a class="pie__enlace" href="buscar-juegos.html">Juegos</a>
+        <a class="pie__enlace" href="juego-random.html">Juego random</a>
+        <a class="pie__enlace" href="eventos.html">Eventos</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Cuenta</h2>
+        <a class="pie__enlace" href="perfil.html">Mi perfil</a>
+        <a class="pie__enlace" href="amigos.html">Amigos</a>
+        <a class="pie__enlace" href="historial-resenas.html">Historial de reseñas</a>
+        <a class="pie__enlace" href="diario.html">Diario</a>
+        <a class="pie__enlace" href="logros.html">Logros</a>
+        <a class="pie__enlace" href="iniciar-sesion.html" data-pie-sesion>Iniciar sesión</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Ayuda</h2>
+        <a class="pie__enlace" href="contacto.html">Contáctanos</a>
+        <a class="pie__enlace" href="../404.html?tipo=estado">Estado de servicios</a>
+        <a class="pie__enlace" href="eventos.html#reglas">Reglas de eventos</a>
+      </div>
+    </nav>
+    <p class="pie__creditos">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos, marcas y portadas pertenecen a sus dueños; portadas tomadas de Steam y Wikipedia. Datos de juegos: ejemplo.</p>
+  </div>
+</footer>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
 </body>
 </html>

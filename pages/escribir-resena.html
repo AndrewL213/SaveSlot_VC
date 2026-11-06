@@ -3,60 +3,163 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="manifest" href="../manifest.webmanifest">
-<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Escribir reseña · SaveSlot</title>
-<meta name="description" content="Escribe una reseña, guía o clip y regístralo en tu diario.">
+<meta name="description" content="Registra un juego en tu diario y publica tu reseña, guía o clip.">
 <meta name="theme-color" content="#12161D">
+<link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="../css/prototipo.css">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/styles.css">
 </head>
-<body data-page="resena" data-section="comunidad">
+<body data-pantalla="escribir">
 
-<main class="container page" style="max-width:860px;gap:28px">
-  <div class="row" style="gap:18px;flex-wrap:nowrap">
-    <span id="r-cover"></span>
-    <div class="stack" style="gap:4px;min-width:0"><span class="eyebrow" id="eyebrow">Nueva reseña</span><h1 style="font-size:30px" id="r-title">…</h1><span class="small muted">Tus horas se pueden sincronizar desde tus cuentas vinculadas.</span></div>
-    <a class="btn btn-secondary btn-sm" id="cancel" href="detalle-juego.html" style="margin-left:auto">Cancelar</a>
+<header class="navegacion">
+  <div class="navegacion__contenido">
+    <a class="navegacion__logo" href="../index.html"><img src="../assets/favicon.svg" alt="">SaveSlot</a>
+    <nav aria-label="Principal">
+      <ul class="navegacion__enlaces">
+        <li><a class="navegacion__enlace" href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li>
+        <li><a class="navegacion__enlace" href="buscar-juegos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4M15.5 12h.01M18 14h.01"/></svg><span>Juegos</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--escritorio" href="comunidad.html" aria-current="page"><span>Comunidad</span></a></li>
+        <li><a class="navegacion__enlace" href="eventos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Eventos</span></a></li>
+        <li><a class="navegacion__enlace" href="matchplay.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>MatchPlay</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--movil" href="iniciar-sesion.html" data-enlace-cuenta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span data-texto>Entrar</span></a></li>
+      </ul>
+    </nav>
+    <form class="navegacion__buscar" role="search" action="buscar-juegos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="solo-lectores" for="buscar-encabezado">Buscar juegos</label>
+      <input class="navegacion__buscar-campo" id="buscar-encabezado" name="q" type="search" placeholder="Buscar juegos">
+    </form>
+    <div class="navegacion__acciones" data-acciones-sesion>
+      <a class="boton boton--secundario boton--sm navegacion__ocultar-movil" href="iniciar-sesion.html">Iniciar sesión</a>
+      <a class="boton boton--sm" href="crear-cuenta.html">Crear cuenta</a>
+    </div>
   </div>
-  <div class="seg" role="tablist" aria-label="Tipo de publicación" id="kind">
-    <button type="button" role="tab" data-k="resena">Reseña</button><button type="button" role="tab" data-k="guia">Guía</button><button type="button" role="tab" data-k="clip">Clip</button>
+</header>
+
+<div class="franja" data-franja role="region" aria-label="Aviso del prototipo">
+  <span>Prototipo académico: los datos de juegos son de ejemplo hasta conectar las APIs. <a class="franja__enlace" href="../404.html?tipo=demo">Más información</a></span>
+  <button class="boton boton--fantasma boton--icono boton--sm" type="button" data-cerrar-franja aria-label="Ocultar aviso del prototipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+
+<main class="contenedor contenedor--medio">
+
+  <div class="resena-encabezado">
+    <span class="portada portada--sm resena-encabezado__portada" id="portada-resena"></span>
+    <div class="resena-encabezado__texto">
+      <span class="antetitulo" id="antetitulo-resena">Nueva reseña</span>
+      <h1 class="titulo-pagina" id="juego-resena">…</h1>
+      <p class="tarjeta__texto">Tus horas se pueden sincronizar desde tus cuentas vinculadas.</p>
+    </div>
+    <a class="boton boton--secundario boton--sm al-final" id="cancelar" href="detalle-juego.html">Cancelar</a>
   </div>
-  <form class="panel" id="review-form" novalidate style="padding:28px;gap:26px">
-    <fieldset style="border:0;margin:0;padding:0" class="stack"><legend class="label" style="margin-bottom:10px">Registrar en tu diario</legend>
-      <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:end">
-        <div class="field"><label for="fecha" style="font-weight:400" class="soft small">Fecha en que lo jugaste</label><input class="input" type="date" id="fecha"></div>
-        <div class="field"><label for="estado" style="font-weight:400" class="soft small">Estado</label><select class="select" id="estado"><option>Terminado</option><option>Rejugado</option><option>En progreso</option><option>Abandonado</option></select></div>
-        <div class="field"><label for="horas" style="font-weight:400" class="soft small">Horas jugadas</label><input class="input" type="number" min="0" max="5000" id="horas" placeholder="Ej. 40"></div>
-        <button type="button" class="btn btn-secondary" id="like" aria-pressed="false"><span style="color:var(--bad);font-size:18px">♥</span>Me gusta</button>
+
+  <div class="segmentado" role="tablist" aria-label="Tipo de publicación" id="tipo">
+    <button class="segmentado__opcion" type="button" role="tab" data-tipo="resena" aria-selected="true">Reseña</button>
+    <button class="segmentado__opcion" type="button" role="tab" data-tipo="guia" aria-selected="false">Guía</button>
+    <button class="segmentado__opcion" type="button" role="tab" data-tipo="clip" aria-selected="false">Clip</button>
+  </div>
+
+  <form class="panel formulario-resena" id="formulario-resena" novalidate>
+    <fieldset class="grupo-campo">
+      <legend class="grupo-campo__etiqueta">Registrar en tu diario</legend>
+      <div class="rejilla-campos">
+        <div class="grupo-campo">
+          <label class="grupo-campo__ayuda" for="fecha">Fecha en que lo jugaste</label>
+          <input class="campo" type="date" id="fecha">
+        </div>
+        <div class="grupo-campo">
+          <label class="grupo-campo__ayuda" for="estado">Estado</label>
+          <select class="campo" id="estado"><option>Terminado</option><option>Rejugado</option><option>En progreso</option><option>Abandonado</option></select>
+        </div>
+        <div class="grupo-campo">
+          <label class="grupo-campo__ayuda" for="horas">Horas jugadas</label>
+          <input class="campo" type="number" min="0" max="5000" inputmode="numeric" id="horas" placeholder="Ej. 40">
+        </div>
+        <button class="boton boton--secundario boton--me-gusta" type="button" id="me-gusta" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3.3 5 6.8 5c2 0 3.4 1 4.2 2.3h2C13.8 6 15.2 5 17.2 5c3.5 0 5.6 3.6 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>Me gusta</button>
       </div>
     </fieldset>
-    <fieldset style="border:0;margin:0;padding:0" class="stack"><legend class="label" style="margin-bottom:10px">Tu calificación <span style="color:var(--accent-text);margin-left:8px" id="score-label"></span></legend>
-      <div class="grid" style="grid-template-columns:repeat(10,minmax(0,1fr));gap:6px" id="scores"></div></fieldset>
-    <fieldset style="border:0;margin:0;padding:0" class="stack"><legend class="label" style="margin-bottom:10px">¿Qué tan difícil fue? <span style="color:var(--bad);margin-left:8px" id="diff-label"></span></legend>
-      <div class="grid" style="grid-template-columns:repeat(10,minmax(0,1fr));gap:6px" id="diffs"></div>
-      <div class="row between xs muted"><span>1 · Relajado</span><span>10 · Brutal</span></div></fieldset>
-    <div class="stack" id="text-block">
-      <div class="field"><label for="tit">Título <span class="muted" style="font-weight:400">(opcional)</span></label><input class="input" id="tit" maxlength="80"></div>
-      <div class="field"><label for="txt" id="txt-label">Tu reseña</label><textarea class="textarea" id="txt" rows="6" maxlength="2000" aria-describedby="txt-err chars" placeholder="¿Qué te gustó, qué no y a quién se lo recomendarías?"></textarea>
-        <div class="row between xs muted"><span>Mínimo 50 caracteres</span><span id="chars">0 / 2.000</span></div><span class="error-text" id="txt-err" hidden>Escribe al menos 50 caracteres para publicar.</span></div>
-      <label class="check"><input type="checkbox" id="spoiler"><span><b>Contiene spoilers</b><br><span class="small muted">Ocultaremos el texto hasta que el lector decida verlo.</span></span></label>
-      <div class="card row" id="saved" hidden style="flex-direction:row;background:var(--surface-2);border:0"><span class="ok-text">✓</span><span class="small">Borrador guardado en este navegador. Si cierras, no lo pierdes.</span></div>
+
+    <fieldset class="grupo-campo">
+      <legend class="grupo-campo__etiqueta">Tu calificación <span class="etiqueta etiqueta--primario" id="texto-calificacion"></span></legend>
+      <div class="escala" role="group" aria-label="Tu calificación de 1 a 10" id="escala-calificacion"></div>
+    </fieldset>
+
+    <fieldset class="grupo-campo">
+      <legend class="grupo-campo__etiqueta">¿Qué tan difícil fue? <span class="etiqueta etiqueta--error" id="texto-dificultad"></span></legend>
+      <div class="escala escala--dificultad" role="group" aria-label="Dificultad de 1 a 10" id="escala-dificultad"></div>
+      <div class="en-fila en-fila--entre grupo-campo__ayuda"><span>1 · Relajado</span><span>10 · Brutal</span></div>
+    </fieldset>
+
+    <div class="pila" id="bloque-texto">
+      <div class="grupo-campo">
+        <label class="grupo-campo__etiqueta" for="titulo">Título <span class="tarjeta__texto">(opcional)</span></label>
+        <input class="campo" id="titulo" maxlength="80">
+      </div>
+      <div class="grupo-campo">
+        <label class="grupo-campo__etiqueta" for="texto" id="etiqueta-texto">Tu reseña</label>
+        <textarea class="campo" id="texto" rows="6" maxlength="2000" aria-describedby="caracteres error-texto" placeholder="¿Qué te gustó, qué no y a quién se lo recomendarías?"></textarea>
+        <div class="en-fila en-fila--entre"><span class="grupo-campo__ayuda">Mínimo 50 caracteres</span><span class="grupo-campo__ayuda" id="caracteres" aria-live="polite"></span></div>
+        <span class="grupo-campo__error" id="error-texto" hidden>Escribe al menos 50 caracteres para publicar.</span>
+      </div>
+      <label class="casilla"><input type="checkbox" id="spoiler"><span><b>Contiene spoilers</b><br><span class="tarjeta__texto">Ocultaremos el texto hasta que el lector decida verlo.</span></span></label>
+      <p class="tarjeta tarjeta__texto" id="borrador-guardado" hidden><span class="nota nota--texto">✓</span> Borrador guardado en este navegador. Si cierras, no lo pierdes.</p>
     </div>
-    <div class="stack" id="clip-block" hidden>
-      <div class="field"><label for="clip">Archivo de video</label><input class="input" type="file" id="clip" accept="video/*"><span class="hint">MP4 o WebM, máximo 60 segundos.</span></div>
+
+    <div class="grupo-campo" id="bloque-clip" hidden>
+      <label class="grupo-campo__etiqueta" for="clip">Archivo de video</label>
+      <input class="campo" type="file" id="clip" accept="video/*">
+      <span class="grupo-campo__ayuda">MP4 o WebM, máximo 60 segundos.</span>
     </div>
-    <div class="row between" style="border-top:1px solid var(--line);padding-top:20px">
-      <span class="small">Al publicar ganas <b style="color:var(--accent-text)">+50 XP</b>.</span>
-      <div class="row"><button type="button" class="btn btn-secondary" id="save-draft">Guardar borrador</button><button class="btn btn-primary" type="submit">Publicar</button></div>
+
+    <div class="en-fila en-fila--entre formulario-resena__pie">
+      <span>Al publicar ganas <b class="nota nota--texto">+50 XP</b>.</span>
+      <div class="en-fila">
+        <button class="boton boton--secundario" type="button" id="guardar-borrador">Guardar borrador</button>
+        <button class="boton" type="submit" id="publicar">Publicar</button>
+      </div>
     </div>
   </form>
+
 </main>
-<script src="../js/prototipo.js"></script>
+
+<footer class="pie">
+  <div class="pie__contenido">
+    <div class="pie__marca">
+      <a class="pie__logo" href="../index.html">SaveSlot</a>
+      <p class="pie__frase">Tu solución gamer. Todos tus juegos y sus comunidades en un solo lugar.</p>
+    </div>
+    <nav class="pie__columnas" aria-label="Pie de página">
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Explora</h2>
+        <a class="pie__enlace" href="buscar-juegos.html">Juegos</a>
+        <a class="pie__enlace" href="juego-random.html">Juego random</a>
+        <a class="pie__enlace" href="eventos.html">Eventos</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Cuenta</h2>
+        <a class="pie__enlace" href="perfil.html">Mi perfil</a>
+        <a class="pie__enlace" href="amigos.html">Amigos</a>
+        <a class="pie__enlace" href="historial-resenas.html">Historial de reseñas</a>
+        <a class="pie__enlace" href="diario.html">Diario</a>
+        <a class="pie__enlace" href="logros.html">Logros</a>
+        <a class="pie__enlace" href="iniciar-sesion.html" data-pie-sesion>Iniciar sesión</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Ayuda</h2>
+        <a class="pie__enlace" href="contacto.html">Contáctanos</a>
+        <a class="pie__enlace" href="../404.html?tipo=estado">Estado de servicios</a>
+        <a class="pie__enlace" href="eventos.html#reglas">Reglas de eventos</a>
+      </div>
+    </nav>
+    <p class="pie__creditos">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos, marcas y portadas pertenecen a sus dueños; portadas tomadas de Steam y Wikipedia. Datos de juegos: ejemplo.</p>
+  </div>
+</footer>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
 </body>
 </html>

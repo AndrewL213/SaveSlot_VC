@@ -183,6 +183,11 @@
         <button class="boton boton--peligro" type="button">Desvincular</button>
         <button class="boton boton--secundario" type="button" aria-pressed="true">Útil · presionado</button>
       </div>
+      <p>Me gusta (<code>.boton--me-gusta</code>), sin marcar y marcado:</p>
+      <div class="cat-ejemplo" data-codigo>
+        <button class="boton boton--secundario boton--me-gusta" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3.3 5 6.8 5c2 0 3.4 1 4.2 2.3h2C13.8 6 15.2 5 17.2 5c3.5 0 5.6 3.6 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>Me gusta</button>
+        <button class="boton boton--secundario boton--me-gusta" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3.3 5 6.8 5c2 0 3.4 1 4.2 2.3h2C13.8 6 15.2 5 17.2 5c3.5 0 5.6 3.6 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>Me gusta · 22</button>
+      </div>
       <div class="cat-ejemplo" data-codigo>
         <button class="boton boton--sm" type="button">Principal pequeño</button>
         <button class="boton boton--secundario boton--sm" type="button">Secundario pequeño</button>
@@ -210,6 +215,10 @@
           <span class="grupo-campo__ayuda">Nunca lo mostramos en tu perfil.</span>
         </div>
       </div>
+      <p>Ayuda cuando el campo ya cumple (<code>.grupo-campo__ayuda--listo</code>):</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <span class="grupo-campo__ayuda grupo-campo__ayuda--listo">✓ Listo para publicar · 64 / 2.000</span>
+      </div>
       <p>Con error:</p>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
         <div class="grupo-campo">
@@ -236,6 +245,15 @@
           <label class="grupo-campo__etiqueta" for="ej-fijo">Usuario</label>
           <input class="campo" id="ej-fijo" value="samluq" disabled>
         </div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
+      <h3>Escala del 1 al 10 · <code>.escala</code></h3>
+      <p>Calificación (la elegida en azul) y dificultad (<code>--dificultad</code>, barras rojas hasta la elegida).</p>
+      <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
+        <div class="escala" role="group" aria-label="Tu calificación"><button class="escala__opcion" type="button" aria-pressed="false">1</button><button class="escala__opcion" type="button" aria-pressed="false">2</button><button class="escala__opcion" type="button" aria-pressed="false">3</button><button class="escala__opcion" type="button" aria-pressed="false">4</button><button class="escala__opcion" type="button" aria-pressed="false">5</button><button class="escala__opcion" type="button" aria-pressed="false">6</button><button class="escala__opcion" type="button" aria-pressed="false">7</button><button class="escala__opcion" type="button" aria-pressed="true">8</button><button class="escala__opcion" type="button" aria-pressed="false">9</button><button class="escala__opcion" type="button" aria-pressed="false">10</button></div>
+        <div class="escala escala--dificultad" role="group" aria-label="Dificultad"><button class="escala__opcion escala__opcion--llena" type="button" aria-pressed="false" aria-label="Dificultad 1 de 10"></button><button class="escala__opcion escala__opcion--llena" type="button" aria-pressed="false" aria-label="Dificultad 2 de 10"></button><button class="escala__opcion escala__opcion--llena" type="button" aria-pressed="false" aria-label="Dificultad 3 de 10"></button><button class="escala__opcion escala__opcion--llena" type="button" aria-pressed="false" aria-label="Dificultad 4 de 10"></button><button class="escala__opcion escala__opcion--llena" type="button" aria-pressed="false" aria-label="Dificultad 5 de 10"></button><button class="escala__opcion" type="button" aria-pressed="true" aria-label="Dificultad 6 de 10"></button><button class="escala__opcion" type="button" aria-pressed="false" aria-label="Dificultad 7 de 10"></button><button class="escala__opcion" type="button" aria-pressed="false" aria-label="Dificultad 8 de 10"></button><button class="escala__opcion" type="button" aria-pressed="false" aria-label="Dificultad 9 de 10"></button><button class="escala__opcion" type="button" aria-pressed="false" aria-label="Dificultad 10 de 10"></button></div>
       </div>
     </div>
 

@@ -91,6 +91,91 @@ function sonAmigos(usuario) {
   });
 }
 
+/* ---------- Reseñas propias y comentarios (hasta conectar Supabase) ----------
+   Lo que la persona publica se guarda en el navegador con las mismas claves y
+   nombres que usan las páginas del prototipo (myReviews, diary, comments.…),
+   para que el Diario y el Historial, aún sin construir, también lo vean. */
+
+function usuarioActual() {
+  return (obtenerSesion() || { user: 'samluq' }).user;
+}
+
+// Reseña guardada (formato del prototipo) → formato de data.js
+function resenaDesdeMemoria(r) {
+  return {
+    id: r.id, juego: r.game, autor: usuarioActual(), tipo: r.kind === 'guia' ? 'guia' : 'resena', estado: 'publicada',
+    titulo: r.title || null, texto: r.text, calificacion: r.score, dificultad: r.diff || null, horas: r.hours || 0,
+    minutosLectura: r.kind === 'guia' ? Math.max(1, Math.round(String(r.text).split(/\s+/).length / 200)) : null,
+    spoiler: !!r.spoiler, votosUtil: r.useful || 0, porcentajeUtil: null, meGusta: r.likes || 0, fecha: r.date || null,
+    estadoPartida: r.state || null, editada: !!r.edited
+  };
+}
+
+function resenaParaMemoria(r) {
+  return {
+    id: r.id, game: r.juego, kind: r.tipo, title: r.titulo, text: r.texto, score: r.calificacion, diff: r.dificultad,
+    hours: r.horas, spoiler: r.spoiler, useful: r.votosUtil, likes: r.meGusta, date: r.fecha, state: r.estadoPartida, edited: r.editada
+  };
+}
+
+// Las reseñas propias: las guardadas o, si no hay, las de samluq en data.js
+function leerResenasPropias() {
+  var guardadas = leerMemoria('myReviews', null);
+  if (guardadas) return guardadas.map(resenaDesdeMemoria);
+  return obtenerDatos('resenas').filter(function (r) { return r.autor === 'samluq'; }).map(function (r) {
+    var partida = obtenerDatos('diario').find(function (d) { return d.juego === r.juego; });
+    return Object.assign({}, r, { autor: usuarioActual(), estadoPartida: partida ? partida.estado : null, editada: false });
+  });
+}
+
+function guardarResenasPropias(lista) {
+  guardarMemoria('myReviews', lista.map(resenaParaMemoria));
+}
+
+// Todas las reseñas y guías: las de los demás (data.js) y las propias
+function obtenerResenas() {
+  return obtenerDatos('resenas').filter(function (r) { return r.autor !== 'samluq'; }).concat(leerResenasPropias());
+}
+
+function esPropia(resena) {
+  return leerResenasPropias().some(function (r) { return r.id === resena.id; });
+}
+
+function leerComentarios(idResena) {
+  var guardados = leerMemoria('comments.' + idResena, null);
+  if (!guardados) return obtenerDatos('comentarios').filter(function (c) { return c.resena === idResena; });
+  return guardados.map(function (c, i) {
+    return { id: c.id || idResena + '-' + i, resena: idResena, autor: c.user, texto: c.text, fecha: c.fecha || null, cuando: c.when || null };
+  });
+}
+
+function guardarComentarios(idResena, lista) {
+  guardarMemoria('comments.' + idResena, lista.map(function (c) {
+    var autor = buscarPorId('usuarios', c.autor);
+    return { id: c.id, review: idResena, user: c.autor, initials: autor ? autor.iniciales : (obtenerSesion() || {}).initials, text: c.texto, fecha: c.fecha, when: c.cuando || null };
+  }));
+}
+
+// Suma una entrada al diario (formato del prototipo), la más reciente primero
+function agregarAlDiario(entrada) {
+  var diario = leerMemoria('diary', null) || obtenerDatos('diario').map(function (d) {
+    return { game: d.juego, date: d.fecha, state: d.estado, hours: d.horas, score: d.calificacion, like: d.meGusta, review: d.tieneResena };
+  });
+  diario.unshift({ game: entrada.juego, date: entrada.fecha, state: entrada.estado, hours: entrada.horas, score: entrada.calificacion, like: entrada.meGusta, review: entrada.tieneResena });
+  diario.sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
+  guardarMemoria('diary', diario);
+}
+
+// Suma XP al perfil; cada 1.500 XP se sube de nivel
+var XP_POR_NIVEL = 1500;
+function sumarXp(cantidad) {
+  var perfil = leerPerfil();
+  perfil.xp += cantidad;
+  while (perfil.xp >= XP_POR_NIVEL) { perfil.xp -= XP_POR_NIVEL; perfil.level += 1; }
+  guardarMemoria('profile', perfil);
+  return perfil;
+}
+
 /* ---------- Ayudas para armar HTML ---------- */
 
 // Escapa texto antes de ponerlo en el HTML.
@@ -98,6 +183,20 @@ function escapar(texto) {
   return String(texto == null ? '' : texto).replace(/[&<>"']/g, function (c) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
   });
+}
+
+var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+// '2026-10-07' → '7 oct 2026'
+function formatearFecha(fecha) {
+  if (!fecha) return '';
+  var partes = String(fecha).split('-');
+  return Number(partes[2]) + ' ' + MESES[Number(partes[1]) - 1] + ' ' + partes[0];
+}
+
+function hoy() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 function formatearNumero(n) {
@@ -142,14 +241,15 @@ function crearElemento(html) {
 
 var ICONO_CERRAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 
-// Abre una ventana. opciones: { titulo, texto, html, acciones: [{ texto, href, principal }] }
+// Abre una ventana. opciones: { titulo, texto, html, acciones: [{ texto, href, principal, peligro, alTocar }] }
+// Una acción con alTocar ejecuta esa función y cierra la ventana.
 function abrirModal(opciones) {
   var anterior = document.activeElement;
-  var acciones = (opciones.acciones || []).map(function (a) {
-    var clase = 'boton' + (a.principal ? '' : ' boton--secundario');
+  var acciones = (opciones.acciones || []).map(function (a, i) {
+    var clase = 'boton' + (a.peligro ? ' boton--peligro' : (a.principal ? '' : ' boton--secundario'));
     return a.href
       ? '<a class="' + clase + '" href="' + escapar(a.href) + '">' + escapar(a.texto) + '</a>'
-      : '<button class="' + clase + '" type="button" data-cerrar>' + escapar(a.texto) + '</button>';
+      : '<button class="' + clase + '" type="button" data-cerrar data-accion="' + i + '">' + escapar(a.texto) + '</button>';
   }).join('');
   var fondo = crearElemento(
     '<div class="modal-fondo">' +
@@ -171,6 +271,12 @@ function abrirModal(opciones) {
     if (e.key === 'Escape') cerrar();
   }
   fondo.addEventListener('click', function (e) {
+    var accion = e.target.closest('[data-accion]');
+    if (accion && opciones.acciones[accion.dataset.accion].alTocar) {
+      cerrar();
+      opciones.acciones[accion.dataset.accion].alTocar();
+      return;
+    }
     if (e.target === fondo || e.target.closest('[data-cerrar]')) cerrar();
   });
   document.addEventListener('keydown', alTeclear);
@@ -297,7 +403,7 @@ function htmlJuegoMini(juego, ranking) {
 function htmlResena(resena, opciones) {
   var juego = buscarPorId('juegos', resena.juego);
   var autor = buscarPorId('usuarios', resena.autor) || { usuario: resena.autor, iniciales: '?' };
-  var comentarios = obtenerDatos('comentarios').filter(function (c) { return c.resena === resena.id; }).length;
+  var comentarios = leerComentarios(resena.id).length;
   var votado = leerMemoria('votosUtil', []).indexOf(resena.id) !== -1;
   var votos = resena.votosUtil + (votado ? 1 : 0);
   return '<article class="tarjeta tarjeta--resena"' + atributoColor(juego && juego.color) + '>' +
@@ -314,7 +420,7 @@ function htmlResena(resena, opciones) {
       ? '<div class="spoiler"><span>Esta reseña tiene spoilers.</span><button class="boton boton--secundario boton--sm" type="button" data-mostrar-spoiler>Mostrar de todas formas</button></div><p hidden>' + escapar(resena.texto) + '</p>'
       : '<p>' + escapar(resena.texto) + '</p>') +
     '<div class="en-fila tarjeta__texto">' +
-      '<button class="boton boton--secundario boton--sm" type="button" data-util="' + escapar(resena.id) + '" aria-pressed="' + votado + '">Útil · <span>' + formatearNumero(votos) + '</span></button>' +
+      '<button class="boton boton--secundario boton--sm" type="button" data-util="' + escapar(resena.id) + '"' + (esPropia(resena) ? ' data-propia' : '') + ' aria-pressed="' + votado + '">Útil · <span>' + formatearNumero(votos) + '</span></button>' +
       '<span>♥ ' + formatearNumero(resena.meGusta) + '</span>' +
       '<span>' + comentarios + (comentarios === 1 ? ' comentario' : ' comentarios') + '</span>' +
       '<a class="al-final" href="' + rutaPagina('detalle-resena.html') + '?id=' + encodeURIComponent(resena.id) + '">Leer y comentar →</a>' +
@@ -337,6 +443,7 @@ function activarResenas(contenedor) {
     var boton = e.target.closest('[data-util]');
     if (!boton) return;
     if (!obtenerSesion()) { pedirCuenta('votar reseñas'); return; }
+    if (boton.hasAttribute('data-propia')) { mostrarAviso('No puedes votar tu propia reseña'); return; }
     if (boton.getAttribute('aria-pressed') === 'true') return;
     var votos = leerMemoria('votosUtil', []);
     votos.push(boton.dataset.util);
@@ -382,7 +489,7 @@ function pantallaIndex() {
   }
 
   // Reseñas destacadas: las 3 primeras publicadas sin spoiler (como en el diseño)
-  var destacadas = obtenerDatos('resenas')
+  var destacadas = obtenerResenas()
     .filter(function (r) { return r.tipo === 'resena' && !r.spoiler && r.estado === 'publicada'; })
     .slice(0, 3);
   var contenedorResenas = document.getElementById('resenas-destacadas');
@@ -949,7 +1056,7 @@ function pantallaJuego() {
   });
 
   // Pestañas: Reseñas, Guías, Clips y Logros
-  var publicadas = obtenerDatos('resenas').filter(function (r) { return r.juego === juego.id && r.estado === 'publicada'; });
+  var publicadas = obtenerResenas().filter(function (r) { return r.juego === juego.id && r.estado === 'publicada'; });
   var resenas = publicadas.filter(function (r) { return r.tipo === 'resena'; });
   var guias = publicadas.filter(function (r) { return r.tipo === 'guia'; });
   var logros = obtenerDatos('logros').filter(function (l) { return l.juego === juego.id; });
@@ -963,7 +1070,7 @@ function pantallaJuego() {
       return guias.length ? guias.map(function (g) {
         return '<article class="tarjeta">' +
           '<div class="en-fila en-fila--entre"><h3 class="tarjeta__titulo">' + escapar(g.titulo) + '</h3><span class="tarjeta__texto">' + escapar(g.minutosLectura) + ' min</span></div>' +
-          '<span class="nota nota--texto">' + escapar(g.porcentajeUtil) + '% la marcó como útil</span>' +
+          (g.porcentajeUtil != null ? '<span class="nota nota--texto">' + escapar(g.porcentajeUtil) + '% la marcó como útil</span>' : '<span class="tarjeta__texto">Guía nueva: todavía sin votos</span>') +
         '</article>';
       }).join('')
         : '<div class="vacio"><b>Aún no hay guías.</b><a href="' + escribir + '&amp;tipo=guia">Escribir la primera</a></div>';
@@ -1022,6 +1129,484 @@ function pantallaJuego() {
   aplicarColores(document);
 }
 
+// 8. Escribir reseña (y 9. Ventana: Publicación confirmada)
+function pantallaEscribir() {
+  var parametros = new URLSearchParams(location.search);
+  var juego = buscarPorId('juegos', parametros.get('id') || 'zelda-totk');
+  if (!juego) { location.replace(rutaPagina('404.html') + '?tipo=juego'); return; }
+  var MINIMO = 50;
+  var tipo = ['guia', 'clip'].indexOf(parametros.get('tipo')) !== -1 ? parametros.get('tipo') : 'resena';
+  var calificacion = 8;
+  var dificultad = juego.dificultad || 5;
+  var meGusta = false;
+  var claveBorrador = 'draft.' + juego.id;
+  var editando = leerResenasPropias().find(function (r) { return r.id === parametros.get('editar') && r.juego === juego.id; }) || null;
+
+  var formulario = document.getElementById('formulario-resena');
+  var campoTexto = document.getElementById('texto');
+  var campoTitulo = document.getElementById('titulo');
+  var campoFecha = document.getElementById('fecha');
+  var botonMeGusta = document.getElementById('me-gusta');
+  var botonPublicar = document.getElementById('publicar');
+  var avisoBorrador = document.getElementById('borrador-guardado');
+
+  // Encabezado: el juego con su portada
+  var portada = document.getElementById('portada-resena');
+  portada.dataset.color = juego.color;
+  portada.innerHTML = imagenPortada(juego);
+  document.getElementById('juego-resena').textContent = juego.nombre;
+  document.getElementById('cancelar').href = 'detalle-juego.html?id=' + encodeURIComponent(juego.id);
+  document.title = 'Escribir reseña de ' + juego.nombreCorto + ' · SaveSlot';
+  campoFecha.value = hoy();
+  campoFecha.max = hoy();
+
+  // Editar una reseña propia: llega con sus datos
+  if (editando) {
+    tipo = editando.tipo;
+    calificacion = editando.calificacion || calificacion;
+    dificultad = editando.dificultad || dificultad;
+    campoTexto.value = editando.texto;
+    campoTitulo.value = editando.titulo || '';
+    document.getElementById('horas').value = editando.horas || '';
+    document.getElementById('spoiler').checked = editando.spoiler;
+    if (editando.estadoPartida) document.getElementById('estado').value = editando.estadoPartida;
+    document.getElementById('tipo').hidden = true;
+    document.getElementById('guardar-borrador').hidden = true;
+    document.getElementById('cancelar').href = 'detalle-resena.html?id=' + encodeURIComponent(editando.id);
+    botonPublicar.textContent = 'Guardar cambios';
+  } else {
+    var borrador = leerMemoria(claveBorrador, null);
+    if (borrador) {
+      campoTexto.value = borrador.text || '';
+      campoTitulo.value = borrador.title || '';
+      calificacion = borrador.score || calificacion;
+      dificultad = borrador.diff || dificultad;
+      meGusta = !!borrador.like;
+      botonMeGusta.setAttribute('aria-pressed', String(meGusta));
+      document.getElementById('horas').value = borrador.hours || '';
+      avisoBorrador.hidden = false;
+    }
+  }
+
+  // Escalas del 1 al 10
+  function dibujarEscalas() {
+    var htmlCalificacion = '';
+    var htmlDificultad = '';
+    for (var n = 1; n <= 10; n++) {
+      htmlCalificacion += '<button class="escala__opcion" type="button" data-calificacion="' + n + '" aria-pressed="' + (n === calificacion) + '" aria-label="Calificación ' + n + ' de 10">' + n + '</button>';
+      htmlDificultad += '<button class="escala__opcion' + (n < dificultad ? ' escala__opcion--llena' : '') + '" type="button" data-dificultad="' + n + '" aria-pressed="' + (n === dificultad) + '" aria-label="Dificultad ' + n + ' de 10"></button>';
+    }
+    document.getElementById('escala-calificacion').innerHTML = htmlCalificacion;
+    document.getElementById('escala-dificultad').innerHTML = htmlDificultad;
+    document.getElementById('texto-calificacion').textContent = calificacion + '/10';
+    document.getElementById('texto-dificultad').textContent = dificultad + '/10';
+  }
+  formulario.addEventListener('click', function (e) {
+    var opcion = e.target.closest('[data-calificacion], [data-dificultad]');
+    if (!opcion) return;
+    if (opcion.dataset.calificacion) calificacion = Number(opcion.dataset.calificacion);
+    else dificultad = Number(opcion.dataset.dificultad);
+    var atributo = opcion.dataset.calificacion ? 'calificacion' : 'dificultad';
+    dibujarEscalas();
+    if (campoTexto.value.trim()) guardarBorrador();
+    formulario.querySelector('[data-' + atributo + '="' + (atributo === 'calificacion' ? calificacion : dificultad) + '"]').focus();
+  });
+  dibujarEscalas();
+
+  botonMeGusta.addEventListener('click', function () {
+    meGusta = !meGusta;
+    botonMeGusta.setAttribute('aria-pressed', String(meGusta));
+    if (campoTexto.value.trim()) guardarBorrador();
+  });
+
+  // Tipo: Reseña, Guía o Clip
+  function elegirTipo(nuevo) {
+    tipo = nuevo;
+    document.querySelectorAll('[data-tipo]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tipo === tipo)); });
+    document.getElementById('bloque-texto').hidden = tipo === 'clip';
+    document.getElementById('bloque-clip').hidden = tipo !== 'clip';
+    document.getElementById('etiqueta-texto').textContent = tipo === 'guia' ? 'Tu guía' : 'Tu reseña';
+    document.getElementById('antetitulo-resena').textContent = editando ? 'Editar reseña' : ({ resena: 'Nueva reseña', guia: 'Nueva guía', clip: 'Nuevo clip' })[tipo];
+  }
+  document.getElementById('tipo').addEventListener('click', function (e) {
+    var boton = e.target.closest('[data-tipo]');
+    if (boton) elegirTipo(boton.dataset.tipo);
+  });
+  elegirTipo(tipo);
+
+  // Contador de caracteres y borrador automático
+  function contar() {
+    var largo = campoTexto.value.trim().length;
+    var contador = document.getElementById('caracteres');
+    contador.textContent = (largo >= MINIMO ? '✓ Listo para publicar · ' : 'Faltan ' + (MINIMO - largo) + ' caracteres · ') + formatearNumero(campoTexto.value.length) + ' / 2.000';
+    contador.classList.toggle('grupo-campo__ayuda--listo', largo >= MINIMO);
+    if (largo >= MINIMO) mostrarError(false);
+  }
+  function mostrarError(hayError) {
+    campoTexto.classList.toggle('campo--error', hayError);
+    campoTexto.setAttribute('aria-invalid', String(hayError));
+    document.getElementById('error-texto').hidden = !hayError;
+  }
+  function guardarBorrador() {
+    if (editando) return;
+    guardarMemoria(claveBorrador, {
+      text: campoTexto.value, title: campoTitulo.value, score: calificacion, diff: dificultad, like: meGusta,
+      hours: document.getElementById('horas').value
+    });
+    avisoBorrador.hidden = false;
+  }
+  campoTexto.addEventListener('input', function () { contar(); guardarBorrador(); });
+  campoTitulo.addEventListener('input', guardarBorrador);
+  document.getElementById('horas').addEventListener('input', function () { if (campoTexto.value.trim()) guardarBorrador(); });
+  document.getElementById('guardar-borrador').addEventListener('click', function () {
+    guardarBorrador();
+    mostrarAviso('Borrador guardado');
+  });
+  contar();
+
+  // Publicar
+  formulario.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (tipo === 'clip') {
+      abrirModal({ titulo: 'Los clips llegan pronto', texto: 'Subir clips todavía no está disponible. Mientras tanto puedes publicar una reseña o una guía.', acciones: [{ texto: 'Entendido', principal: true }] });
+      return;
+    }
+    if (campoTexto.value.trim().length < MINIMO) {
+      mostrarError(true);
+      campoTexto.focus();
+      return;
+    }
+    if (!obtenerSesion()) { pedirCuenta('publicar tu ' + (tipo === 'guia' ? 'guía' : 'reseña')); return; }
+
+    var datos = {
+      tipo: tipo, titulo: campoTitulo.value.trim() || null, texto: campoTexto.value.trim(), calificacion: calificacion,
+      dificultad: dificultad, horas: Number(document.getElementById('horas').value) || 0,
+      spoiler: document.getElementById('spoiler').checked, estadoPartida: document.getElementById('estado').value
+    };
+    var propias = leerResenasPropias();
+    botonPublicar.disabled = true;
+    botonPublicar.textContent = editando ? 'Guardando…' : 'Publicando…';
+
+    setTimeout(function () {
+      botonPublicar.disabled = false;
+      if (editando) {
+        var guardada = propias.find(function (r) { return r.id === editando.id; });
+        Object.assign(guardada, datos, { editada: true });
+        guardarResenasPropias(propias);
+        botonPublicar.textContent = 'Guardar cambios';
+        abrirModal({
+          titulo: 'Reseña actualizada',
+          texto: 'Los cambios ya se ven en tu historial y en la página del juego.',
+          acciones: [{ texto: 'Ver reseña', href: 'detalle-resena.html?id=' + encodeURIComponent(editando.id), principal: true }, { texto: 'Ir al historial', href: 'historial-resenas.html' }]
+        });
+        return;
+      }
+
+      var nueva = Object.assign({
+        id: 'u' + Date.now(), juego: juego.id, autor: usuarioActual(), estado: 'publicada', minutosLectura: null,
+        votosUtil: 0, porcentajeUtil: null, meGusta: 0, fecha: hoy(), editada: false
+      }, datos);
+      propias.unshift(nueva);
+      guardarResenasPropias(propias);
+      agregarAlDiario({ juego: juego.id, fecha: campoFecha.value || hoy(), estado: datos.estadoPartida, horas: datos.horas, calificacion: calificacion, meGusta: meGusta, tieneResena: tipo === 'resena' });
+      guardarMemoria(claveBorrador, null);
+      avisoBorrador.hidden = true;
+      var perfil = sumarXp(50);
+      botonPublicar.textContent = 'Publicar';
+
+      // 9. Ventana: Publicación confirmada
+      abrirModal({
+        titulo: (tipo === 'guia' ? 'Guía' : 'Reseña') + ' publicada',
+        texto: 'Ganaste 50 XP. Vas en ' + formatearNumero(perfil.xp) + ' / ' + formatearNumero(XP_POR_NIVEL) + ' XP del nivel ' + perfil.level + '.',
+        acciones: tipo === 'guia'
+          ? [{ texto: 'Ver en el juego', href: 'detalle-juego.html?id=' + encodeURIComponent(juego.id), principal: true }, { texto: 'Ver mi diario', href: 'diario.html' }]
+          : [{ texto: 'Ver mi reseña', href: 'detalle-resena.html?id=' + encodeURIComponent(nueva.id), principal: true }, { texto: 'Ir al historial', href: 'historial-resenas.html' }]
+      });
+    }, 500);
+  });
+
+  aplicarColores(document);
+}
+
+// 11. Comunidad
+function pantallaComunidad() {
+  var pestana = 'resenas';
+  var orden = 'utiles';
+  var lista = document.getElementById('lista-comunidad');
+  var pestanas = document.getElementById('pestanas-comunidad');
+
+  function ordenar(resenas) {
+    return resenas.sort(orden === 'utiles'
+      ? function (a, b) { return (b.votosUtil || 0) - (a.votosUtil || 0); }
+      : function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
+  }
+
+  function mostrar() {
+    pestanas.querySelectorAll('[data-pestana]').forEach(function (b) {
+      b.setAttribute('aria-selected', String(b.dataset.pestana === pestana));
+    });
+    lista.setAttribute('aria-labelledby', 'pestana-' + pestana);
+    document.getElementById('caja-orden').hidden = pestana === 'guias';
+    var publicadas = obtenerResenas().filter(function (r) { return r.estado === 'publicada'; });
+
+    if (pestana === 'guias') {
+      lista.innerHTML = publicadas.filter(function (r) { return r.tipo === 'guia'; }).map(function (g) {
+        var juego = buscarPorId('juegos', g.juego);
+        return '<a class="tarjeta tarjeta--enlace tarjeta--resena" href="detalle-juego.html?id=' + encodeURIComponent(g.juego) + '"' + atributoColor(juego.color) + '>' +
+          '<span class="tarjeta__texto">' + escapar(juego.nombreCorto.toUpperCase()) + ' · ' + escapar(g.minutosLectura) + ' MIN</span>' +
+          '<b class="tarjeta__titulo">' + escapar(g.titulo || 'Guía de ' + juego.nombreCorto) + '</b>' +
+          (g.porcentajeUtil != null ? '<span class="nota nota--texto">' + escapar(g.porcentajeUtil) + '% la marcó como útil</span>' : '<span class="tarjeta__texto">Guía nueva: todavía sin votos</span>') +
+        '</a>';
+      }).join('');
+    } else {
+      var resenas = publicadas.filter(function (r) { return r.tipo === 'resena'; });
+      if (pestana === 'amigos') resenas = resenas.filter(function (r) { return sonAmigos(r.autor); });
+      resenas = ordenar(resenas);
+      lista.innerHTML = resenas.length
+        ? resenas.map(function (r) { return htmlResena(r, { conJuego: true }); }).join('')
+        : (obtenerSesion()
+          ? '<div class="vacio"><b>Tus amigos todavía no publican reseñas.</b><a href="amigos.html">Busca amigos</a></div>'
+          : '<div class="vacio"><b>Inicia sesión para ver las reseñas de tus amigos.</b><a class="boton boton--sm" href="iniciar-sesion.html?volver=comunidad.html">Iniciar sesión</a></div>');
+    }
+    aplicarColores(lista);
+  }
+
+  pestanas.addEventListener('click', function (e) {
+    var boton = e.target.closest('[data-pestana]');
+    if (!boton) return;
+    pestana = boton.dataset.pestana;
+    mostrar();
+  });
+  document.getElementById('orden').addEventListener('change', function (e) {
+    orden = e.target.value;
+    mostrar();
+  });
+  activarResenas(lista);
+  mostrar();
+}
+
+var ICONO_CORAZON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3.3 5 6.8 5c2 0 3.4 1 4.2 2.3h2C13.8 6 15.2 5 17.2 5c3.5 0 5.6 3.6 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>';
+
+// Avatar de una persona con el anillo de su estado (si se conoce)
+function htmlAvatar(persona, tamano) {
+  var estado = persona.estado ? ' avatar--' + persona.estado : '';
+  return '<span class="avatar' + (tamano ? ' avatar--' + tamano : '') + estado + '" aria-hidden="true">' + escapar(persona.iniciales || '?') +
+    (persona.estado ? '<span class="avatar__punto"></span>' : '') + '</span>';
+}
+
+// Datos de una persona: los de data.js o, si es la cuenta actual, los de la sesión
+function datosPersona(usuario) {
+  var sesion = obtenerSesion();
+  var persona = buscarPorId('usuarios', usuario);
+  if (sesion && sesion.user === usuario) {
+    return Object.assign({ usuario: usuario, estado: 'en-linea' }, persona || {}, { nombre: sesion.name, iniciales: sesion.initials, nivel: leerPerfil().level });
+  }
+  return persona || { usuario: usuario, nombre: usuario, iniciales: usuario.slice(0, 2).toUpperCase(), nivel: null, estado: null };
+}
+
+function enlacePerfil(usuario) {
+  return obtenerSesion() && usuario === usuarioActual() ? 'perfil.html' : 'perfil-usuario.html?u=' + encodeURIComponent(usuario);
+}
+
+// 12. Detalle de reseña
+function pantallaResena() {
+  var id = new URLSearchParams(location.search).get('id');
+  var resena = obtenerResenas().find(function (r) { return r.id === id; });
+  if (!resena) { location.replace(rutaPagina('404.html') + '?tipo=resena'); return; }
+  var juego = buscarPorId('juegos', resena.juego);
+  var propia = esPropia(resena);
+  var autor = datosPersona(resena.autor);
+  var sesion = obtenerSesion();
+  var esGuia = resena.tipo === 'guia';
+
+  document.title = (esGuia ? 'Guía' : 'Reseña') + ' de ' + juego.nombreCorto + ' · SaveSlot';
+
+  // Cabecera: juego, autor y nota
+  document.getElementById('cabecera').dataset.color = juego.color;
+  var miga = document.getElementById('miga-juego');
+  miga.textContent = juego.nombreCorto;
+  miga.href = 'detalle-juego.html?id=' + encodeURIComponent(juego.id);
+  var portada = document.getElementById('portada-resena');
+  portada.href = miga.href;
+  portada.dataset.color = juego.color;
+  portada.innerHTML = imagenPortada(juego) + '<span class="solo-lectores">Abrir la ficha de ' + escapar(juego.nombre) + '</span>';
+  document.getElementById('antetitulo-resena').textContent = (esGuia ? 'Guía' : 'Reseña') + ' · ' + juego.generos.join(' · ');
+  document.getElementById('titulo-resena').textContent = juego.nombre;
+  document.getElementById('autor-resena').innerHTML = htmlAvatar(autor) +
+    '<span><a href="' + enlacePerfil(autor.usuario) + '"><b>' + escapar(autor.nombre) + '</b></a> <span class="tarjeta__texto">@' + escapar(autor.usuario) + '</span><br>' +
+    '<span class="tarjeta__texto">' + formatearFecha(resena.fecha) + (resena.editada ? ' · editada' : '') + '</span></span>';
+  var nota = document.getElementById('nota-resena');
+  if (resena.calificacion) {
+    nota.innerHTML = '<b>' + escapar(resena.calificacion) + '</b><span>de 10</span>';
+    nota.setAttribute('aria-label', 'Calificación ' + resena.calificacion + ' de 10');
+    nota.style.setProperty('--p', resena.calificacion * 10);
+  } else {
+    nota.hidden = true;
+  }
+
+  // Texto completo (con el spoiler tapado)
+  var cuerpo = document.getElementById('cuerpo-resena');
+  var texto = resena.texto
+    ? '<p>' + escapar(resena.texto) + '</p>'
+    : '<p class="tarjeta__texto">Esta guía todavía no tiene su texto completo en SaveSlot.</p>';
+  cuerpo.innerHTML = (resena.titulo ? '<h2 class="tarjeta__titulo">' + escapar(resena.titulo) + '</h2>' : '') +
+    (resena.spoiler
+      ? '<div class="spoiler"><span>Esta reseña tiene spoilers.</span><button class="boton boton--secundario boton--sm" type="button" data-mostrar-spoiler>Mostrar de todas formas</button></div>' + texto.replace('<p', '<p hidden')
+      : texto);
+  activarResenas(cuerpo);
+
+  // Acciones: me gusta, útil y compartir; editar y eliminar si es propia
+  var acciones = document.getElementById('acciones-resena');
+  function dibujarAcciones() {
+    var meGusta = leerMemoria('meGustaResenas', []).indexOf(resena.id) !== -1;
+    var votado = leerMemoria('votosUtil', []).indexOf(resena.id) !== -1;
+    acciones.innerHTML =
+      '<button class="boton boton--secundario boton--me-gusta" type="button" id="accion-me-gusta" aria-pressed="' + meGusta + '">' + ICONO_CORAZON + 'Me gusta · ' + formatearNumero(resena.meGusta + (meGusta ? 1 : 0)) + '</button>' +
+      '<button class="boton boton--secundario" type="button" data-util="' + escapar(resena.id) + '"' + (propia ? ' data-propia' : '') + ' aria-pressed="' + votado + '">Útil · <span>' + formatearNumero((resena.votosUtil || 0) + (votado ? 1 : 0)) + '</span></button>' +
+      '<button class="boton boton--secundario" type="button" id="accion-compartir">Compartir</button>' +
+      (propia
+        ? '<a class="boton boton--secundario al-final" href="escribir-resena.html?id=' + encodeURIComponent(juego.id) + '&amp;editar=' + encodeURIComponent(resena.id) + '">Editar</a>' +
+          '<button class="boton boton--peligro" type="button" id="accion-eliminar">Eliminar</button>'
+        : '');
+  }
+  dibujarAcciones();
+  activarResenas(acciones);
+  acciones.addEventListener('click', function (e) {
+    if (e.target.closest('#accion-compartir')) {
+      // Simulado: copia el enlace de esta página
+      var enlace = location.href;
+      if (navigator.clipboard) navigator.clipboard.writeText(enlace).then(function () { mostrarAviso('Enlace copiado'); }, function () { mostrarAviso('Enlace: ' + enlace); });
+      else mostrarAviso('Enlace: ' + enlace);
+    }
+    if (e.target.closest('#accion-me-gusta')) {
+      if (!obtenerSesion()) { pedirCuenta('dar me gusta'); return; }
+      if (propia) { mostrarAviso('No puedes dar me gusta a tu propia reseña'); return; }
+      var meGustan = leerMemoria('meGustaResenas', []);
+      meGustan = meGustan.indexOf(resena.id) !== -1 ? meGustan.filter(function (x) { return x !== resena.id; }) : meGustan.concat(resena.id);
+      guardarMemoria('meGustaResenas', meGustan);
+      dibujarAcciones();
+      document.getElementById('accion-me-gusta').focus();
+    }
+    if (e.target.closest('#accion-eliminar')) {
+      abrirModal({
+        titulo: '¿Eliminar esta ' + (esGuia ? 'guía' : 'reseña') + '?',
+        texto: 'Se quitará del juego, de la comunidad y de tu historial. No se puede deshacer.',
+        acciones: [
+          { texto: 'Cancelar' },
+          { texto: 'Eliminar', peligro: true, alTocar: function () {
+            guardarResenasPropias(leerResenasPropias().filter(function (r) { return r.id !== resena.id; }));
+            location.href = 'historial-resenas.html';
+          } }
+        ]
+      });
+    }
+  });
+
+  // Comentarios
+  var lista = document.getElementById('lista-comentarios');
+  var campo = document.getElementById('texto-comentario');
+  var error = document.getElementById('error-comentario');
+  document.getElementById('avatar-comentario').textContent = sesion ? sesion.initials : '?';
+
+  function dibujarComentarios() {
+    var comentarios = leerComentarios(resena.id);
+    document.getElementById('cantidad-comentarios').textContent = '· ' + comentarios.length;
+    lista.innerHTML = comentarios.length ? comentarios.map(function (c) {
+      var persona = datosPersona(c.autor);
+      var mio = sesion && c.autor === sesion.user;
+      return '<div class="fila">' + htmlAvatar(persona, 'sm') +
+        '<div class="comentario">' +
+          '<div class="en-fila"><a href="' + enlacePerfil(c.autor) + '"><b>@' + escapar(c.autor) + '</b></a>' +
+          '<span class="tarjeta__texto">' + escapar(c.fecha ? formatearFecha(c.fecha) : (c.cuando || '')) + '</span>' +
+          (mio ? '<button class="dato__ayuda al-final" type="button" data-borrar-comentario="' + escapar(c.id) + '">Eliminar</button>' : '') + '</div>' +
+          '<p class="comentario__texto">' + escapar(c.texto) + '</p>' +
+        '</div></div>';
+    }).join('') : '<div class="vacio">Sé la primera persona en comentar.</div>';
+  }
+  dibujarComentarios();
+
+  document.getElementById('formulario-comentario').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var texto = campo.value.trim();
+    if (!texto) {
+      error.hidden = false;
+      campo.classList.add('campo--error');
+      campo.setAttribute('aria-invalid', 'true');
+      campo.focus();
+      return;
+    }
+    if (!obtenerSesion()) { pedirCuenta('comentar'); return; }
+    var comentarios = leerComentarios(resena.id);
+    comentarios.push({ id: 'k' + Date.now(), resena: resena.id, autor: usuarioActual(), texto: texto, fecha: hoy() });
+    guardarComentarios(resena.id, comentarios);
+    campo.value = '';
+    dibujarComentarios();
+    mostrarAviso('Comentario publicado');
+  });
+  campo.addEventListener('input', function () {
+    if (!campo.value.trim()) return;
+    error.hidden = true;
+    campo.classList.remove('campo--error');
+    campo.setAttribute('aria-invalid', 'false');
+  });
+  lista.addEventListener('click', function (e) {
+    var boton = e.target.closest('[data-borrar-comentario]');
+    if (!boton) return;
+    var comentarios = leerComentarios(resena.id);
+    var posicion = comentarios.findIndex(function (c) { return c.id === boton.dataset.borrarComentario; });
+    var borrado = comentarios.splice(posicion, 1)[0];
+    guardarComentarios(resena.id, comentarios);
+    dibujarComentarios();
+    mostrarAviso('Comentario eliminado', { texto: 'Deshacer', alTocar: function () {
+      var actuales = leerComentarios(resena.id);
+      actuales.splice(posicion, 0, borrado);
+      guardarComentarios(resena.id, actuales);
+      dibujarComentarios();
+    } });
+  });
+
+  // Sobre quien escribe (con "+ Agregar amigo" si no lo es)
+  var solicitudes = leerMemoria('friends', {});
+  var relacion = propia ? 'yo' : (sonAmigos(autor.usuario) ? 'amigos' : (solicitudes[autor.usuario] === 'out' ? 'enviada' : 'ninguna'));
+  document.getElementById('sobre-autor').innerHTML = '<h2 class="panel__titulo" id="titulo-autor">Sobre quien escribe</h2>' +
+    '<a class="fila fila--actividad" href="' + enlacePerfil(autor.usuario) + '">' + htmlAvatar(autor, 'md') +
+      '<span><b>' + escapar(autor.nombre) + '</b><br><span class="tarjeta__texto">' + (autor.nivel ? 'Nivel ' + escapar(autor.nivel) : '@' + escapar(autor.usuario)) + '</span></span></a>' +
+    (autor.sobreMi && !propia ? '<p class="tarjeta__texto">' + escapar(autor.sobreMi) + '</p>' : '') +
+    (relacion === 'amigos' ? '<span><span class="etiqueta etiqueta--amigo">✓ Amigos</span></span>' : '') +
+    (relacion === 'enviada' ? '<span><span class="etiqueta etiqueta--contorno">Solicitud enviada</span></span>' : '') +
+    (relacion === 'ninguna' && autor.nivel ? '<span><button class="boton boton--secundario boton--sm" type="button" id="agregar-amigo">+ Agregar amigo</button></span>' : '');
+  var botonAmigo = document.getElementById('agregar-amigo');
+  if (botonAmigo) botonAmigo.addEventListener('click', function () {
+    if (!obtenerSesion()) { pedirCuenta('agregar amigos'); return; }
+    var pendientes = leerMemoria('friends', {});
+    pendientes[autor.usuario] = 'out';
+    guardarMemoria('friends', pendientes);
+    botonAmigo.outerHTML = '<span class="etiqueta etiqueta--contorno">Solicitud enviada</span>';
+    mostrarAviso('Solicitud enviada a ' + autor.nombre);
+  });
+
+  // Datos de la partida
+  var partida = resena.estadoPartida;
+  if (!partida && resena.autor === 'samluq') {
+    var enDiario = obtenerDatos('diario').find(function (d) { return d.juego === resena.juego; });
+    partida = enDiario && enDiario.estado;
+  }
+  document.getElementById('datos-partida').innerHTML = [
+    ['Estado', partida || 'Terminado'], ['Horas jugadas', (resena.horas || 0) + ' h'],
+    ['Dificultad votada', (resena.dificultad || '—') + '/10'], ['Nota de la comunidad', formatearNota(juego.calificacion) + '/10']
+  ].map(function (f) { return '<dt>' + f[0] + '</dt><dd>' + escapar(f[1]) + '</dd>'; }).join('');
+
+  // Más reseñas de este juego
+  var mas = obtenerResenas().filter(function (r) { return r.juego === juego.id && r.id !== resena.id && r.tipo === 'resena'; }).slice(0, 3);
+  document.getElementById('mas-resenas').innerHTML = mas.length ? mas.map(function (r) {
+    return '<a class="fila fila--actividad" href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '">' + htmlAvatar(datosPersona(r.autor), 'sm') +
+      '<span><b>@' + escapar(r.autor) + '</b> <span class="nota nota--texto">' + escapar(r.calificacion) + '/10</span><br>' +
+      '<span class="tarjeta__texto">' + escapar(r.spoiler ? 'Contiene spoilers' : r.texto.slice(0, 90) + (r.texto.length > 90 ? '…' : '')) + '</span></span></a>';
+  }).join('') : '<p class="tarjeta__texto">Es la única reseña de este juego.</p><a href="escribir-resena.html?id=' + encodeURIComponent(juego.id) + '"><b>Escribe la tuya</b></a>';
+
+  aplicarColores(document);
+}
+
 /* ---------- Arranque ---------- */
 
 var PANTALLAS = {
@@ -1029,7 +1614,10 @@ var PANTALLAS = {
   buscar: pantallaBuscar,
   random: pantallaRandom,
   matchplay: pantallaMatchplay,
-  juego: pantallaJuego
+  juego: pantallaJuego,
+  escribir: pantallaEscribir,
+  comunidad: pantallaComunidad,
+  resena: pantallaResena
 };
 
 document.addEventListener('DOMContentLoaded', function () {

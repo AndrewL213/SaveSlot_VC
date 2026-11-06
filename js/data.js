@@ -487,6 +487,91 @@ const DATOS = {
       fecha: "2026-08-02"
     },
     {
+      id: "m1",
+      juego: "zelda-totk",
+      autor: "samluq",
+      tipo: "resena",
+      estado: "publicada",
+      titulo: null,
+      texto: "Ultramano convierte cada problema en un juguete. Me pasé horas construyendo puentes absurdos y nunca sentí que perdía el tiempo.",
+      calificacion: 10,
+      dificultad: 6,
+      horas: 48,
+      minutosLectura: null,
+      spoiler: false,
+      votosUtil: 34,
+      meGusta: 21,
+      fecha: "2026-10-07"
+    },
+    {
+      id: "m2",
+      juego: "fnaf-into-the-pit",
+      autor: "samluq",
+      tipo: "resena",
+      estado: "publicada",
+      titulo: null,
+      texto: "Corto y con buena tensión. Los saltos de tiempo están bien pensados, aunque el final se siente apurado.",
+      calificacion: 7,
+      dificultad: 5,
+      horas: 6,
+      minutosLectura: null,
+      spoiler: false,
+      votosUtil: 12,
+      meGusta: 6,
+      fecha: "2026-10-04"
+    },
+    {
+      id: "m3",
+      juego: "nier-automata",
+      autor: "samluq",
+      tipo: "resena",
+      estado: "publicada",
+      titulo: null,
+      texto: "En la segunda partida con 9S entiendes por qué la primera era solo la mitad. El final E me hizo llorar con los créditos.",
+      calificacion: 9,
+      dificultad: 6,
+      horas: 21,
+      minutosLectura: null,
+      spoiler: true,
+      votosUtil: 27,
+      meGusta: 15,
+      fecha: "2026-10-02"
+    },
+    {
+      id: "m4",
+      juego: "valorant",
+      autor: "samluq",
+      tipo: "resena",
+      estado: "publicada",
+      titulo: null,
+      texto: "Técnicamente impecable, pero no es para mí. Demasiado castigo para alguien que juega un rato los fines de semana.",
+      calificacion: 5,
+      dificultad: 8,
+      horas: 9,
+      minutosLectura: null,
+      spoiler: false,
+      votosUtil: 4,
+      meGusta: 2,
+      fecha: "2026-09-19"
+    },
+    {
+      id: "m5",
+      juego: "hollow-knight",
+      autor: "samluq",
+      tipo: "resena",
+      estado: "publicada",
+      titulo: null,
+      texto: "Volví para sacar los finales que me faltaban. El Panteón es duro, pero cada intento enseña algo.",
+      calificacion: 9,
+      dificultad: 7,
+      horas: 27,
+      minutosLectura: null,
+      spoiler: false,
+      votosUtil: 41,
+      meGusta: 25,
+      fecha: "2026-08-12"
+    },
+    {
       id: "g1",
       juego: "zelda-totk",
       autor: "cami.rpg",
@@ -583,42 +668,42 @@ const DATOS = {
       resena: "m1",
       autor: "kenvel",
       texto: "Lo de los puentes absurdos es lo mejor del juego, jaja.",
-      fecha: null
+      fecha: "2026-10-07"
     },
     {
       id: "c2",
       resena: "m1",
       autor: "d4ni",
       texto: "¿Ya probaste el subsuelo completo? Cambia mucho la experiencia.",
-      fecha: null
+      fecha: "2026-10-08"
     },
     {
       id: "c3",
       resena: "m3",
       autor: "juanvi",
       texto: "El final E es de lo mejor que he jugado.",
-      fecha: null
+      fecha: "2026-10-04"
     },
     {
       id: "c4",
       resena: "r1",
       autor: "mlopez",
       texto: "Totalmente, la ruta C es otro juego.",
-      fecha: null
+      fecha: "2026-10-06"
     },
     {
       id: "c5",
       resena: "r3",
       autor: "kenvel",
       texto: "Buen consejo lo de las islas del cielo primero.",
-      fecha: null
+      fecha: "2026-10-02"
     },
     {
       id: "c6",
       resena: "r6",
       autor: "valer1a",
       texto: "Los Hermanos Mantis son mi jefe favorito.",
-      fecha: null
+      fecha: "2026-10-05"
     }
   ],
   usuarios: [

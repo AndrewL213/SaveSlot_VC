@@ -9,6 +9,11 @@ body {
   overflow-x: clip;
 }
 
+/* Lo que tiene el atributo hidden no se ve, aunque su clase le dé otro display */
+[hidden] {
+  display: none !important;
+}
+
 /* Lector de pantalla: texto que no se ve pero se lee */
 .solo-lectores {
   position: absolute;
@@ -310,6 +315,139 @@ body {
 
   .datos-clave {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Escribir reseña ---------- */
+.contenedor--medio {
+  max-width: calc(var(--espacio-8) * 21 + var(--espacio-5));
+  gap: var(--espacio-6);
+}
+
+.resena-encabezado {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-4);
+}
+
+.resena-encabezado .portada--sm {
+  width: calc(var(--espacio-8) + var(--espacio-6));
+}
+
+.resena-encabezado__texto {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+
+.formulario-resena {
+  gap: var(--espacio-6);
+  padding: var(--espacio-6);
+}
+
+.rejilla-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--espacio-8) * 4), 1fr));
+  align-items: end;
+  gap: var(--espacio-4);
+}
+
+.formulario-resena__pie {
+  padding-top: var(--espacio-5);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+@media (max-width: 700px) {
+  .resena-encabezado {
+    flex-wrap: wrap;
+  }
+
+  .formulario-resena {
+    padding: var(--espacio-4);
+  }
+}
+
+/* ---------- Comunidad ---------- */
+/* "Ordenar" al lado de su lista, sin que la lista ocupe todo el ancho */
+.orden .campo {
+  width: auto;
+}
+
+/* ---------- Detalle de reseña ---------- */
+.resena-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--espacio-7);
+}
+
+.resena-cabecera__portada {
+  flex: none;
+  width: calc(var(--espacio-8) * 4);
+}
+
+.resena-cabecera__texto {
+  flex: 999 1 calc(var(--espacio-8) * 10 + var(--espacio-5));
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+}
+
+.resena-completa p {
+  margin: 0;
+  font-size: var(--texto-lg);
+  line-height: 1.7;
+}
+
+/* Escribir un comentario: avatar, campo y botón en una fila */
+.comentario-nuevo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+}
+
+.comentario-nuevo .campo {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Más reseñas del juego: el avatar arriba, junto al nombre */
+.mas-resenas .fila {
+  align-items: flex-start;
+}
+
+.comentario {
+  flex: 1;
+  min-width: 0;
+}
+
+.comentario__texto {
+  margin: var(--espacio-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .resena-cabecera {
+    gap: var(--espacio-4);
+  }
+
+  .resena-cabecera__portada {
+    width: calc(var(--espacio-8) * 2 + var(--espacio-5));
+  }
+
+  .comentario-nuevo {
+    flex-wrap: wrap;
+  }
+
+  .comentario-nuevo .campo {
+    flex-basis: calc(100% - var(--espacio-8) - var(--espacio-3));
+  }
+
+  .comentario-nuevo .boton {
+    margin-left: auto;
   }
 }
 
