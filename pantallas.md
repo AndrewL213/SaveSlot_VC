@@ -71,3 +71,4 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 - **Notificaciones**: no muestra el aviso de comentarios del diseño («Kenneth y Daniela comentaron…»), porque la spec solo define avisos de votos «útil» y de cierre de inscripciones; las ventanas del kit no llevan el ícono de arriba del diseño.
 - **Avatares**: los de amigos no llevan el color de fondo de cada persona como en el diseño (el avatar del kit no tiene esa opción).
 - **Perfil de otro usuario**: «Juegos» cuenta los juegos que la persona calificó (el diseño suma un número fijo); el avatar grande es azul y no del color de la persona.
+- **Traducción de descripciones (api/igdb.js)**: usa por ahora el enlace gratis de Google Translate, que no es oficial. Al conectar Supabase hay que guardar cada traducción una sola vez y pasar a DeepL (poner `DEEPL_API_KEY` en Vercel).

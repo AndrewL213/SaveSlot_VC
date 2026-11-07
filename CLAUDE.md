@@ -16,7 +16,8 @@ Digitales 3. Más contexto en README.md.
   debe funcionar abriendo los archivos en el navegador.
 - La app se publicará en Vercel, conectada a este repositorio.
 - Cuentas y base de datos: Supabase. Catálogo de juegos: IGDB (de Twitch), con las
-  descripciones traducidas al español por DeepL. Todo lo
+  descripciones traducidas al español (por ahora con el enlace gratis de
+  Google Translate, temporal; DeepL si se pone su clave). Todo lo
   demás usa datos simulados (ver spec.md).
 
 ## Estructura del proyecto
@@ -47,7 +48,7 @@ Digitales 3. Más contexto en README.md.
 4. Nunca escribas claves, contraseñas ni tokens de acceso en el código:
    este repositorio es público. Única excepción: la clave pública (anon
    key) de Supabase, hecha para ir en el navegador; los datos se protegen
-   con reglas de acceso en la base. Las demás claves (como las de Twitch para IGDB y la de DeepL) van
+   con reglas de acceso en la base. Las demás claves (como las de Twitch para IGDB y la de DeepL, si se usa) van
    en las variables de entorno de Vercel y solo se usan desde api/.
 5. Si algo que te pedimos contradice spec.md, avísanos antes de hacerlo.
 6. Al terminar cada tarea, explica en lenguaje simple qué cambiaste y

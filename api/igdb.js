@@ -3,7 +3,7 @@
 // La página le pregunta a /api/igdb y esta función, que corre en el servidor de Vercel,
 // es la única que habla con Twitch e IGDB. Así las claves nunca llegan al navegador.
 // Las claves se leen de las variables de entorno de Vercel: TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET,
-// y DEEPL_API_KEY para traducir las descripciones al español.
+// y DEEPL_API_KEY (opcional) para traducir las descripciones al español.
 //
 // Pedidos que acepta (solo estos tres):
 //   /api/igdb?buscar=zelda   → hasta 20 juegos que coinciden con el texto
@@ -130,7 +130,7 @@ function traducir(j, horas) {
     desarrolladora: desarrolla ? desarrolla.company.name : '',
     tipo: nombresIgdb.indexOf('Indie') !== -1 ? 'Indie' : 'AAA',
     horasHistoria: horas,
-    descripcion: j.summary || '', // IGDB solo la tiene en inglés; la ficha (?id=) la traduce con DeepL
+    descripcion: j.summary || '', // IGDB solo la tiene en inglés; la ficha (?id=) la traduce
     idiomaDescripcion: 'en',
     portada: j.cover ? 'https://images.igdb.com/igdb/image/upload/t_cover_big/' + j.cover.image_id + '.jpg' : null,
     creditoPortada: j.cover ? 'IGDB' : null,
@@ -138,27 +138,45 @@ function traducir(j, horas) {
   };
 }
 
-// Traduce la descripción al español con DeepL (clave en la variable de entorno DEEPL_API_KEY).
-// Si no hay clave, se acabó el cupo o DeepL falla, la descripción queda en inglés: nunca rompe la ficha.
+// Traduce la descripción al español. Si falla, queda en inglés: nunca rompe la ficha.
+//   1. DeepL, si está la clave DEEPL_API_KEY en Vercel (traductor oficial).
+//   2. Si no, el enlace gratis de Google Translate.
+//      TEMPORAL: no es oficial (va contra las condiciones de Google y puede bloquearse).
+//      Se quita cuando conectemos Supabase y guardemos cada traducción una sola vez.
 async function traducirDescripcion(juego) {
-  const clave = process.env.DEEPL_API_KEY;
-  if (!clave || !juego.descripcion) return juego;
-  // Las claves del plan gratis terminan en ":fx" y usan otra dirección.
-  const servidor = /:fx$/.test(clave) ? 'https://api-free.deepl.com' : 'https://api.deepl.com';
+  if (!juego.descripcion) return juego;
   try {
-    const r = await llamar(servidor + '/v2/translate', {
-      method: 'POST',
-      headers: { 'Authorization': 'DeepL-Auth-Key ' + clave, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: [juego.descripcion], source_lang: 'EN', target_lang: 'ES' })
-    });
-    if (!r.ok) { console.error('DeepL respondió ' + r.status); return juego; }
-    const datos = await r.json();
-    juego.descripcion = datos.translations[0].text;
-    juego.idiomaDescripcion = 'es';
+    const texto = process.env.DEEPL_API_KEY ? await conDeepl(juego.descripcion) : await conGoogle(juego.descripcion);
+    if (texto) { juego.descripcion = texto; juego.idiomaDescripcion = 'es'; }
   } catch (e) {
-    console.error('DeepL no respondió');
+    console.error('No se pudo traducir la descripción: ' + e.message);
   }
   return juego;
+}
+
+async function conDeepl(texto) {
+  const clave = process.env.DEEPL_API_KEY;
+  // Las claves del plan gratis terminan en ":fx" y usan otra dirección.
+  const servidor = /:fx$/.test(clave) ? 'https://api-free.deepl.com' : 'https://api.deepl.com';
+  const r = await llamar(servidor + '/v2/translate', {
+    method: 'POST',
+    headers: { 'Authorization': 'DeepL-Auth-Key ' + clave, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: [texto], source_lang: 'EN', target_lang: 'ES' })
+  });
+  if (!r.ok) throw new Error('DeepL respondió ' + r.status);
+  return (await r.json()).translations[0].text;
+}
+
+async function conGoogle(texto) {
+  const r = await llamar('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+    body: 'q=' + encodeURIComponent(texto)
+  });
+  if (!r.ok) throw new Error('Google Translate respondió ' + r.status);
+  // Responde [[["frase traducida", "frase original", …], …], …]: se juntan las frases.
+  const datos = await r.json();
+  return datos[0].map(function (frase) { return frase[0]; }).join('');
 }
 
 async function buscar(texto) {

@@ -20,7 +20,11 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
 - **IGDB** (de Twitch): catálogo de juegos (búsqueda, filtros, ficha y tiempos para terminar). Sus claves (Client ID y Client Secret de Twitch) se guardan en Vercel y se usan solo desde una función en `api/`, que también renueva el token de acceso; nunca van en el código del navegador (IGDB tampoco acepta pedidos directos desde el navegador). Uso no comercial: si SaveSlot se vuelve comercial, hay que pedir permiso a Twitch.
   - La función es `api/igdb.js`. Acepta solo tres pedidos: `?buscar=texto` (hasta 20 juegos), `?id=slug` (la ficha de un juego) y `?populares=1` (los 10 más visitados en IGDB, para "Mejores juegos de la semana"). Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`).
   - Vercel guarda cada respuesta una hora, para hacer menos consultas a IGDB.
-  - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) la traduce al español con **DeepL** (plan gratis: 500.000 caracteres al mes; clave `DEEPL_API_KEY` en Vercel). En las listas (`?buscar=` y `?populares=1`) queda en inglés para no gastar el cupo; cada juego trae `idiomaDescripcion` (`es` o `en`). Si DeepL falla o se acaba el cupo, la ficha llega igual, en inglés.
+  - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) la traduce al español:
+    - **Por ahora (temporal):** con el enlace gratis de Google Translate, sin clave. No es oficial: va contra las condiciones de Google y puede dejar de funcionar en cualquier momento. Se reemplaza al conectar Supabase.
+    - **Al conectar Supabase:** cada traducción se guarda una sola vez y se usa un traductor oficial: **DeepL** (plan gratis de 500.000 caracteres al mes; basta con poner la clave `DEEPL_API_KEY` en Vercel, y la función la usa en lugar de Google).
+    - En las listas (`?buscar=` y `?populares=1`) la descripción queda en inglés, para no hacer 20 traducciones por búsqueda. Cada juego trae `idiomaDescripcion` (`es` o `en`).
+    - Si la traducción falla, la ficha llega igual, en inglés.
   - Mientras no esté conectada (o abriendo los archivos directo en el navegador), la app usa los juegos de `js/data.js`.
 - Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros (también los logros totales de cada juego, que IGDB no da) y la vinculación con Steam y Xbox, y el estado de los servicios.
 
