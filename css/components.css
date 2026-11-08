@@ -787,6 +787,35 @@ legend.grupo-campo__etiqueta {
 }
 
 /* ==========================================================================
+   Menú lateral · .menu-lateral con .menu-lateral__enlace
+   Secciones de una página (por ejemplo, los ajustes del perfil): cuadradas,
+   del color del fondo, y solo cambian al pasar el mouse.
+   ========================================================================== */
+.menu-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+
+.menu-lateral__enlace {
+  display: flex;
+  align-items: center;
+  min-height: var(--alto-control-sm);
+  padding: var(--espacio-2) var(--espacio-3);
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: var(--color-texto);
+  font-size: var(--texto-sm);
+  text-decoration: none;
+  transition: background var(--transicion);
+}
+
+.menu-lateral__enlace:hover {
+  background: var(--color-superficie-elevada);
+  color: var(--color-texto);
+}
+
+/* ==========================================================================
    Chip (filtro que se activa y desactiva)
    Activo: aria-pressed="true" en un <button>, o la clase .chip--activo
    ========================================================================== */
@@ -1922,6 +1951,16 @@ legend.grupo-campo__etiqueta {
   min-width: var(--espacio-5);
   justify-content: center;
   box-shadow: 0 0 0 var(--borde-grueso) var(--color-fondo);
+}
+
+/* El botón con contador deja ver el número que sale por su esquina
+   (los botones recortan lo que se sale, por el reflejo; aquí el reflejo se quita) */
+.boton:has(> .navegacion__contador) {
+  overflow: visible;
+}
+
+.boton:has(> .navegacion__contador)::after {
+  display: none;
 }
 
 /* Pastilla del usuario con sesión: avatar, nombre y nivel */

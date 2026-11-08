@@ -91,6 +91,8 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<span class="etiqueta etiqueta--amigo">Amigo</span>`
 - `.contador` (+ `--destacado`):
   `<span class="contador contador--destacado">3</span>`
+- `.menu-lateral` con `.menu-lateral__enlace` (secciones de una página; cuadradas, del color del fondo, solo cambian con el hover):
+  `<nav class="menu-lateral" aria-label="Ajustes"><a class="menu-lateral__enlace" href="#datos">Perfil público</a></nav>`
 - `.chip` (activo con `aria-pressed="true"` o `.chip--activo`):
   `<button class="chip" type="button" aria-pressed="false">Torneos</button>`
 - `.nota` (+ `--texto`) y `.nota-anillo` (se llena con `--p`, de 0 a 100):

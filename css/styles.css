@@ -650,7 +650,6 @@ body {
 /* ---------- Editar perfil ---------- */
 .menu-ajustes {
   flex: 1 1 calc(var(--espacio-8) * 5 + var(--espacio-5));
-  align-items: flex-start;
   position: sticky;
   top: calc(var(--alto-control) * 2);
 }
