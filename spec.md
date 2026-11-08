@@ -13,7 +13,7 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
 
 ## Integraciones de backend del MVP
 - **Supabase**: todo lo que se guarda.
-  - Cuentas: crear cuenta, iniciar sesión y sesión de invitado (la "cuenta de demostración").
+  - Cuentas: crear cuenta, iniciar sesión y sesión de invitado (la "cuenta de demostración"). Se entra con la cuenta de SaveSlot (correo y contraseña) o con Google, Discord, Twitch o Steam (proveedores de inicio de sesión de Supabase; sus claves se guardan en Supabase, nunca en el código).
   - Base de datos: reseñas y borradores, comentarios, diario, perfil, amigos, eventos, inscripciones, notificaciones, chats de MatchPlay, tendencias, vistos recientemente y mensajes de contacto.
   - Presencia: quién está en línea.
   - Su clave pública va en el código; los datos se protegen con reglas de acceso en la base.
@@ -56,7 +56,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
 - **reseñas** (Supabase): id, juego, autor, tipo (reseña o guía), estado (publicada o borrador), título (opcional), texto, calificación (1–10), dificultad (1–10), horas jugadas, minutos de lectura (guías), contiene spoilers, votos de "útil", fecha
 - **comentarios** (Supabase): reseña, autor, texto, fecha
 - **diario** (Supabase): usuario, juego, fecha, estado (Terminado, Rejugado, En progreso o Abandonado), horas, calificación, me gusta, tiene reseña
-- **usuarios** (Supabase): nombre visible, usuario, correo, invitado (sí o no), sobre mí, jugando ahora, miembro desde, nivel, XP, 4 juegos favoritos, géneros favoritos, lista de deseos, insignias, iniciales
+- **usuarios** (Supabase): nombre visible, usuario, correo, forma de entrar (correo, Google, Discord, Twitch o Steam), invitado (sí o no), sobre mí, jugando ahora, miembro desde, nivel, XP, 4 juegos favoritos, géneros favoritos, lista de deseos, insignias, iniciales
   - Estado: "en línea" sale de la presencia de Supabase; "jugando" sale de "jugando ahora"
 - **amigos** (Supabase): usuario, amigo, estado (amigos, solicitud enviada o solicitud recibida), fecha
 - **eventos** (Supabase): id, tipo (torneo o sorteo), juego, título, fecha y hora, organizador, tipo de organizador, cupos ocupados, cupos máximos, costo, gratis (sí o no), premio, reglas
@@ -314,17 +314,18 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   2. Entrar
   3. Entrar con la cuenta de demostración
   4. Explorar sin cuenta
-  5. Google y Discord
+  5. Google, Discord, Twitch y Steam (cuatro botones con su logo, encima del formulario)
 - **Qué funciona de verdad:**
-  - Entrar con correo: Real (Supabase)
+  - Entrar con correo (cuenta de SaveSlot): Real (Supabase)
   - Cuenta de demostración: Real (sesión de invitado de Supabase, sin contraseña, con los datos de ejemplo cargados)
-  - Google y Discord: Después (el diseño dice "Pronto")
+  - Google, Discord, Twitch y Steam: Real (proveedores de Supabase Auth; Steam ya está vinculado en Supabase). Mientras no esté conectado Supabase en la app, cada botón lleva a la página de error con la variante «acceso» y el nombre del servicio.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
   - Con el correo mal escrito o sin contraseña, muestra el error junto al campo.
   - Al entrar, el encabezado muestra al usuario en vez de los botones de acceso.
   - La cuenta de demostración entra sin pedir datos y muestra el perfil de ejemplo.
+  - Cada botón de servicio lleva a entrar con ese servicio (sin Supabase: a la página de error con su nombre).
 
 ### 17. Crear cuenta
 - **Archivo de diseño:** disenos/registro.html (paso 1 de 3)
@@ -334,15 +335,17 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   2. Nombre, correo, usuario, contraseña con medidor de fuerza
   3. Aceptar términos
   4. Crear cuenta
-  5. Google y Discord
+  5. Google, Discord, Twitch y Steam (cuatro botones con su logo, encima del formulario)
 - **Qué funciona de verdad:**
-  - Crear cuenta: Real (Supabase)
-  - Google y Discord: Después
+  - Crear cuenta con correo (cuenta de SaveSlot): Real (Supabase)
+  - Google, Discord, Twitch y Steam: Real (proveedores de Supabase Auth; Steam ya está vinculado en Supabase). Mientras no esté conectado Supabase en la app, cada botón lleva a la página de error con la variante «acceso» y el nombre del servicio.
+  - Quien entra por primera vez con un servicio elige su @usuario y sigue a Editar perfil (pasos 2 y 3), igual que con el correo.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
   - Cada campo vacío o inválido muestra su error.
   - El medidor cambia según la contraseña.
+  - Cada botón de servicio lleva a crear la cuenta con ese servicio (sin Supabase: a la página de error con su nombre).
   - Al crear la cuenta lleva a Editar perfil con el aviso "¡Cuenta creada!".
 
 ### 18. Perfil

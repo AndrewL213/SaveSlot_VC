@@ -209,6 +209,14 @@ a:hover {
   flex: none;
 }
 
+/* Logo de un servicio (Google, Discord, Twitch, Steam) dentro de un botón: una imagen de assets/ */
+.boton__logo {
+  width: var(--espacio-5);
+  height: var(--espacio-5);
+  flex: none;
+  object-fit: contain;
+}
+
 .boton--secundario {
   background: var(--degradado-superficie-elevada);
   border-color: var(--color-borde);

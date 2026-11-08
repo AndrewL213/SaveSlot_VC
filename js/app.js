@@ -1896,15 +1896,6 @@ function marcarError(campo, error, mensaje) {
 
 var ICONO_OJO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 
-// Botones "Pronto" (Google y Discord): todavía no funcionan
-function activarPronto(accion) {
-  document.querySelectorAll('[data-pronto]').forEach(function (boton) {
-    boton.addEventListener('click', function () {
-      mostrarAviso(accion + ' con ' + boton.dataset.pronto + ' estará disponible pronto. Por ahora usa tu correo.');
-    });
-  });
-}
-
 // Botón del ojo: muestra u oculta la contraseña
 function activarOjo(boton, campo) {
   boton.addEventListener('click', function () {
@@ -1919,7 +1910,6 @@ function activarOjo(boton, campo) {
 function pantallaEntrar() {
   if (obtenerSesion()) { location.replace(destinoVolver()); return; }
   document.getElementById('ir-a-crear').href = 'crear-cuenta.html' + location.search;
-  activarPronto('Entrar');
   var correo = document.getElementById('correo');
   var clave = document.getElementById('clave');
   activarOjo(document.getElementById('ver-clave'), clave);
@@ -1954,7 +1944,6 @@ function pantallaEntrar() {
 function pantallaRegistro() {
   if (obtenerSesion()) { location.replace('perfil.html'); return; }
   document.getElementById('ir-a-entrar').href = 'iniciar-sesion.html' + location.search;
-  activarPronto('Registrarte');
   var nombre = document.getElementById('nombre');
   var correo = document.getElementById('correo');
   var usuario = document.getElementById('usuario');
@@ -2907,7 +2896,7 @@ function pantallaError() {
   }
 
   // Qué puedes hacer
-  document.getElementById('lista-consejos').innerHTML = variante.consejos.map(function (c) { return '<li>' + escapar(c) + '</li>'; }).join('');
+  document.getElementById('lista-consejos').innerHTML = variante.consejos.map(function (c) { return '<li>' + escapar(conServicio(c)) + '</li>'; }).join('');
   document.getElementById('consejos-error').hidden = !variante.consejos.length;
 
   // Botón de la variante (por ejemplo "Ver eventos gratis")

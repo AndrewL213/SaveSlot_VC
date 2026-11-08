@@ -20,8 +20,9 @@ solo para identificar cada juego y siempre se indica su fuente y su dueño.
 | portada-valorant.jpg | Valorant | Aportada por el equipo (origen por confirmar) | © Riot Games |
 | favicon.svg, icono-app-*.png | SaveSlot | Diseños del equipo | Equipo SaveSlot |
 | avatar-prueba.jpg | Foto de perfil de prueba (catálogo de componentes) | Fan art de Hyoma Chigiri (Blue Lock) aportado por el equipo; autor desconocido | Personaje © Muneyuki Kaneshiro, Yusuke Nomura / Kodansha. Reemplazar antes del lanzamiento público |
+| logo-google.svg, logo-discord.svg, logo-twitch.svg, logo-steam.svg | Logos de los servicios para iniciar sesión | Simple Icons (CC0) para Discord, Twitch y Steam; logo «G» de Google | © Google, Discord, Twitch (Amazon) y Valve. Se usan solo en los botones de iniciar sesión, según las guías de marca de cada servicio |
 
-SaveSlot no está respaldado ni patrocinado por Riot Games, Nintendo, Valve ni ninguna de las
+SaveSlot no está respaldado ni patrocinado por Riot Games, Nintendo, Valve, Google, Discord, Twitch ni ninguna de las
 empresas mencionadas. Todas las marcas pertenecen a sus dueños.
 
 ## Kits de prensa oficiales (revisados el 2026-11-02)

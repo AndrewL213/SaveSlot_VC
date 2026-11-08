@@ -1800,6 +1800,23 @@ const DATOS = {
       reintentar: false
     },
     {
+      id: "acceso",
+      codigo: "LIM-AUTH",
+      titulo: "Entrar con {servicio} aún no está disponible",
+      texto: "Estamos conectando el inicio de sesión con {servicio}. Mientras tanto, entra o crea tu cuenta con tu correo, o prueba la cuenta de demostración.",
+      consejos: [
+        "Entra con tu correo y contraseña de SaveSlot.",
+        "Usa la cuenta de demostración para ver todo sin registrarte.",
+        "Cuando conectes {servicio}, tu progreso se queda en la misma cuenta."
+      ],
+      reintentar: false,
+      servicioPorDefecto: "este servicio",
+      accion: {
+        texto: "Entrar con tu correo",
+        pagina: "iniciar-sesion.html"
+      }
+    },
+    {
       id: "demo",
       codigo: "DEMO",
       titulo: "Estás viendo el prototipo de SaveSlot",
@@ -1875,8 +1892,8 @@ const DATOS = {
     },
     {
       id: "s8",
-      servicio: "Inicio de sesión con Google / Discord",
-      proveedor: "OAuth2",
+      servicio: "Inicio de sesión con Google, Discord, Twitch y Steam",
+      proveedor: "Supabase Auth",
       estado: "pendiente",
       texto: "Pendiente"
     },

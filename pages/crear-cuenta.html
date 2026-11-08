@@ -63,7 +63,13 @@
       </div>
       <span class="antetitulo">Paso 1 de 3</span>
       <h2 class="titulo-pagina" id="titulo-registro">Tus datos</h2>
-      <div class="rejilla-dos"><button class="boton boton--secundario" type="button" data-pronto="Google" aria-disabled="true">Google <span class="etiqueta etiqueta--contorno">Pronto</span></button><button class="boton boton--secundario" type="button" data-pronto="Discord" aria-disabled="true">Discord <span class="etiqueta etiqueta--contorno">Pronto</span></button></div>
+      <div class="rejilla-dos" role="group" aria-label="Continuar con otra cuenta">
+        <a class="boton boton--secundario" href="../404.html?tipo=acceso&amp;servicio=Google"><img class="boton__logo" src="../assets/logo-google.svg" alt="">Google</a>
+        <a class="boton boton--secundario" href="../404.html?tipo=acceso&amp;servicio=Discord"><img class="boton__logo" src="../assets/logo-discord.svg" alt="">Discord</a>
+        <a class="boton boton--secundario" href="../404.html?tipo=acceso&amp;servicio=Twitch"><img class="boton__logo" src="../assets/logo-twitch.svg" alt="">Twitch</a>
+        <a class="boton boton--secundario" href="../404.html?tipo=acceso&amp;servicio=Steam"><img class="boton__logo" src="../assets/logo-steam.svg" alt="">Steam</a>
+      </div>
+      <p class="separador">o crea tu cuenta de SaveSlot</p>
       <div class="grupo-campo">
         <label class="grupo-campo__etiqueta" for="nombre">Nombre</label>
         <input class="campo" id="nombre" autocomplete="name" aria-describedby="error-nombre">
