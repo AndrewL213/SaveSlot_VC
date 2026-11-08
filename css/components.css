@@ -683,6 +683,11 @@ legend.grupo-campo__etiqueta {
   box-shadow: 0 0 0 4px var(--color-secundario-tinte);
 }
 
+/* Una etiqueta dentro del buscador (por ejemplo "IA") va centrada en la altura */
+.buscador > .etiqueta {
+  align-self: center;
+}
+
 .buscador svg {
   width: var(--espacio-5);
   height: var(--espacio-5);
