@@ -62,7 +62,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ | ⬜ |
 
 ## Pendientes para la revisión vs spec
-- **Iniciar sesión y Crear cuenta**: los botones «Pronto» de Google y Discord del diseño ahora son cuatro (Google, Discord, Twitch y Steam) con su logo (`.boton__logo`). Llevan a la página de error hasta conectar Supabase en la app.
+- **Iniciar sesión y Crear cuenta**: los botones «Pronto» de Google y Discord del diseño ahora son cuatro (Google, Discord, Twitch y Steam) con su logo (`.boton__logo`), debajo del formulario de la cuenta de SaveSlot. Llevan a la página de error hasta conectar Supabase en la app.
 - **404.html**: tiene 5 variantes nuevas de «no encontrado» (página, juego, evento, reseña y usuario) y una de «acceso» (entrar con Google, Discord, Twitch o Steam mientras no está Supabase) que el diseño no traía; la de página es la que sale por defecto. En Vercel, una línea en el <head> hace que los archivos se busquen desde la raíz del sitio.
 - **Mensaje (Amigos y Perfil de otro usuario)**, clips, pagos y foto de perfil: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
 - **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).

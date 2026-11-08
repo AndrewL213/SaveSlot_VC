@@ -314,7 +314,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   2. Entrar
   3. Entrar con la cuenta de demostración
   4. Explorar sin cuenta
-  5. Google, Discord, Twitch y Steam (cuatro botones con su logo, encima del formulario)
+  5. Google, Discord, Twitch y Steam (cuatro botones con su logo, debajo del botón principal: primero va la cuenta de SaveSlot)
 - **Qué funciona de verdad:**
   - Entrar con correo (cuenta de SaveSlot): Real (Supabase)
   - Cuenta de demostración: Real (sesión de invitado de Supabase, sin contraseña, con los datos de ejemplo cargados)
@@ -335,7 +335,7 @@ Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale
   2. Nombre, correo, usuario, contraseña con medidor de fuerza
   3. Aceptar términos
   4. Crear cuenta
-  5. Google, Discord, Twitch y Steam (cuatro botones con su logo, encima del formulario)
+  5. Google, Discord, Twitch y Steam (cuatro botones con su logo, debajo del botón principal: primero va la cuenta de SaveSlot)
 - **Qué funciona de verdad:**
   - Crear cuenta con correo (cuenta de SaveSlot): Real (Supabase)
   - Google, Discord, Twitch y Steam: Real (proveedores de Supabase Auth; Steam ya está vinculado en Supabase). Mientras no esté conectado Supabase en la app, cada botón lleva a la página de error con la variante «acceso» y el nombre del servicio.
