@@ -190,7 +190,7 @@ function renombrarUsuario(viejo, nuevo) {
 }
 
 // Anota tu cuenta en la tabla usuarios_steam de Supabase (una vez por visita), para que tus
-// reseñas de Steam salgan como "EN SAVESLOT". Solo tú puedes escribir tu fila (reglas de la tabla).
+// reseñas de Steam salgan como "También en SaveSlot". Solo tú puedes escribir tu fila (reglas de la tabla).
 function anotarCuentaSteam(steam) {
   if (!clienteSupabase || !steam || !steam.steamid || leerVisita('steamAnotado')) return;
   clienteSupabase.auth.getUser().then(function (r) {
@@ -847,9 +847,25 @@ function llenarMasJugadosSteam(rejilla) {
 
 // Tarjeta de reseña con autor, nota, texto y acciones.
 // Etiqueta con la plataforma donde se escribió la reseña (al lado del usuario)
-var ORIGENES = { SaveSlot: 'etiqueta--primario', Steam: 'etiqueta--contorno', Xbox: 'etiqueta--contorno', PlayStation: 'etiqueta--contorno' };
+// Lleva el logo de la plataforma (.etiqueta__logo), así se distingue de un vistazo.
+var ORIGENES = {
+  SaveSlot: { clase: 'etiqueta--primario', logo: 'assets/favicon.svg' },
+  Steam: { clase: 'etiqueta--contorno', logo: 'assets/logo-steam.svg' },
+  Xbox: { clase: 'etiqueta--contorno' },
+  PlayStation: { clase: 'etiqueta--contorno' }
+};
 function etiquetaOrigen(origen) {
-  return '<span class="etiqueta ' + (ORIGENES[origen] || 'etiqueta--contorno') + '" title="Reseña escrita en ' + escapar(origen) + '">' + escapar(origen.toUpperCase()) + '</span>';
+  var o = ORIGENES[origen] || { clase: 'etiqueta--contorno' };
+  return '<span class="etiqueta ' + o.clase + '" title="Reseña escrita en ' + escapar(origen) + '">' +
+    (o.logo ? '<img class="etiqueta__logo" src="' + escapar(rutaRecurso(o.logo)) + '" alt="">' : '') + escapar(origen) + '</span>';
+}
+
+// En las reseñas de Steam: solo se marca a quien también tiene cuenta en SaveSlot (con su @).
+// Quien no la tiene no lleva nada extra: ya se sabe que es de Steam por la etiqueta de origen.
+function etiquetaMiembro(usuario) {
+  // Azul y con el logo de SaveSlot: el mismo color de las reseñas de SaveSlot
+  return '<span class="etiqueta etiqueta--primario" title="Esta persona también tiene cuenta en SaveSlot">' +
+    '<img class="etiqueta__logo" src="' + escapar(rutaRecurso('assets/favicon.svg')) + '" alt="">También en SaveSlot · @' + escapar(usuario) + '</span>';
 }
 
 // Reseña que viene de Steam: recomienda o no (Steam no usa nota del 1 al 10)
@@ -861,9 +877,7 @@ function htmlResenaSteam(r, opciones) {
       '<div>' +
         '<a href="' + escapar(r.enlace) + '" target="_blank" rel="noopener"><b>' + escapar(r.autor) + '</b></a> ' + etiquetaOrigen('Steam') + ' ' +
         // ¿Tiene cuenta en SaveSlot? (su Steam está vinculado a una cuenta de SaveSlot)
-        (r.saveslot
-          ? '<span class="etiqueta etiqueta--exito" title="Esta persona también tiene cuenta en SaveSlot">EN SAVESLOT · @' + escapar(r.saveslot.usuario) + '</span>'
-          : '<span class="etiqueta etiqueta--contorno" title="Esta persona no tiene cuenta en SaveSlot">SOLO STEAM</span>') +
+        (r.saveslot ? etiquetaMiembro(r.saveslot.usuario) : '') +
         '<p class="tarjeta__texto">' + (opciones && opciones.juego ? 'sobre ' + escapar(opciones.juego) + ' · ' : '') + formatearNumero(r.horas) + ' h jugadas · ' + formatearFecha(r.fecha) + '</p>' +
       '</div>' +
       '<span class="etiqueta ' + (r.recomienda ? 'etiqueta--exito' : 'etiqueta--error') + ' al-final">' + (r.recomienda ? '👍 Recomendado' : '👎 No recomendado') + '</span>' +
@@ -1701,7 +1715,7 @@ function mostrarJuego(juego) {
         ? '<p class="tarjeta__texto">En Steam: <b>' + escapar(steam.resumen.texto || '') + '</b> · ' +
           Math.round(steam.resumen.positivas / steam.resumen.total * 100) + '% de ' + formatearNumero(steam.resumen.total) + ' reseñas recomiendan el juego. ' +
           '<a href="https://store.steampowered.com/app/' + steam.appid + '/#app_reviews_hash" target="_blank" rel="noopener">Ver todas en Steam</a>' +
-          (steam.resenas.length ? '<br>De estas ' + steam.resenas.length + ' reseñas de Steam, ' + (conCuenta ? conCuenta + (conCuenta === 1 ? ' es de alguien' : ' son de personas') + ' con cuenta en SaveSlot (EN SAVESLOT)' : 'ninguna es de alguien con cuenta en SaveSlot') + '; las demás dicen SOLO STEAM.' : '') + '</p>'
+          (conCuenta ? '<br>' + conCuenta + (conCuenta === 1 ? ' de estas reseñas es de alguien que también tiene' : ' de estas reseñas son de personas que también tienen') + ' cuenta en SaveSlot.' : '') + '</p>'
         : '';
       var lista = (origen !== 'Steam' ? resenas.map(function (r) { return htmlResena(r); }) : [])
         .concat(origen !== 'SaveSlot' ? steam.resenas.map(function (r) { return htmlResenaSteam(r); }) : []);
