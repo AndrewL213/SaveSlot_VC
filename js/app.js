@@ -188,6 +188,20 @@ function renombrarUsuario(viejo, nuevo) {
   if (steamid && (sesion.steam || (leerPerfil().accounts || {}).Steam)) recordarUsuarioSteam(steamid, nuevo);
 }
 
+// Anota tu cuenta en la tabla usuarios_steam de Supabase (una vez por visita), para que tus
+// reseñas de Steam salgan como "EN SAVESLOT". Solo tú puedes escribir tu fila (reglas de la tabla).
+function anotarCuentaSteam(steam) {
+  if (!clienteSupabase || !steam || !steam.steamid || leerVisita('steamAnotado')) return;
+  clienteSupabase.auth.getUser().then(function (r) {
+    var u = r.data && r.data.user;
+    if (!u || !u.app_metadata || String(u.app_metadata.steam_id) !== String(steam.steamid)) return;
+    return clienteSupabase.from('usuarios_steam').upsert({
+      id: u.id, steam_id64: String(steam.steamid), steam_username: steam.personaname || null,
+      steam_avatar: steam.avatarfull || null, sincronizado_el: new Date().toISOString()
+    }).then(function (res) { if (!res.error) guardarVisita('steamAnotado', true); });
+  }).catch(function () {});
+}
+
 // Botón "Steam" de Iniciar sesión y Crear cuenta
 function activarBotonSteam() {
   var boton = document.querySelector('a[href*="servicio=Steam"]');
@@ -736,7 +750,11 @@ function htmlResenaSteam(r, opciones) {
     '<div class="en-fila">' +
       '<span class="avatar" aria-hidden="true">' + escapar(iniciales) + '</span>' +
       '<div>' +
-        '<a href="' + escapar(r.enlace) + '" target="_blank" rel="noopener"><b>' + escapar(r.autor) + '</b></a> ' + etiquetaOrigen('Steam') +
+        '<a href="' + escapar(r.enlace) + '" target="_blank" rel="noopener"><b>' + escapar(r.autor) + '</b></a> ' + etiquetaOrigen('Steam') + ' ' +
+        // ¿Tiene cuenta en SaveSlot? (su Steam está vinculado a una cuenta de SaveSlot)
+        (r.saveslot
+          ? '<span class="etiqueta etiqueta--exito" title="Esta persona también tiene cuenta en SaveSlot">EN SAVESLOT · @' + escapar(r.saveslot.usuario) + '</span>'
+          : '<span class="etiqueta etiqueta--contorno" title="Esta persona no tiene cuenta en SaveSlot">SOLO STEAM</span>') +
         '<p class="tarjeta__texto">' + (opciones && opciones.juego ? 'sobre ' + escapar(opciones.juego) + ' · ' : '') + formatearNumero(r.horas) + ' h jugadas · ' + formatearFecha(r.fecha) + '</p>' +
       '</div>' +
       '<span class="etiqueta ' + (r.recomienda ? 'etiqueta--exito' : 'etiqueta--error') + ' al-final">' + (r.recomienda ? '👍 Recomendado' : '👎 No recomendado') + '</span>' +
@@ -1431,10 +1449,12 @@ function pantallaJuego() {
         [['Todas', resenas.length + steam.resenas.length], ['SaveSlot', resenas.length], ['Steam', steam.resenas.length]].map(function (o) {
           return '<button class="chip" type="button" data-origen="' + o[0] + '" aria-pressed="' + (origen === o[0]) + '">' + o[0] + ' · ' + o[1] + '</button>';
         }).join('') + '</div>';
+      var conCuenta = steam.resenas.filter(function (r) { return r.saveslot; }).length;
       var resumen = steam.resumen && steam.resumen.total
         ? '<p class="tarjeta__texto">En Steam: <b>' + escapar(steam.resumen.texto || '') + '</b> · ' +
           Math.round(steam.resumen.positivas / steam.resumen.total * 100) + '% de ' + formatearNumero(steam.resumen.total) + ' reseñas recomiendan el juego. ' +
-          '<a href="https://store.steampowered.com/app/' + steam.appid + '/#app_reviews_hash" target="_blank" rel="noopener">Ver todas en Steam</a></p>'
+          '<a href="https://store.steampowered.com/app/' + steam.appid + '/#app_reviews_hash" target="_blank" rel="noopener">Ver todas en Steam</a>' +
+          (steam.resenas.length ? '<br>De estas ' + steam.resenas.length + ' reseñas de Steam, ' + (conCuenta ? conCuenta + (conCuenta === 1 ? ' es de alguien' : ' son de personas') + ' con cuenta en SaveSlot (EN SAVESLOT)' : 'ninguna es de alguien con cuenta en SaveSlot') + '; las demás dicen SOLO STEAM.' : '') + '</p>'
         : '';
       var lista = (origen !== 'Steam' ? resenas.map(function (r) { return htmlResena(r); }) : [])
         .concat(origen !== 'SaveSlot' ? steam.resenas.map(function (r) { return htmlResenaSteam(r); }) : []);
@@ -2483,6 +2503,7 @@ function pantallaPerfil() {
   function usarPerfilSteam(steam) {
     perfilSteam = steam;
     dibujarCuentas(steam);
+    anotarCuentaSteam(steam);
     var caja = document.getElementById('jugando-perfil');
     if (steam.playing_now) {
       var actual = juegoDeSteam({ appid: steam.playing_now.appid, name: steam.playing_now.name });
