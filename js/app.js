@@ -592,6 +592,14 @@ document.addEventListener('error', function (e) {
   }
 }, true);
 
+// Si la única portada que hay es horizontal (por ejemplo, un DLC de Steam sin portada vertical),
+// se muestra completa en vez de recortarla
+document.addEventListener('load', function (e) {
+  var img = e.target;
+  if (!img.classList || !img.classList.contains('portada__imagen')) return;
+  img.classList.toggle('portada__imagen--horizontal', img.naturalWidth > img.naturalHeight);
+}, true);
+
 function crearElemento(html) {
   var plantilla = document.createElement('template');
   plantilla.innerHTML = html.trim();
