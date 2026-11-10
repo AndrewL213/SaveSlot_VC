@@ -3524,9 +3524,9 @@ function pantallaBiblioteca() {
     var lista = juegos.filter(function (j) { return !texto || j.nombre.toLowerCase().indexOf(texto) !== -1; }).sort(ORDENES[orden]);
     caja.innerHTML = lista.map(function (j) {
       return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
-        '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
-        // De qué cuenta viene el juego (hoy la biblioteca solo trae Steam)
-        '<span class="etiqueta etiqueta--contorno"><img class="etiqueta__logo" src="' + rutaRecurso('assets/logo-steam.svg') + '" alt="">Steam</span>' +
+        // De qué cuenta viene el juego: logo en la esquina inferior izquierda de la portada (hoy solo Steam)
+        '<span class="portada portada--enlace">' + imagenPortada(j) +
+          '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-steam.svg')) + '" alt="Steam" title="De tu cuenta de Steam"></span>' +
         '<b>' + escapar(j.nombreCorto) + '</b>' +
         '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
     }).join('') || (juegos.length
