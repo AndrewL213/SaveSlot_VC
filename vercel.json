@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/steam/sincronizar", "schedule": "0 9 * * *" }
+  ]
+}
