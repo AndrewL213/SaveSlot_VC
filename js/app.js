@@ -65,15 +65,22 @@ function terminarVueltaDeSteam() {
   history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + location.hash);
   if (fallo || !token || !clienteSupabase) return Promise.resolve('No pudimos conectar con Steam. Inténtalo de nuevo.');
 
+  var metadatos = {};
   return clienteSupabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' }).then(function (r) {
     if (r.error) throw r.error;
+    metadatos = (r.data && r.data.user && r.data.user.user_metadata) || {};
     return pedirSteam('profile');
   }).then(function (steam) {
     var nombre = steam.personaname || 'Steam';
     if (!obtenerSesion()) {
       // Entró con Steam: su cuenta de SaveSlot nace con Steam vinculada
-      var usuario = 'steam_' + steam.steamid;
-      iniciarSesion({ name: nombre, user: usuario, initials: inicialesDe(nombre), email: '', steam: true }, {
+      // Su @: el que eligió antes (Supabase o este navegador); si es nueva, uno a partir de su nombre de Steam.
+      // Las cuentas creadas antes de este cambio se llamaban steam_<número completo>: se respetan.
+      var antiguo = 'steam_' + steam.steamid;
+      var usuario = metadatos.usuario || leerMemoria('usuariosSteam', {})[steam.steamid] ||
+        (leerMemoria('duenoDatos', '') === antiguo || leerMemoria('datosDe.' + antiguo, null) ? antiguo : usuarioDesdeNombre(nombre, steam.steamid));
+      recordarUsuarioSteam(steam.steamid, usuario);
+      iniciarSesion({ name: nombre, user: usuario, initials: inicialesDe(nombre), email: '', steam: true, steamid: steam.steamid }, {
         profile: { user: usuario, xp: XP_POR_CUENTA, level: 1, bio: '', since: hoy(), favorites: [], wishlist: [], genres: [], playing: null,
           accounts: { Steam: nombre, PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: [] },
         myReviews: [], diary: [], joined: [], inscripciones: [], friends: {}, chatsMatchplay: []
@@ -136,6 +143,49 @@ function enlaceJuego(juego) {
   return juego.steam
     ? 'https://store.steampowered.com/app/' + juego.appid + '/'
     : 'detalle-juego.html?id=' + encodeURIComponent(juego.id);
+}
+
+// ---------- Usuario (@) ----------
+var USUARIO_VALIDO = /^[a-z0-9_.]{3,20}$/i;
+
+// ¿Está libre este @? (personas de ejemplo, cuentas de este navegador y cuentas de Steam ya vistas)
+function usuarioLibre(usuario, propio) {
+  var u = String(usuario || '').toLowerCase();
+  if (!USUARIO_VALIDO.test(u)) return false;
+  if (propio && u === String(propio).toLowerCase()) return true;
+  if (buscarPorId('usuarios', u)) return false;
+  var cuentas = leerMemoria('accounts', {});
+  if (Object.keys(cuentas).some(function (k) { return String(cuentas[k].user).toLowerCase() === u; })) return false;
+  var deSteam = leerMemoria('usuariosSteam', {});
+  return !Object.keys(deSteam).some(function (id) { return String(deSteam[id]).toLowerCase() === u; });
+}
+
+// Un @ a partir del nombre de Steam ("Ludr3ss" → "ludr3ss"); si no sirve, steam_ + 8 números
+function usuarioDesdeNombre(nombre, steamid) {
+  var base = String(nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_.]/g, '').slice(0, 20);
+  return usuarioLibre(base) ? base : 'steam_' + String(steamid).slice(-8);
+}
+
+// El @ de una cuenta de Steam: se guarda en Supabase (user_metadata) y en este navegador
+function recordarUsuarioSteam(steamid, usuario) {
+  if (!steamid) return;
+  var mapa = leerMemoria('usuariosSteam', {});
+  mapa[steamid] = usuario;
+  guardarMemoria('usuariosSteam', mapa);
+  if (clienteSupabase) clienteSupabase.auth.updateUser({ data: { usuario: usuario } }).catch(function () {});
+}
+
+// Cambia el @ de la cuenta abierta: los datos guardados pasan al nuevo nombre
+function renombrarUsuario(viejo, nuevo) {
+  if (leerMemoria('duenoDatos', 'samluq') === viejo) guardarMemoria('duenoDatos', nuevo);
+  try { localStorage.removeItem('ss.datosDe.' + viejo); } catch (e) { /* modo privado */ }
+  var cuentas = leerMemoria('accounts', {});
+  Object.keys(cuentas).forEach(function (k) { if (cuentas[k].user === viejo) cuentas[k].user = nuevo; });
+  guardarMemoria('accounts', cuentas);
+  var steam = leerMemoria('steamPerfil', null);
+  var sesion = obtenerSesion() || {};
+  var steamid = sesion.steamid || (steam && steam.steamid);
+  if (steamid && (sesion.steam || (leerPerfil().accounts || {}).Steam)) recordarUsuarioSteam(steamid, nuevo);
 }
 
 // Botón "Steam" de Iniciar sesión y Crear cuenta
@@ -2254,7 +2304,6 @@ function pantallaRegistro() {
   var terminos = document.getElementById('terminos');
   var mensajeUsuario = document.getElementById('mensaje-usuario');
   activarOjo(document.getElementById('ver-clave'), clave);
-  var USUARIO_VALIDO = /^[a-z0-9_.]{3,20}$/i;
 
   // Medidor de fuerza: largo, mayúsculas y minúsculas, números y símbolos
   var textosFuerza = ['Escribe al menos 8 caracteres.', 'Débil. Agrega mayúsculas y números.', 'Regular. Agrega un número o símbolo.', 'Buena. Agrega un símbolo para hacerla fuerte.', 'Fuerte.'];
@@ -2267,7 +2316,7 @@ function pantallaRegistro() {
 
   usuario.addEventListener('input', function () {
     var valor = usuario.value.trim();
-    var libre = USUARIO_VALIDO.test(valor) && !buscarPorId('usuarios', valor.toLowerCase());
+    var libre = usuarioLibre(valor);
     mensajeUsuario.className = valor ? (libre ? 'grupo-campo__ayuda grupo-campo__ayuda--listo' : 'grupo-campo__error') : 'grupo-campo__ayuda';
     mensajeUsuario.textContent = !valor ? '' : (libre ? '✓ Disponible' : (USUARIO_VALIDO.test(valor) ? 'Ese usuario ya existe. Prueba otro.' : 'Usa de 3 a 20 letras, números, punto o guion bajo.'));
     usuario.classList.toggle('campo--error', !!valor && !libre);
@@ -2276,7 +2325,7 @@ function pantallaRegistro() {
   document.getElementById('formulario-registro').addEventListener('submit', function (e) {
     e.preventDefault();
     var valorUsuario = usuario.value.trim();
-    var usuarioOk = USUARIO_VALIDO.test(valorUsuario) && !buscarPorId('usuarios', valorUsuario.toLowerCase());
+    var usuarioOk = usuarioLibre(valorUsuario);
     var resultados = [
       [nombre, marcarError(nombre, document.getElementById('error-nombre'), nombre.value.trim().length >= 2 ? '' : 'Escribe tu nombre.')],
       [correo, marcarError(correo, document.getElementById('error-correo'), correoValido(correo.value.trim()) ? '' : 'Revisa el correo. Ejemplo: tu@correo.com')],
@@ -2354,7 +2403,21 @@ function pantallaPerfil() {
     avatar.insertAdjacentHTML('beforeend', '<span class="avatar__punto"></span>');
   }
   document.getElementById('nombre-perfil').textContent = sesion.name;
-  document.getElementById('usuario-perfil').textContent = '@' + sesion.user;
+  // Tus @ en cada plataforma, debajo del nombre
+  function dibujarCuentas(steam) {
+    var cuentasVinculadas = perfil.accounts || {};
+    var lista = ['<span class="tarjeta__texto" title="Tu usuario en SaveSlot"><b>@' + escapar(sesion.user) + '</b></span>'];
+    if (cuentasVinculadas.Steam) {
+      var enlace = steam && steam.profileurl;
+      lista.push((enlace ? '<a class="en-fila tarjeta__texto" href="' + escapar(enlace) + '" target="_blank" rel="noopener"' : '<span class="en-fila tarjeta__texto"') +
+        ' title="Tu cuenta de Steam"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-steam.svg')) + '" alt="Steam">@' + escapar(cuentasVinculadas.Steam) + (enlace ? '</a>' : '</span>'));
+    }
+    ['Xbox', 'PlayStation', 'Nintendo'].forEach(function (p) {
+      if (cuentasVinculadas[p]) lista.push('<span class="tarjeta__texto" title="Tu cuenta de ' + p + '">' + p + ' @' + escapar(cuentasVinculadas[p]) + '</span>');
+    });
+    document.getElementById('usuario-perfil').innerHTML = lista.join('<span class="tarjeta__texto" aria-hidden="true">·</span>');
+  }
+  dibujarCuentas(leerMemoria('steamPerfil', null));
   document.getElementById('insignias-perfil').innerHTML = '<span class="etiqueta etiqueta--primario">NIVEL ' + escapar(perfil.level) + '</span>' +
     (datosUsuario.insignias || []).map(function (i) { return '<span class="etiqueta etiqueta--contorno">' + escapar(i.toUpperCase()) + '</span>'; }).join('');
   document.getElementById('compartir-perfil').addEventListener('click', function () {
@@ -2372,6 +2435,7 @@ function pantallaPerfil() {
   var perfilSteam = null;
   function usarPerfilSteam(steam) {
     perfilSteam = steam;
+    dibujarCuentas(steam);
     var caja = document.getElementById('jugando-perfil');
     if (steam.playing_now) {
       var actual = juegoDeSteam({ appid: steam.playing_now.appid, name: steam.playing_now.name });
@@ -2643,7 +2707,25 @@ function pantallaEditar() {
   if (new URLSearchParams(location.search).get('nuevo')) document.getElementById('bienvenida').hidden = false;
   document.getElementById('avatar-editar').textContent = sesion.initials;
   campoNombre.value = sesion.name;
-  document.getElementById('usuario-fijo').value = sesion.user;
+  // Usuario (@): se puede cambiar (menos en la cuenta de demostración)
+  var campoUsuario = document.getElementById('usuario-fijo');
+  var ayudaUsuario = document.getElementById('ayuda-usuario');
+  var esDemo = sesion.email === 'demo@saveslot';
+  campoUsuario.value = sesion.user;
+  campoUsuario.disabled = esDemo;
+  function revisarUsuario() {
+    var valor = campoUsuario.value.trim();
+    var libre = usuarioLibre(valor, sesion.user);
+    ayudaUsuario.className = valor === sesion.user ? 'grupo-campo__ayuda' : (libre ? 'grupo-campo__ayuda grupo-campo__ayuda--listo' : 'grupo-campo__error');
+    ayudaUsuario.textContent = esDemo ? 'La cuenta de demostración no puede cambiar de usuario.'
+      : valor === sesion.user ? (USUARIO_VALIDO.test(valor) ? 'Tu @ en SaveSlot. De 3 a 20 letras, números, punto o guion bajo.' : 'Elige un @ más corto: de 3 a 20 letras, números, punto o guion bajo.')
+      : libre ? '✓ Disponible' : (USUARIO_VALIDO.test(valor) ? 'Ese usuario ya existe. Prueba otro.' : 'Usa de 3 a 20 letras, números, punto o guion bajo.');
+    campoUsuario.classList.toggle('campo--error', !esDemo && valor !== sesion.user && !libre);
+    campoUsuario.setAttribute('aria-invalid', String(!esDemo && valor !== sesion.user && !libre));
+    return esDemo || valor === sesion.user || libre;
+  }
+  campoUsuario.addEventListener('input', revisarUsuario);
+  revisarUsuario();
   document.getElementById('sobre-mi').value = perfil.bio || '';
   // "¿Qué estás jugando ahora?": con Steam vinculada, lo automático es lo que juegues en Steam
   var selectorJugando = document.getElementById('jugando-ahora');
@@ -2793,11 +2875,17 @@ function pantallaEditar() {
       campoNombre.focus();
       return;
     }
+    if (!revisarUsuario()) { campoUsuario.focus(); return; }
+    var nuevoUsuario = esDemo ? sesion.user : campoUsuario.value.trim();
+    if (nuevoUsuario !== sesion.user) {
+      renombrarUsuario(sesion.user, nuevoUsuario);
+      perfil.user = nuevoUsuario;
+    }
     perfil.bio = document.getElementById('sobre-mi').value.trim().slice(0, 190);
     perfil.playing = document.getElementById('jugando-ahora').value || null;
     guardarMemoria('profile', perfil);
     if (!perfil.accounts.Steam && clienteSupabase) clienteSupabase.auth.signOut();
-    guardarMemoria('session', Object.assign({}, sesion, { name: campoNombre.value.trim(), initials: inicialesDe(campoNombre.value) }));
+    guardarMemoria('session', Object.assign({}, sesion, { user: nuevoUsuario, name: campoNombre.value.trim(), initials: inicialesDe(campoNombre.value) }));
     mostrarAviso('Cambios guardados');
     setTimeout(function () { location.href = 'perfil.html'; }, 600);
   });
