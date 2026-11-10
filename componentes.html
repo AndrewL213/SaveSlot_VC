@@ -778,6 +778,25 @@
     </div>
 
     <div class="cat-componente">
+      <h3>Menú de la cuenta · <code>.menu-usuario</code></h3>
+      <p>Se abre al tocar tu nombre en la barra de arriba. Lleva a tu perfil, a Editar perfil y a Cerrar sesión (en rojo, separado). Aquí se muestra abierto.</p>
+      <div class="cat-ejemplo cat-estatico" data-codigo>
+        <div class="menu-usuario">
+          <button class="navegacion__usuario" type="button" aria-haspopup="menu" aria-expanded="true" aria-controls="ej-menu-cuenta">
+            <span class="avatar avatar--sm">SL</span>
+            <span><span class="navegacion__nombre">Samuel</span><span class="navegacion__nivel">Nivel 12</span></span>
+          </button>
+          <div class="menu-usuario__lista" id="ej-menu-cuenta" role="menu" style="position: static; margin-top: var(--espacio-2)">
+            <a class="menu-usuario__opcion" role="menuitem" href="#componentes">Mi perfil</a>
+            <a class="menu-usuario__opcion" role="menuitem" href="#componentes">Editar perfil</a>
+            <span class="menu-usuario__separador" role="separator"></span>
+            <button class="menu-usuario__opcion menu-usuario__opcion--peligro" role="menuitem" type="button">Cerrar sesión</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cat-componente">
       <h3>Modal · <code>.modal-fondo</code> y <code>.modal</code></h3>
       <p>Aquí se muestra dentro de la página. En la app cubre la pantalla, y en el celular sale desde abajo.</p>
       <div class="cat-ejemplo cat-ejemplo--columna cat-estatico" data-codigo>
