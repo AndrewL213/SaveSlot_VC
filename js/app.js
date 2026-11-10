@@ -223,14 +223,80 @@ function buscarPorId(tipo, id) {
   if (tipo === 'juegos' && /^steam-/.test(id)) {
     return leerBibliotecaSteam().find(function (j) { return j.id === id; }) || null;
   }
-  return obtenerDatos(tipo).find(function (x) { return x.id === id; }) || null;
+  var encontrado = obtenerDatos(tipo).find(function (x) { return x.id === id; }) || null;
+  // Los juegos de IGDB que ya se abrieron quedan guardados (para reseñas, deseos, diario…)
+  if (tipo === 'juegos') return unirConIgdb(encontrado, leerMemoria('juegosIgdb', {})[id] || null);
+  return encontrado;
 }
 
-// Busca juegos con filtros: { texto, generos, plataformas, tipo, duracion, desde, hasta }.
-// Hoy filtra los juegos de data.js; con IGDB, esta función hará la consulta a api/.
+/* ---------- Juegos de IGDB (api/igdb.js) ---------- */
+
+// Datos del catálogo que manda IGDB. Los de la comunidad (calificación, dificultad, votos…),
+// la portada de assets/ y el color se quedan como están en data.js.
+var CAMPOS_DE_IGDB = ['idIgdb', 'appidSteam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idiomaDescripcion', 'similares'];
+
+// Junta un juego de data.js con el mismo juego de IGDB (cualquiera de los dos puede faltar).
+function unirConIgdb(local, igdb) {
+  if (!igdb) return local;
+  if (!local) return igdb;
+  var juego = Object.assign({}, local);
+  CAMPOS_DE_IGDB.forEach(function (campo) {
+    var valor = igdb[campo];
+    if (valor != null && valor !== '' && !(Array.isArray(valor) && !valor.length)) juego[campo] = valor;
+  });
+  // Las horas siguen la regla de IGDB aunque no haya dato ("Sin datos" u "Online")
+  juego.horasHistoria = igdb.horasHistoria;
+  juego.soloOnline = igdb.soloOnline;
+  if (!juego.portada) { juego.portada = igdb.portada; juego.creditoPortada = igdb.creditoPortada; }
+  return juego;
+}
+
+// Guarda en el navegador los últimos juegos de IGDB abiertos (sin la lista de similares).
+var MAXIMO_JUEGOS_GUARDADOS = 100;
+function guardarJuegoIgdb(juego) {
+  var guardados = leerMemoria('juegosIgdb', {});
+  var copia = Object.assign({}, juego);
+  delete copia.similares;
+  delete guardados[juego.id];
+  guardados[juego.id] = copia;
+  var ids = Object.keys(guardados);
+  ids.slice(0, Math.max(0, ids.length - MAXIMO_JUEGOS_GUARDADOS)).forEach(function (viejo) { delete guardados[viejo]; });
+  guardarMemoria('juegosIgdb', guardados);
+}
+
+// Le pregunta a api/igdb.js. Devuelve una promesa con la respuesta, o falla con el código de error.
+function preguntarIgdb(parametros) {
+  return fetch('/api/igdb?' + new URLSearchParams(parametros)).then(function (r) {
+    if (!r.ok) { var error = new Error('IGDB ' + r.status); error.estado = r.status; throw error; }
+    return r.json();
+  });
+}
+
+// Un juego por su id (slug de IGDB), ya unido con data.js.
+// Si IGDB no responde (o se abre el archivo sin servidor), sirve el de data.js.
+// Falla con estado 404 si no existe, o con el error de IGDB si no hay copia local.
+function pedirJuego(id) {
+  var local = buscarPorId('juegos', id);
+  if (/^steam-/.test(id)) return local ? Promise.resolve(local) : Promise.reject({ estado: 404 });
+  return preguntarIgdb({ id: id }).then(function (datos) {
+    guardarJuegoIgdb(datos.juego);
+    return unirConIgdb(obtenerDatos('juegos').find(function (x) { return x.id === id; }) || null, datos.juego);
+  }).catch(function (error) {
+    if (local) return local;
+    throw error;
+  });
+}
+
+// Busca juegos de data.js con filtros: { texto, generos, plataformas, tipo, duracion, desde, hasta }.
+// Buscar juegos le pregunta a IGDB y usa esta función solo si IGDB no responde.
 function buscarJuegos(filtros) {
+  return filtrarJuegos(obtenerDatos('juegos'), filtros);
+}
+
+// Filtra una lista de juegos (de data.js o de IGDB) con los filtros de Buscar.
+function filtrarJuegos(juegos, filtros) {
   var texto = (filtros.texto || '').toLowerCase();
-  return obtenerDatos('juegos').filter(function (j) {
+  return juegos.filter(function (j) {
     var horas = j.horasHistoria;
     if (texto && (j.nombre + ' ' + j.nombreCorto + ' ' + j.generos.join(' ')).toLowerCase().indexOf(texto) === -1) return false;
     if (filtros.generos.length && !filtros.generos.some(function (g) { return j.generos.indexOf(g) !== -1; })) return false;
@@ -735,7 +801,8 @@ function prepararPie() {
 /* ---------- Piezas que se repiten entre pantallas ---------- */
 
 // Portada de un juego con su nota, para rejillas.
-function htmlJuegoMini(juego, ranking) {
+// "detalle" (opcional, ya escapado) reemplaza la nota: por ejemplo, los jugadores de Steam.
+function htmlJuegoMini(juego, ranking, detalle) {
   return '<li>' +
     '<a class="portada portada--enlace" href="' + rutaPagina('detalle-juego.html') + '?id=' + encodeURIComponent(juego.id) + '"' + atributoColor(juego.color) + '>' + imagenPortada(juego) +
       (ranking ? '<span class="portada__ranking">#' + ranking + '</span>' : '') +
@@ -744,9 +811,27 @@ function htmlJuegoMini(juego, ranking) {
     '</a>' +
     '<div class="juego__meta">' +
       '<span class="tarjeta__texto">' + escapar(juego.generos[0] || '') + '</span>' +
-      (juego.calificacion != null ? '<span class="nota nota--texto" aria-label="Nota de la comunidad ' + formatearNota(juego.calificacion) + ' de 10">' + formatearNota(juego.calificacion) + '</span>' : '') +
+      (detalle ? '<span class="tarjeta__texto">' + detalle + '</span>' : juego.calificacion != null ? '<span class="nota nota--texto" aria-label="Nota de la comunidad ' + formatearNota(juego.calificacion) + ' de 10">' + formatearNota(juego.calificacion) + '</span>' : '') +
     '</div>' +
   '</li>';
+}
+
+// Juego de IGDB unido con su copia de data.js, si la hay (portada de assets/, nota de la comunidad…)
+function conDatosLocales(juego) {
+  return unirConIgdb(obtenerDatos('juegos').find(function (x) { return x.id === juego.id; }) || null, juego);
+}
+
+// "Lo más jugado en Steam" (api/igdb?steam=1): llena la rejilla.
+// Devuelve una promesa: true si hay juegos para mostrar; false si Steam o IGDB no respondieron.
+function llenarMasJugadosSteam(rejilla) {
+  return preguntarIgdb({ steam: 1 }).then(function (datos) {
+    if (!datos.juegos || !datos.juegos.length) return false;
+    rejilla.innerHTML = datos.juegos.map(function (j, i) {
+      return htmlJuegoMini(conDatosLocales(j), i + 1, j.jugadoresSteam ? formatearNumero(j.jugadoresSteam) + ' jugadores' : '');
+    }).join('');
+    aplicarColores(rejilla);
+    return true;
+  }).catch(function () { return false; });
 }
 
 // Tarjeta de reseña con autor, nota, texto y acciones.
@@ -978,34 +1063,108 @@ function pantallaBuscar() {
     '</a>';
   }
 
-  function mostrar() {
-    var texto = campoBusqueda.value.trim();
-    var lista = buscarJuegos({
-      texto: texto,
+  function leerFiltros() {
+    return {
       generos: marcados('genero'),
       plataformas: marcados('plataforma'),
       tipo: tipo,
       duracion: duracion,
       desde: Number(document.getElementById('anio-desde').value) || null,
       hasta: Number(document.getElementById('anio-hasta').value) || null
-    });
-    titulo.textContent = lista.length + (lista.length === 1 ? ' juego' : ' juegos') + (texto ? ' para “' + texto + '”' : '');
+    };
+  }
+
+  // Lo que se le pide a IGDB para explorar (solo los filtros que tienen algo)
+  function pedidoExplorar(f, pagina) {
+    var pedido = { explorar: 1, pagina: pagina };
+    if (f.generos.length) pedido.generos = f.generos.join(',');
+    if (f.plataformas.length) pedido.plataformas = f.plataformas.join(',');
+    ['tipo', 'duracion', 'desde', 'hasta'].forEach(function (k) { if (f[k]) pedido[k] = f[k]; });
+    return pedido;
+  }
+
+  // Si lo escrito es un género ("terror"), se marca ese filtro en vez de buscarlo por nombre
+  function textoEsGenero() {
+    var texto = campoBusqueda.value.trim().toLowerCase();
+    var casilla = Array.prototype.find.call(filtros.querySelectorAll('input[name="genero"]'), function (c) { return c.value.toLowerCase() === texto; });
+    if (!casilla) return false;
+    casilla.checked = true;
+    campoBusqueda.value = '';
+    return true;
+  }
+
+  var seccionSteam = document.getElementById('steam-seccion');
+  var steamListo = false;
+  var buscando = false;
+  llenarMasJugadosSteam(document.getElementById('steam-juegos')).then(function (hay) {
+    steamListo = hay;
+    seccionSteam.hidden = buscando || !steamListo;
+  });
+
+  var vistos = [];   // juegos ya en la lista (crece con "Ver más")
+  var pagina = 1;
+  var pedidoActual = 0; // si cambian los filtros rápido, solo cuenta la última respuesta
+
+  function dibujar(lista, total, hayMas, texto) {
+    var cantidad = total != null ? total : lista.length;
+    titulo.textContent = formatearNumero(cantidad) + (hayMas && total == null ? '+' : '') + (cantidad === 1 ? ' juego' : ' juegos') + (texto ? ' para “' + texto + '”' : '');
     resultados.innerHTML = lista.length
-      ? lista.map(htmlResultado).join('')
+      ? lista.map(htmlResultado).join('') +
+        (hayMas ? '<button class="boton boton--secundario boton--bloque" type="button" id="ver-mas">Ver más juegos</button>' : '')
       : '<div class="vacio"><b>No encontramos juegos con esos filtros.</b>' +
         '<span>Revisa la ortografía o quita algún filtro. También puedes preguntarle a MatchPlay.</span>' +
         '<a class="boton boton--secundario boton--sm" href="matchplay.html?q=' + encodeURIComponent(texto || 'Recomiéndame un juego') + '">Preguntar a MatchPlay</a></div>';
     aplicarColores(resultados);
   }
 
+  // Con texto: búsqueda por nombre en IGDB (hasta 20) y los filtros se aplican a esos.
+  // Sin texto: IGDB explora con los filtros, de 24 en 24. Si IGDB no responde: los juegos de data.js.
+  function mostrar(siguiente) {
+    var texto = campoBusqueda.value.trim();
+    var f = leerFiltros();
+    var numero = ++pedidoActual;
+    pagina = siguiente ? pagina + 1 : 1;
+    // "Lo más jugado en Steam" solo cuando no se está buscando ni filtrando
+    buscando = !!(texto || f.generos.length || f.plataformas.length || f.tipo || f.duracion || f.desde || f.hasta);
+    seccionSteam.hidden = buscando || !steamListo;
+    if (siguiente) {
+      var boton = document.getElementById('ver-mas');
+      if (boton) { boton.disabled = true; boton.textContent = 'Cargando…'; }
+    } else {
+      titulo.textContent = 'Buscando…';
+    }
+    var pedido = texto
+      ? preguntarIgdb({ buscar: texto }).then(function (d) {
+          return { juegos: filtrarJuegos(d.juegos.map(conDatosLocales), f), total: null, hayMas: false };
+        })
+      : preguntarIgdb(pedidoExplorar(f, pagina)).then(function (d) {
+          return { juegos: d.juegos.map(conDatosLocales), total: d.total, hayMas: d.hayMas };
+        });
+    pedido.then(function (r) {
+      if (numero !== pedidoActual) return;
+      var ids = vistos.map(function (j) { return j.id; });
+      vistos = siguiente ? vistos.concat(r.juegos.filter(function (j) { return ids.indexOf(j.id) === -1; })) : r.juegos;
+      dibujar(vistos, r.total, r.hayMas, texto);
+    }).catch(function () {
+      if (numero !== pedidoActual) return;
+      vistos = buscarJuegos(Object.assign({ texto: texto }, f));
+      dibujar(vistos, null, false, texto);
+    });
+  }
+
+  resultados.addEventListener('click', function (e) {
+    if (e.target.closest('#ver-mas')) mostrar(true);
+  });
+
   formularioBusqueda.addEventListener('submit', function (e) {
     e.preventDefault();
+    textoEsGenero();
     var texto = campoBusqueda.value.trim();
     history.replaceState(null, '', texto ? '?q=' + encodeURIComponent(texto) : location.pathname);
     mostrar();
   });
 
-  filtros.addEventListener('change', mostrar);
+  filtros.addEventListener('change', function () { mostrar(); });
   filtros.addEventListener('submit', function (e) { e.preventDefault(); });
   filtros.addEventListener('click', function (e) {
     var chipTipo = e.target.closest('[data-tipo]');
@@ -1041,6 +1200,7 @@ function pantallaBuscar() {
     botonFiltros.textContent = abiertos ? 'Ocultar filtros' : 'Filtros';
   });
 
+  textoEsGenero();
   mostrar();
 }
 
@@ -1368,8 +1528,12 @@ function htmlCalaveras(dificultad) {
 // 6. Detalle de juego (y 7. Ventana: Dificultad de 1 a 10)
 function pantallaJuego() {
   var id = idDeJuego(new URLSearchParams(location.search).get('id'));
-  var juego = buscarPorId('juegos', id);
-  if (!juego) { location.replace(rutaPagina('404.html') + '?tipo=juego'); return; }
+  pedirJuego(id).then(mostrarJuego, function (error) {
+    location.replace(rutaPagina('404.html') + (error && error.estado === 404 ? '?tipo=juego' : '?tipo=api&servicio=IGDB'));
+  });
+}
+
+function mostrarJuego(juego) {
   var sesion = obtenerSesion();
   var genero = juego.generos[0] || '';
 
@@ -1612,10 +1776,13 @@ function pantallaJuego() {
   document.getElementById('ficha').innerHTML = [
     ['Desarrolla', juego.desarrolladora || '—'], ['Lanzamiento', juego.anio || '—'], ['Género', juego.generos.join(', ')],
     ['Tipo', juego.tipo || '—'], ['Plataformas', juego.plataformas.join(', ')]
-  ].map(function (f) { return '<dt>' + f[0] + '</dt><dd>' + escapar(f[1]) + '</dd>'; }).join('');
-  var similares = obtenerDatos('juegos').filter(function (j) {
+  ].concat(juego.idiomaDescripcion ? [['Datos', 'IGDB.com']] : []).map(function (f) { return '<dt>' + f[0] + '</dt><dd>' + escapar(f[1]) + '</dd>'; }).join('');
+  // Los parecidos que da IGDB; sin IGDB, otros juegos de data.js del mismo género
+  var similares = (juego.similares && juego.similares.length ? juego.similares.map(function (j) {
+    return buscarPorId('juegos', j.id) ? unirConIgdb(buscarPorId('juegos', j.id), j) : j;
+  }) : obtenerDatos('juegos').filter(function (j) {
     return j.id !== juego.id && j.generos.some(function (g) { return juego.generos.indexOf(g) !== -1; });
-  }).slice(0, 3);
+  })).slice(0, 3);
   document.getElementById('similares').innerHTML = similares.length ? similares.map(function (j) {
     return '<a class="similar" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '">' +
       '<span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
@@ -3309,6 +3476,8 @@ function pantallaBiblioteca() {
     caja.innerHTML = lista.map(function (j) {
       return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
         '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
+        // De qué cuenta viene el juego (hoy la biblioteca solo trae Steam)
+        '<span class="etiqueta etiqueta--contorno"><img class="etiqueta__logo" src="' + rutaRecurso('assets/logo-steam.svg') + '" alt="">Steam</span>' +
         '<b>' + escapar(j.nombreCorto) + '</b>' +
         '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
     }).join('') || (juegos.length

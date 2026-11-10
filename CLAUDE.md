@@ -99,7 +99,7 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<label class="casilla"><input type="checkbox" name="genero" value="RPG">RPG</label>`
 - `.buscador` (+ `--ia`, borde morado para escribirle a MatchPlay) con `.buscador__campo`:
   `<form class="buscador" role="search"><input class="buscador__campo" type="search" aria-label="Buscar juegos"><button class="boton">Buscar</button></form>`
-- `.etiqueta` (+ `--primario`, `--exito`, `--error`, `--aviso`, `--ia`, `--amigo`, `--contorno`):
+- `.etiqueta` (+ `--primario`, `--exito`, `--error`, `--aviso`, `--ia`, `--amigo`, `--contorno`; `.etiqueta__logo` para el logo de una cuenta, con `alt=""`):
   `<span class="etiqueta etiqueta--amigo">Amigo</span>`
 - `.contador` (+ `--destacado`):
   `<span class="contador contador--destacado">3</span>`

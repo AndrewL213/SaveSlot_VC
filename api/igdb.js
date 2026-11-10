@@ -5,15 +5,18 @@
 // Las claves se leen de las variables de entorno de Vercel: TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET,
 // y DEEPL_API_KEY (opcional) para traducir las descripciones al español.
 //
-// Pedidos que acepta (solo estos cinco):
+// Pedidos que acepta (solo estos seis):
 //   /api/igdb?buscar=zelda   → hasta 20 juegos que coinciden con el texto, los más conocidos primero
 //   /api/igdb?id=hades--1    → la ficha de un juego (id = el "slug" o el número de IGDB), con la
 //                              descripción en español y "Si te gusta, prueba" (similares)
 //   /api/igdb?populares=1    → los 10 juegos más visitados en IGDB (Mejores juegos de la semana)
-//   /api/igdb?explorar=1     → lista para Buscar juegos, de 24 en 24, los más conocidos primero.
+//   /api/igdb?explorar=1     → lista para Buscar juegos, de 24 en 24, los más conocidos primero,
+//                              y cuántos hay en total (total; null si se filtra por duración).
 //                              Filtros: generos=RPG,Terror · plataformas=PC,Xbox · tipo=AAA|Indie
 //                              duracion=corto|medio|largo · desde=2015 · hasta=2024 · pagina=2
 //   /api/igdb?random=1       → un juego al azar entre los más conocidos. genero=RPG · excepto=hades--1
+//   /api/igdb?steam=1        → los 10 juegos más jugados en Steam (PC), con su pico de jugadores
+//                              (jugadoresSteam); la lista viene de Steam y los datos, de IGDB
 //
 // Solo se muestran juegos principales, remakes, remasters y expansiones que se venden solas:
 // nada de DLC, mods, packs ni ports no oficiales.
@@ -318,10 +321,15 @@ async function explorar(filtros) {
   // Con duración se piden más, porque una parte se descarta después.
   const pedir = conDuracion ? POR_PAGINA * 3 : POR_PAGINA;
   const where = await condiciones(filtros);
-  const juegos = await consultar('games', CAMPOS + ' where ' + where + '; sort total_rating_count desc; limit ' + pedir + '; offset ' + (pagina - 1) * pedir + ';');
+  // A la vez: la página de juegos y cuántos hay en total (para "N juegos" en Buscar)
+  const [juegos, cuenta] = await Promise.all([
+    consultar('games', CAMPOS + ' where ' + where + '; sort total_rating_count desc; limit ' + pedir + '; offset ' + (pagina - 1) * pedir + ';'),
+    conDuracion ? null : consultar('games/count', 'where ' + where + ';')
+  ]);
   let traducidos = await conHoras(juegos);
   if (conDuracion) traducidos = traducidos.filter(function (j) { return cumpleDuracion(j, filtros.duracion); }).slice(0, POR_PAGINA);
-  return { juegos: traducidos, pagina: pagina, hayMas: juegos.length === pedir };
+  // Con duración no se sabe el total (se filtra después): total = null
+  return { juegos: traducidos, pagina: pagina, hayMas: juegos.length === pedir, total: cuenta ? cuenta.count : null };
 }
 
 // Un juego al azar entre los 300 más conocidos (del género pedido, si hay).
@@ -374,6 +382,37 @@ async function populares() {
   return conHoras(juegos.slice(0, 10));
 }
 
+// Lo más jugado en Steam: la lista pública de Steam (sin clave) con el pico de jugadores de ayer.
+// Steam da solo su número de cada juego; IGDB lo traduce a sus juegos (external_games, fuente 1 = Steam).
+async function masJugadosSteam() {
+  let ranking;
+  try {
+    const r = await fetch('https://api.steampowered.com/ISteamChartsService/GetMostPlayedGames/v1/', { signal: AbortSignal.timeout(LIMITE_DE_ESPERA) });
+    if (!r.ok) throw new Error('Steam ' + r.status);
+    ranking = ((await r.json()).response || {}).ranks || [];
+  } catch (e) {
+    console.error(e);
+    throw falla('api', 502);
+  }
+  // Se piden 40 porque algunos (programas, herramientas) no son juegos para IGDB
+  const primeros = ranking.slice(0, 40).filter(function (x) { return Number.isInteger(x.appid); });
+  if (!primeros.length) return [];
+  const numeros = primeros.map(function (x) { return '"' + x.appid + '"'; }).join(',');
+  const enlaces = await consultar('external_games', 'fields game, uid; where uid = (' + numeros + ') & (external_game_source = 1 | category = 1); limit 100;');
+  const juegoDe = {};
+  enlaces.forEach(function (e) { if (!juegoDe[e.uid]) juegoDe[e.uid] = e.game; });
+  const ids = primeros.map(function (x) { return juegoDe[String(x.appid)]; }).filter(Boolean);
+  if (!ids.length) return [];
+  const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS + '; limit 40;');
+  juegos.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); });
+  const lista = await conHoras(juegos.slice(0, 10));
+  return lista.map(function (j) {
+    const puesto = primeros.find(function (x) { return x.appid === j.appidSteam; });
+    j.jugadoresSteam = puesto ? puesto.peak_in_game : null; // pico de jugadores a la vez (ayer)
+    return j;
+  });
+}
+
 module.exports = async function (req, res) {
   const q = req.query || {};
   try {
@@ -383,7 +422,8 @@ module.exports = async function (req, res) {
     else if (q.populares !== undefined) respuesta = { juegos: await populares() };
     else if (q.explorar !== undefined) respuesta = await explorar(q);
     else if (q.random !== undefined) respuesta = { juego: await random(q) };
-    else { res.status(400).json({ error: 'pedido', detalle: 'Usa ?buscar=, ?id=, ?populares=1, ?explorar=1 o ?random=1' }); return; }
+    else if (q.steam !== undefined) respuesta = { juegos: await masJugadosSteam() };
+    else { res.status(400).json({ error: 'pedido', detalle: 'Usa ?buscar=, ?id=, ?populares=1, ?explorar=1, ?random=1 o ?steam=1' }); return; }
     // Vercel guarda la respuesta una hora: menos consultas a IGDB y más rápido para todos.
     // El juego al azar no se guarda: cada pedido debe dar uno distinto.
     res.setHeader('Cache-Control', q.random !== undefined ? 'no-store' : 's-maxage=3600, stale-while-revalidate=86400');

@@ -18,7 +18,7 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
   - Presencia: quién está en línea.
   - Su clave pública va en el código; los datos se protegen con reglas de acceso en la base.
 - **IGDB** (de Twitch): catálogo de juegos (búsqueda, filtros, ficha y tiempos para terminar). Sus claves (Client ID y Client Secret de Twitch) se guardan en Vercel y se usan solo desde una función en `api/`, que también renueva el token de acceso; nunca van en el código del navegador (IGDB tampoco acepta pedidos directos desde el navegador). Uso no comercial: si SaveSlot se vuelve comercial, hay que pedir permiso a Twitch.
-  - La función es `api/igdb.js`. Acepta solo cinco pedidos: `?buscar=texto` (hasta 20 juegos, los más conocidos primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo, duración y año) y `?random=1` (un juego al azar entre los 300 más conocidos de un género). Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`).
+  - La función es `api/igdb.js`. Acepta solo seis pedidos: `?buscar=texto` (hasta 20 juegos, los más conocidos primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo, duración y año), `?random=1` (un juego al azar entre los 300 más conocidos de un género) y `?steam=1` (los 10 juegos más jugados en Steam: la lista pública de Steam, sin clave, con el pico de jugadores de ayer; IGDB pone los datos de cada juego). `?explorar` también dice cuántos juegos hay en total. Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`).
   - Vercel guarda cada respuesta una hora, para hacer menos consultas a IGDB.
   - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) la traduce al español:
     - **Por ahora (temporal):** con el enlace gratis de Google Translate, sin clave. No es oficial: va contra las condiciones de Google y puede dejar de funcionar en cualquier momento. Se reemplaza al conectar Supabase.
@@ -137,6 +137,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 | `outbox` | **mensajes de contacto** |
 | `usuariosSteam` | Supabase Auth (`user_metadata.usuario`, ya se guarda ahí) |
 | `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos`, `steamResenas` | Ninguna: son copias de lo que da Steam, para mostrar algo mientras llega lo nuevo |
+| `juegosIgdb` | Ninguna: copia de los últimos 100 juegos de IGDB abiertos, para que reseñas, deseos y diario sepan su nombre y portada |
 | `hideDemo`, `datosDe.*`, `duenoDatos` | Ninguna: son ayudas del modo demo y se quitan |
 
 ## Pantallas
@@ -178,17 +179,20 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Contenido:**
   1. Buscador
   2. Cantidad de resultados
-  3. Lista de resultados con portada
-  4. Filtros: género, plataforma, tipo, duración de la historia, año
+  3. Lista de resultados con portada, de 24 en 24 con "Ver más juegos" (sin texto); con texto, hasta 20
+  4. Filtros: género, plataforma, tipo, duración de la historia, año. Si lo escrito es un género ("terror"), se marca ese filtro
   5. Botones Juego random y Limpiar filtros
+  6. Lo más jugado en Steam (solo sin búsqueda ni filtros): los 10 juegos de PC con más jugadores a la vez ayer, con su puesto y sus jugadores; cada uno abre su ficha
 - **Qué funciona de verdad:**
-  - Búsqueda y filtros: Real (IGDB)
+  - Búsqueda y filtros: Real (IGDB). Si IGDB no responde, busca en los juegos de ejemplo
+  - Lo más jugado en Steam: Real (lista de Steam, datos de IGDB)
   - Sugerencias automáticas al escribir (del flujograma): Después
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho): los filtros se abren con el botón "Filtros".
   - Cada filtro cambia la lista y el número de resultados.
   - "Limpiar filtros" muestra todos los juegos otra vez.
+  - Con el filtro de duración el número es aproximado ("24+ juegos"), porque IGDB no filtra por horas.
   - Si no hay resultados, se ve un mensaje y no una lista vacía.
 
 ### 4. Juego random
@@ -254,6 +258,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - "+ Lista de deseos" cambia de estado y el juego aparece en el Perfil.
   - Las reseñas con spoiler se ven ocultas hasta tocarlas.
   - Si el juego está en Steam, se ven su línea de Steam y sus reseñas de Steam con la etiqueta STEAM.
+  - Abre cualquier juego de IGDB por su dirección (`?id=slug`); si no existe, lleva a la página de error de juego, y si IGDB no responde, a la de servicio caído (los juegos de ejemplo se ven igual con sus datos de `js/data.js`).
 
 ### 7. Ventana: Dificultad de 1 a 10
 - **Archivo de diseño:** disenos/juego.html (ventana emergente)
@@ -636,7 +641,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   1. Resumen (juegos, horas jugadas, jugados, sin estrenar)
   2. Jugado últimamente (horas de las últimas 2 semanas)
   3. Orden (más jugados, recientes, A–Z) y buscador
-  4. Rejilla de portadas con horas; cada juego abre su página en la tienda de Steam
+  4. Rejilla de portadas con horas; debajo de cada portada, una etiqueta con el logo y el nombre de la cuenta de la que viene (hoy, Steam); cada juego abre su página en la tienda de Steam
 - **Qué funciona de verdad:** Biblioteca: Real (Steam)
 - **Está lista cuando:**
   - Funciona en celular (375 px de ancho).

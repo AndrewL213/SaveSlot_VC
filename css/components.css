@@ -770,6 +770,14 @@ legend.grupo-campo__etiqueta {
   color: var(--color-texto-suave);
 }
 
+/* Logo de un servicio dentro de una etiqueta (por ejemplo, de qué cuenta viene un juego) */
+.etiqueta__logo {
+  width: var(--texto-sm);
+  height: var(--texto-sm);
+  flex: none;
+  object-fit: contain;
+}
+
 /* ==========================================================================
    Contador (número pequeño en píldora, por ejemplo junto a una pestaña)
    .contador · --destacado
