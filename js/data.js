@@ -1832,8 +1832,9 @@ const DATOS = {
       id: "demo",
       codigo: "DEMO",
       titulo: "Estás viendo el prototipo de SaveSlot",
-      texto: "Mientras conectamos los servicios (catálogo de juegos, cuentas e IA), la web usa datos de ejemplo y guarda tu actividad solo en este navegador.",
+      texto: "Steam ya está conectado: si entras con Steam, tu biblioteca, logros, lista de deseos, juegos recientes y reseñas son reales. El resto (catálogo, cuentas con correo e IA) todavía usa datos de ejemplo y guarda tu actividad solo en este navegador.",
       consejos: [
+        "Entra con Steam para ver tus datos reales, o usa la cuenta de demostración para probar todo lo demás.",
         "Puedes crear una cuenta, reseñar, llenar tu diario y chatear con MatchPlay en modo demo.",
         "Borrar los datos del navegador borra tu actividad."
       ],
@@ -1876,10 +1877,10 @@ const DATOS = {
     },
     {
       id: "s4",
-      servicio: "Cuentas: Steam",
-      proveedor: "Steam Web API + OpenID",
-      estado: "pendiente",
-      texto: "Pendiente de clave"
+      servicio: "Cuentas: Steam (perfil, biblioteca, logros, deseos y reseñas)",
+      proveedor: "Steam Web API + OpenID (Vercel)",
+      estado: "conectado",
+      texto: "Conectado"
     },
     {
       id: "s5",
@@ -1904,10 +1905,24 @@ const DATOS = {
     },
     {
       id: "s8",
-      servicio: "Inicio de sesión con Google, Discord, Twitch y Steam",
+      servicio: "Inicio de sesión con Steam",
+      proveedor: "Steam OpenID + Supabase Auth",
+      estado: "conectado",
+      texto: "Conectado"
+    },
+    {
+      id: "s11",
+      servicio: "Inicio de sesión con Google, Discord y Twitch",
       proveedor: "Supabase Auth",
       estado: "pendiente",
       texto: "Pendiente"
+    },
+    {
+      id: "s12",
+      servicio: "Precios, notas, jugadores y reseñas de Steam en cada juego",
+      proveedor: "Steam (tienda y comunidad) + Supabase",
+      estado: "conectado",
+      texto: "Conectado · se actualiza cada día"
     },
     {
       id: "s9",
