@@ -2206,6 +2206,11 @@ button.navegacion__usuario {
   object-fit: cover;
 }
 
+/* Portada horizontal (no hay vertical): se ve completa, centrada sobre el fondo de la portada */
+.portada__imagen--horizontal {
+  object-fit: contain;
+}
+
 /* Degradado oscuro abajo, para que el título se lea sobre la imagen */
 .portada::after {
   content: "";
