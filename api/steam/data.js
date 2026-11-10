@@ -226,7 +226,10 @@ module.exports = async function handler(req, res) {
       case "my_reviews": {
         // Tus reseñas de Steam. Steam no tiene API para esto: se leen de la página pública
         // steamcommunity.com/profiles/<id>/recommended (hasta 3 páginas de 10).
-        const MESES = { January: 1, February: 2, March: 3, April: 4, May: 5, June: 6, July: 7, August: 8, September: 9, October: 10, November: 11, December: 12 };
+        const MESES = {
+          january: 1, february: 2, march: 3, april: 4, may: 5, june: 6, july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
+          enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7, agosto: 8, septiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
+        };
         const limpiar = (html) => html.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")
           .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
           .replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim();
@@ -240,13 +243,17 @@ module.exports = async function handler(req, res) {
             const appid = Number((c.match(/recommended\/(\d+)\//) || c.match(/steamcommunity\.com\/app\/(\d+)/) || [])[1]);
             if (!appid) continue;
             const horas = Number(((c.match(/class="hours[^"]*">\s*([\d,.]+)/) || [])[1] || "0").replace(/,/g, ""));
-            const fecha = (c.match(/Posted\s+(\d{1,2})\s+([A-Za-z]+)(?:,\s*(\d{4}))?/) || []);
+            // La fecha llega como "Posted 8 November", "Posted November 8, 2025" o "Publicada el 8 de noviembre"
+            const posted = (c.match(/class="posted[^"]*">([\s\S]*?)<\/div>/) || [])[1] || "";
+            let fecha = posted.match(/(\d{1,2})\s+(?:de\s+)?([A-Za-zé]+)(?:,?\s*(?:de\s+)?(\d{4}))?/) || [];
+            const us = posted.match(/([A-Za-z]+)\s+(\d{1,2})(?:,\s*(\d{4}))?/);
+            if (!fecha[1] && us) fecha = [us[0], us[2], us[1], us[3]];
             const anio = fecha[3] || String(new Date().getFullYear());
             reviews.push({
               appid,
               recomienda: /icon_thumbsUp/.test(c),
               horas,
-              fecha: fecha[1] ? `${anio}-${String(MESES[fecha[2]] || 1).padStart(2, "0")}-${fecha[1].padStart(2, "0")}` : null,
+              fecha: fecha[1] && MESES[fecha[2].toLowerCase()] ? `${anio}-${String(MESES[fecha[2].toLowerCase()]).padStart(2, "0")}-${fecha[1].padStart(2, "0")}` : null,
               texto: limpiar((c.match(/class="content[^"]*">([\s\S]*?)<\/div>/) || [])[1] || ""),
               enlace: `https://steamcommunity.com/profiles/${steamid}/recommended/${appid}/`,
             });
