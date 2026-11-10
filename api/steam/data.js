@@ -42,22 +42,22 @@ const steam = (path, params) => {
 // Portadas reales de Steam. Muchos juegos ya no tienen la imagen en la dirección vieja
 // (cdn.cloudflare.steamstatic.com/steam/apps/<id>/library_600x900.jpg): Steam la guarda en una
 // carpeta con código propio. La tienda (GetItems con include_assets) dice cuál es.
-// Devuelve Map(appid → { cover: vertical 600x900, header: horizontal }).
+// Devuelve Map(appid → { cover: vertical 600x900, header: horizontal, generos: [..] }).
 const CDN_ASSETS = "https://shared.fastly.steamstatic.com/store_item_assets/";
 async function portadas(appids) {
   const mapa = new Map();
   const unicos = [...new Set(appids.map(Number).filter(Boolean))];
   for (let i = 0; i < unicos.length; i += 50) {
     const r = await steam("IStoreBrowseService/GetItems/v1/", {
-      input_json: JSON.stringify({ ids: unicos.slice(i, i + 50).map((appid) => ({ appid })), context: { language: "spanish", country_code: "CO" }, data_request: { include_assets: true } }),
+      input_json: JSON.stringify({ ids: unicos.slice(i, i + 50).map((appid) => ({ appid })), context: { language: "spanish", country_code: "CO" }, data_request: { include_assets: true, include_tag_count: 20 } }),
     }).catch(() => null);
     for (const it of r?.response?.store_items ?? []) {
       const a = it.assets;
-      if (!a?.asset_url_format) continue;
-      const url = (archivo) => archivo ? CDN_ASSETS + a.asset_url_format.replace("${FILENAME}", archivo) : null;
+      const url = (archivo) => a?.asset_url_format && archivo ? CDN_ASSETS + a.asset_url_format.replace("${FILENAME}", archivo) : null;
       mapa.set(it.appid ?? it.id, {
-        cover: url(a.library_capsule_2x || a.library_capsule),
-        header: url(a.header || a.main_capsule),
+        cover: url(a?.library_capsule_2x || a?.library_capsule),
+        header: url(a?.header || a?.main_capsule),
+        generos: generosDe(it),
       });
     }
   }
@@ -69,9 +69,30 @@ async function conPortadas(lista) {
   const mapa = await portadas(lista.map((g) => g.appid));
   for (const g of lista) {
     const p = mapa.get(Number(g.appid));
-    if (p) { if (p.cover) g.cover = p.cover; if (p.header) g.header = p.header; }
+    if (p) { if (p.cover) g.cover = p.cover; if (p.header) g.header = p.header; g.generos = p.generos; }
   }
   return lista;
+}
+
+// Etiquetas de Steam (tagid) → géneros de SaveSlot (los mismos nombres que usa api/igdb.js).
+// Steam no tiene "género" fijo: cada juego trae sus etiquetas ordenadas por votos.
+const GENERO_DE_ETIQUETA = {
+  19: "Acción", 21: "Aventura", 122: "RPG", 4231: "RPG", 4434: "RPG",
+  1774: "Shooter", 1663: "Shooter", 3814: "Shooter", 1625: "Plataformas", 5379: "Plataformas",
+  701: "Deportes", 699: "Carreras", 1743: "Pelea", 1664: "Puzzle",
+  9: "Estrategia", 1676: "Estrategia", 1741: "Estrategia", 599: "Simulación",
+  1667: "Terror", 1721: "Terror", 3978: "Terror", 1662: "Supervivencia",
+  1716: "Roguelike", 3959: "Roguelike", 1628: "Metroidvania",
+};
+// Hasta 3 géneros por juego, en el orden de sus etiquetas más votadas
+function generosDe(item) {
+  const generos = [];
+  for (const t of item.tagids ?? []) {
+    const g = GENERO_DE_ETIQUETA[t];
+    if (g && !generos.includes(g)) generos.push(g);
+    if (generos.length === 3) break;
+  }
+  return generos;
 }
 
 // Valida el JWT de Supabase y devuelve el usuario
