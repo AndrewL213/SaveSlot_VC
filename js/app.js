@@ -111,7 +111,7 @@ function juegoDeSteam(g) {
     id: 'steam-' + g.appid, appid: g.appid, nombre: g.name, nombreCorto: g.name,
     // La portada real la manda api/steam (g.cover); la dirección vieja queda solo como respaldo
     portada: g.cover || cdn + 'library_600x900.jpg', portadaRespaldo: g.header || cdn + 'header.jpg', color: null,
-    generos: [], plataformas: ['PC (Steam)'], horas: g.hours || 0, ultimaVez: g.last_played || 0, steam: true
+    generos: g.generos || [], plataformas: ['PC (Steam)'], horas: g.hours || 0, ultimaVez: g.last_played || 0, steam: true
   };
 }
 
@@ -2929,18 +2929,28 @@ function pantallaPerfil() {
   dibujarRecientes();
   if (typeof guardadoSteam !== 'undefined' && guardadoSteam) usarPerfilSteam(guardadoSteam);
 
-  // Géneros más jugados (horas del diario por género)
-  var horas = {};
-  diario.forEach(function (d) {
-    var j = buscarPorId('juegos', d.juego);
-    if (j) j.generos.forEach(function (g) { horas[g] = (horas[g] || 0) + (d.horas || 0) / j.generos.length; });
-  });
-  var total = Object.keys(horas).reduce(function (s, g) { return s + horas[g]; }, 0) || 1;
-  var top = Object.keys(horas).map(function (g) { return [g, horas[g]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 5);
-  var mayor = top.length ? top[0][1] : 1;
-  document.getElementById('generos-perfil').innerHTML = top.map(function (g) {
-    return '<span>' + escapar(g[0]) + '</span><span class="medidor"><span class="medidor__barra" data-ancho="' + Math.round(g[1] / mayor * 100) + '"></span></span><b>' + Math.round(g[1] / total * 100) + '%</b>';
-  }).join('') || '<span class="tarjeta__texto">Registra juegos para ver tus géneros.</span>';
+  // Géneros más jugados: horas del diario y, con Steam vinculada, horas de la biblioteca de Steam
+  // (los géneros de Steam salen de sus etiquetas; api/steam/data los manda en "generos")
+  function dibujarGeneros(biblioteca) {
+    var horas = {};
+    function sumar(generos, h) {
+      if (!generos || !generos.length || !h) return;
+      generos.forEach(function (g) { horas[g] = (horas[g] || 0) + h / generos.length; });
+    }
+    diario.forEach(function (d) {
+      var j = buscarPorId('juegos', d.juego);
+      if (j) sumar(j.generos, d.horas || 0);
+    });
+    (biblioteca || []).forEach(function (j) { sumar(j.generos, j.horas); });
+    var total = Object.keys(horas).reduce(function (s, g) { return s + horas[g]; }, 0) || 1;
+    var top = Object.keys(horas).map(function (g) { return [g, horas[g]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 5);
+    var mayor = top.length ? top[0][1] : 1;
+    document.getElementById('generos-perfil').innerHTML = top.map(function (g) {
+      return '<span>' + escapar(g[0]) + '</span><span class="medidor"><span class="medidor__barra" data-ancho="' + Math.round(g[1] / mayor * 100) + '"></span></span><b>' + Math.round(g[1] / total * 100) + '%</b>';
+    }).join('') || '<span class="tarjeta__texto">' + ((perfil.accounts || {}).Steam ? 'Calculando tus géneros con tus horas de Steam…' : 'Registra juegos en tu diario o vincula Steam para ver tus géneros.') + '</span>';
+    aplicarColores(document.getElementById('generos-perfil'));
+  }
+  dibujarGeneros(bibliotecaSteam);
   document.getElementById('generos-favoritos').textContent = perfil.genres.length ? 'Favoritos: ' + perfil.genres.join(', ') : '';
 
   // Calificaciones del 1 al 10
@@ -2953,8 +2963,21 @@ function pantallaPerfil() {
   histograma.innerHTML = cuentas10.map(function (c, i) {
     return '<span class="histograma__barra" data-h="' + Math.round(c / maximo * 100) + '" title="' + (i + 1) + '/10: ' + c + ' juegos"></span>';
   }).join('');
-  histograma.setAttribute('aria-label', 'Distribución de tus calificaciones. Promedio ' + formatearNota(promedio));
-  document.getElementById('promedio-perfil').textContent = formatearPromedio(promedio) + ' · ' + calificados.length + ' juegos';
+  histograma.setAttribute('aria-label', calificados.length ? 'Distribución de tus calificaciones. Promedio ' + formatearNota(promedio) : 'Todavía no calificas juegos');
+  document.getElementById('promedio-perfil').textContent = calificados.length ? formatearPromedio(promedio) + ' · ' + calificados.length + ' juegos' : '—';
+  // Sin notas todavía: lo explica. Steam no usa notas del 1 al 10, solo recomendar o no
+  if (!calificados.length) {
+    // Sin notas, el histograma vacío (rayas planas) confunde: se oculta y se deja el mensaje
+    histograma.hidden = true;
+    if (histograma.nextElementSibling) histograma.nextElementSibling.hidden = true;
+    histograma.insertAdjacentHTML('afterend', '<p class="tarjeta__texto" id="calificaciones-vacio">Aún no calificas juegos en SaveSlot. <a href="buscar-juegos.html">Califica uno</a></p>');
+    var resenasSteam = (perfil.accounts || {}).Steam ? (leerMemoria('steamResenas', null) || { reviews: [] }).reviews : [];
+    if (resenasSteam.length) {
+      var si = resenasSteam.filter(function (r) { return r.recomienda; }).length;
+      document.getElementById('calificaciones-vacio').insertAdjacentHTML('beforeend',
+        '<br>En Steam: <b>' + si + ' 👍</b> recomendados y <b>' + (resenasSteam.length - si) + ' 👎</b> no recomendados (Steam no usa notas).');
+    }
+  }
 
   // Biblioteca de Steam: los 6 más jugados (antes de la lista de deseos)
   function dibujarBiblioteca(lista) {
@@ -2969,6 +2992,7 @@ function pantallaPerfil() {
     }).join('') || '<div class="vacio">Trayendo tu biblioteca de Steam…</div>';
     var dato = document.querySelector('#estadisticas-perfil a[href="biblioteca.html"] .dato__valor');
     if (dato) dato.textContent = lista.length;
+    dibujarGeneros(lista);
   }
   if ((perfil.accounts || {}).Steam) {
     dibujarBiblioteca(bibliotecaSteam);
