@@ -27,8 +27,10 @@ Digitales 3. Más contexto en README.md.
   portadas de juegos que trae IGDB (images.igdb.com), siempre con crédito a IGDB.
 - css/: estilos. tokens.css (decisiones base), components.css
   (componentes) y styles.css (estilos generales de las pantallas).
-- js/: código. app.js (comportamiento) y data.js (datos simulados,
-  separados del diseño).
+- js/: código. app.js (comportamiento), data.js (datos simulados,
+  separados del diseño) y config.js (dirección y clave pública de Supabase).
+  Cada página carga, en este orden: supabase-js (versión fija, con integrity),
+  js/config.js, js/data.js y js/app.js.
 - api/: funciones de Vercel que usan claves secretas (por ejemplo,
   api/igdb.js, la consulta a IGDB). JavaScript sin paso de compilación.
 - index.html: la pantalla de inicio, la puerta de entrada de la app.

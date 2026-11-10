@@ -10,6 +10,15 @@
      reemplazan por consultas a la base de datos.
    ========================================================================== */
 
+/* ---------- Supabase ---------- */
+
+// Cliente de Supabase: la librería supabase-js (cargada en cada página) con la
+// dirección y la clave pública de js/config.js. Si la librería no cargó (por
+// ejemplo, sin internet), queda en null y la app sigue con los datos de data.js.
+var clienteSupabase = (window.supabase && typeof SUPABASE_URL !== 'undefined')
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_CLAVE_PUBLICA)
+  : null;
+
 /* ---------- Datos ---------- */
 
 // Devuelve una copia de la lista pedida ("juegos", "resenas", "eventos"…).
