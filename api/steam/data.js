@@ -125,17 +125,23 @@ module.exports = async function handler(req, res) {
           .filter((g) => g.playtime_forever > 0 && g.has_community_visible_stats)
           .sort((a, b) => b.playtime_forever - a.playtime_forever)
           .slice(0, 30);
+        let privados = 0;
         const porJuego = await Promise.all(jugados.map(async (g) => {
           try {
             const d = await steam("ISteamUserStats/GetPlayerAchievements/v1/", { steamid, appid: g.appid, l: "spanish" });
             const lista = d.playerstats?.achievements ?? [];
             if (!lista.length) return null;
             return { appid: g.appid, name: g.name, total: lista.length, unlocked: lista.filter((a) => a.achieved === 1).length, lista };
-          } catch {
+          } catch (e) {
+            if (/Steam 403/.test(e.message)) privados++;
             return null;
           }
         }));
         const games = porJuego.filter(Boolean);
+        // Steam responde 403 cuando los "Detalles de juego" del perfil son privados
+        if (!games.length && privados) {
+          return json(res, { error: "Tus detalles de juego en Steam son privados", private: true }, 403);
+        }
 
         // Rareza: % global de jugadores que tiene cada logro (10 juegos más jugados)
         const raros = [];
