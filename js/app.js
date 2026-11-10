@@ -1401,7 +1401,11 @@ function pantallaJuego() {
   mostrarPestana('resenas');
 
   // Trae las reseñas de Steam (busca el juego en Steam por su nombre)
-  fetch('/api/steam/resenas?' + (juego.appid ? 'appid=' + encodeURIComponent(juego.appid) : 'nombre=' + encodeURIComponent(juego.nombre)))
+  // Si el juego está en tu biblioteca de Steam, se usa su número (más exacto que buscar por nombre)
+  var normalizar = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
+  var enBiblioteca = leerBibliotecaSteam().find(function (j) { return normalizar(j.nombre) === normalizar(juego.nombre) || normalizar(j.nombre) === normalizar(juego.nombreCorto); });
+  var appid = juego.appid || (enBiblioteca && enBiblioteca.appid);
+  fetch('/api/steam/resenas?' + (appid ? 'appid=' + encodeURIComponent(appid) : 'nombre=' + encodeURIComponent(juego.nombre)))
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (datos) {
       if (!datos || !datos.appid) return;
