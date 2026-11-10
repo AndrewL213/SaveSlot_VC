@@ -810,8 +810,9 @@ function htmlJuegoMini(juego, ranking, detalle) {
       '<span class="solo-lectores">, abrir la ficha del juego</span>' +
     '</a>' +
     '<div class="juego__meta">' +
-      '<span class="tarjeta__texto">' + escapar(juego.generos[0] || '') + '</span>' +
-      (detalle ? '<span class="tarjeta__texto">' + detalle + '</span>' : juego.calificacion != null ? '<span class="nota nota--texto" aria-label="Nota de la comunidad ' + formatearNota(juego.calificacion) + ' de 10">' + formatearNota(juego.calificacion) + '</span>' : '') +
+      // Con detalle (por ejemplo, jugadores de Steam) se muestra solo eso; si no, el género y la nota
+      (detalle ? '<span class="tarjeta__texto">' + detalle + '</span>' : '<span class="tarjeta__texto">' + escapar(juego.generos[0] || '') + '</span>') +
+      (!detalle && juego.calificacion != null ? '<span class="nota nota--texto" aria-label="Nota de la comunidad ' + formatearNota(juego.calificacion) + ' de 10">' + formatearNota(juego.calificacion) + '</span>' : '') +
     '</div>' +
   '</li>';
 }
@@ -826,7 +827,8 @@ function conDatosLocales(juego) {
 function llenarMasJugadosSteam(rejilla) {
   return preguntarIgdb({ steam: 1 }).then(function (datos) {
     if (!datos.juegos || !datos.juegos.length) return false;
-    rejilla.innerHTML = datos.juegos.map(function (j, i) {
+    // 6, como las demás rejillas de portadas: así caben en una fila en computador
+    rejilla.innerHTML = datos.juegos.slice(0, 6).map(function (j, i) {
       return htmlJuegoMini(conDatosLocales(j), i + 1, j.jugadoresSteam ? formatearNumero(j.jugadoresSteam) + ' jugadores' : '');
     }).join('');
     aplicarColores(rejilla);
@@ -976,9 +978,23 @@ function pantallaIndex() {
       '<b class="portada__titulo">' + escapar(juego.nombreCorto) + '</b></div>';
   }).join('');
 
-  // Mejores juegos de la semana: los 6 de mejor calificación
-  var mejores = juegos.slice().sort(function (a, b) { return (b.calificacion || 0) - (a.calificacion || 0); }).slice(0, 6);
-  document.getElementById('mejores-juegos').innerHTML = mejores.map(function (j, i) { return htmlJuegoMini(j, i + 1); }).join('');
+  // Mejores juegos de la semana: los 6 que más gente está jugando según IGDB.
+  // Si IGDB no responde: los 6 juegos de ejemplo con mejor calificación.
+  var cajaMejores = document.getElementById('mejores-juegos');
+  preguntarIgdb({ populares: 1 }).then(function (d) {
+    if (!d.juegos || !d.juegos.length) throw new Error('sin juegos');
+    return d.juegos.slice(0, 6).map(conDatosLocales);
+  }).catch(function () {
+    return juegos.slice().sort(function (a, b) { return (b.calificacion || 0) - (a.calificacion || 0); }).slice(0, 6);
+  }).then(function (mejores) {
+    cajaMejores.innerHTML = mejores.map(function (j, i) { return htmlJuegoMini(j, i + 1); }).join('');
+    aplicarColores(cajaMejores);
+  });
+
+  // Lo más jugado en Steam (se ve solo si Steam e IGDB responden)
+  llenarMasJugadosSteam(document.getElementById('steam-juegos')).then(function (hay) {
+    document.getElementById('steam-seccion').hidden = !hay;
+  });
 
   // Vistos recientemente: solo si ya se abrió algún juego
   var vistos = leerMemoria('recentGames', []).map(function (id) { return buscarPorId('juegos', id); }).filter(Boolean);
@@ -1205,17 +1221,15 @@ function pantallaBuscar() {
 }
 
 // 4. Juego random
-function pantallaRandom() {
-  var juegos = obtenerDatos('juegos');
-  var generos = [];
-  juegos.forEach(function (j) {
-    j.generos.forEach(function (g) { if (generos.indexOf(g) === -1) generos.push(g); });
-  });
-  generos.sort();
+// Géneros que entiende api/igdb.js (FILTRO_GENERO) para el juego random
+var GENEROS_RANDOM = ['Acción', 'Aventura', 'Carreras', 'Deportes', 'Estrategia', 'Metroidvania', 'Pelea', 'Plataformas', 'Puzzle', 'Roguelike', 'RPG', 'Shooter', 'Simulación', 'Supervivencia', 'Terror'];
 
+function pantallaRandom() {
+  var generos = GENEROS_RANDOM;
   var parametro = new URLSearchParams(location.search).get('genero');
   var genero = generos.indexOf(parametro) !== -1 ? parametro : 'Aventura';
   var actual = null;
+  var pedidoActual = 0; // si se cambia de género rápido, solo cuenta la última respuesta
   var cajaGeneros = document.getElementById('generos');
   var cajaSugerencia = document.getElementById('sugerencia');
 
@@ -1223,37 +1237,67 @@ function pantallaRandom() {
     return '<button class="chip" type="button" data-genero="' + escapar(g) + '" aria-pressed="false">' + escapar(g) + '</button>';
   }).join('');
 
-  // Elige un juego del género al azar, distinto al que se ve ahora
-  function sortear() {
-    var opciones = juegos.filter(function (j) { return j.generos.indexOf(genero) !== -1; });
+  // Sin IGDB: un juego de data.js del género, distinto al que se ve ahora
+  function sortearLocal() {
+    var opciones = obtenerDatos('juegos').filter(function (j) { return j.generos.indexOf(genero) !== -1; });
     var otros = opciones.filter(function (j) { return !actual || j.id !== actual.id; });
     var lista = otros.length ? otros : opciones;
-    return lista[Math.floor(Math.random() * lista.length)];
+    return lista.length ? lista[Math.floor(Math.random() * lista.length)] : null;
   }
 
-  function mostrar() {
-    cajaGeneros.querySelectorAll('[data-genero]').forEach(function (b) {
-      b.setAttribute('aria-pressed', String(b.dataset.genero === genero));
-    });
-    var cantidad = juegos.filter(function (j) { return j.generos.indexOf(genero) !== -1; }).length;
-    var j = actual = sortear();
+  // Le pide a IGDB un juego al azar del género (entre los 300 más conocidos), distinto al actual
+  function sortear() {
+    var pedido = { random: 1, genero: genero };
+    if (actual) pedido.excepto = actual.id;
+    return preguntarIgdb(pedido).then(function (d) {
+      if (!d.juego) return sortearLocal();
+      guardarJuegoIgdb(d.juego);
+      return conDatosLocales(d.juego);
+    }).catch(sortearLocal);
+  }
+
+  function dibujar(j) {
+    if (!j) {
+      cajaSugerencia.innerHTML = '<div class="vacio"><b>No encontramos un juego de ' + escapar(genero.toLowerCase()) + '.</b><span>Prueba con otro género o vuelve a intentarlo en un rato.</span></div>';
+      return;
+    }
     cajaSugerencia.innerHTML =
       '<div class="portada sugerencia__portada"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</div>' +
       '<div class="sugerencia__texto">' +
         '<span class="antetitulo">Tu juego random de ' + escapar(genero.toLowerCase()) + '</span>' +
         '<h2 class="titulo-pagina">' + escapar(j.nombre) + '</h2>' +
-        '<p>' + escapar(j.descripcion) + '</p>' +
+        (j.descripcion ? '<p>' + escapar(recortarTexto(j.descripcion, 280)) + '</p>' : '') +
         '<div class="en-fila">' +
           '<span class="etiqueta etiqueta--contorno">Historia: ' + textoHoras(j) + '</span>' +
-          '<span class="etiqueta etiqueta--contorno">Dificultad: ' + escapar(j.dificultad) + '/10</span>' +
-          '<span class="etiqueta etiqueta--contorno">Nota: ' + formatearNota(j.calificacion) + '/10</span>' +
+          (j.dificultad ? '<span class="etiqueta etiqueta--contorno">Dificultad: ' + escapar(j.dificultad) + '/10</span>' : '') +
+          (j.calificacion != null ? '<span class="etiqueta etiqueta--contorno">Nota: ' + formatearNota(j.calificacion) + '/10</span>' : '') +
+          (j.anio ? '<span class="etiqueta etiqueta--contorno">' + escapar(j.anio) + '</span>' : '') +
         '</div>' +
         '<div class="en-fila">' +
           '<a class="boton" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '">Ver juego</a>' +
-          '<button class="boton boton--secundario" type="button" id="otro-juego"' + (cantidad < 2 ? ' disabled title="Solo hay un juego de este género por ahora"' : '') + '>Dame otro</button>' +
+          '<button class="boton boton--secundario" type="button" id="otro-juego">Dame otro</button>' +
         '</div>' +
       '</div>';
     aplicarColores(cajaSugerencia);
+  }
+
+  function mostrar(conFoco) {
+    cajaGeneros.querySelectorAll('[data-genero]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.genero === genero));
+    });
+    var numero = ++pedidoActual;
+    var otro = document.getElementById('otro-juego');
+    if (otro) { otro.disabled = true; otro.textContent = 'Buscando…'; }
+    else cajaSugerencia.innerHTML = '<div class="vacio"><b>Buscando un juego…</b></div>';
+    cajaSugerencia.setAttribute('aria-busy', 'true');
+    sortear().then(function (j) {
+      if (numero !== pedidoActual) return;
+      cajaSugerencia.removeAttribute('aria-busy');
+      actual = j;
+      dibujar(j);
+      // el botón se vuelve a dibujar: no perder el foco
+      if (conFoco && document.getElementById('otro-juego')) document.getElementById('otro-juego').focus();
+    });
   }
 
   cajaGeneros.addEventListener('click', function (e) {
@@ -1261,12 +1305,11 @@ function pantallaRandom() {
     if (!chip) return;
     genero = chip.dataset.genero;
     actual = null;
+    history.replaceState(null, '', '?genero=' + encodeURIComponent(genero));
     mostrar();
   });
   cajaSugerencia.addEventListener('click', function (e) {
-    if (!e.target.closest('#otro-juego')) return;
-    mostrar();
-    document.getElementById('otro-juego').focus(); // el botón se vuelve a dibujar: no perder el foco
+    if (e.target.closest('#otro-juego')) mostrar(true);
   });
 
   mostrar();
@@ -1795,9 +1838,15 @@ function mostrarJuego(juego) {
 
 // 8. Escribir reseña (y 9. Ventana: Publicación confirmada)
 function pantallaEscribir() {
+  var id = idDeJuego(new URLSearchParams(location.search).get('id'));
+  // Cualquier juego de IGDB (queda guardado, para que la reseña y el diario sepan su nombre y portada)
+  pedirJuego(id).then(mostrarEscribir, function (error) {
+    location.replace(rutaPagina('404.html') + (error && error.estado === 404 ? '?tipo=juego' : '?tipo=api&servicio=IGDB'));
+  });
+}
+
+function mostrarEscribir(juego) {
   var parametros = new URLSearchParams(location.search);
-  var juego = buscarPorId('juegos', idDeJuego(parametros.get('id')));
-  if (!juego) { location.replace(rutaPagina('404.html') + '?tipo=juego'); return; }
   var MINIMO = 50;
   var tipo = ['guia', 'clip'].indexOf(parametros.get('tipo')) !== -1 ? parametros.get('tipo') : 'resena';
   var calificacion = 8;

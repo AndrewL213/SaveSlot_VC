@@ -149,11 +149,13 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   1. Título, buscador y 3 portadas destacadas
   2. Atajos: Juego random, Recomiéndame algo corto, Torneos de esta semana
   3. Vistos recientemente (solo si ya visitó juegos)
-  4. Mejores juegos de la semana
-  5. Reseñas destacadas
-  6. Eventos: el evento del mes y un sorteo
+  4. Mejores juegos de la semana (los 6 que más gente marca como "jugando ahora" en IGDB)
+  5. Lo más jugado en Steam (los 6 juegos de PC con más jugadores a la vez ayer; se ve solo si Steam responde)
+  6. Reseñas destacadas
+  7. Eventos: el evento del mes y un sorteo
 - **Qué funciona de verdad:**
-  - Buscador y Mejores juegos de la semana: Real (IGDB)
+  - Buscador y Mejores juegos de la semana: Real (IGDB). Si IGDB no responde, se ven los juegos de ejemplo mejor calificados
+  - Lo más jugado en Steam: Real (lista de Steam, datos de IGDB)
   - Reseñas destacadas y votar "útil": Real (Supabase)
   - Vistos recientemente: Real (Supabase; sin sesión, en el navegador)
   - Eventos: Real (Supabase)
@@ -182,7 +184,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   3. Lista de resultados con portada, de 24 en 24 con "Ver más juegos" (sin texto); con texto, hasta 20
   4. Filtros: género, plataforma, tipo, duración de la historia, año. Si lo escrito es un género ("terror"), se marca ese filtro
   5. Botones Juego random y Limpiar filtros
-  6. Lo más jugado en Steam (solo sin búsqueda ni filtros): los 10 juegos de PC con más jugadores a la vez ayer, con su puesto y sus jugadores; cada uno abre su ficha
+  6. Lo más jugado en Steam (solo sin búsqueda ni filtros): los 6 juegos de PC con más jugadores a la vez ayer, con su puesto y sus jugadores; cada uno abre su ficha
 - **Qué funciona de verdad:**
   - Búsqueda y filtros: Real (IGDB). Si IGDB no responde, busca en los juegos de ejemplo
   - Lo más jugado en Steam: Real (lista de Steam, datos de IGDB)
@@ -199,10 +201,10 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Archivo de diseño:** disenos/random.html
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda recibir una sugerencia al azar de un género. Sabemos que funciona si la persona abre el juego sugerido.
 - **Contenido:**
-  1. Selector de género
-  2. Juego sugerido (portada, datos y enlace a su página)
+  1. Selector de género (15 géneros: Acción, Aventura, Carreras, Deportes, Estrategia, Metroidvania, Pelea, Plataformas, Puzzle, Roguelike, RPG, Shooter, Simulación, Supervivencia y Terror)
+  2. Juego sugerido (portada, descripción corta, horas de la historia, año, y nota y dificultad si ya tiene reseñas; enlace a su página)
   3. Botón para pedir otro
-- **Qué funciona de verdad:** Sugerencia: Real (IGDB)
+- **Qué funciona de verdad:** Sugerencia: Real (IGDB, un juego al azar entre los 300 más conocidos del género). Si IGDB no responde, sugiere uno de los juegos de ejemplo
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
@@ -289,6 +291,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - No deja publicar con menos de 50 caracteres y muestra el error.
   - Al publicar, la reseña aparece en el juego, en el Diario y en el Historial.
   - Sin sesión iniciada, sale la ventana "Necesitas una cuenta".
+  - Sirve para cualquier juego de IGDB (`?id=slug`), aunque no se haya abierto antes.
 
 ### 9. Ventana: Publicación confirmada
 - **Archivo de diseño:** disenos/resena.html (ventana emergente "Reseña publicada" / "Guía publicada")

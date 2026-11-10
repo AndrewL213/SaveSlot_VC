@@ -1834,7 +1834,7 @@ const DATOS = {
       id: "demo",
       codigo: "DEMO",
       titulo: "Estás viendo el prototipo de SaveSlot",
-      texto: "Steam ya está conectado: si entras con Steam, tu biblioteca, logros, lista de deseos, juegos recientes y reseñas son reales. El resto (catálogo, cuentas con correo e IA) todavía usa datos de ejemplo y guarda tu actividad solo en este navegador.",
+      texto: "Steam ya está conectado: si entras con Steam, tu biblioteca, logros, lista de deseos, juegos recientes y reseñas son reales. El catálogo de juegos también es real (IGDB). El resto (cuentas con correo, eventos, amigos e IA) todavía usa datos de ejemplo y guarda tu actividad solo en este navegador.",
       consejos: [
         "Entra con Steam para ver tus datos reales, o usa la cuenta de demostración para probar todo lo demás.",
         "Puedes crear una cuenta, reseñar, llenar tu diario y chatear con MatchPlay en modo demo.",
@@ -1859,9 +1859,9 @@ const DATOS = {
     {
       id: "s1",
       servicio: "Catálogo de juegos",
-      proveedor: "IGDB (Twitch)",
-      estado: "demo",
-      texto: "Modo demo"
+      proveedor: "IGDB (Twitch) + lo más jugado en Steam",
+      estado: "conectado",
+      texto: "Conectado"
     },
     {
       id: "s2",

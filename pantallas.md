@@ -11,9 +11,9 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 1. Inicio | `index.html` | ✅ | ✅ | ✅ | ⬜ |
+| 1. Inicio | `index.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
-| 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ | ⬜ |
+| 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ | ⬜ |
 | 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 7. Ventana: Dificultad de 1 a 10 | dentro de `pages/detalle-juego.html` | ✅ | ✅ | ✅ | ⬜ |
@@ -22,7 +22,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ | ⬜ |
+| 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ | ⬜ |
 | 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ✅ | ✅ | ⬜ |
 | 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ | ⬜ |
@@ -73,6 +73,8 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 - **Notificaciones**: no muestra el aviso de comentarios del diseño («Kenneth y Daniela comentaron…»), porque la spec solo define avisos de votos «útil» y de cierre de inscripciones; las ventanas del kit no llevan el ícono de arriba del diseño.
 - **Avatares**: los de amigos no llevan el color de fondo de cada persona como en el diseño (el avatar del kit no tiene esa opción).
 - **Perfil de otro usuario**: «Juegos» cuenta los juegos que la persona calificó (el diseño suma un número fijo); el avatar grande es azul y no del color de la persona.
+- **Inicio**: «Mejores juegos de la semana» sale de IGDB («jugando ahora»). Tiene una sección «Lo más jugado en Steam» que el diseño no traía. El aviso de arriba y el pie ya dicen que el catálogo es real (IGDB).
+- **Juego random**: los géneros ya no salen de los juegos de ejemplo, sino de los 15 que entiende IGDB. Nota y dificultad solo se ven si el juego ya tiene reseñas en SaveSlot.
 - **Buscar juegos**: busca en todo IGDB (de 24 en 24, con «Ver más juegos»). Tiene una sección «Lo más jugado en Steam» que el diseño no traía (solo se ve sin búsqueda ni filtros). Algunas búsquedas traen al final juegos poco conocidos o repetidos de IGDB.
 - **Detalle de juego**: abre cualquier juego de IGDB (no solo los 12 de ejemplo); «Si te gusta, prueba» usa los parecidos de IGDB. Tiene un apartado «Sobre el juego» (la descripción, con «Leer más») que el diseño no traía. Las horas de la historia salen de IGDB solo si las reportaron 10 jugadores o más; si no, dice «Sin datos» (u «Online» en juegos solo online) y queda el enlace «Ver en HowLongToBeat».
 - **Traducción de descripciones (api/igdb.js)**: usa por ahora el enlace gratis de Google Translate, que no es oficial. Al conectar Supabase hay que guardar cada traducción una sola vez y pasar a DeepL (poner `DEEPL_API_KEY` en Vercel).
