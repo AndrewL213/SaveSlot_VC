@@ -2008,6 +2008,87 @@ legend.grupo-campo__etiqueta {
   line-height: var(--interlineado-titulos);
 }
 
+/* El botón de la cuenta abre el menú de la cuenta (no es un enlace) */
+button.navegacion__usuario {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* ---------- Menú de la cuenta ----------
+   <div class="menu-usuario">
+     <button class="navegacion__usuario" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-cuenta">…</button>
+     <div class="menu-usuario__lista" id="menu-cuenta" role="menu" hidden>
+       <a class="menu-usuario__opcion" role="menuitem" href="perfil.html">Mi perfil</a>
+       <a class="menu-usuario__opcion" role="menuitem" href="editar-perfil.html">Editar perfil</a>
+       <span class="menu-usuario__separador" role="separator"></span>
+       <button class="menu-usuario__opcion menu-usuario__opcion--peligro" role="menuitem" type="button">Cerrar sesión</button>
+     </div>
+   </div> */
+.menu-usuario {
+  position: relative;
+}
+
+.menu-usuario__lista {
+  position: absolute;
+  top: calc(100% + var(--espacio-2));
+  right: 0;
+  z-index: 50;
+  min-width: calc(var(--espacio-8) * 5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+  padding: var(--espacio-2);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie-elevada);
+  box-shadow: var(--sombra-media);
+}
+
+.menu-usuario__lista[hidden] {
+  display: none;
+}
+
+.menu-usuario__opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  width: 100%;
+  min-height: var(--alto-control-sm);
+  padding: var(--espacio-2) var(--espacio-3);
+  border: 0;
+  border-radius: var(--radio-md);
+  background: none;
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--texto-sm);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu-usuario__opcion:hover,
+.menu-usuario__opcion:focus-visible {
+  background: var(--velo-fuerte);
+  color: var(--color-texto);
+}
+
+.menu-usuario__opcion--peligro {
+  color: var(--color-error);
+}
+
+.menu-usuario__opcion--peligro:hover,
+.menu-usuario__opcion--peligro:focus-visible {
+  background: color-mix(in srgb, var(--color-error) 15%, transparent);
+  color: var(--color-error);
+}
+
+.menu-usuario__separador {
+  height: var(--borde-fino);
+  margin: var(--espacio-1) 0;
+  background: var(--color-borde);
+}
+
 @media (max-width: 700px) {
   /* Sin desenfoque: si no, la barra fija de abajo queda atrapada dentro del header */
   .navegacion {
