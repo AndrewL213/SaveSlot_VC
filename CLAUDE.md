@@ -23,8 +23,10 @@ Digitales 3. Más contexto en README.md.
 ## Estructura del proyecto
 - disenos/: diseños originales. Solo de referencia: nunca los modifiques.
 - assets/: todas las imágenes, logos e íconos de la app. Usa siempre
-  las de aquí, nunca links de imágenes de internet. Única excepción: las
-  portadas de juegos que trae IGDB (images.igdb.com), siempre con crédito a IGDB.
+  las de aquí, nunca links de imágenes de internet. Únicas excepciones: las
+  portadas de juegos que trae IGDB (images.igdb.com), siempre con crédito a IGDB,
+  y las de la biblioteca de Steam del usuario (cdn.cloudflare.steamstatic.com),
+  siempre con crédito a Steam.
 - css/: estilos. tokens.css (decisiones base), components.css
   (componentes) y styles.css (estilos generales de las pantallas).
 - js/: código. app.js (comportamiento), data.js (datos simulados,
@@ -32,7 +34,8 @@ Digitales 3. Más contexto en README.md.
   Cada página carga, en este orden: supabase-js (versión fija, con integrity),
   js/config.js, js/data.js y js/app.js.
 - api/: funciones de Vercel que usan claves secretas (por ejemplo,
-  api/igdb.js, la consulta a IGDB). JavaScript sin paso de compilación.
+  api/igdb.js, la consulta a IGDB, y api/steam/, el inicio de sesión y los
+  datos de Steam: perfil, biblioteca y logros). JavaScript sin paso de compilación.
 - index.html: la pantalla de inicio, la puerta de entrada de la app.
   Las demás pantallas van en la carpeta pages/.
 - 404.html: la página de error, también en la raíz (Vercel la usa para
