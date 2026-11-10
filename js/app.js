@@ -606,11 +606,22 @@ function prepararEncabezado() {
     '<a class="boton boton--secundario boton--icono navegacion__ocultar-movil" href="' + rutaPagina('amigos.html') + '" aria-label="Amigos">' + ICONO_AMIGOS + '</a>' +
     '<button class="boton boton--secundario boton--icono" type="button" data-notificaciones aria-label="Notificaciones, ' + cantidad + ' nuevas">' + ICONO_CAMPANA +
       (cantidad ? '<span class="contador contador--destacado navegacion__contador" aria-hidden="true">' + cantidad + '</span>' : '') + '</button>' +
-    '<a class="navegacion__usuario" href="' + rutaPagina('perfil.html') + '">' +
-      '<span class="avatar avatar--sm">' + escapar(sesion.initials) + '</span>' +
-      '<span><span class="navegacion__nombre">' + escapar(String(sesion.name || '').split(' ')[0]) + '</span>' +
-      '<span class="navegacion__nivel">Nivel ' + escapar(nivel) + '</span></span>' +
-    '</a>';
+    // Menú de la cuenta: Mi perfil, Editar perfil y Cerrar sesión
+    '<div class="menu-usuario">' +
+      '<button class="navegacion__usuario" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-cuenta" data-menu-cuenta>' +
+        '<span class="avatar avatar--sm">' + escapar(sesion.initials) + '</span>' +
+        '<span><span class="navegacion__nombre">' + escapar(String(sesion.name || '').split(' ')[0]) + '</span>' +
+        '<span class="navegacion__nivel">Nivel ' + escapar(nivel) + '</span></span>' +
+      '</button>' +
+      '<div class="menu-usuario__lista" id="menu-cuenta" role="menu" hidden>' +
+        '<a class="menu-usuario__opcion" role="menuitem" href="' + rutaPagina('perfil.html') + '">Mi perfil</a>' +
+        '<a class="menu-usuario__opcion" role="menuitem" href="' + rutaPagina('editar-perfil.html') + '">Editar perfil</a>' +
+        '<span class="menu-usuario__separador" role="separator"></span>' +
+        '<button class="menu-usuario__opcion menu-usuario__opcion--peligro" role="menuitem" type="button" data-cerrar-sesion>Cerrar sesión</button>' +
+      '</div>' +
+    '</div>';
+
+  activarMenuCuenta(acciones);
 
   acciones.querySelector('[data-notificaciones]').addEventListener('click', function () {
     // 26. Ventana: Notificaciones (solicitudes de amistad y avisos, cada uno con su enlace)
@@ -635,6 +646,42 @@ function prepararEncabezado() {
   }
 }
 
+// Cierra la sesión (la de SaveSlot y la de Steam/Supabase) y vuelve al inicio
+function cerrarSesion() {
+  guardarMemoria('session', null);
+  var salir = function () { location.href = rutaPagina('index.html'); };
+  if (clienteSupabase) clienteSupabase.auth.signOut().then(salir, salir);
+  else salir();
+}
+
+// Abre y cierra el menú de la cuenta: con clic, fuera del menú o con Escape
+function activarMenuCuenta(contenedor) {
+  var boton = contenedor.querySelector('[data-menu-cuenta]');
+  var lista = contenedor.querySelector('#menu-cuenta');
+  if (!boton || !lista) return;
+  function abrir(si) {
+    lista.hidden = !si;
+    boton.setAttribute('aria-expanded', String(si));
+    if (si) lista.querySelector('.menu-usuario__opcion').focus();
+  }
+  boton.addEventListener('click', function () { abrir(lista.hidden); });
+  document.addEventListener('click', function (e) {
+    if (!lista.hidden && !e.target.closest('.menu-usuario')) abrir(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !lista.hidden) { abrir(false); boton.focus(); }
+  });
+  // Flechas arriba/abajo para moverse entre las opciones
+  lista.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    var opciones = Array.prototype.slice.call(lista.querySelectorAll('.menu-usuario__opcion'));
+    var i = opciones.indexOf(document.activeElement);
+    opciones[(i + (e.key === 'ArrowDown' ? 1 : opciones.length - 1)) % opciones.length].focus();
+  });
+  lista.querySelector('[data-cerrar-sesion]').addEventListener('click', cerrarSesion);
+}
+
 // Franja "Prototipo académico": se puede cerrar y se recuerda.
 function prepararFranja() {
   var franja = document.querySelector('[data-franja]');
@@ -654,10 +701,7 @@ function prepararPie() {
   enlace.href = rutaPagina('index.html');
   enlace.addEventListener('click', function (e) {
     e.preventDefault();
-    guardarMemoria('session', null);
-    var salir = function () { location.href = rutaPagina('index.html'); };
-    if (clienteSupabase) clienteSupabase.auth.signOut().then(salir, salir);
-    else salir();
+    cerrarSesion();
   });
 }
 
@@ -2406,7 +2450,7 @@ function pantallaPerfil() {
   // Tus @ en cada plataforma, debajo del nombre
   function dibujarCuentas(steam) {
     var cuentasVinculadas = perfil.accounts || {};
-    var lista = ['<span class="tarjeta__texto" title="Tu usuario en SaveSlot"><b>@' + escapar(sesion.user) + '</b></span>'];
+    var lista = [];
     if (cuentasVinculadas.Steam) {
       var enlace = steam && steam.profileurl;
       lista.push((enlace ? '<a class="en-fila tarjeta__texto" href="' + escapar(enlace) + '" target="_blank" rel="noopener"' : '<span class="en-fila tarjeta__texto"') +
@@ -2415,8 +2459,11 @@ function pantallaPerfil() {
     ['Xbox', 'PlayStation', 'Nintendo'].forEach(function (p) {
       if (cuentasVinculadas[p]) lista.push('<span class="tarjeta__texto" title="Tu cuenta de ' + p + '">' + p + ' @' + escapar(cuentasVinculadas[p]) + '</span>');
     });
-    document.getElementById('usuario-perfil').innerHTML = lista.join('<span class="tarjeta__texto" aria-hidden="true">·</span>');
+    var caja = document.getElementById('cuentas-perfil');
+    caja.innerHTML = lista.join('<span class="tarjeta__texto" aria-hidden="true">·</span>');
+    caja.hidden = !lista.length;
   }
+  document.getElementById('usuario-perfil').textContent = '@' + sesion.user;
   dibujarCuentas(leerMemoria('steamPerfil', null));
   document.getElementById('insignias-perfil').innerHTML = '<span class="etiqueta etiqueta--primario">NIVEL ' + escapar(perfil.level) + '</span>' +
     (datosUsuario.insignias || []).map(function (i) { return '<span class="etiqueta etiqueta--contorno">' + escapar(i.toUpperCase()) + '</span>'; }).join('');
