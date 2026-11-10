@@ -72,15 +72,26 @@ module.exports = async function handler(req, res) {
   try {
     switch (action) {
       case "profile": {
-        const [sum, recent] = await Promise.all([
+        const [sum, recent, insignias] = await Promise.all([
           steam("ISteamUser/GetPlayerSummaries/v2/", { steamids: steamid }),
-          steam("IPlayerService/GetRecentlyPlayedGames/v1/", { steamid, count: 5 }),
+          // Todos los jugados en las últimas 2 semanas
+          steam("IPlayerService/GetRecentlyPlayedGames/v1/", { steamid }).catch(() => ({ response: {} })),
+          // Nivel de Steam e insignias
+          steam("IPlayerService/GetBadges/v1/", { steamid }).catch(() => ({ response: {} })),
         ]);
         const p = sum.response.players[0];
         return json(res, {
           ...p,
           playing_now: p.gameextrainfo ? { name: p.gameextrainfo, appid: p.gameid } : null,
-          recent_games: recent.response.games ?? [],
+          recent_games: (recent.response.games ?? []).map((g) => ({
+            appid: g.appid,
+            name: g.name,
+            hours_2weeks: Math.round((g.playtime_2weeks / 60) * 10) / 10,
+            hours: Math.round((g.playtime_forever / 60) * 10) / 10,
+          })),
+          steam_level: insignias.response.player_level ?? null,
+          badges: (insignias.response.badges ?? []).length,
+          steam_xp: insignias.response.player_xp ?? null,
         });
       }
 
