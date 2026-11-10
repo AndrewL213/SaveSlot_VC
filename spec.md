@@ -256,7 +256,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Ficha, datos y "Si te gusta, prueba": Real (IGDB)
   - Dificultad, calificación y horas al 100 %: Real (calculados con reseñas de Supabase)
   - Pestañas Reseñas y Guías, votar "útil": Real (Supabase)
-  - Reseñas de Steam en la pestaña Reseñas: Real (comunidad de Steam). Cada reseña lleva al lado del @ la etiqueta de su origen (SAVESLOT o STEAM) y se pueden filtrar por Todas, SaveSlot o Steam. Las de Steam muestran 👍/👎 (Steam no usa nota) y enlazan a la original. Además dicen si su autor tiene cuenta en SaveSlot: **EN SAVESLOT · @usuario** (su Steam está vinculado a una cuenta de SaveSlot, según la tabla **usuarios_steam**) o **SOLO STEAM**.
+  - Reseñas de Steam en la pestaña Reseñas: Real (comunidad de Steam). Cada reseña lleva al lado del @ la etiqueta de su origen (SAVESLOT o STEAM) y se pueden filtrar por Todas, SaveSlot o Steam. Las de Steam muestran 👍/👎 (Steam no usa nota) y enlazan a la original. La etiqueta de origen lleva el logo de su plataforma (SaveSlot en azul, Steam con borde). Si el autor de una reseña de Steam también tiene cuenta en SaveSlot (su Steam está vinculado, según la tabla **usuarios_steam**), lleva además **También en SaveSlot · @usuario** (azul, con el logo de SaveSlot); si no, no lleva nada extra.
   - Línea de Steam (precio, nota, jugadores): Real (tabla **juegos**, se actualiza cada día)
   - Editar o eliminar mi reseña: Real (Supabase)
   - Lista de deseos: Real (Supabase)
@@ -525,7 +525,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Qué funciona de verdad:**
   - Lista, búsqueda y filtros: Real (Supabase)
   - Editar o eliminar una reseña: Real (Supabase)
-  - Tus reseñas de Steam: Real (comunidad de Steam). Llevan la etiqueta STEAM, muestran si recomiendas el juego y se editan desde Steam; salen con el filtro "Todas" (no tienen nota). Las de SaveSlot llevan la etiqueta SAVESLOT.
+  - Tus reseñas de Steam: Real (comunidad de Steam). Llevan la etiqueta Steam (con su logo), muestran si recomiendas el juego y se editan desde Steam; salen con el filtro "Todas" (no tienen nota). Las de SaveSlot llevan la etiqueta SaveSlot (con su logo).
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
