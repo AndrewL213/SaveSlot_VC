@@ -9,7 +9,7 @@ Leyenda de "Qué funciona de verdad":
 - **Después**: no entra en el MVP.
 Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican.
 
-**Portadas:** todas las portadas de juegos se ven con su imagen, en cualquier pantalla: listas, resultados, perfiles, diario, historial y amigos. Si el juego tiene imagen en `assets/`, se usa esa; si no, la portada que trae IGDB (desde images.igdb.com), con crédito a IGDB. Solo si IGDB no tiene portada se usa el rectángulo de color de respaldo.
+**Portadas:** todas las portadas de juegos se ven con su imagen, en cualquier pantalla: listas, resultados, perfiles, diario, historial y amigos. Si el juego tiene imagen en `assets/`, se usa esa; si no, la portada que trae IGDB (desde images.igdb.com), con crédito a IGDB. Solo si IGDB no tiene portada se usa el rectángulo de color de respaldo. Los juegos que vienen de la cuenta de Steam de la persona (biblioteca, favoritos, lista de deseos, logros, recientes) usan la portada oficial de Steam (cdn.cloudflare.steamstatic.com), con crédito a Steam.
 
 ## Integraciones de backend del MVP
 - **Supabase**: todo lo que se guarda.
@@ -26,7 +26,16 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
     - En las listas (`?buscar=` y `?populares=1`) la descripción queda en inglés, para no hacer 20 traducciones por búsqueda. Cada juego trae `idiomaDescripcion` (`es` o `en`).
     - Si la traducción falla, la ficha llega igual, en inglés.
   - Mientras no esté conectada (o abriendo los archivos directo en el navegador), la app usa los juegos de `js/data.js`.
-- Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros (también los logros totales de cada juego, que IGDB no da) y la vinculación con Steam y Xbox, y el estado de los servicios.
+  - Cada juego trae `appidSteam`, su número en Steam (IGDB lo guarda en `external_games`; Steam es la fuente 1), para pedirle a Steam precio, nota, logros y reseñas.
+- **Steam** (Steam Web API + OpenID): funciones de Vercel en `api/steam/`. La clave `STEAM_API_KEY` y la llave secreta de Supabase (`SUPABASE_SERVICE_ROLE_KEY`) están solo en Vercel. Antes eran Edge Functions de Supabase (`steam-auth` y `steam-data`); ya no se usan.
+  - `api/steam/auth.js`: entrar con Steam (OpenID 2.0). Steam devuelve a la persona a la app con un token de un solo uso y la app abre la sesión de Supabase (`verifyOtp`). La cuenta queda con `app_metadata.steam_id`, y su @ se guarda en `user_metadata.usuario`.
+  - `api/steam/data.js` (con la sesión de Supabase): `profile` (perfil, jugando ahora, recientes de 2 semanas, nivel e insignias de Steam), `library` (biblioteca con horas), `wishlist` (lista de deseos con precio en COP y descuento), `achievements_summary` (logros de los 30 juegos más jugados y los más raros), `achievements`, `stats` y `my_reviews` (tus reseñas de Steam).
+  - `api/steam/resenas.js` (sin sesión): las 10 reseñas en español más útiles de un juego y su nota global en Steam.
+  - `api/steam/juego.js` (sin sesión): precio, descuento, nota, logros totales y jugadores conectados de un juego; los guarda en la tabla **juegos** de Supabase y no vuelve a preguntarle a Steam en 24 horas.
+  - `api/steam/sincronizar.js`: Vercel la ejecuta cada día a las 9:00 UTC (4:00 a. m. en Colombia; `crons` en `vercel.json`) y actualiza hasta 200 juegos de la tabla **juegos**. Solo responde a Vercel (variable `CRON_SECRET`).
+  - Steam ya no da un JSON público de reseñas: las reseñas de cada juego y las tuyas se leen de las páginas públicas de la comunidad de Steam. Funciona, pero si Steam cambia esas páginas hay que ajustar `resenas.js` y `my_reviews`.
+  - Logros, lista de deseos y reseñas necesitan que en Steam «Detalles de juego» esté en **Público**. Si no, la app explica cómo cambiarlo.
+- Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros de otras plataformas (los de Steam son reales), la vinculación con Xbox y el estado de los servicios.
 
 ## Flujo
 
@@ -41,7 +50,9 @@ Se puede entrar y explorar sin cuenta. La cuenta se pide solo al escribir, comen
 3. **Participar en un evento** (flujograma "Eventos")
    Inicio (ventana Evento del mes) → Eventos → Detalle de evento (torneo o sorteo) → [sin cuenta: Necesitas una cuenta] → Inscripción confirmada → Perfil (Mis eventos)
 4. **Cuenta, perfil y amigos** (flujograma "Cuenta y perfil")
-   Crear cuenta (paso 1) → Editar perfil (pasos 2 y 3: vincular plataformas y elegir favoritos) → Perfil → Diario · Historial de reseñas · Logros · Editar perfil
+   Crear cuenta (paso 1) → Editar perfil (pasos 2 y 3: vincular plataformas y elegir favoritos) → Perfil → Diario · Historial de reseñas · Logros · Biblioteca · Editar perfil
+   Entrar con Steam (Iniciar sesión o Crear cuenta) → Steam → Perfil, con Steam ya vinculada
+   Menú de la cuenta (en la barra, en todas las páginas) → Mi perfil · Editar perfil · Cerrar sesión
    Perfil o Comunidad → Amigos → Perfil de otro usuario
    Iniciar sesión (o entrar como invitado) → la pantalla donde estaba
 5. **Ayuda**: desde cualquier pantalla → Contáctanos. Si algo falla → Error.
@@ -55,15 +66,27 @@ Solo lo que se ve o se guarda en las pantallas. Entre paréntesis, de dónde sal
 ### Vienen de IGDB
 
 - **juegos** (IGDB): id (slug de IGDB), idIgdb (número de IGDB), nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie: Indie si IGDB le pone ese género), horas de la historia ("Time to beat" de IGDB), descripción (en español, ver Integraciones), portada (de `assets/` o de IGDB), color de respaldo (solo los juegos con imagen en `assets/`; los demás usan el neutro del kit)
-  - Datos de ejemplo: logros totales (IGDB no los da)
+  - De Steam (si el juego está en Steam): número de Steam (`appidSteam`), logros totales, precio, nota y jugadores conectados (ver la tabla **juegos**)
+  - Datos de ejemplo: logros totales de los juegos que no están en Steam (IGDB no los da)
   - Calculados con nuestras reseñas (Supabase): dificultad promedio (1–10), calificación, número de votos, horas al 100 %
 
+### Vienen de Steam (de la cuenta de la persona, sin guardarse en tablas)
+
+- **perfil de Steam**: nombre y enlace del perfil, jugando ahora, juegos recientes (horas de las últimas 2 semanas), nivel e insignias
+- **biblioteca de Steam**: juegos con horas jugadas y última vez jugado
+- **logros de Steam**: por juego (obtenidos y totales), resumen y logros más raros (% global de jugadores)
+- **lista de deseos de Steam**: juegos con precio, precio anterior y descuento. Se ve en el Perfil; se cambia desde Steam.
+- **reseñas de Steam**: las de cada juego (autor, recomienda o no, horas, fecha, votos de "útil") y las de la persona
+- El navegador guarda una copia para mostrar algo mientras llegan los datos nuevos (claves `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos` y `steamResenas`).
+
 ### Se guardan en Supabase
+
+- **juegos** (Supabase, ya creada; código en `supabase/juegos.sql`): igdb_id (clave), slug, nombre, steam_appid, steam_precio, steam_precio_original, steam_descuento, steam_gratis, steam_nota, steam_nota_pct, steam_resenas, steam_logros, steam_jugando, actualizado. Cualquiera la lee; solo el servidor (Vercel) escribe. La llenan `api/steam/juego.js` al abrir una ficha y `api/steam/sincronizar.js` cada día.
 
 - **usuarios** (Supabase): id, usuario (@, único), nombre visible, iniciales, correo, forma de entrar (correo, Google, Discord, Twitch o Steam), invitado (sí o no), sobre mí, jugando ahora (juego), miembro desde, nivel, XP, 4 juegos favoritos, géneros favoritos, lista de deseos, insignias, color del avatar
   - Estado: "en línea" y última conexión salen de la presencia de Supabase; "jugando" sale de "jugando ahora"
   - Calculado: amigos en común, notas de cada juego (del diario; en los datos de ejemplo están en `notas`)
-- **cuentas vinculadas** (Supabase; hoy datos de ejemplo dentro de usuarios): usuario, plataforma (Steam, Xbox, PlayStation o Nintendo), nombre en la plataforma, estado (verificada o pendiente). Quien entra con Steam la tiene vinculada desde el inicio.
+- **cuentas vinculadas** (Supabase; hoy dentro del perfil en el navegador): usuario, plataforma (Steam, Xbox, PlayStation o Nintendo), nombre en la plataforma, estado (verificada o pendiente). Quien entra con Steam la tiene vinculada desde el inicio. Steam es real (su número queda en `app_metadata.steam_id` de Supabase Auth); Xbox es simulada.
 - **reseñas** (Supabase): id, juego, autor, tipo (reseña o guía), estado (publicada o borrador), título (opcional), texto, calificación (1–10), dificultad (1–10), horas jugadas, estado de la partida (Terminado, Rejugado, En progreso o Abandonado), minutos de lectura (guías), contiene spoilers, editada (sí o no), fecha
   - Calculado: votos de "útil" y me gusta (se cuentan en sus tablas), porcentaje de "útil" de las guías
   - Borradores: un borrador por persona y juego, con los mismos campos (estado "borrador")
@@ -111,6 +134,8 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 | `chatsMatchplay` | **chats de MatchPlay** |
 | `recentGames` | **vistos recientemente** (sin sesión sigue en el navegador) |
 | `outbox` | **mensajes de contacto** |
+| `usuariosSteam` | Supabase Auth (`user_metadata.usuario`, ya se guarda ahí) |
+| `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos`, `steamResenas` | Ninguna: son copias de lo que da Steam, para mostrar algo mientras llega lo nuevo |
 | `hideDemo`, `datosDe.*`, `duenoDatos` | Ninguna: son ayudas del modo demo y se quitan |
 
 ## Pantallas
@@ -204,7 +229,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Archivo de diseño:** disenos/juego.html (pestañas Reseñas, Guías, Clips y Logros, y la ventana "Dificultad de 1 a 10")
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda ver todo sobre un juego en un solo lugar. Sabemos que funciona si la persona lee reseñas o guías, o agrega el juego a su lista de deseos.
 - **Contenido:**
-  1. Portada, nombre, plataformas
+  1. Portada, nombre, plataformas y, si está en Steam, una línea de Steam: precio (o descuento), nota de Steam, jugadores conectados y "Ver en Steam"
   2. Botones: Escribir reseña, Lista de deseos, Preguntar a MatchPlay
   3. Datos clave (tiempo, dificultad, calificación, logros)
   4. Pestañas: Reseñas, Guías, Clips, Logros
@@ -214,9 +239,11 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Ficha, datos y "Si te gusta, prueba": Real (IGDB)
   - Dificultad, calificación y horas al 100 %: Real (calculados con reseñas de Supabase)
   - Pestañas Reseñas y Guías, votar "útil": Real (Supabase)
+  - Reseñas de Steam en la pestaña Reseñas: Real (comunidad de Steam). Cada reseña lleva al lado del @ la etiqueta de su origen (SAVESLOT o STEAM) y se pueden filtrar por Todas, SaveSlot o Steam. Las de Steam muestran 👍/👎 (Steam no usa nota) y enlazan a la original.
+  - Línea de Steam (precio, nota, jugadores): Real (tabla **juegos**, se actualiza cada día)
   - Editar o eliminar mi reseña: Real (Supabase)
   - Lista de deseos: Real (Supabase)
-  - Pestaña Logros: Simulado
+  - Número de logros: Real si el juego está en Steam; la lista de la pestaña Logros sigue Simulada
   - Pestaña Clips: Después (el diseño dice que llega con la API de Twitch)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
@@ -224,6 +251,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Cada pestaña muestra su contenido y su número.
   - "+ Lista de deseos" cambia de estado y el juego aparece en el Perfil.
   - Las reseñas con spoiler se ven ocultas hasta tocarlas.
+  - Si el juego está en Steam, se ven su línea de Steam y sus reseñas de Steam con la etiqueta STEAM.
 
 ### 7. Ventana: Dificultad de 1 a 10
 - **Archivo de diseño:** disenos/juego.html (ventana emergente)
@@ -362,7 +390,8 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Qué funciona de verdad:**
   - Entrar con correo (cuenta de SaveSlot): Real (Supabase)
   - Cuenta de demostración: Real (sesión de invitado de Supabase, sin contraseña, con los datos de ejemplo cargados)
-  - Google, Discord, Twitch y Steam: Real (proveedores de Supabase Auth; Steam ya está vinculado en Supabase). Mientras no esté conectado Supabase en la app, cada botón lleva a la página de error con la variante «acceso» y el nombre del servicio.
+  - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). Vuelve a la pantalla donde estaba, con Steam vinculada.
+  - Google, Discord y Twitch: Real (proveedores de Supabase Auth). Mientras no estén conectados, cada botón lleva a la página de error con la variante «acceso» y el nombre del servicio.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
@@ -382,7 +411,8 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   5. Google, Discord, Twitch y Steam (cuatro botones con su logo, debajo del botón principal: primero va la cuenta de SaveSlot)
 - **Qué funciona de verdad:**
   - Crear cuenta con correo (cuenta de SaveSlot): Real (Supabase)
-  - Google, Discord, Twitch y Steam: Real (proveedores de Supabase Auth; Steam ya está vinculado en Supabase). Mientras no esté conectado Supabase en la app, cada botón lleva a la página de error con la variante «acceso» y el nombre del servicio.
+  - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). La cuenta nace con Steam vinculada y un @ sacado de su nombre de Steam, que puede cambiar en Editar perfil.
+  - Google, Discord y Twitch: Real (proveedores de Supabase Auth). Mientras no estén conectados, cada botón lleva a la página de error con la variante «acceso» y el nombre del servicio.
   - Quien entra por primera vez con un servicio elige su @usuario y sigue a Editar perfil (pasos 2 y 3), igual que con el correo.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
@@ -396,18 +426,20 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Archivo de diseño:** disenos/perfil.html (y la ventana "Cómo ganar XP")
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda ver su actividad y sus juegos en un solo lugar. Sabemos que funciona si la persona entra a Editar perfil, Diario o Logros desde aquí.
 - **Contenido:**
-  1. Portada, avatar, nombre, nivel y "jugando ahora"
-  2. Estadísticas
-  3. 4 juegos favoritos
-  4. Actividad reciente, con enlaces a Historial de reseñas y Diario
+  1. Portada, avatar, nombre con el @ de SaveSlot al lado; debajo, los @ de las cuentas vinculadas (Steam con su logo y enlace a su perfil); luego el nivel de SaveSlot y el de Steam (con sus insignias), y "jugando ahora"
+  2. Estadísticas (Juegos = biblioteca de Steam si está vinculada; Logros, Reseñas y Lista de deseos suman los de Steam)
+  3. 4 juegos favoritos (pueden ser del catálogo o de la biblioteca de Steam)
+  4. Actividad reciente: lo jugado en Steam las últimas 2 semanas y lo último del diario, con enlaces a Historial de reseñas y Diario
   5. Géneros más jugados y calificaciones
-  6. Lista de deseos
-  7. Sobre mí, XP, Amigos, conexiones y Mis eventos
-  8. Editar perfil y Compartir
+  6. Biblioteca de Steam: los 6 más jugados, con enlace a Biblioteca
+  7. Lista de deseos: la de SaveSlot y la de Steam (con precio y descuento; se ven 6 y "Ver los N de Steam")
+  8. Sobre mí, XP, Amigos, conexiones y Mis eventos
+  9. Editar perfil y Compartir
 - **Qué funciona de verdad:**
   - Datos del perfil, favoritos, actividad, lista de deseos, amigos y Mis eventos: Real (Supabase)
-  - Quitar de lista de deseos y cancelar inscripción: Real (Supabase)
-  - Conexiones (cuentas vinculadas): Simulado
+  - Jugando ahora, recientes, nivel e insignias, biblioteca y lista de deseos de Steam: Real (Steam)
+  - Quitar de lista de deseos y cancelar inscripción: Real (Supabase; la lista de Steam solo se ve)
+  - Conexiones: Steam Real; Xbox Simulado
   - Copiar enlace del perfil: Simulado
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
@@ -427,14 +459,17 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Archivo de diseño:** disenos/editar-perfil.html
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda personalizar su perfil y vincular sus plataformas. Sabemos que funciona si la persona guarda al menos un cambio.
 - **Contenido:**
-  1. Perfil público: nombre, sobre mí, qué estás jugando
+  1. Perfil público: nombre, usuario (@), sobre mí, qué estás jugando
   2. 4 juegos favoritos
   3. Géneros favoritos
   4. Cuentas vinculadas
   5. Guardar o Cancelar
 - **Qué funciona de verdad:**
   - Guardar cambios (incluye "qué estás jugando", que define el estado "jugando"): Real (Supabase)
-  - Vincular Steam o Xbox: Simulado
+  - Cambiar el @: Real. De 3 a 20 letras, números, punto o guion bajo; avisa si está ocupado. Los datos pasan al nuevo @, y con Steam se guarda en Supabase Auth. La cuenta de demostración no lo puede cambiar. (Hoy solo se compara con los usuarios de ejemplo y las cuentas del navegador; al tener la tabla **usuarios**, se revisa contra todos.)
+  - "¿Qué estás jugando ahora?": con Steam vinculada, la primera opción es "Automático: lo que juegues en Steam" y se puede elegir un juego de la biblioteca de Steam o del catálogo; lo de Steam manda cuando estás jugando en Steam.
+  - Favoritos: se pueden elegir de la biblioteca de Steam (ordenada por horas) o del catálogo.
+  - Vincular Steam: Real (Steam). Vincular Xbox: Simulado
   - Vincular PlayStation o Nintendo: Después (no tienen conexión pública, según el diseño)
   - Foto de perfil: Después (el diseño dice que llega con el almacenamiento de archivos)
 - **Está lista cuando:**
@@ -442,7 +477,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Funciona en celular (375 px de ancho).
   - No deja agregar un quinto favorito.
   - Los cambios guardados se ven en el Perfil.
-  - El usuario no se puede editar.
+  - Un @ inválido u ocupado muestra su error y no deja guardar.
 
 ### 21. Diario
 - **Archivo de diseño:** disenos/diario.html
@@ -471,6 +506,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Qué funciona de verdad:**
   - Lista, búsqueda y filtros: Real (Supabase)
   - Editar o eliminar una reseña: Real (Supabase)
+  - Tus reseñas de Steam: Real (comunidad de Steam). Llevan la etiqueta STEAM, muestran si recomiendas el juego y se editan desde Steam; salen con el filtro "Todas" (no tienen nota). Las de SaveSlot llevan la etiqueta SAVESLOT.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
@@ -486,12 +522,15 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   2. Filtro por plataforma
   3. Progreso por juego
   4. Logros más raros
-- **Qué funciona de verdad:** Logros: Simulado
+- **Qué funciona de verdad:**
+  - Logros de Steam (los 30 juegos más jugados, resumen y más raros): Real (Steam). Botón "Actualizar" con la hora de la última actualización.
+  - Logros de otras plataformas: Simulado
 - **Está lista cuando:**
-  - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
+  - Se ve igual al diseño aprobado, con sus portadas (de assets/, IGDB o Steam).
   - Funciona en celular (375 px de ancho).
   - El filtro de plataforma cambia la lista y, si no hay datos, lo dice.
-  - Indica que son datos de ejemplo.
+  - Indica qué es de Steam y qué es de ejemplo.
+  - Si en Steam los detalles de juego son privados, explica cómo hacerlos públicos.
 
 ### 24. Amigos
 - **Archivo de diseño:** disenos/amigos.html
@@ -587,3 +626,27 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Funciona en celular (375 px de ancho).
   - Cada variante muestra su código y sus consejos.
   - "Reportar el problema" lleva a Contáctanos.
+
+### 30. Biblioteca
+- **Archivo de diseño:** no tiene (pantalla nueva; usa los componentes del kit)
+- **Objetivo:** Esta pantalla existe para que el gamer casual pueda ver todos sus juegos de Steam con sus horas. Sabemos que funciona si la persona busca un juego o cambia el orden.
+- **Contenido:**
+  1. Resumen (juegos, horas jugadas, jugados, sin estrenar)
+  2. Jugado últimamente (horas de las últimas 2 semanas)
+  3. Orden (más jugados, recientes, A–Z) y buscador
+  4. Rejilla de portadas con horas; cada juego abre su página en la tienda de Steam
+- **Qué funciona de verdad:** Biblioteca: Real (Steam)
+- **Está lista cuando:**
+  - Funciona en celular (375 px de ancho).
+  - El orden y el buscador cambian la rejilla.
+  - Sin Steam vinculada, invita a vincularla.
+  - Si Steam no responde, lo dice y explica que el perfil debe ser público.
+
+### 31. Menú de la cuenta
+- **Archivo de diseño:** no tiene (componente nuevo del kit: `.menu-usuario`, en componentes.html)
+- **Objetivo:** Esta pantalla existe para que el gamer casual pueda ir a su perfil o cerrar sesión desde cualquier página. Sabemos que funciona si la persona cierra sesión sin ir al pie de página.
+- **Contenido:** al tocar el nombre o el avatar de la barra: Mi perfil, Editar perfil y Cerrar sesión (en rojo y separado)
+- **Qué funciona de verdad:** Cerrar sesión: Real (cierra la sesión de SaveSlot y la de Supabase/Steam)
+- **Está lista cuando:**
+  - Funciona en celular (375 px de ancho).
+  - Se cierra al tocar fuera o con Escape, y se recorre con las flechas.

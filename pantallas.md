@@ -52,6 +52,8 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ | ⬜ |
 | 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ | ⬜ |
 | 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ✅ | ✅ | ⬜ |
+| 30. Biblioteca | `pages/biblioteca.html` | ✅ | ✅ | ✅ (datos reales de Steam) | ⬜ |
+| 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ | ⬜ |
 
 ## Ayuda
 
@@ -62,8 +64,8 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ | ⬜ |
 
 ## Pendientes para la revisión vs spec
-- **Iniciar sesión y Crear cuenta**: los botones «Pronto» de Google y Discord del diseño ahora son cuatro (Google, Discord, Twitch y Steam) con su logo (`.boton__logo`), debajo del formulario de la cuenta de SaveSlot. Llevan a la página de error hasta conectar Supabase en la app.
-- **404.html**: tiene 5 variantes nuevas de «no encontrado» (página, juego, evento, reseña y usuario) y una de «acceso» (entrar con Google, Discord, Twitch o Steam mientras no está Supabase) que el diseño no traía; la de página es la que sale por defecto. En Vercel, una línea en el <head> hace que los archivos se busquen desde la raíz del sitio.
+- **Iniciar sesión y Crear cuenta**: los botones «Pronto» de Google y Discord del diseño ahora son cuatro (Google, Discord, Twitch y Steam) con su logo (`.boton__logo`), debajo del formulario de la cuenta de SaveSlot. Steam ya funciona (`api/steam/auth.js`); Google, Discord y Twitch llevan a la página de error hasta conectarlos en Supabase.
+- **404.html**: tiene 5 variantes nuevas de «no encontrado» (página, juego, evento, reseña y usuario) y una de «acceso» (entrar con Google, Discord o Twitch mientras no están conectados) que el diseño no traía; la de página es la que sale por defecto. En Vercel, una línea en el <head> hace que los archivos se busquen desde la raíz del sitio.
 - **Mensaje (Amigos y Perfil de otro usuario)**, clips, pagos y foto de perfil: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
 - **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).
 - **Comunidad, pestaña Guías**: cada guía abre su juego (como en el diseño), no un Detalle de reseña; las guías de ejemplo no tienen texto completo.
@@ -72,3 +74,6 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 - **Avatares**: los de amigos no llevan el color de fondo de cada persona como en el diseño (el avatar del kit no tiene esa opción).
 - **Perfil de otro usuario**: «Juegos» cuenta los juegos que la persona calificó (el diseño suma un número fijo); el avatar grande es azul y no del color de la persona.
 - **Traducción de descripciones (api/igdb.js)**: usa por ahora el enlace gratis de Google Translate, que no es oficial. Al conectar Supabase hay que guardar cada traducción una sola vez y pasar a DeepL (poner `DEEPL_API_KEY` en Vercel).
+- **Steam (noviembre)**: perfil, biblioteca, logros, lista de deseos, juegos recientes y reseñas de Steam ya son reales (`api/steam/`), y cada ficha de juego muestra precio, nota y jugadores de Steam (tabla **juegos** de Supabase, actualizada cada día). Las portadas de Steam están permitidas en `CLAUDE.md`. Las reseñas de Steam se leen de las páginas públicas de la comunidad: si Steam las cambia, hay que ajustar el código.
+- **Perfil y Editar perfil**: el @ ya se puede cambiar (el diseño decía que no); las cuentas vinculadas van debajo del nombre. Falta revisar que el @ sea único contra todos los usuarios cuando exista la tabla **usuarios**.
+- **Biblioteca y Menú de la cuenta**: no tienen diseño en disenos/; se hicieron con el kit (`.menu-usuario` es un componente nuevo, en componentes.html).

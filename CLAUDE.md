@@ -36,6 +36,10 @@ Digitales 3. Más contexto en README.md.
 - api/: funciones de Vercel que usan claves secretas (por ejemplo,
   api/igdb.js, la consulta a IGDB, y api/steam/, el inicio de sesión y los
   datos de Steam: perfil, biblioteca y logros). JavaScript sin paso de compilación.
+- supabase/: el código SQL de las tablas de Supabase (por ejemplo, juegos.sql).
+  Si creas o cambias una tabla, guarda aquí su SQL.
+- vercel.json: las tareas automáticas de Vercel (crons), como la
+  actualización diaria de los datos de Steam.
 - index.html: la pantalla de inicio, la puerta de entrada de la app.
   Las demás pantallas van en la carpeta pages/.
 - 404.html: la página de error, también en la raíz (Vercel la usa para
