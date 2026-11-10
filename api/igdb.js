@@ -5,10 +5,18 @@
 // Las claves se leen de las variables de entorno de Vercel: TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET,
 // y DEEPL_API_KEY (opcional) para traducir las descripciones al español.
 //
-// Pedidos que acepta (solo estos tres):
-//   /api/igdb?buscar=zelda   → hasta 20 juegos que coinciden con el texto
-//   /api/igdb?id=hades--1    → la ficha de un juego (id = el "slug" o el número de IGDB), con la descripción en español
+// Pedidos que acepta (solo estos cinco):
+//   /api/igdb?buscar=zelda   → hasta 20 juegos que coinciden con el texto, los más conocidos primero
+//   /api/igdb?id=hades--1    → la ficha de un juego (id = el "slug" o el número de IGDB), con la
+//                              descripción en español y "Si te gusta, prueba" (similares)
 //   /api/igdb?populares=1    → los 10 juegos más visitados en IGDB (Mejores juegos de la semana)
+//   /api/igdb?explorar=1     → lista para Buscar juegos, de 24 en 24, los más conocidos primero.
+//                              Filtros: generos=RPG,Terror · plataformas=PC,Xbox · tipo=AAA|Indie
+//                              duracion=corto|medio|largo · desde=2015 · hasta=2024 · pagina=2
+//   /api/igdb?random=1       → un juego al azar entre los más conocidos. genero=RPG · excepto=hades--1
+//
+// Solo se muestran juegos principales, remakes, remasters y expansiones que se venden solas:
+// nada de DLC, mods, packs ni ports no oficiales.
 //
 // Responde con los juegos en el mismo formato que js/data.js. Si algo falla, responde
 // { error: '…' } con el mismo nombre que las variantes de la página de error (variantesError).
@@ -20,7 +28,13 @@ let permiso = null;
 let permisoVence = 0;
 
 // Campos que se le piden a IGDB por cada juego.
-const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name;';
+const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count;';
+
+// Tipos de juego de IGDB que sí mostramos: 0 juego principal, 4 expansión que se vende sola,
+// 8 remake, 9 remaster, 10 juego ampliado. Y nada de versiones (ediciones) de otro juego.
+const SOLO_JUEGOS = 'version_parent = null & game_type = (0,4,8,9,10)';
+
+const POR_PAGINA = 24;
 
 // IGDB nombra los géneros (y algunos temas) en inglés: aquí van los que usa SaveSlot.
 const GENEROS = {
@@ -43,6 +57,36 @@ const GENEROS = {
   'Action': 'Acción',
   'Horror': 'Terror',
   'Survival': 'Supervivencia'
+};
+
+// Géneros de SaveSlot que en IGDB son palabras clave, no géneros.
+const PALABRAS_CLAVE = { 'roguelike': 'Roguelike', 'roguelite': 'Roguelike', 'metroidvania': 'Metroidvania' };
+
+// Cómo se filtra cada género de SaveSlot en IGDB (números de géneros y temas de IGDB).
+const FILTRO_GENERO = {
+  'Aventura': 'genres = (31)',
+  'RPG': 'genres = (12)',
+  'Acción': '(themes = (1) | genres = (25))',
+  'Terror': 'themes = (19)',
+  'Shooter': 'genres = (5)',
+  'Deportes': 'genres = (14)',
+  'Plataformas': 'genres = (8)',
+  'Carreras': 'genres = (10)',
+  'Pelea': 'genres = (4)',
+  'Puzzle': 'genres = (9)',
+  'Estrategia': 'genres = (11,15,16,24)',
+  'Simulación': 'genres = (13)',
+  'Supervivencia': 'themes = (21)',
+  'Roguelike': 'palabras:roguelike,roguelite',
+  'Metroidvania': 'palabras:metroidvania'
+};
+
+// Números de plataformas de IGDB por familia.
+const PLATAFORMAS = {
+  'PC': [6, 14, 3],
+  'PlayStation': [7, 8, 9, 48, 167, 38, 46],
+  'Xbox': [11, 12, 49, 169],
+  'Nintendo': [130, 41, 5, 37, 20, 4, 21, 24, 33, 22, 18, 19]
 };
 
 function plataformaDe(nombre) {
@@ -117,7 +161,8 @@ async function conHoras(juegos) {
 // Calificación, votos, dificultad y horas al 100 % salen de nuestras reseñas (Supabase), no de IGDB.
 function traducir(j, horas) {
   const nombresIgdb = (j.genres || []).concat(j.themes || []).map(function (g) { return g.name; });
-  const generos = sinRepetidos(nombresIgdb.map(function (n) { return GENEROS[n]; })).filter(function (g) { return g !== 'Indie'; });
+  const palabras = (j.keywords || []).map(function (k) { return PALABRAS_CLAVE[k.slug]; });
+  const generos = sinRepetidos(nombresIgdb.map(function (n) { return GENEROS[n]; }).concat(palabras)).filter(function (g) { return g !== 'Indie'; });
   const desarrolla = (j.involved_companies || []).find(function (c) { return c.developer && c.company; });
   return {
     id: j.slug,
@@ -179,10 +224,99 @@ async function conGoogle(texto) {
   return datos[0].map(function (frase) { return frase[0]; }).join('');
 }
 
+// IGDB no deja ordenar una búsqueda por popularidad: se piden 50 y se ordenan aquí.
+// Primero los que se llaman igual a lo buscado; después, los que tienen más calificaciones.
 async function buscar(texto) {
   const limpio = String(texto).replace(/["\\;]/g, ' ').trim().slice(0, 60);
   if (!limpio) return [];
-  return conHoras(await consultar('games', 'search "' + limpio + '"; ' + CAMPOS + ' where version_parent = null; limit 20;'));
+  const juegos = await consultar('games', 'search "' + limpio + '"; ' + CAMPOS + ' where ' + SOLO_JUEGOS + '; limit 50;');
+  const igual = function (j) { return comparable(j.name) === comparable(limpio) ? 1 : 0; };
+  juegos.sort(function (a, b) { return igual(b) - igual(a) || (b.total_rating_count || 0) - (a.total_rating_count || 0); });
+  return conHoras(juegos.slice(0, 20));
+}
+
+function comparable(texto) {
+  return String(texto).toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, '');
+}
+
+// Números de las palabras clave de IGDB (roguelike, metroidvania…): se buscan una vez y se guardan.
+let numerosDePalabras = null;
+async function numerosDe(slugs) {
+  if (!numerosDePalabras) {
+    const encontradas = await consultar('keywords', 'fields id, slug; where slug = ("' + Object.keys(PALABRAS_CLAVE).join('","') + '"); limit 50;');
+    numerosDePalabras = {};
+    encontradas.forEach(function (k) { numerosDePalabras[k.slug] = k.id; });
+  }
+  return slugs.map(function (x) { return numerosDePalabras[x]; }).filter(Boolean);
+}
+
+// Arma el "where" de IGDB con los filtros de la página. Solo acepta valores conocidos.
+async function condiciones(filtros) {
+  const partes = [SOLO_JUEGOS];
+  const generos = lista(filtros.generos).filter(function (g) { return FILTRO_GENERO[g]; });
+  if (generos.length) {
+    const opciones = [];
+    for (const g of generos) {
+      const f = FILTRO_GENERO[g];
+      if (f.indexOf('palabras:') === 0) {
+        const numeros = await numerosDe(f.slice(9).split(','));
+        if (numeros.length) opciones.push('keywords = (' + numeros.join(',') + ')');
+      } else opciones.push(f);
+    }
+    if (opciones.length) partes.push('(' + opciones.join(' | ') + ')');
+  }
+  const plataformas = [].concat.apply([], lista(filtros.plataformas).map(function (p) { return PLATAFORMAS[p] || []; }));
+  if (plataformas.length) partes.push('platforms = (' + plataformas.join(',') + ')');
+  if (filtros.tipo === 'Indie') partes.push('genres = (32)');
+  if (filtros.tipo === 'AAA') partes.push('genres = !(32)');
+  const desde = anio(filtros.desde), hasta = anio(filtros.hasta);
+  if (desde) partes.push('first_release_date >= ' + Date.UTC(desde, 0, 1) / 1000);
+  if (hasta) partes.push('first_release_date < ' + Date.UTC(hasta + 1, 0, 1) / 1000);
+  partes.push('total_rating_count != null');
+  return partes.join(' & ');
+}
+
+function lista(valor) {
+  return String(valor || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 10);
+}
+
+function anio(valor) {
+  const n = parseInt(valor, 10);
+  return n >= 1970 && n <= 2100 ? n : null;
+}
+
+// La duración no se puede filtrar en IGDB: se filtra con las horas de la historia, ya traídas.
+function cumpleDuracion(juego, duracion) {
+  const h = juego.horasHistoria;
+  if (duracion === 'corto') return h != null && h < 10;
+  if (duracion === 'medio') return h != null && h >= 10 && h <= 40;
+  if (duracion === 'largo') return h != null && h > 40;
+  return true;
+}
+
+async function explorar(filtros) {
+  const pagina = Math.min(Math.max(parseInt(filtros.pagina, 10) || 1, 1), 50);
+  const conDuracion = ['corto', 'medio', 'largo'].indexOf(filtros.duracion) !== -1;
+  // Con duración se piden más, porque una parte se descarta después.
+  const pedir = conDuracion ? POR_PAGINA * 3 : POR_PAGINA;
+  const where = await condiciones(filtros);
+  const juegos = await consultar('games', CAMPOS + ' where ' + where + '; sort total_rating_count desc; limit ' + pedir + '; offset ' + (pagina - 1) * pedir + ';');
+  let traducidos = await conHoras(juegos);
+  if (conDuracion) traducidos = traducidos.filter(function (j) { return cumpleDuracion(j, filtros.duracion); }).slice(0, POR_PAGINA);
+  return { juegos: traducidos, pagina: pagina, hayMas: juegos.length === pedir };
+}
+
+// Un juego al azar entre los 300 más conocidos (del género pedido, si hay).
+async function random(filtros) {
+  const where = await condiciones({ generos: filtros.genero });
+  const total = (await consultar('games/count', 'where ' + where + ';')).count || 0;
+  if (!total) return null;
+  const excepto = /^[a-z0-9-]{1,100}$/.test(filtros.excepto || '') ? filtros.excepto : '';
+  const tope = Math.min(total, 300);
+  const posicion = Math.min(Math.floor(Math.random() * tope), Math.max(tope - 2, 0));
+  const juegos = await consultar('games', CAMPOS + ' where ' + where + '; sort total_rating_count desc; limit 2; offset ' + posicion + ';');
+  const elegido = juegos.find(function (j) { return j.slug !== excepto; }) || juegos[0];
+  return elegido ? traducirDescripcion((await conHoras([elegido]))[0]) : null;
 }
 
 // id puede ser el slug ("hades--1", el que va en las direcciones) o el número de IGDB (113112, el de las tablas).
@@ -191,9 +325,19 @@ async function ficha(id) {
   if (/^\d{1,10}$/.test(id)) condicion = 'id = ' + id;
   else if (/^[a-z0-9-]{1,100}$/.test(id)) condicion = 'slug = "' + id + '"';
   else throw falla('juego', 404);
-  const juegos = await consultar('games', CAMPOS + ' where ' + condicion + '; limit 1;');
+  const juegos = await consultar('games', CAMPOS.replace(';', ', similar_games;') + ' where ' + condicion + '; limit 1;');
   if (!juegos.length) throw falla('juego', 404);
-  return traducirDescripcion((await conHoras(juegos))[0]);
+  const juego = await traducirDescripcion((await conHoras(juegos))[0]);
+  juego.similares = await similares(juegos[0].similar_games);
+  return juego;
+}
+
+// "Si te gusta, prueba": hasta 6 juegos parecidos que IGDB ya tiene calculados.
+async function similares(ids) {
+  const numeros = (ids || []).filter(function (n) { return Number.isInteger(n); }).slice(0, 12);
+  if (!numeros.length) return [];
+  const juegos = await consultar('games', CAMPOS + ' where id = (' + numeros.join(',') + ') & ' + SOLO_JUEGOS + '; sort total_rating_count desc; limit 6;');
+  return juegos.map(function (j) { return traducir(j, null); });
 }
 
 async function populares() {
@@ -201,7 +345,7 @@ async function populares() {
   const lista = await consultar('popularity_primitives', 'fields game_id, value; where popularity_type = 1; sort value desc; limit 10;');
   if (!lista.length) return [];
   const ids = lista.map(function (p) { return p.game_id; });
-  const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + '); limit 10;');
+  const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS + '; limit 10;');
   juegos.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); });
   return conHoras(juegos);
 }
@@ -213,9 +357,12 @@ module.exports = async function (req, res) {
     if (q.buscar !== undefined) respuesta = { juegos: await buscar(q.buscar) };
     else if (q.id !== undefined) respuesta = { juego: await ficha(String(q.id)) };
     else if (q.populares !== undefined) respuesta = { juegos: await populares() };
-    else { res.status(400).json({ error: 'pedido', detalle: 'Usa ?buscar=, ?id= o ?populares=1' }); return; }
+    else if (q.explorar !== undefined) respuesta = await explorar(q);
+    else if (q.random !== undefined) respuesta = { juego: await random(q) };
+    else { res.status(400).json({ error: 'pedido', detalle: 'Usa ?buscar=, ?id=, ?populares=1, ?explorar=1 o ?random=1' }); return; }
     // Vercel guarda la respuesta una hora: menos consultas a IGDB y más rápido para todos.
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+    // El juego al azar no se guarda: cada pedido debe dar uno distinto.
+    res.setHeader('Cache-Control', q.random !== undefined ? 'no-store' : 's-maxage=3600, stale-while-revalidate=86400');
     res.status(200).json(respuesta);
   } catch (e) {
     if (!e.tipo) console.error(e);
