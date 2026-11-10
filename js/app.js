@@ -119,6 +119,14 @@ function actualizarBibliotecaSteam() {
   });
 }
 
+// Un juego reciente de Steam para las rejillas de actividad: portada + horas de las últimas 2 semanas
+function htmlRecienteSteam(g) {
+  var j = juegoDeSteam(g);
+  return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="' + escapar(j.nombre) + ': ' + formatearNumero(g.hours_2weeks) + ' h en las últimas 2 semanas">' +
+    '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
+    '<span class="nota nota--texto">' + formatearNumero(g.hours_2weeks) + ' h</span></a>';
+}
+
 function tieneSteam() {
   return !!(leerPerfil().accounts || {}).Steam;
 }
@@ -2033,7 +2041,7 @@ function pantallaEvento() {
    El navegador guarda los datos de una sola persona a la vez (perfil, reseñas,
    diario…). Al entrar con otra cuenta, se guardan los de la anterior aparte y se
    cargan los de la nueva. Si "duenoDatos" no existe, los datos son de samluq. */
-var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos'];
+var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos', 'steamPerfil'];
 
 function cambiarDeCuenta(usuario, datosNuevos) {
   var dueno = leerMemoria('duenoDatos', 'samluq');
@@ -2254,16 +2262,35 @@ function pantallaPerfil() {
     : '<p class="tarjeta__texto">No está jugando nada en este momento.</p>';
 
   // Si Steam está vinculada de verdad, se muestra lo que juega ahora en Steam
+  // y también su nivel de Steam y sus juegos recientes (sección Actividad reciente)
+  var perfilSteam = null;
+  function usarPerfilSteam(steam) {
+    perfilSteam = steam;
+    var caja = document.getElementById('jugando-perfil');
+    if (steam.playing_now) {
+      var actual = juegoDeSteam({ appid: steam.playing_now.appid, name: steam.playing_now.name });
+      avatar.classList.add('avatar--jugando');
+      if (!avatar.querySelector('.avatar__punto')) avatar.insertAdjacentHTML('beforeend', '<span class="avatar__punto"></span>');
+      caja.innerHTML = '<a class="fila fila--jugando" href="' + escapar(enlaceJuego(actual)) + '" target="_blank" rel="noopener"><span class="portada portada--sm">' + imagenPortada(actual) + '</span>' +
+        '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(actual.nombre) + '</b><br><span class="tarjeta__texto">En Steam</span></span></a>';
+    } else if (!jugando && steam.recent_games && steam.recent_games.length) {
+      var ultimo = steam.recent_games[0];
+      caja.innerHTML = '<p class="tarjeta__texto">No está jugando ahora. Último en Steam: <b>' + escapar(ultimo.name) + '</b> · ' +
+        formatearNumero(ultimo.hours_2weeks) + ' h en las últimas 2 semanas.</p>';
+    }
+    var insignias = document.getElementById('insignias-perfil');
+    var nivel = insignias.querySelector('[data-steam]');
+    if (steam.steam_level != null) {
+      if (!nivel) { insignias.insertAdjacentHTML('beforeend', '<span class="etiqueta etiqueta--contorno" data-steam></span>'); nivel = insignias.querySelector('[data-steam]'); }
+      nivel.textContent = 'STEAM NIVEL ' + steam.steam_level + (steam.badges ? ' · ' + steam.badges + ' INSIGNIAS' : '');
+    }
+    dibujarRecientes();
+  }
   if ((perfil.accounts || {}).Steam) {
+    var guardadoSteam = leerMemoria('steamPerfil', null);
     pedirSteam('profile').then(function (steam) {
-      var caja = document.getElementById('jugando-perfil');
-      if (steam.playing_now) {
-        caja.innerHTML = '<div class="fila fila--jugando"><span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(steam.playing_now.name) + '</b><br><span class="tarjeta__texto">Dato de Steam</span></span></div>';
-      } else if (!jugando && steam.recent_games && steam.recent_games.length) {
-        var ultimo = steam.recent_games[0];
-        caja.innerHTML = '<p class="tarjeta__texto">No está jugando ahora. Último en Steam: <b>' + escapar(ultimo.name) + '</b> · ' +
-          formatearNumero(Math.round((ultimo.playtime_2weeks || 0) / 60)) + ' h en las últimas 2 semanas.</p>';
-      }
+      guardarMemoria('steamPerfil', steam);
+      usarPerfilSteam(steam);
     }).catch(function () { /* sin sesión de Steam (cuenta demo): se queda el dato de ejemplo */ });
   }
 
@@ -2356,14 +2383,22 @@ function pantallaPerfil() {
     return '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombreCorto) + '</b></a>';
   }).join('') + new Array(4 - favoritos.length + 1).join('<a class="vacio" href="editar-perfil.html#favoritos">+ Elegir favorito</a>');
 
-  // Actividad reciente: los últimos 6 del diario
-  document.getElementById('recientes-perfil').innerHTML = diario.slice(0, 6).map(function (d) {
-    var j = buscarPorId('juegos', d.juego);
-    if (!j) return '';
-    var abandonado = d.estado === 'Abandonado';
-    return '<a href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"><span class="portada portada--enlace"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
-      '<span class="' + (abandonado ? 'etiqueta etiqueta--error' : 'nota nota--texto') + '">' + (abandonado ? 'Abandonado' : d.calificacion + '/10') + (d.meGusta ? ' ♥' : '') + '</span></a>';
-  }).join('') || '<div class="vacio">Aún no registras juegos. <a href="buscar-juegos.html">Busca uno</a></div>';
+  // Actividad reciente: lo jugado en Steam las últimas 2 semanas y los últimos del diario (máx. 8)
+  function dibujarRecientes() {
+    var deSteam = perfilSteam && perfilSteam.recent_games ? perfilSteam.recent_games.map(htmlRecienteSteam) : [];
+    var delDiario = diario.slice(0, 6).map(function (d) {
+      var j = buscarPorId('juegos', d.juego);
+      if (!j) return '';
+      var abandonado = d.estado === 'Abandonado';
+      return '<a href="' + escapar(enlaceJuego(j)) + '"><span class="portada portada--enlace"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
+        '<span class="' + (abandonado ? 'etiqueta etiqueta--error' : 'nota nota--texto') + '">' + (abandonado ? 'Abandonado' : d.calificacion + '/10') + (d.meGusta ? ' ♥' : '') + '</span></a>';
+    }).filter(Boolean);
+    var caja = document.getElementById('recientes-perfil');
+    caja.innerHTML = deSteam.concat(delDiario).slice(0, 8).join('') || '<div class="vacio">Aún no registras juegos. <a href="buscar-juegos.html">Busca uno</a></div>';
+    aplicarColores(caja);
+  }
+  dibujarRecientes();
+  if (typeof guardadoSteam !== 'undefined' && guardadoSteam) usarPerfilSteam(guardadoSteam);
 
   // Géneros más jugados (horas del diario por género)
   var horas = {};
@@ -2946,6 +2981,21 @@ function pantallaBiblioteca() {
   buscador.addEventListener('input', dibujar);
 
   dibujar();
+
+  // Jugados en las últimas 2 semanas (del perfil de Steam)
+  function dibujarRecientesBiblioteca(steam) {
+    var lista = (steam && steam.recent_games) || [];
+    var seccion = document.getElementById('recientes-biblioteca-seccion');
+    if (!seccion) return;
+    seccion.hidden = !lista.length;
+    document.getElementById('recientes-biblioteca').innerHTML = lista.map(htmlRecienteSteam).join('');
+  }
+  dibujarRecientesBiblioteca(leerMemoria('steamPerfil', null));
+  pedirSteam('profile').then(function (steam) {
+    guardarMemoria('steamPerfil', steam);
+    dibujarRecientesBiblioteca(steam);
+  }).catch(function () {});
+
   var estado = document.getElementById('estado-biblioteca');
   estado.textContent = juegos.length ? 'Actualizando con Steam…' : 'Trayendo tu biblioteca de Steam…';
   actualizarBibliotecaSteam().then(function (lista) {
