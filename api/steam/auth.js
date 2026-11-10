@@ -133,6 +133,22 @@ module.exports = async function handler(req, res) {
       const hashed = link.data?.hashed_token ?? link.data?.properties?.hashed_token;
       if (!link.ok || !hashed) throw new Error(`Supabase generateLink ${link.status}`);
 
+      // Anota la cuenta en usuarios_steam: así las reseñas de Steam saben quién tiene cuenta en SaveSlot
+      const idUsuario = link.data?.id ?? link.data?.user?.id ?? created.data?.id;
+      if (idUsuario) {
+        await fetch(`${SUPABASE_URL}/rest/v1/usuarios_steam?on_conflict=id`, {
+          method: "POST",
+          headers: {
+            apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}`, "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates,return=minimal",
+          },
+          body: JSON.stringify({
+            id: idUsuario, steam_id64: steamId, steam_username: player.personaname ?? null,
+            steam_avatar: player.avatarfull ?? null, sincronizado_el: new Date().toISOString(),
+          }),
+        }).catch((e) => console.error("usuarios_steam", e));
+      }
+
       return back(res, redirectTo, { token_hash: hashed, type: "magiclink" });
     } catch (e) {
       console.error(e);

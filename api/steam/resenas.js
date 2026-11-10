@@ -7,7 +7,8 @@
 // Responde { appid, nombre, resumen, resenas: [...] } con las 10 reseñas en español más útiles.
 // (El JSON oficial store.steampowered.com/appreviews ahora redirige a la tienda: ya no se puede usar.)
 // Si el juego no está en Steam: { appid: null, resenas: [] }.
-// No necesita claves: usa la API pública de la tienda y la página pública de reseñas de la comunidad.
+// Usa la API pública de la tienda y la página pública de reseñas de la comunidad.
+// Con SUPABASE_SERVICE_ROLE_KEY marca qué autores tienen cuenta en SaveSlot (campo "saveslot" de cada reseña).
 
 
 function json(res, data, status = 200) {
@@ -34,6 +35,23 @@ async function buscarAppid(nombre) {
   return item ? { appid: item.id, nombre: item.name } : null;
 }
 
+
+// Cuentas de SaveSlot vinculadas a Steam: Map(steamid64 → @ en SaveSlot)
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://jzshrfiezzysbkzdsjzf.supabase.co";
+const SECRETA = process.env.SUPABASE_SERVICE_ROLE_KEY;
+async function cuentasSaveSlot(steamids) {
+  const mapa = new Map();
+  if (!SECRETA || !steamids.length) return mapa;
+  const cab = { apikey: SECRETA, Authorization: `Bearer ${SECRETA}` };
+  const filas = await fetch(`${SUPABASE_URL}/rest/v1/usuarios_steam?select=id,steam_id64,steam_username&steam_id64=in.(${steamids.join(",")})`, { headers: cab })
+    .then((r) => (r.ok ? r.json() : [])).catch(() => []);
+  // El @ de SaveSlot está en los datos de su cuenta (user_metadata.usuario)
+  await Promise.all(filas.map(async (f) => {
+    const u = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${f.id}`, { headers: cab }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    mapa.set(f.steam_id64, u?.user_metadata?.usuario || f.steam_username || "en SaveSlot");
+  }));
+  return mapa;
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -73,8 +91,11 @@ module.exports = async function handler(req, res) {
     const autor = c.match(/apphub_CardContentAuthorName[^"]*"><a href="([^"]+)">([^<]+)<\/a>/) || [];
     const fecha = c.match(/date_posted">[^0-9<]*(\d{1,2}) de ([a-záéíóú]+)(?: de (\d{4}))?/i) || [];
     const texto = limpiar((c.match(/class="date_posted">[\s\S]*?<\/div>([\s\S]*?)<\/div>/) || [])[1] || "");
+    // data-miniprofile es el número corto de la cuenta: steamid64 = 76561197960265728 + ese número
+    const corto = (c.match(/data-miniprofile="(\d+)"/) || [])[1];
     return {
       id: String(i),
+      steamid: corto ? String(76561197960265728n + BigInt(corto)) : null,
       autor: limpiar(autor[2] || "Jugador de Steam"),
       perfil: autor[1] || null,
       recomienda: /thumbsUp/i.test(c.split("apphub_CardTextContent")[0]),
@@ -85,6 +106,13 @@ module.exports = async function handler(req, res) {
       enlace: (c.match(/data-modal-content-url="([^"]+)"/) || [])[1] || `https://steamcommunity.com/app/${appid}/reviews/`,
     };
   }).filter((r) => r.texto);
+
+  // ¿Quién de estos autores tiene cuenta en SaveSlot? (tabla usuarios_steam de Supabase)
+  const conCuenta = await cuentasSaveSlot(resenas.map((r) => r.steamid).filter(Boolean));
+  for (const r of resenas) {
+    const cuenta = r.steamid && conCuenta.get(r.steamid);
+    r.saveslot = cuenta ? { usuario: cuenta } : null;
+  }
 
   return json(res, {
     appid,
