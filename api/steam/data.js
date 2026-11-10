@@ -6,7 +6,7 @@
 //   fetch("/api/steam/data", {
 //     method: "POST",
 //     headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-//     body: JSON.stringify({ action: "library" }),   // "profile" | "library" | "achievements_summary" | "achievements" | "stats" (+ appid)
+//     body: JSON.stringify({ action: "library" }),   // "profile" | "library" | "wishlist" | "achievements_summary" | "achievements" | "stats" (+ appid)
 //   }).then(r => r.json());
 //
 // Variables de entorno: STEAM_API_KEY. Opcionales: SUPABASE_URL, SUPABASE_ANON_KEY
@@ -19,6 +19,7 @@ const API = "https://api.steampowered.com";
 
 function json(res, data, status = 200) {
   res.statusCode = status;
+  res.setHeader("Cache-Control", "no-store");
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(data));
 }
@@ -26,8 +27,14 @@ function json(res, data, status = 200) {
 const steam = (path, params) => {
   const q = new URLSearchParams({ key: KEY, format: "json" });
   for (const [k, v] of Object.entries(params)) q.set(k, String(v));
-  return fetch(`${API}/${path}?${q}`).then(async (r) => {
-    if (!r.ok) throw new Error(`Steam ${r.status} (¿perfil o detalles de juego privados?)`);
+  return fetch(`${API}/${path}?${q}`, { cache: "no-store" }).then(async (r) => {
+    if (!r.ok) {
+      // Steam explica el motivo en el cuerpo (ej. "Profile is not public")
+      const cuerpo = await r.text().catch(() => "");
+      let motivo = "";
+      try { motivo = JSON.parse(cuerpo).playerstats?.error ?? ""; } catch { motivo = cuerpo.slice(0, 120); }
+      throw new Error(`Steam ${r.status}${motivo ? ": " + motivo : ""}`);
+    }
     return r.json();
   });
 };
@@ -126,6 +133,7 @@ module.exports = async function handler(req, res) {
           .sort((a, b) => b.playtime_forever - a.playtime_forever)
           .slice(0, 30);
         let privados = 0;
+        let motivo = "";
         const porJuego = await Promise.all(jugados.map(async (g) => {
           try {
             const d = await steam("ISteamUserStats/GetPlayerAchievements/v1/", { steamid, appid: g.appid, l: "spanish" });
@@ -133,14 +141,14 @@ module.exports = async function handler(req, res) {
             if (!lista.length) return null;
             return { appid: g.appid, name: g.name, total: lista.length, unlocked: lista.filter((a) => a.achieved === 1).length, lista };
           } catch (e) {
-            if (/Steam 403/.test(e.message)) privados++;
+            if (/Steam 403/.test(e.message)) { privados++; motivo = motivo || e.message; }
             return null;
           }
         }));
         const games = porJuego.filter(Boolean);
         // Steam responde 403 cuando los "Detalles de juego" del perfil son privados
         if (!games.length && privados) {
-          return json(res, { error: "Tus detalles de juego en Steam son privados", private: true }, 403);
+          return json(res, { error: motivo, private: /not public|private/i.test(motivo) }, 403);
         }
 
         // Rareza: % global de jugadores que tiene cada logro (10 juegos más jugados)
@@ -174,6 +182,34 @@ module.exports = async function handler(req, res) {
           games: games.map(({ lista, ...g }) => g),
           rarest: raros.slice(0, 8),
         });
+      }
+
+      case "wishlist": {
+        // Lista de deseos de Steam (debe ser pública) + nombre y precio de cada juego
+        const w = await steam("IWishlistService/GetWishlist/v1/", { steamid });
+        const items = (w.response?.items ?? []).sort((a, b) =>
+          (a.priority || 1e9) - (b.priority || 1e9) || b.date_added - a.date_added);
+        const datos = new Map();
+        for (let i = 0; i < items.length; i += 50) {
+          const ids = items.slice(i, i + 50).map((x) => ({ appid: x.appid }));
+          const r = await steam("IStoreBrowseService/GetItems/v1/", {
+            input_json: JSON.stringify({ ids, context: { language: "spanish", country_code: "CO" }, data_request: {} }),
+          }).catch(() => null);
+          for (const it of r?.response?.store_items ?? []) datos.set(it.appid ?? it.id, it);
+        }
+        const games = items.map((x) => {
+          const it = datos.get(x.appid) ?? {};
+          const precio = it.best_purchase_option ?? {};
+          return {
+            appid: x.appid,
+            name: it.name ?? `App ${x.appid}`,
+            added: x.date_added,
+            price: precio.formatted_final_price ?? (it.is_free ? "Gratis" : null),
+            original_price: precio.formatted_original_price ?? null,
+            discount_pct: precio.discount_pct ?? 0,
+          };
+        });
+        return json(res, { count: games.length, games });
       }
 
       case "stats": {
