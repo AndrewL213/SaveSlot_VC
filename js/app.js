@@ -109,7 +109,8 @@ function juegoDeSteam(g) {
   var cdn = 'https://cdn.cloudflare.steamstatic.com/steam/apps/' + g.appid + '/';
   return {
     id: 'steam-' + g.appid, appid: g.appid, nombre: g.name, nombreCorto: g.name,
-    portada: cdn + 'library_600x900.jpg', portadaRespaldo: cdn + 'header.jpg', color: null,
+    // La portada real la manda api/steam (g.cover); la dirección vieja queda solo como respaldo
+    portada: g.cover || cdn + 'library_600x900.jpg', portadaRespaldo: g.header || cdn + 'header.jpg', color: null,
     generos: [], plataformas: ['PC (Steam)'], horas: g.hours || 0, ultimaVez: g.last_played || 0, steam: true
   };
 }
@@ -2758,7 +2759,7 @@ function pantallaPerfil() {
     anotarCuentaSteam(steam);
     var caja = document.getElementById('jugando-perfil');
     if (steam.playing_now) {
-      var actual = juegoDeSteam({ appid: steam.playing_now.appid, name: steam.playing_now.name });
+      var actual = juegoDeSteam(steam.playing_now);
       avatar.classList.add('avatar--jugando');
       if (!avatar.querySelector('.avatar__punto')) avatar.insertAdjacentHTML('beforeend', '<span class="avatar__punto"></span>');
       caja.innerHTML = '<a class="fila fila--jugando" href="' + escapar(enlaceJuego(actual)) + '" target="_blank" rel="noopener"><span class="portada portada--sm">' + imagenPortada(actual) + '</span>' +
@@ -3289,7 +3290,7 @@ function pantallaHistorial() {
   // Tus reseñas escritas en Steam (se ven aquí; se editan en Steam)
   var deSteam = tieneSteam() ? ((leerMemoria('steamResenas', null) || { reviews: [] }).reviews) : [];
   function htmlFilaSteam(r) {
-    var j = juegoDeSteam({ appid: r.appid, name: r.name });
+    var j = juegoDeSteam(r);
     return '<article class="tarjeta tarjeta--resena fila-historial">' +
       '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">' + imagenPortada(j) + '</a>' +
       '<div class="fila-historial__cuerpo">' +
