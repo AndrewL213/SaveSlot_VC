@@ -45,7 +45,11 @@ function pedirSteam(accion, appid) {
     });
   }).then(function (respuesta) {
     return respuesta.json().then(function (datos) {
-      if (!respuesta.ok) throw new Error(datos.error || 'Steam no respondió');
+      if (!respuesta.ok) {
+        var error = new Error(datos.error || 'Steam no respondió');
+        error.privado = !!datos.private;
+        throw error;
+      }
       return datos;
     });
   });
@@ -2818,9 +2822,12 @@ function pantallaLogros() {
     pedirSteam('achievements_summary').then(function (datos) {
       guardarMemoria('steamLogros', datos);
       usarSteam(datos);
-    }).catch(function () {
-      var cargando = document.getElementById('cargando-steam');
-      if (cargando) cargando.textContent = 'No pudimos traer tus logros de Steam. Revisa que tus detalles de juego sean públicos en Steam.';
+    }).catch(function (error) {
+      if (error.privado) guardarMemoria('steamLogros', null);
+      if (!document.getElementById('cargando-steam')) caja.insertAdjacentHTML('afterbegin', '<p class="tarjeta__texto" id="cargando-steam"></p>');
+      document.getElementById('cargando-steam').innerHTML = error.privado
+        ? '<b>Tus logros de Steam están ocultos.</b> En Steam ve a tu perfil → Editar perfil → Configuración de privacidad y pon «Detalles de juego» en <b>Público</b>. Luego vuelve a abrir esta página.'
+        : 'No pudimos traer tus logros de Steam. Inténtalo de nuevo en un momento.';
     });
   }
 }
