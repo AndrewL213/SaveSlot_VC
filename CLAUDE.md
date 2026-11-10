@@ -27,7 +27,8 @@ Digitales 3. Más contexto en README.md.
 - assets/: todas las imágenes, logos e íconos de la app. Usa siempre
   las de aquí, nunca links de imágenes de internet. Únicas excepciones: las
   portadas de juegos que trae IGDB (images.igdb.com), siempre con crédito a IGDB,
-  y las de la biblioteca de Steam del usuario (cdn.cloudflare.steamstatic.com),
+  y las de la biblioteca de Steam del usuario (shared.fastly.steamstatic.com,
+  con la dirección que da la tienda de Steam; cdn.cloudflare.steamstatic.com como respaldo),
   siempre con crédito a Steam.
 - css/: estilos. tokens.css (decisiones base), components.css
   (componentes) y styles.css (estilos generales de las pantallas).
