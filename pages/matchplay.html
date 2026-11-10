@@ -75,12 +75,7 @@
     <div class="chat__hilo" id="hilo" hidden aria-live="polite"></div>
 
     <form class="chat__compositor" id="compositor">
-      <div class="en-fila en-fila--desliza" role="group" aria-label="Ideas para preguntar">
-        <button class="chip" type="button" data-idea="Recomiéndame un juego parecido a ">Parecido a…</button>
-        <button class="chip" type="button" data-idea="¿Cuánto dura ">¿Cuánto dura…?</button>
-        <button class="chip" type="button" data-idea="Tengo poco tiempo, ¿qué juego corto de terror me recomiendas?">Algo corto</button>
-        <button class="chip" type="button" data-idea="¿Cómo consigo el logro ">Ayuda con un logro</button>
-      </div>
+      <div class="en-fila en-fila--desliza" id="ideas-matchplay" role="group" aria-label="Ideas para preguntar"></div>
       <div class="buscador buscador--ia">
         <label class="solo-lectores" for="mensaje">Escribe tu mensaje</label>
         <input class="buscador__campo" id="mensaje" autocomplete="off" maxlength="600" placeholder="Pregunta lo que quieras sobre tus juegos">

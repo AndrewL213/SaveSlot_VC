@@ -1,6 +1,8 @@
 /* SaveSlot · data.js
    Datos simulados de la app, separados del diseño. Una lista por tipo de dato, con los
-   nombres de la sección Datos de spec.md y un id en cada elemento.
+   nombres de la sección Datos de spec.md (minúsculas, con guion bajo) y un id único en
+   cada elemento: el slug de IGDB en los juegos, el @ en los usuarios y un nombre corto en lo demás.
+   Las imágenes van como rutas desde la raíz ("assets/…"); app.js les pone ../ con rutaRecurso().
    Las pantallas los leen solo con obtenerDatos("…") de js/app.js: cuando se conecten
    Supabase e IGDB, cambia esa función y no este archivo ni las pantallas.
    Origen: disenos/js/data.js (diseño v3). Portadas desde assets/. */
@@ -1294,7 +1296,7 @@ const DATOS = {
       fecha: "2026-10-07"
     }
   ],
-  destacadosInicio: [
+  destacados_inicio: [
     {
       id: "d1",
       juego: "the-legend-of-zelda-tears-of-the-kingdom"
@@ -1355,7 +1357,7 @@ const DATOS = {
       plataforma: null
     }
   ],
-  tendenciasMatchplay: [
+  tendencias_matchplay: [
     {
       id: "t1",
       etiqueta: "En tendencia · Rocket League",
@@ -1381,7 +1383,7 @@ const DATOS = {
       preguntasHoy: 860
     }
   ],
-  chatsMatchplay: [
+  chats_matchplay: [
     {
       id: "c1",
       usuario: "samluq",
@@ -1431,7 +1433,7 @@ const DATOS = {
       ]
     }
   ],
-  respuestasMatchplay: [
+  respuestas_matchplay: [
     {
       id: "ia1",
       palabras: [
@@ -1577,7 +1579,7 @@ const DATOS = {
       tieneResena: true
     }
   ],
-  progresoLogros: [
+  progreso_logros: [
     {
       id: "p1",
       usuario: "samluq",
@@ -1619,7 +1621,7 @@ const DATOS = {
       plataforma: "Steam"
     }
   ],
-  resumenLogros: [
+  resumen_logros: [
     {
       id: "rl1",
       usuario: "samluq",
@@ -1628,8 +1630,92 @@ const DATOS = {
       juegosCompletos: 7,
       raros: 24
     }
+  ],
+  /* ---------- Fijos de la app: listas que antes estaban escritas en el HTML ---------- */
+  // Géneros que entiende IGDB (api/igdb.js). enBuscar: aparecen en los filtros de Buscar, en este orden;
+  // Juego random usa todos, en orden alfabético.
+  generos: [
+    { id: "aventura", nombre: "Aventura", enBuscar: true },
+    { id: "rpg", nombre: "RPG", enBuscar: true },
+    { id: "accion", nombre: "Acción", enBuscar: true },
+    { id: "terror", nombre: "Terror", enBuscar: true },
+    { id: "shooter", nombre: "Shooter", enBuscar: true },
+    { id: "deportes", nombre: "Deportes", enBuscar: true },
+    { id: "roguelike", nombre: "Roguelike", enBuscar: true },
+    { id: "carreras", nombre: "Carreras", enBuscar: false },
+    { id: "estrategia", nombre: "Estrategia", enBuscar: false },
+    { id: "metroidvania", nombre: "Metroidvania", enBuscar: false },
+    { id: "pelea", nombre: "Pelea", enBuscar: false },
+    { id: "plataformas", nombre: "Plataformas", enBuscar: false },
+    { id: "puzzle", nombre: "Puzzle", enBuscar: false },
+    { id: "simulacion", nombre: "Simulación", enBuscar: false },
+    { id: "supervivencia", nombre: "Supervivencia", enBuscar: false }
   ],
-  variantesError: [
+  // Plataformas de los juegos (filtro de Buscar; api/igdb.js usa los mismos nombres)
+  plataformas: [
+    { id: "pc", nombre: "PC" },
+    { id: "playstation", nombre: "PlayStation" },
+    { id: "xbox", nombre: "Xbox" },
+    { id: "nintendo", nombre: "Nintendo" }
+  ],
+  // Cuentas de juego que se pueden vincular (Editar perfil). Steam es real (api/steam);
+  // Xbox, simulado; PlayStation y Nintendo no tienen conexión pública.
+  cuentas: [
+    { id: "steam", nombre: "Steam", nota: "Se conecta con tu cuenta de Steam", vincula: true },
+    { id: "playstation", nombre: "PlayStation", nota: "No tiene conexión pública: registra tus juegos a mano", vincula: false },
+    { id: "xbox", nombre: "Xbox", nota: "Se conecta mediante OpenXBL (servicio de terceros)", vincula: true },
+    { id: "nintendo", nombre: "Nintendo", nota: "No tiene conexión pública: registra tus juegos a mano", vincula: false }
+  ],
+  // Estado de una partida (Escribir reseña y Diario), con el color de su etiqueta
+  estados_partida: [
+    { id: "terminado", nombre: "Terminado", etiqueta: "etiqueta--exito" },
+    { id: "rejugado", nombre: "Rejugado", etiqueta: "etiqueta--primario" },
+    { id: "en-progreso", nombre: "En progreso", etiqueta: "etiqueta--contorno" },
+    { id: "abandonado", nombre: "Abandonado", etiqueta: "etiqueta--error" }
+  ],
+  // Temas de Contáctanos (el id es el que va en la dirección: contacto.html?tema=torneo)
+  temas_contacto: [
+    { id: "cuenta", nombre: "Problema con mi cuenta" },
+    { id: "eventos", nombre: "Eventos y pagos" },
+    { id: "torneo", nombre: "Quiero organizar un torneo" },
+    { id: "reporte", nombre: "Reportar contenido" },
+    { id: "otro", nombre: "Otro" }
+  ],
+  // Preguntas frecuentes de Contáctanos
+  preguntas_frecuentes: [
+    { id: "vincular", pregunta: "¿Por qué no puedo vincular PlayStation o Nintendo?", respuesta: "No ofrecen una conexión pública para webs como SaveSlot. Puedes registrar tus juegos a mano en tu diario." },
+    { id: "xp", pregunta: "¿Qué es el XP?", respuesta: "Son puntos que ganas al reseñar, vincular cuentas e inscribirte en torneos. Con 300 XP entras gratis a un sorteo." },
+    { id: "datos", pregunta: "¿Dónde se guardan mis datos?", respuesta: "En este prototipo, solo en tu navegador. Si borras los datos del navegador, se borra tu actividad." },
+    { id: "dificultad", pregunta: "¿Cómo se calcula la dificultad de un juego?", respuesta: "Es el promedio de lo que votan los jugadores al reseñarlo, de 1 (relajado) a 10 (brutal)." },
+    { id: "torneo", pregunta: "¿Cómo propongo un torneo?", respuesta: "Escríbenos con el tema “Quiero organizar un torneo” y te contamos los requisitos." }
+  ],
+  // Atajos de Inicio, bajo el buscador (enlace desde la raíz del sitio)
+  atajos_inicio: [
+    { id: "random", texto: "Juego random por género", enlace: "pages/juego-random.html" },
+    { id: "corto", texto: "Recomiéndame algo corto", enlace: "pages/matchplay.html?q=Recomi%C3%A9ndame%20algo%20corto%20para%20el%20finde" },
+    { id: "torneos", texto: "Torneos de esta semana", enlace: "pages/eventos.html" }
+  ],
+  // Ideas para empezar a escribirle a MatchPlay: el chip muestra "texto" y escribe "idea" en el campo
+  ideas_matchplay: [
+    { id: "parecido", texto: "Parecido a…", idea: "Recomiéndame un juego parecido a " },
+    { id: "duracion", texto: "¿Cuánto dura…?", idea: "¿Cuánto dura " },
+    { id: "corto", texto: "Algo corto", idea: "Tengo poco tiempo, ¿qué juego corto de terror me recomiendas?" },
+    { id: "logro", texto: "Ayuda con un logro", idea: "¿Cómo consigo el logro " }
+  ],
+  // Reglas de Eventos ("enlace" y "textoEnlace" son opcionales; el enlace va desde la raíz del sitio)
+  reglas_eventos: [
+    { id: "organiza", texto: "Cada evento muestra quién lo organiza y quién lo patrocina." },
+    { id: "costo", texto: "El costo total se muestra antes de pagar. No hay suscripciones ni cargos recurrentes." },
+    { id: "sorteos", texto: "Los sorteos tienen siempre una forma gratuita de participar con XP." },
+    { id: "proponer", texto: "¿Organizas torneos? ", enlace: "pages/contacto.html?tema=torneo", textoEnlace: "Propón un evento" }
+  ],
+  // Quién organiza un evento (filtro de Eventos; cada evento lo tiene en tipoOrganizador)
+  organizadores: [
+    { id: "marcas", nombre: "Marcas y organizadores" },
+    { id: "desarrolladoras", nombre: "Desarrolladoras oficiales" },
+    { id: "saveslot", nombre: "SaveSlot" }
+  ],
+  variantes_error: [
     {
       id: "no-encontrado",
       codigo: "404",
@@ -1855,7 +1941,7 @@ const DATOS = {
       reintentar: false
     }
   ],
-  estadoServicios: [
+  estado_servicios: [
     {
       id: "s1",
       servicio: "Catálogo de juegos",

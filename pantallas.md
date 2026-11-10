@@ -4,7 +4,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 - **Separada**: tiene su propia página (o vive dentro de la página indicada, si es una ventana).
 - **Con kit**: usa solo css/tokens.css y css/components.css, sin el andamio del prototipo (css/prototipo.css y js/prototipo.js, ya borrados).
-- **Datos en data.js**: sus datos simulados salen de js/data.js, separados del diseño (o de Supabase/IGDB, si son Real).
+- **Datos en data.js**: sus datos simulados salen de js/data.js, separados del diseño (o de Supabase/IGDB, si son Real). También las listas fijas que antes estaban escritas en el HTML (géneros, plataformas, estados de partida, temas y preguntas de Contáctanos, atajos de Inicio, ideas de MatchPlay, reglas y organizadores de Eventos); en el HTML solo quedan las opciones de orden y filtros de la interfaz.
 - **Revisada vs spec**: cumple todos sus criterios de «Está lista cuando» en spec.md.
 
 ## Descubrir
@@ -76,6 +76,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 - **Inicio**: «Mejores juegos de la semana» sale de IGDB («jugando ahora»). Tiene una sección «Lo más jugado en Steam» que el diseño no traía. El aviso de arriba y el pie ya dicen que el catálogo es real (IGDB).
 - **Juego random**: los géneros ya no salen de los juegos de ejemplo, sino de los 15 que entiende IGDB. Nota y dificultad solo se ven si el juego ya tiene reseñas en SaveSlot.
 - **Buscar juegos**: busca en todo IGDB (de 24 en 24, con «Ver más juegos»). Tiene una sección «Lo más jugado en Steam» que el diseño no traía (solo se ve sin búsqueda ni filtros). Algunas búsquedas traen al final juegos poco conocidos o repetidos de IGDB.
+- **Perfil de otro usuario**: la dirección ahora es `perfil-usuario.html?id=usuario`, como las demás pantallas de detalle (`?u=` sigue funcionando).
 - **Detalle de juego**: abre cualquier juego de IGDB (no solo los 12 de ejemplo); «Si te gusta, prueba» usa los parecidos de IGDB. Tiene un apartado «Sobre el juego» (la descripción, con «Leer más») que el diseño no traía. Las horas de la historia salen de IGDB solo si las reportaron 10 jugadores o más; si no, dice «Sin datos» (u «Online» en juegos solo online) y queda el enlace «Ver en HowLongToBeat».
 - **Traducción de descripciones (api/igdb.js)**: usa por ahora el enlace gratis de Google Translate, que no es oficial. Al conectar Supabase hay que guardar cada traducción una sola vez y pasar a DeepL (poner `DEEPL_API_KEY` en Vercel).
 - **Steam (noviembre)**: perfil, biblioteca, logros, lista de deseos, juegos recientes y reseñas de Steam ya son reales (`api/steam/`), y cada ficha de juego muestra precio, nota y jugadores de Steam (tabla **juegos** de Supabase, actualizada cada día). Las portadas de Steam están permitidas en `CLAUDE.md`. Las reseñas de Steam se leen de las páginas públicas de la comunidad: si Steam las cambia, hay que ajustar el código.

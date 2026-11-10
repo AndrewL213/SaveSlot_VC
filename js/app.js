@@ -886,7 +886,7 @@ function htmlResena(resena, opciones) {
     '<div class="en-fila">' +
       '<span class="avatar' + (autor.estado ? ' avatar--' + autor.estado : '') + '" aria-hidden="true">' + escapar(autor.iniciales) + (autor.estado ? '<span class="avatar__punto"></span>' : '') + '</span>' +
       '<div>' +
-        '<a href="' + rutaPagina('perfil-usuario.html') + '?u=' + encodeURIComponent(autor.usuario) + '"><b>' + escapar(autor.usuario) + '</b></a> ' + etiquetaOrigen('SaveSlot') + ' ' +
+        '<a href="' + rutaPagina('perfil-usuario.html') + '?id=' + encodeURIComponent(autor.usuario) + '"><b>' + escapar(autor.usuario) + '</b></a> ' + etiquetaOrigen('SaveSlot') + ' ' +
         (sonAmigos(autor.usuario) ? '<span class="etiqueta etiqueta--amigo">Amigo</span>' : '') +
         '<p class="tarjeta__texto">' + (opciones && opciones.conJuego && juego ? 'sobre ' + escapar(juego.nombreCorto) + ' · ' : '') + escapar(resena.horas) + ' h jugadas</p>' +
       '</div>' +
@@ -979,8 +979,13 @@ function etiquetaTipoEvento(evento) {
 function pantallaIndex() {
   var juegos = obtenerDatos('juegos');
 
+  // Atajos bajo el buscador
+  document.getElementById('atajos').innerHTML = obtenerDatos('atajos_inicio').map(function (a) {
+    return '<li><a class="chip" href="' + escapar(rutaRecurso(a.enlace)) + '">' + escapar(a.texto) + '</a></li>';
+  }).join('');
+
   // Portadas de la bienvenida (decorativas: el texto ya dice de qué trata la página)
-  document.getElementById('portadas-heroe').innerHTML = obtenerDatos('destacadosInicio').map(function (d) {
+  document.getElementById('portadas-heroe').innerHTML = obtenerDatos('destacados_inicio').map(function (d) {
     var juego = buscarPorId('juegos', d.juego);
     if (!juego) return '';
     return '<div class="portada heroe__portada"' + atributoColor(juego.color) + '>' + imagenPortada(juego) +
@@ -1042,7 +1047,19 @@ function pantallaIndex() {
 }
 
 // 3. Buscar juegos
+// Casillas de un filtro (name = "genero" o "plataforma"), con los nombres de una lista de DATOS
+function htmlCasillas(nombre, lista) {
+  return lista.map(function (x) {
+    return '<label class="casilla"><input type="checkbox" name="' + nombre + '" value="' + escapar(x.nombre) + '">' + escapar(x.nombre) + '</label>';
+  }).join('');
+}
+
 function pantallaBuscar() {
+  // Filtros de género y plataforma (antes de leer lo que llega en la dirección)
+  document.getElementById('filtro-generos').insertAdjacentHTML('beforeend',
+    htmlCasillas('genero', obtenerDatos('generos').filter(function (g) { return g.enBuscar; })));
+  document.getElementById('filtro-plataformas').insertAdjacentHTML('beforeend', htmlCasillas('plataforma', obtenerDatos('plataformas')));
+
   var parametros = new URLSearchParams(location.search);
   var formularioBusqueda = document.getElementById('formulario-busqueda');
   var campoBusqueda = document.getElementById('busqueda');
@@ -1230,11 +1247,9 @@ function pantallaBuscar() {
 }
 
 // 4. Juego random
-// Géneros que entiende api/igdb.js (FILTRO_GENERO) para el juego random
-var GENEROS_RANDOM = ['Acción', 'Aventura', 'Carreras', 'Deportes', 'Estrategia', 'Metroidvania', 'Pelea', 'Plataformas', 'Puzzle', 'Roguelike', 'RPG', 'Shooter', 'Simulación', 'Supervivencia', 'Terror'];
-
 function pantallaRandom() {
-  var generos = GENEROS_RANDOM;
+  // Todos los géneros que entiende IGDB, en orden alfabético
+  var generos = obtenerDatos('generos').map(function (g) { return g.nombre; }).sort(function (a, b) { return a.localeCompare(b, 'es'); });
   var parametro = new URLSearchParams(location.search).get('genero');
   var genero = generos.indexOf(parametro) !== -1 ? parametro : 'Aventura';
   var actual = null;
@@ -1328,7 +1343,7 @@ function pantallaRandom() {
 // Cuando se conecte una IA de verdad, solo cambia esta función.
 function responderMatchplay(pregunta) {
   var texto = pregunta.toLowerCase();
-  var respuestas = obtenerDatos('respuestasMatchplay');
+  var respuestas = obtenerDatos('respuestas_matchplay');
   var elegida = respuestas.find(function (r) {
     return r.palabras.some(function (p) { return texto.indexOf(p) !== -1; });
   }) || respuestas[respuestas.length - 1];
@@ -1342,7 +1357,7 @@ function pantallaMatchplay() {
   var HORA = 3600000;
   var ahora = Date.now();
   // Chats guardados en el navegador (hasta conectar Supabase); la primera vez, los de ejemplo
-  var chats = leerMemoria('chatsMatchplay', null) || obtenerDatos('chatsMatchplay').map(function (c) {
+  var chats = leerMemoria('chatsMatchplay', null) || obtenerDatos('chats_matchplay').map(function (c) {
     return { id: c.id, titulo: c.titulo, fecha: ahora - c.horasAtras * HORA, mensajes: c.mensajes };
   });
   var activo = null;
@@ -1355,7 +1370,7 @@ function pantallaMatchplay() {
   var hilo = document.getElementById('hilo');
   var campo = document.getElementById('mensaje');
   var botonChats = document.getElementById('boton-chats');
-  var tendencias = obtenerDatos('tendenciasMatchplay');
+  var tendencias = obtenerDatos('tendencias_matchplay');
 
   function guardar() { guardarMemoria('chatsMatchplay', chats); }
   function chatActivo() { return chats.find(function (c) { return c.id === activo; }) || null; }
@@ -1489,6 +1504,9 @@ function pantallaMatchplay() {
   });
 
   // Ideas para preguntar: escriben el comienzo de la pregunta
+  document.getElementById('ideas-matchplay').innerHTML = obtenerDatos('ideas_matchplay').map(function (i) {
+    return '<button class="chip" type="button" data-idea="' + escapar(i.idea) + '">' + escapar(i.texto) + '</button>';
+  }).join('');
   document.querySelectorAll('[data-idea]').forEach(function (chip) {
     chip.addEventListener('click', function () {
       campo.value = chip.dataset.idea;
@@ -1856,6 +1874,10 @@ function pantallaEscribir() {
 
 function mostrarEscribir(juego) {
   var parametros = new URLSearchParams(location.search);
+  // Estados de la partida (antes de cargar una reseña que se edita)
+  document.getElementById('estado').innerHTML = obtenerDatos('estados_partida').map(function (e) {
+    return '<option>' + escapar(e.nombre) + '</option>';
+  }).join('');
   var MINIMO = 50;
   var tipo = ['guia', 'clip'].indexOf(parametros.get('tipo')) !== -1 ? parametros.get('tipo') : 'resena';
   var calificacion = 8;
@@ -2127,7 +2149,7 @@ function datosPersona(usuario) {
 }
 
 function enlacePerfil(usuario) {
-  return obtenerSesion() && usuario === usuarioActual() ? 'perfil.html' : 'perfil-usuario.html?u=' + encodeURIComponent(usuario);
+  return obtenerSesion() && usuario === usuarioActual() ? 'perfil.html' : 'perfil-usuario.html?id=' + encodeURIComponent(usuario);
 }
 
 // 12. Detalle de reseña
@@ -2334,6 +2356,14 @@ function pantallaEventos() {
   var lista = document.getElementById('lista-eventos');
   var cajaFiltros = document.getElementById('filtro-tipo');
   var selectorOrganiza = document.getElementById('organiza');
+
+  // Quién organiza (después de "Todos") y reglas de los eventos
+  selectorOrganiza.insertAdjacentHTML('beforeend', obtenerDatos('organizadores').map(function (o) {
+    return '<option>' + escapar(o.nombre) + '</option>';
+  }).join(''));
+  document.getElementById('reglas-eventos').innerHTML = obtenerDatos('reglas_eventos').map(function (r) {
+    return '<li>' + escapar(r.texto) + (r.enlace ? '<a href="' + escapar(rutaRecurso(r.enlace)) + '"><b>' + escapar(r.textoEnlace) + '</b></a>.' : '') + '</li>';
+  }).join('');
 
   var delMes = eventos.find(function (e) { return e.destacado; });
   document.getElementById('evento-destacado').innerHTML = delMes ? htmlEventoDestacado(delMes) : '';
@@ -2749,7 +2779,7 @@ function pantallaPerfil() {
   document.getElementById('insignias-perfil').innerHTML = '<span class="etiqueta etiqueta--primario">NIVEL ' + escapar(perfil.level) + '</span>' +
     (datosUsuario.insignias || []).map(function (i) { return '<span class="etiqueta etiqueta--contorno">' + escapar(i.toUpperCase()) + '</span>'; }).join('');
   document.getElementById('compartir-perfil').addEventListener('click', function () {
-    copiarEnlace(location.href.split('?')[0].replace('perfil.html', 'perfil-usuario.html?u=' + encodeURIComponent(sesion.user)), 'Enlace del perfil copiado');
+    copiarEnlace(location.href.split('?')[0].replace('perfil.html', 'perfil-usuario.html?id=' + encodeURIComponent(sesion.user)), 'Enlace del perfil copiado');
   });
 
   // Actividad: qué está jugando
@@ -2817,7 +2847,7 @@ function pantallaPerfil() {
   var solicitudes = personas.filter(function (u) { return relacionCon(u.usuario) === 'solicitud recibida'; });
   document.getElementById('cantidad-amigos').textContent = '· ' + amigos.length;
   document.getElementById('amigos-perfil').innerHTML = amigos.slice(0, 8).map(function (a) {
-    return '<a href="perfil-usuario.html?u=' + encodeURIComponent(a.usuario) + '" title="' + escapar(a.nombre) + '"><span class="solo-lectores">' + escapar(a.nombre) + '</span>' + htmlAvatar(a) + '</a>';
+    return '<a href="perfil-usuario.html?id=' + encodeURIComponent(a.usuario) + '" title="' + escapar(a.nombre) + '"><span class="solo-lectores">' + escapar(a.nombre) + '</span>' + htmlAvatar(a) + '</a>';
   }).join('') || '<p class="tarjeta__texto">Aún no tienes amigos. <a href="amigos.html#sugerencias">Ver sugerencias</a></p>';
   document.getElementById('solicitudes-perfil').innerHTML = solicitudes.length
     ? '<a class="fila fila--actividad" href="amigos.html#solicitudes">' + htmlAvatar(solicitudes[0], 'sm') + '<span><b>' + solicitudes.length + (solicitudes.length === 1 ? ' solicitud' : ' solicitudes') + '</b> de amistad pendientes</span><span class="al-final" aria-hidden="true">→</span></a>'
@@ -2860,7 +2890,7 @@ function pantallaPerfil() {
 
   // Estadísticas
   var resenas = leerResenasPropias().filter(function (r) { return r.tipo === 'resena'; });
-  var resumenLogros = obtenerDatos('resumenLogros').find(function (r) { return r.usuario === sesion.user; });
+  var resumenLogros = obtenerDatos('resumen_logros').find(function (r) { return r.usuario === sesion.user; });
   var anio = String(new Date().getFullYear());
   var logrosSteam = (perfil.accounts || {}).Steam ? leerMemoria('steamLogros', null) : null;
   var bibliotecaSteam = (perfil.accounts || {}).Steam ? leerBibliotecaSteam() : [];
@@ -3016,13 +3046,6 @@ function pantallaPerfil() {
 // 20. Editar perfil (pasos 2 y 3 al crear la cuenta)
 var MAXIMO_FAVORITOS = 4;
 var XP_POR_CUENTA = 100;
-// Steam se vincula de verdad (api/steam); Xbox, simulado; PlayStation y Nintendo no tienen conexión pública (Después)
-var PLATAFORMAS = [
-  { nombre: 'Steam', nota: 'Se conecta con tu cuenta de Steam', vincula: true },
-  { nombre: 'PlayStation', nota: 'No tiene conexión pública: registra tus juegos a mano', vincula: false },
-  { nombre: 'Xbox', nota: 'Se conecta mediante OpenXBL (servicio de terceros)', vincula: true },
-  { nombre: 'Nintendo', nota: 'No tiene conexión pública: registra tus juegos a mano', vincula: false }
-];
 
 function pantallaEditar() {
   if (!exigirSesion()) return;
@@ -3151,7 +3174,8 @@ function pantallaEditar() {
   // Cuentas vinculadas (simulado)
   var cajaCuentas = document.getElementById('cuentas-editar');
   function dibujarCuentas() {
-    cajaCuentas.innerHTML = PLATAFORMAS.map(function (p) {
+    // Cuentas que se pueden vincular (cuentas en data.js)
+    cajaCuentas.innerHTML = obtenerDatos('cuentas').map(function (p) {
       var nombre = perfil.accounts[p.nombre];
       return '<div class="fila fila--comparacion"><span><b>' + p.nombre + '</b><br><span class="tarjeta__texto">' + p.nota + '</span></span>' +
         (nombre
@@ -3220,8 +3244,11 @@ function pantallaEditar() {
   });
 }
 
-// Etiqueta de color para el estado de un juego en el diario
-var ETIQUETA_ESTADO = { Terminado: 'etiqueta--exito', Rejugado: 'etiqueta--primario', Abandonado: 'etiqueta--error', 'En progreso': 'etiqueta--contorno' };
+// Etiqueta de color para el estado de un juego en el diario (estados_partida en data.js)
+function claseEstado(nombre) {
+  var estado = obtenerDatos('estados_partida').find(function (e) { return e.nombre === nombre; });
+  return estado ? estado.etiqueta : 'etiqueta--contorno';
+}
 
 // 21. Diario
 function pantallaDiario() {
@@ -3261,7 +3288,7 @@ function pantallaDiario() {
         '<td class="tabla__dia">' + String(d.fecha).slice(8, 10) + '</td>' +
         '<td class="tabla__ancha"><a class="juego-en-fila" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"><span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
           '<span><b>' + escapar(j.nombreCorto) + '</b><br><span class="tarjeta__texto">' + escapar(j.plataformas[0]) + '</span></span></a></td>' +
-        '<td><span class="etiqueta ' + (ETIQUETA_ESTADO[d.estado] || 'etiqueta--contorno') + '">' + escapar(d.estado) + '</span></td>' +
+        '<td><span class="etiqueta ' + claseEstado(d.estado) + '">' + escapar(d.estado) + '</span></td>' +
         '<td class="tabla__solo-escritorio tarjeta__texto">' + (d.horas || 0) + ' h</td>' +
         '<td><span class="nota nota--texto">' + (d.calificacion ? d.calificacion + '/10' : '—') + '</span></td>' +
         '<td class="tabla__centro tabla__solo-escritorio"><span class="tabla__me-gusta' + (d.meGusta ? ' tabla__me-gusta--activo' : '') + '" role="img" aria-label="' + (d.meGusta ? 'Te gustó' : 'Sin me gusta') + '">♥</span></td>' +
@@ -3415,8 +3442,8 @@ function pantallaLogros() {
   if (!exigirSesion()) return;
   var usuario = obtenerSesion().user;
   var plataforma = 'Todas';
-  var progreso = obtenerDatos('progresoLogros').filter(function (p) { return p.usuario === usuario; });
-  var resumen = obtenerDatos('resumenLogros').find(function (r) { return r.usuario === usuario; }) || { desbloqueados: 0, promedio: 0, juegosCompletos: 0, raros: 0 };
+  var progreso = obtenerDatos('progreso_logros').filter(function (p) { return p.usuario === usuario; });
+  var resumen = obtenerDatos('resumen_logros').find(function (r) { return r.usuario === usuario; }) || { desbloqueados: 0, promedio: 0, juegosCompletos: 0, raros: 0 };
   var raros = obtenerDatos('logros').map(function (l) {
     var j = buscarPorId('juegos', l.juego);
     return { nombre: l.nombre, juego: j ? j.nombreCorto : '', porcentaje: l.porcentaje, obtenido: l.obtenido };
@@ -3617,7 +3644,7 @@ function pantallaAmigos() {
     var relacion = relacionCon(p.usuario);
     var juego = p.estado === 'jugando' ? buscarPorId('juegos', p.jugandoAhora) : null;
     var comunes = juegosEnComun(p);
-    var perfil = 'perfil-usuario.html?u=' + encodeURIComponent(p.usuario);
+    var perfil = 'perfil-usuario.html?id=' + encodeURIComponent(p.usuario);
     var acciones = {
       amigos: '<a class="boton boton--secundario boton--sm" href="' + perfil + '">Ver perfil</a>' +
         '<button class="boton boton--secundario boton--sm" type="button" data-mensaje="' + escapar(p.usuario) + '" aria-disabled="true">Mensaje <span class="etiqueta etiqueta--contorno">Pronto</span></button>' +
@@ -3745,9 +3772,11 @@ function pantallaAmigos() {
   aplicarColores(document);
 }
 
-// 25. Perfil de otro usuario (?u=usuario)
+// 25. Perfil de otro usuario (?id=usuario)
 function pantallaUsuario() {
-  var usuario = new URLSearchParams(location.search).get('u');
+  // El id es el @ de la persona (?id=juanvi); ?u= es la forma vieja y sigue funcionando
+  var parametros = new URLSearchParams(location.search);
+  var usuario = parametros.get('id') || parametros.get('u');
   var persona = buscarPorId('usuarios', usuario);
   if (!persona || !persona.nivel) { location.replace(rutaPagina('404.html') + '?tipo=usuario'); return; }
   var sesion = obtenerSesion();
@@ -3805,7 +3834,7 @@ function pantallaUsuario() {
   var comunes = obtenerDatos('usuarios').filter(function (u) { return u.usuario !== persona.usuario && sonAmigos(u.usuario); }).slice(0, persona.amigosEnComun || 3);
   document.getElementById('cantidad-comunes').textContent = comunes.length;
   document.getElementById('amigos-comunes').innerHTML = comunes.map(function (u) {
-    return '<a href="perfil-usuario.html?u=' + encodeURIComponent(u.usuario) + '" title="' + escapar(u.nombre) + '"><span class="solo-lectores">' + escapar(u.nombre) + '</span>' + htmlAvatar(u) + '</a>';
+    return '<a href="perfil-usuario.html?id=' + encodeURIComponent(u.usuario) + '" title="' + escapar(u.nombre) + '"><span class="solo-lectores">' + escapar(u.nombre) + '</span>' + htmlAvatar(u) + '</a>';
   }).join('') || '<p class="tarjeta__texto">Ninguno</p>';
 
   // Estadísticas
@@ -3848,7 +3877,6 @@ function pantallaUsuario() {
 }
 
 // 27. Contáctanos (y 28. Ventana: Mensaje guardado)
-var TEMAS_CONTACTO = { cuenta: 'Problema con mi cuenta', eventos: 'Eventos y pagos', torneo: 'Quiero organizar un torneo', reporte: 'Otro' };
 
 function pantallaContacto() {
   var formulario = document.getElementById('formulario-contacto');
@@ -3858,9 +3886,15 @@ function pantallaContacto() {
   var mensaje = document.getElementById('mensaje-contacto');
   var sesion = obtenerSesion();
 
+  // Temas del formulario y preguntas frecuentes
+  tema.innerHTML = obtenerDatos('temas_contacto').map(function (t) { return '<option>' + escapar(t.nombre) + '</option>'; }).join('');
+  document.getElementById('preguntas-frecuentes').innerHTML = obtenerDatos('preguntas_frecuentes').map(function (p) {
+    return '<details class="preguntas__item"><summary>' + escapar(p.pregunta) + '</summary><p>' + escapar(p.respuesta) + '</p></details>';
+  }).join('');
+
   // Lo que ya sabemos: el tema desde el enlace (?tema=torneo) y el nombre si hay sesión
-  var temaInicial = TEMAS_CONTACTO[new URLSearchParams(location.search).get('tema')];
-  if (temaInicial) tema.value = temaInicial;
+  var temaInicial = buscarPorId('temas_contacto', new URLSearchParams(location.search).get('tema'));
+  if (temaInicial) tema.value = temaInicial.nombre;
   if (sesion) {
     nombre.value = sesion.name || '';
     if (sesion.email && sesion.email.indexOf('@saveslot') === -1) correo.value = sesion.email;
@@ -3897,7 +3931,7 @@ var ETIQUETA_SERVICIO = { conectado: 'etiqueta--exito', demo: 'etiqueta--ia', pe
 
 function pantallaError() {
   var parametros = new URLSearchParams(location.search);
-  var variantes = obtenerDatos('variantesError');
+  var variantes = obtenerDatos('variantes_error');
   var tipo = parametros.get('tipo') || (navigator.onLine === false ? 'sin-conexion' : 'no-encontrado');
   var variante = variantes.find(function (v) { return v.id === tipo; }) || variantes.find(function (v) { return v.id === 'no-encontrado'; });
   var servicio = (parametros.get('servicio') || '').slice(0, 60);
@@ -3950,7 +3984,7 @@ function pantallaError() {
   }
 
   // Estado de los servicios (simulado)
-  document.getElementById('estado-servicios').innerHTML = obtenerDatos('estadoServicios').map(function (s) {
+  document.getElementById('estado-servicios').innerHTML = obtenerDatos('estado_servicios').map(function (s) {
     // "Con fallas" solo cuando un servicio falló (no cuando una función no existe todavía)
     var falla = /^API-/.test(variante.codigo);
     var afectado = falla && servicio && (s.servicio.indexOf(servicio) !== -1 || s.proveedor.indexOf(servicio) !== -1);

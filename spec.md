@@ -114,6 +114,15 @@ Solo lo que se ve o se guarda en las pantallas. Entre paréntesis, de dónde sal
 
 ### Fijos de la app (no son datos de usuarios; se quedan en `js/data.js`)
 
+Las listas de `js/data.js` se llaman en minúsculas con guion bajo (`variantes_error`, `estado_servicios`…). Los ids son texto: el slug de IGDB en los juegos, el @ en los usuarios y un nombre corto en lo demás (Supabase pondrá los suyos al crear las tablas). Las pantallas de detalle reciben el id en la dirección: `?id=…`.
+
+- **géneros** (`generos`): id, nombre, si sale en los filtros de Buscar (Juego random usa todos)
+- **plataformas** (`plataformas`): id, nombre (PC, PlayStation, Xbox, Nintendo)
+- **cuentas** (`cuentas`): id, nombre, nota, si se puede vincular (Editar perfil)
+- **estados de partida** (`estados_partida`): id, nombre, color de su etiqueta (Escribir reseña y Diario)
+- **temas de contacto** (`temas_contacto`) y **preguntas frecuentes** (`preguntas_frecuentes`): Contáctanos
+- **atajos de Inicio** (`atajos_inicio`), **ideas de MatchPlay** (`ideas_matchplay`), **reglas de eventos** (`reglas_eventos`) y **organizadores** (`organizadores`, filtro de Eventos)
+- Las opciones de orden y los rangos de los filtros ("Más recientes", "A–Z", "9–10", "< 10 h"…) son parte de la interfaz y siguen en el HTML.
 - **variantes de error**: id, código, título, texto, consejos, reintentar (sí o no), segundos de espera, botón de la variante, servicio por defecto
 - **estado de los servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto
 

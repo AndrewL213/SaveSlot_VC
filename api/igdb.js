@@ -22,7 +22,7 @@
 // nada de DLC, mods, packs ni ports no oficiales.
 //
 // Responde con los juegos en el mismo formato que js/data.js. Si algo falla, responde
-// { error: '…' } con el mismo nombre que las variantes de la página de error (variantesError).
+// { error: '…' } con el mismo nombre que las variantes de la página de error (variantes_error, en js/data.js).
 
 const LIMITE_DE_ESPERA = 8000; // milisegundos; después se responde "tiempo"
 
