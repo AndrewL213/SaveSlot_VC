@@ -1400,23 +1400,63 @@ function pantallaJuego() {
   activarResenas(panel);
   mostrarPestana('resenas');
 
-  // Trae las reseñas de Steam (busca el juego en Steam por su nombre)
-  // Si el juego está en tu biblioteca de Steam, se usa su número (más exacto que buscar por nombre)
+  // Steam: datos del catálogo (precio, nota, jugadores, logros) y reseñas.
+  // El número de Steam sale de IGDB (api/steam/juego); si no, de tu biblioteca; si no, se busca por nombre.
   var normalizar = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
   var enBiblioteca = leerBibliotecaSteam().find(function (j) { return normalizar(j.nombre) === normalizar(juego.nombre) || normalizar(j.nombre) === normalizar(juego.nombreCorto); });
-  var appid = juego.appid || (enBiblioteca && enBiblioteca.appid);
-  fetch('/api/steam/resenas?' + (appid ? 'appid=' + encodeURIComponent(appid) : 'nombre=' + encodeURIComponent(juego.nombre)))
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (datos) {
-      if (!datos || !datos.appid) return;
-      steam = datos;
-      var pestana = pestanas[0];
-      pestana.numero = resenas.length + steam.resenas.length;
-      var contador = cajaPestanas.querySelector('[data-pestana="resenas"] .contador');
-      if (contador) contador.textContent = formatearNumero(pestana.numero);
-      if (pestanaActual === 'resenas') mostrarPestana('resenas');
-    })
-    .catch(function () { /* sin conexión con Steam: solo las de SaveSlot */ });
+  var appidLocal = juego.appidSteam || (enBiblioteca && enBiblioteca.appid) || null;
+
+  function pedirResenasSteam(appid) {
+    fetch('/api/steam/resenas?' + (appid ? 'appid=' + encodeURIComponent(appid) : 'nombre=' + encodeURIComponent(juego.nombre)))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (datos) {
+        if (!datos || !datos.appid) return;
+        steam = datos;
+        var pestana = pestanas[0];
+        pestana.numero = resenas.length + steam.resenas.length;
+        var contador = cajaPestanas.querySelector('[data-pestana="resenas"] .contador');
+        if (contador) contador.textContent = formatearNumero(pestana.numero);
+        if (pestanaActual === 'resenas') mostrarPestana('resenas');
+      })
+      .catch(function () { /* sin conexión con Steam: solo las de SaveSlot */ });
+  }
+
+  // Precio, descuento, nota de Steam y jugadores de ahora, debajo de las plataformas
+  function mostrarDatosSteam(j) {
+    if (!j || !j.steam_appid) return;
+    var precio = j.steam_gratis ? '<b>Gratis</b>'
+      : (j.steam_precio ? (j.steam_descuento ? '<span class="etiqueta etiqueta--exito">-' + escapar(j.steam_descuento) + '%</span> <s>' + escapar(j.steam_precio_original || '') + '</s> ' : '') + '<b>' + escapar(j.steam_precio) + '</b>' : '');
+    var partes = [precio,
+      j.steam_nota ? escapar(j.steam_nota) + (j.steam_nota_pct != null ? ' (' + j.steam_nota_pct + '% de ' + formatearNumero(j.steam_resenas) + ')' : '') : '',
+      j.steam_jugando ? formatearNumero(j.steam_jugando) + ' jugando ahora' : '',
+      '<a href="https://store.steampowered.com/app/' + j.steam_appid + '/" target="_blank" rel="noopener">Ver en Steam</a>'
+    ].filter(Boolean);
+    var linea = document.getElementById('steam-juego');
+    if (!linea) {
+      document.getElementById('plataformas-juego').insertAdjacentHTML('afterend', '<p class="tarjeta__texto" id="steam-juego"></p>');
+      linea = document.getElementById('steam-juego');
+    }
+    linea.innerHTML = etiquetaOrigen('Steam') + ' ' + partes.join(' · ');
+    // Logros: el total real de Steam
+    if (j.steam_logros) {
+      pestanas[3].numero = j.steam_logros;
+      var contador = cajaPestanas.querySelector('[data-pestana="logros"] .contador');
+      if (contador) contador.textContent = formatearNumero(j.steam_logros);
+    }
+  }
+
+  if (juego.idIgdb) {
+    fetch('/api/steam/juego?igdb=' + encodeURIComponent(juego.idIgdb) + '&slug=' + encodeURIComponent(juego.id) + '&nombre=' + encodeURIComponent(juego.nombre))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (datos) {
+        var j = datos && datos.juego;
+        mostrarDatosSteam(j);
+        pedirResenasSteam((j && j.steam_appid) || appidLocal);
+      })
+      .catch(function () { pedirResenasSteam(appidLocal); });
+  } else {
+    pedirResenasSteam(appidLocal);
+  }
 
   // Ficha y "Si te gusta, prueba" (otros juegos del mismo género)
   document.getElementById('ficha').innerHTML = [
