@@ -6,7 +6,7 @@
 //   fetch("/api/steam/data", {
 //     method: "POST",
 //     headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-//     body: JSON.stringify({ action: "library" }),   // "profile" | "library" | "achievements" | "stats" (+ appid)
+//     body: JSON.stringify({ action: "library" }),   // "profile" | "library" | "achievements_summary" | "achievements" | "stats" (+ appid)
 //   }).then(r => r.json());
 //
 // Variables de entorno: STEAM_API_KEY. Opcionales: SUPABASE_URL, SUPABASE_ANON_KEY
@@ -114,6 +114,60 @@ module.exports = async function handler(req, res) {
         });
         const done = list.filter((a) => a.achieved).length;
         return json(res, { appid, total: list.length, unlocked: done, achievements: list });
+      }
+
+      case "achievements_summary": {
+        // Logros de los 30 juegos más jugados (los que tienen estadísticas públicas)
+        const lib = await steam("IPlayerService/GetOwnedGames/v1/", {
+          steamid, include_appinfo: 1, include_played_free_games: 1,
+        });
+        const jugados = (lib.response.games ?? [])
+          .filter((g) => g.playtime_forever > 0 && g.has_community_visible_stats)
+          .sort((a, b) => b.playtime_forever - a.playtime_forever)
+          .slice(0, 30);
+        const porJuego = await Promise.all(jugados.map(async (g) => {
+          try {
+            const d = await steam("ISteamUserStats/GetPlayerAchievements/v1/", { steamid, appid: g.appid, l: "spanish" });
+            const lista = d.playerstats?.achievements ?? [];
+            if (!lista.length) return null;
+            return { appid: g.appid, name: g.name, total: lista.length, unlocked: lista.filter((a) => a.achieved === 1).length, lista };
+          } catch {
+            return null;
+          }
+        }));
+        const games = porJuego.filter(Boolean);
+
+        // Rareza: % global de jugadores que tiene cada logro (10 juegos más jugados)
+        const raros = [];
+        await Promise.all(games.slice(0, 10).map(async (g) => {
+          try {
+            const r = await fetch(`${API}/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?gameid=${g.appid}`).then((x) => x.json());
+            const pct = new Map((r.achievementpercentages?.achievements ?? []).map((a) => [a.name, Number(a.percent)]));
+            for (const a of g.lista) {
+              if (!pct.has(a.apiname)) continue;
+              raros.push({
+                appid: g.appid, game: g.name, name: a.name || a.apiname, description: a.description || null,
+                percent: Math.round(pct.get(a.apiname) * 10) / 10, achieved: a.achieved === 1,
+              });
+            }
+          } catch { /* sin datos globales para ese juego */ }
+        }));
+        raros.sort((a, b) => a.percent - b.percent);
+
+        const unlocked = games.reduce((s, g) => s + g.unlocked, 0);
+        const average = games.length
+          ? Math.round(games.reduce((s, g) => s + g.unlocked / g.total, 0) / games.length * 100)
+          : 0;
+        return json(res, {
+          summary: {
+            unlocked,
+            average,
+            complete: games.filter((g) => g.unlocked === g.total).length,
+            rare: raros.filter((a) => a.achieved && a.percent < 10).length,
+          },
+          games: games.map(({ lista, ...g }) => g),
+          rarest: raros.slice(0, 8),
+        });
       }
 
       case "stats": {
