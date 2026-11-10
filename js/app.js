@@ -2392,6 +2392,27 @@ function pantallaPerfil() {
   histograma.setAttribute('aria-label', 'Distribución de tus calificaciones. Promedio ' + formatearNota(promedio));
   document.getElementById('promedio-perfil').textContent = formatearPromedio(promedio) + ' · ' + calificados.length + ' juegos';
 
+  // Biblioteca de Steam: los 6 más jugados (antes de la lista de deseos)
+  function dibujarBiblioteca(lista) {
+    var seccion = document.getElementById('biblioteca');
+    if (!seccion) return;
+    seccion.hidden = false;
+    var top = lista.slice().sort(function (a, b) { return b.horas - a.horas; }).slice(0, 6);
+    document.getElementById('biblioteca-perfil').innerHTML = top.map(function (j) {
+      return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
+        '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
+        '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
+    }).join('') || '<div class="vacio">Trayendo tu biblioteca de Steam…</div>';
+    var dato = document.querySelector('#estadisticas-perfil a[href="biblioteca.html"] .dato__valor');
+    if (dato) dato.textContent = lista.length;
+  }
+  if ((perfil.accounts || {}).Steam) {
+    dibujarBiblioteca(bibliotecaSteam);
+    actualizarBibliotecaSteam().then(dibujarBiblioteca).catch(function () {
+      if (!bibliotecaSteam.length) document.getElementById('biblioteca').hidden = true;
+    });
+  }
+
   // Lista de deseos: quitar con deshacer
   var cajaDeseos = document.getElementById('deseos-perfil');
   function dibujarDeseos() {
