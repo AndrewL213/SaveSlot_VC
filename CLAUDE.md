@@ -11,9 +11,9 @@ Digitales 3. Más contexto en README.md.
   componentes.html muestra todos los componentes.
 
 ## Tecnología (no cambiar sin preguntar)
-- HTML, CSS y JavaScript puro. Sin frameworks ni librerías (nada de
-  React, Vue, Tailwind ni TypeScript) y sin paso de compilación: todo
-  debe funcionar abriendo los archivos en el navegador.
+- HTML, CSS y JavaScript sin paso de compilación: todo debe funcionar
+  abriendo los archivos en el navegador. Las librerías (por ejemplo,
+  supabase-js) se cargan como scripts normales, sin type="module".
 - La app se publicará en Vercel, conectada a este repositorio.
 - Cuentas y base de datos: Supabase. Catálogo de juegos: IGDB (de Twitch), con las
   descripciones traducidas al español (por ahora con el enlace gratis de

@@ -48,26 +48,64 @@ Se puede entrar y explorar sin cuenta. La cuenta se pide solo al escribir, comen
 
 ## Datos
 
-Solo lo que se ve o se guarda en los diseños. Entre paréntesis, de dónde sale.
+Solo lo que se ve o se guarda en las pantallas. Entre paréntesis, de dónde sale.
 
-- **juegos** (IGDB): id, nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie: Indie si IGDB le pone ese género), horas de la historia ("Time to beat" de IGDB), descripción, portada (de `assets/` o de IGDB), color de respaldo (solo los juegos con imagen en `assets/`; los demás usan el neutro del kit)
-  - Datos de ejemplo: logros totales (IGDB no los da)
-  - Calculados con nuestras reseñas (Supabase): dificultad promedio (1–10), calificación, número de votos, horas al 100 %
-- **reseñas** (Supabase): id, juego, autor, tipo (reseña o guía), estado (publicada o borrador), título (opcional), texto, calificación (1–10), dificultad (1–10), horas jugadas, minutos de lectura (guías), contiene spoilers, votos de "útil", fecha
-- **comentarios** (Supabase): reseña, autor, texto, fecha
-- **diario** (Supabase): usuario, juego, fecha, estado (Terminado, Rejugado, En progreso o Abandonado), horas, calificación, me gusta, tiene reseña
-- **usuarios** (Supabase): nombre visible, usuario, correo, forma de entrar (correo, Google, Discord, Twitch o Steam), invitado (sí o no), sobre mí, jugando ahora, miembro desde, nivel, XP, 4 juegos favoritos, géneros favoritos, lista de deseos, insignias, iniciales
-  - Estado: "en línea" sale de la presencia de Supabase; "jugando" sale de "jugando ahora"
-- **amigos** (Supabase): usuario, amigo, estado (amigos, solicitud enviada o solicitud recibida), fecha
-- **eventos** (Supabase): id, tipo (torneo o sorteo), juego, título, fecha y hora, organizador, tipo de organizador, cupos ocupados, cupos máximos, costo, gratis (sí o no), premio, reglas
-- **inscripciones** (Supabase): usuario, evento, nombre del equipo, compañero, forma de participar (XP o pago)
-- **notificaciones** (Supabase): usuario, tipo (voto "útil" a una reseña tuya o cierre de inscripciones de un evento tuyo), texto, fecha
-- **chats de MatchPlay** (Supabase): usuario, título, fecha, mensajes (quién habla y texto), voto de "útil" por respuesta. Las respuestas de la IA son simuladas.
-- **tendencias de MatchPlay** (Supabase): etiqueta, pregunta, cantidad de preguntas hoy
+**Cómo se identifican:** cada elemento tiene un `id`. Las personas se enlazan por el id de su cuenta en Supabase Auth (el @usuario es el nombre visible, único, pero puede cambiar). Los juegos se enlazan por su id de IGDB (pendiente: pasar a ese id los 12 juegos de ejemplo). "Calculado" quiere decir que no se guarda: la app lo saca de otros datos.
+
+### Se guardan en Supabase
+
+- **usuarios** (Supabase): id, usuario (@, único), nombre visible, iniciales, correo, forma de entrar (correo, Google, Discord, Twitch o Steam), invitado (sí o no), sobre mí, jugando ahora (juego), miembro desde, nivel, XP, 4 juegos favoritos, géneros favoritos, lista de deseos, insignias, color del avatar
+  - Estado: "en línea" y última conexión salen de la presencia de Supabase; "jugando" sale de "jugando ahora"
+  - Calculado: amigos en común, notas de cada juego (del diario; en los datos de ejemplo están en `notas`)
+- **cuentas vinculadas** (Supabase; hoy datos de ejemplo dentro de usuarios): usuario, plataforma (Steam, Xbox, PlayStation o Nintendo), nombre en la plataforma, estado (verificada o pendiente). Quien entra con Steam la tiene vinculada desde el inicio.
+- **reseñas** (Supabase): id, juego, autor, tipo (reseña o guía), estado (publicada o borrador), título (opcional), texto, calificación (1–10), dificultad (1–10), horas jugadas, estado de la partida (Terminado, Rejugado, En progreso o Abandonado), minutos de lectura (guías), contiene spoilers, editada (sí o no), fecha
+  - Calculado: votos de "útil" y me gusta (se cuentan en sus tablas), porcentaje de "útil" de las guías
+  - Borradores: un borrador por persona y juego, con los mismos campos (estado "borrador")
+- **votos "útil"** (Supabase): usuario, reseña, fecha. Uno por persona y reseña; nadie vota su propia reseña.
+- **me gusta de reseñas** (Supabase): usuario, reseña, fecha. Uno por persona y reseña; se puede quitar.
+- **comentarios** (Supabase): id, reseña, autor, texto, fecha
+- **diario** (Supabase): id, usuario, juego, fecha, estado (Terminado, Rejugado, En progreso o Abandonado), horas, calificación, me gusta, tiene reseña
+- **amigos** (Supabase): id, usuario, amigo, estado (amigos, solicitud enviada o solicitud recibida), fecha
+- **eventos** (Supabase): id, tipo (torneo o sorteo), juego, título, descripción, fecha y hora, organizador, tipo de organizador, cupos ocupados, cupos máximos, costo, gratis (sí o no), premio, cronograma (pasos con su fecha), reglas, color, destacado (el "evento del mes" de Inicio)
+- **inscripciones** (Supabase): id, usuario, evento, nombre del equipo, compañero, forma de participar (XP o pago), fecha
+- **notificaciones** (Supabase): id, usuario, tipo (voto "útil" a una reseña tuya o cierre de inscripciones de un evento tuyo), texto, enlace, fecha, leída (sí o no)
+- **chats de MatchPlay** (Supabase): id, usuario, título, fecha, mensajes (quién habla, texto y voto de "útil" en cada respuesta). Las respuestas de la IA son simuladas.
+- **tendencias de MatchPlay** (Supabase): id, etiqueta, pregunta, cantidad de preguntas hoy
+- **destacados de Inicio** (Supabase): id, juego, orden (las 3 portadas del título de Inicio)
 - **vistos recientemente** (Supabase; sin sesión, en el navegador): usuario, los últimos 6 juegos abiertos
-- **mensajes de contacto** (Supabase): nombre, correo, tema, mensaje, fecha
-- **logros** (datos de ejemplo): juego, nombre, descripción, % de jugadores que lo tienen, obtenido (sí o no), plataforma
-- **cuentas vinculadas** (datos de ejemplo): usuario, plataforma (Steam, Xbox, PlayStation o Nintendo), nombre en la plataforma, estado
+- **mensajes de contacto** (Supabase): id, nombre, correo, tema, mensaje, fecha
+
+### Siguen como datos de ejemplo (en `js/data.js`)
+
+- **logros** (datos de ejemplo): id, juego, nombre, descripción, % de jugadores que lo tienen, obtenido (sí o no), plataforma
+- **progreso de logros** (datos de ejemplo): id, usuario, juego, obtenidos, totales, plataforma
+- **resumen de logros** (datos de ejemplo): id, usuario, desbloqueados, % promedio, juegos completos, logros raros
+- **respuestas de MatchPlay** (datos de ejemplo): id, palabras que las activan, texto. Son las respuestas simuladas de la IA.
+
+### Fijos de la app (no son datos de usuarios; se quedan en `js/data.js`)
+
+- **variantes de error**: id, código, título, texto, consejos, reintentar (sí o no), segundos de espera, botón de la variante, servicio por defecto
+- **estado de los servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto
+
+### Hoy en el navegador → tabla de Supabase
+
+Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`localStorage`, claves `ss.*`). Al conectar, cada clave pasa a su tabla:
+
+| Clave en el navegador | Tabla de Supabase |
+|---|---|
+| `session`, `accounts` | Supabase Auth y **usuarios** |
+| `profile` | **usuarios** (y **cuentas vinculadas**) |
+| `myReviews`, `draft.<juego>` | **reseñas** (publicadas y borradores) |
+| `votosUtil` | **votos "útil"** |
+| `meGustaResenas` | **me gusta de reseñas** |
+| `comments.<reseña>` | **comentarios** |
+| `diary` | **diario** |
+| `friends` | **amigos** |
+| `joined`, `inscripciones` | **inscripciones** |
+| `chatsMatchplay` | **chats de MatchPlay** |
+| `recentGames` | **vistos recientemente** (sin sesión sigue en el navegador) |
+| `outbox` | **mensajes de contacto** |
+| `hideDemo`, `datosDe.*`, `duenoDatos` | Ninguna: son ayudas del modo demo y se quitan |
 
 ## Pantallas
 
