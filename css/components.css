@@ -2277,6 +2277,22 @@ button.navegacion__usuario {
   transition: background-color var(--transicion), border-color var(--transicion);
 }
 
+/* Logo de la plataforma de donde viene el juego (por ejemplo, Steam en la Biblioteca),
+   en la esquina inferior izquierda de la portada. alt con el nombre de la plataforma. */
+.portada__plataforma {
+  position: absolute;
+  left: var(--espacio-2);
+  bottom: var(--espacio-2);
+  z-index: 3;
+  width: calc(var(--espacio-5) + var(--espacio-3));
+  height: calc(var(--espacio-5) + var(--espacio-3));
+  padding: var(--espacio-1);
+  border: var(--borde-fino) solid var(--velo-fuerte);
+  border-radius: var(--radio-total);
+  background: color-mix(in srgb, var(--color-fondo) 80%, transparent);
+  object-fit: contain;
+}
+
 .portada__accion:hover {
   border-color: var(--color-error);
   background: var(--color-error);
