@@ -1046,13 +1046,21 @@ body {
     gap: var(--espacio-8);
   }
 
+  /* Filas de 6 juegos (Inicio): 3 por fila en tablet y 6 en computador, así nunca
+     queda un hueco al final de la fila. Las portadas crecen para llenar el ancho. */
   .rejilla-juegos {
     grid-auto-flow: row;
-    grid-template-columns: repeat(auto-fill, minmax(calc(var(--espacio-8) * 4), 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     overflow: visible;
   }
 
   .rejilla-tarjetas {
     grid-template-columns: repeat(auto-fill, minmax(calc(var(--espacio-8) * 7 + var(--espacio-5)), 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .rejilla-juegos {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
