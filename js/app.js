@@ -245,6 +245,19 @@ function buscarJuegos(filtros) {
   });
 }
 
+// Horas de la historia para mostrar. Sin dato: "Online" si el juego es solo online
+// (no tiene historia), "Sin datos" si sí tiene pero no hay suficientes tiempos reportados.
+function textoHoras(juego) {
+  if (juego.horasHistoria) return juego.horasHistoria + ' h';
+  return juego.soloOnline ? 'Online' : 'Sin datos';
+}
+
+// Recorta un texto largo sin cortar palabras.
+function recortarTexto(texto, maximo) {
+  if (texto.length <= maximo) return texto;
+  return texto.slice(0, texto.lastIndexOf(' ', maximo)).replace(/[\s,.;:]+$/, '') + '…';
+}
+
 /* ---------- Rutas ---------- */
 
 // Las páginas de pages/ suben un nivel para llegar a la raíz.
@@ -948,7 +961,7 @@ function pantallaBuscar() {
   }
 
   function htmlResultado(juego) {
-    var horas = juego.horasHistoria ? juego.horasHistoria + ' h' : 'Online';
+    var horas = textoHoras(juego);
     return '<a class="tarjeta tarjeta--enlace resultado" href="detalle-juego.html?id=' + encodeURIComponent(juego.id) + '">' +
       '<span class="portada portada--sm"' + atributoColor(juego.color) + '>' + imagenPortada(juego) + '</span>' +
       '<span class="resultado__nombre">' +
@@ -1071,7 +1084,7 @@ function pantallaRandom() {
         '<h2 class="titulo-pagina">' + escapar(j.nombre) + '</h2>' +
         '<p>' + escapar(j.descripcion) + '</p>' +
         '<div class="en-fila">' +
-          '<span class="etiqueta etiqueta--contorno">Historia: ' + (j.horasHistoria ? j.horasHistoria + ' h' : 'Online') + '</span>' +
+          '<span class="etiqueta etiqueta--contorno">Historia: ' + textoHoras(j) + '</span>' +
           '<span class="etiqueta etiqueta--contorno">Dificultad: ' + escapar(j.dificultad) + '/10</span>' +
           '<span class="etiqueta etiqueta--contorno">Nota: ' + formatearNota(j.calificacion) + '/10</span>' +
         '</div>' +
@@ -1415,7 +1428,7 @@ function pantallaJuego() {
       '<span class="tarjeta__texto">Votada por la comunidad</span>' +
       '<button class="dato__ayuda" type="button" id="ayuda-dificultad">¿Cómo se calcula?</button>' +
     '</div>' +
-    '<div class="dato"><span class="dato__etiqueta">Historia principal</span><span class="dato__valor">' + (juego.horasHistoria ? juego.horasHistoria + ' h' : 'Online') + '</span><span class="tarjeta__texto">Promedio de jugadores</span>' +
+    '<div class="dato"><span class="dato__etiqueta">Historia principal</span><span class="dato__valor">' + textoHoras(juego) + '</span><span class="tarjeta__texto">Promedio de jugadores</span>' +
       // Enlace a HowLongToBeat (solo enlazamos: su web no permite leer sus datos con programas)
       '<a class="dato__ayuda" href="https://howlongtobeat.com/?q=' + encodeURIComponent(juego.nombre) + '" target="_blank" rel="noopener">Ver en HowLongToBeat</a></div>' +
     '<div class="dato"><span class="dato__etiqueta">Completar 100%</span><span class="dato__valor">' + (juego.horas100 ? juego.horas100 + ' h' : '—') + '</span><span class="tarjeta__texto">Promedio de jugadores</span></div>' +
@@ -1573,6 +1586,29 @@ function pantallaJuego() {
   }
 
   // Ficha y "Si te gusta, prueba" (otros juegos del mismo género)
+  // Sobre el juego: la descripción, recortada si es larga ("Leer más" la muestra entera)
+  var descripcion = (juego.descripcion || '').trim();
+  document.getElementById('sobre-juego').hidden = !descripcion;
+  if (descripcion) {
+    var cajaDescripcion = document.getElementById('descripcion-juego');
+    var leerMas = document.getElementById('leer-mas');
+    var corta = recortarTexto(descripcion, 280);
+    cajaDescripcion.textContent = corta;
+    leerMas.hidden = corta === descripcion;
+    leerMas.addEventListener('click', function () {
+      var abierta = leerMas.getAttribute('aria-expanded') === 'true';
+      cajaDescripcion.textContent = abierta ? corta : descripcion;
+      leerMas.setAttribute('aria-expanded', String(!abierta));
+      leerMas.textContent = abierta ? 'Leer más' : 'Leer menos';
+    });
+    // Las que vienen de IGDB dicen de dónde salen
+    if (juego.idiomaDescripcion) {
+      var fuente = document.getElementById('fuente-descripcion');
+      fuente.hidden = false;
+      fuente.textContent = juego.idiomaDescripcion === 'es' ? 'Descripción de IGDB, traducida automáticamente.' : 'Descripción de IGDB, en inglés.';
+    }
+  }
+
   document.getElementById('ficha').innerHTML = [
     ['Desarrolla', juego.desarrolladora || '—'], ['Lanzamiento', juego.anio || '—'], ['Género', juego.generos.join(', ')],
     ['Tipo', juego.tipo || '—'], ['Plataformas', juego.plataformas.join(', ')]

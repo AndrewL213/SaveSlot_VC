@@ -62,6 +62,7 @@ const DATOS = {
     {
       id: "rocket-league",
       idIgdb: 11198,
+      soloOnline: true,
       nombre: "Rocket League",
       nombreCorto: "Rocket League",
       generos: [
@@ -89,6 +90,7 @@ const DATOS = {
     {
       id: "valorant",
       idIgdb: 126459,
+      soloOnline: true,
       nombre: "Valorant",
       nombreCorto: "Valorant",
       generos: [

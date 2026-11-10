@@ -65,7 +65,7 @@ Solo lo que se ve o se guarda en las pantallas. Entre paréntesis, de dónde sal
 
 ### Vienen de IGDB
 
-- **juegos** (IGDB): id (slug de IGDB), idIgdb (número de IGDB), nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie: Indie si IGDB le pone ese género), horas de la historia ("Time to beat" de IGDB), descripción (en español, ver Integraciones), portada (de `assets/` o de IGDB), color de respaldo (solo los juegos con imagen en `assets/`; los demás usan el neutro del kit)
+- **juegos** (IGDB): id (slug de IGDB), idIgdb (número de IGDB), nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie: Indie si IGDB le pone ese género), horas de la historia ("Time to beat" de IGDB: el tiempo de solo la historia principal; se muestra solo si lo reportaron 10 jugadores o más y si no pasa de 300 h; si no, la pantalla dice "Sin datos"), solo online (sí o no: sin modo de un jugador; en vez de horas dice "Online"), descripción (en español, ver Integraciones), portada (de `assets/` o de IGDB), color de respaldo (solo los juegos con imagen en `assets/`; los demás usan el neutro del kit)
   - De Steam (si el juego está en Steam): número de Steam (`appidSteam`), logros totales, precio, nota y jugadores conectados (ver la tabla **juegos**)
   - Datos de ejemplo: logros totales de los juegos que no están en Steam (IGDB no los da)
   - Calculados con nuestras reseñas (Supabase): dificultad promedio (1–10), calificación, número de votos, horas al 100 %
@@ -234,8 +234,9 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   2. Botones: Escribir reseña, Lista de deseos, Preguntar a MatchPlay
   3. Datos clave (tiempo, dificultad, calificación, logros)
   4. Pestañas: Reseñas, Guías, Clips, Logros
-  5. Ficha del juego
-  6. "Si te gusta, prueba"
+  5. Sobre el juego (la descripción; si es larga, "Leer más". Si viene de IGDB, dice "Descripción de IGDB, traducida automáticamente")
+  6. Ficha del juego
+  7. "Si te gusta, prueba"
 - **Qué funciona de verdad:**
   - Ficha, datos y "Si te gusta, prueba": Real (IGDB)
   - Dificultad, calificación y horas al 100 %: Real (calculados con reseñas de Supabase)

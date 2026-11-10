@@ -28,7 +28,7 @@ let permiso = null;
 let permisoVence = 0;
 
 // Campos que se le piden a IGDB por cada juego.
-const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count, external_games.uid, external_games.external_game_source, external_games.category;';
+const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count, game_modes, external_games.uid, external_games.external_game_source, external_games.category;';
 
 const POR_PAGINA = 24;
 
@@ -153,15 +153,18 @@ async function consultar(seccion, consulta, reintento) {
 // Más horas que esto no es una historia, es un juego sin fin (MMO, sandbox…): no se muestran.
 const MAXIMO_DE_HORAS = 300;
 
+// Los tiempos los reportan los jugadores en IGDB: con menos reportes que esto no son confiables.
+const MINIMO_DE_REPORTES = 10;
+
 // Agrega las horas de la historia ("Time to beat" de IGDB, en segundos) a una lista de juegos.
 // Se usa "hastily" (terminar la historia principal, sin extras); si no está, "normally" (con algunos extras).
 async function conHoras(juegos) {
   if (!juegos.length) return [];
   const ids = juegos.map(function (j) { return j.id; }).join(',');
-  const tiempos = await consultar('game_time_to_beats', 'fields game_id, hastily, normally; where game_id = (' + ids + '); limit 500;');
+  const tiempos = await consultar('game_time_to_beats', 'fields game_id, hastily, normally, count; where game_id = (' + ids + '); limit 500;');
   return juegos.map(function (j) {
     const t = tiempos.find(function (x) { return x.game_id === j.id; }) || {};
-    const segundos = t.hastily || t.normally;
+    const segundos = (t.count || 0) >= MINIMO_DE_REPORTES ? (t.hastily || t.normally) : null;
     const horas = segundos ? Math.max(1, Math.round(segundos / 3600)) : null;
     return traducir(j, horas && horas <= MAXIMO_DE_HORAS ? horas : null);
   });
@@ -187,6 +190,8 @@ function traducir(j, horas) {
     anio: j.first_release_date ? new Date(j.first_release_date * 1000).getUTCFullYear() : null,
     desarrolladora: desarrolla ? desarrolla.company.name : '',
     tipo: nombresIgdb.indexOf('Indie') !== -1 ? 'Indie' : 'AAA',
+    // Solo online: tiene modos de juego y ninguno es "un jugador" (1). No tiene historia que medir.
+    soloOnline: !!(j.game_modes && j.game_modes.length && j.game_modes.indexOf(1) === -1),
     horasHistoria: horas,
     descripcion: j.summary || '', // IGDB solo la tiene en inglés; la ficha (?id=) la traduce
     idiomaDescripcion: 'en',

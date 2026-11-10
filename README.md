@@ -22,9 +22,23 @@ Gamers casuales de 15 a 24 años en España y Latinoamérica que hoy tienen que 
 - Brief del proyecto: [Brief-SaveSlot.md](Brief-SaveSlot.md)
 - Repositorio del proceso: [SaveSlot-Info](https://github.com/AndrewL213/SaveSlot-Info)
 
+## Con qué funciona
+
+- **Páginas**: HTML, CSS y JavaScript, sin paso de compilación, publicadas en Vercel.
+- **Cuentas y base de datos**: Supabase.
+- **Catálogo de juegos**: IGDB (de Twitch), con las descripciones traducidas al español.
+- **Steam**: entrar con Steam, y ver perfil, biblioteca, logros, lista de deseos, reseñas y el precio, la nota y los jugadores de cada juego.
+- Lo demás (eventos, amigos, MatchPlay…) usa por ahora datos de ejemplo.
+
 ## Cómo está organizado este repo
 
+- `index.html` · La pantalla de inicio. Las demás pantallas están en `pages/`, y la página de error es `404.html`.
 - `disenos/` · Los diseños originales de las pantallas (inicio, buscador, ficha de juego, perfil, eventos, chat con IA y más). Son solo de referencia.
+- `js/` · El código de la app: `app.js` (cómo se comporta), `data.js` (datos de ejemplo) y `config.js` (conexión con Supabase).
+- `api/` · Funciones de Vercel que usan claves secretas: `igdb.js` (catálogo de juegos) y `steam/` (inicio de sesión y datos de Steam).
+- `supabase/` · El código SQL de las tablas de Supabase.
+- `vercel.json` · Tareas automáticas de Vercel, como actualizar cada día los datos de Steam.
+- `pantallas.md` · El avance de cada pantalla.
 - `assets/` · Las imágenes de la app: iconos, portadas de juegos y una foto de prueba, con sus créditos en `CREDITOS.md`.
 - `css/` · El design kit: `tokens.css` (colores, letras, espacios) y `components.css` (botones, tarjetas, campos y demás piezas).
 - `componentes.html` · Catálogo para ver en el navegador todas las piezas del design kit.
