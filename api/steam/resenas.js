@@ -43,6 +43,18 @@ const RESUMEN = {
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   const url = new URL(req.url, "http://localhost");
+  // Diagnóstico: /api/steam/resenas?diagnostico=1 muestra qué responde Steam
+  if (url.searchParams.get("diagnostico")) {
+    const pruebas = {};
+    for (const [k, u] of Object.entries({
+      busqueda: "https://store.steampowered.com/api/storesearch/?term=Hades&l=spanish&cc=CO",
+      resenas: "https://store.steampowered.com/appreviews/1145360?json=1&language=all&num_per_page=0",
+    })) {
+      pruebas[k] = await fetch(u).then(async (r) => ({ status: r.status, url: r.url, inicio: (await r.text()).slice(0, 200) }))
+        .catch((e) => ({ error: String(e) }));
+    }
+    return json(res, pruebas);
+  }
   let appid = Number(url.searchParams.get("appid")) || null;
   let nombre = url.searchParams.get("nombre");
 
