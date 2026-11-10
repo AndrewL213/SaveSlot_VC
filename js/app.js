@@ -629,6 +629,32 @@ function htmlJuegoMini(juego, ranking) {
 }
 
 // Tarjeta de reseña con autor, nota, texto y acciones.
+// Etiqueta con la plataforma donde se escribió la reseña (al lado del usuario)
+var ORIGENES = { SaveSlot: 'etiqueta--primario', Steam: 'etiqueta--contorno', Xbox: 'etiqueta--contorno', PlayStation: 'etiqueta--contorno' };
+function etiquetaOrigen(origen) {
+  return '<span class="etiqueta ' + (ORIGENES[origen] || 'etiqueta--contorno') + '" title="Reseña escrita en ' + escapar(origen) + '">' + escapar(origen.toUpperCase()) + '</span>';
+}
+
+// Reseña que viene de Steam: recomienda o no (Steam no usa nota del 1 al 10)
+function htmlResenaSteam(r, opciones) {
+  var iniciales = inicialesDe(r.autor || 'S');
+  return '<article class="tarjeta tarjeta--resena">' +
+    '<div class="en-fila">' +
+      '<span class="avatar" aria-hidden="true">' + escapar(iniciales) + '</span>' +
+      '<div>' +
+        '<a href="' + escapar(r.enlace) + '" target="_blank" rel="noopener"><b>' + escapar(r.autor) + '</b></a> ' + etiquetaOrigen('Steam') +
+        '<p class="tarjeta__texto">' + (opciones && opciones.juego ? 'sobre ' + escapar(opciones.juego) + ' · ' : '') + formatearNumero(r.horas) + ' h jugadas · ' + formatearFecha(r.fecha) + '</p>' +
+      '</div>' +
+      '<span class="etiqueta ' + (r.recomienda ? 'etiqueta--exito' : 'etiqueta--error') + ' al-final">' + (r.recomienda ? '👍 Recomendado' : '👎 No recomendado') + '</span>' +
+    '</div>' +
+    '<p class="texto-corto">' + escapar(r.texto) + '</p>' +
+    '<div class="en-fila tarjeta__texto">' +
+      (r.votosUtil != null ? '<span>Útil en Steam · ' + formatearNumero(r.votosUtil) + '</span>' : '') +
+      '<a class="al-final" href="' + escapar(r.enlace) + '" target="_blank" rel="noopener">Leer en Steam →</a>' +
+    '</div>' +
+  '</article>';
+}
+
 function htmlResena(resena, opciones) {
   var juego = buscarPorId('juegos', resena.juego);
   var autor = buscarPorId('usuarios', resena.autor) || { usuario: resena.autor, iniciales: '?' };
@@ -639,7 +665,7 @@ function htmlResena(resena, opciones) {
     '<div class="en-fila">' +
       '<span class="avatar' + (autor.estado ? ' avatar--' + autor.estado : '') + '" aria-hidden="true">' + escapar(autor.iniciales) + (autor.estado ? '<span class="avatar__punto"></span>' : '') + '</span>' +
       '<div>' +
-        '<a href="' + rutaPagina('perfil-usuario.html') + '?u=' + encodeURIComponent(autor.usuario) + '"><b>' + escapar(autor.usuario) + '</b></a> ' +
+        '<a href="' + rutaPagina('perfil-usuario.html') + '?u=' + encodeURIComponent(autor.usuario) + '"><b>' + escapar(autor.usuario) + '</b></a> ' + etiquetaOrigen('SaveSlot') + ' ' +
         (sonAmigos(autor.usuario) ? '<span class="etiqueta etiqueta--amigo">Amigo</span>' : '') +
         '<p class="tarjeta__texto">' + (opciones && opciones.conJuego && juego ? 'sobre ' + escapar(juego.nombreCorto) + ' · ' : '') + escapar(resena.horas) + ' h jugadas</p>' +
       '</div>' +
@@ -1302,10 +1328,24 @@ function pantallaJuego() {
   var guias = publicadas.filter(function (r) { return r.tipo === 'guia'; });
   var logros = obtenerDatos('logros').filter(function (l) { return l.juego === juego.id; });
   var escribir = 'escribir-resena.html?id=' + encodeURIComponent(juego.id);
+  // Reseñas de Steam del juego (llegan después) y filtro por origen
+  var steam = { resenas: [], resumen: null, appid: null };
+  var origen = 'Todas';
   var pestanas = [
     { id: 'resenas', nombre: 'Reseñas', numero: resenas.length, html: function () {
-      return resenas.length ? resenas.map(function (r) { return htmlResena(r); }).join('')
-        : '<div class="vacio"><b>Todavía no hay reseñas.</b><span>Sé la primera persona en reseñar este juego.</span><a class="boton boton--sm" href="' + escribir + '">Escribir reseña</a></div>';
+      var filtro = '<div class="en-fila en-fila--desliza" role="group" aria-label="Origen de la reseña">' +
+        [['Todas', resenas.length + steam.resenas.length], ['SaveSlot', resenas.length], ['Steam', steam.resenas.length]].map(function (o) {
+          return '<button class="chip" type="button" data-origen="' + o[0] + '" aria-pressed="' + (origen === o[0]) + '">' + o[0] + ' · ' + o[1] + '</button>';
+        }).join('') + '</div>';
+      var resumen = steam.resumen && steam.resumen.total
+        ? '<p class="tarjeta__texto">En Steam: <b>' + escapar(steam.resumen.texto || '') + '</b> · ' +
+          Math.round(steam.resumen.positivas / steam.resumen.total * 100) + '% de ' + formatearNumero(steam.resumen.total) + ' reseñas recomiendan el juego. ' +
+          '<a href="https://store.steampowered.com/app/' + steam.appid + '/#app_reviews_hash" target="_blank" rel="noopener">Ver todas en Steam</a></p>'
+        : '';
+      var lista = (origen !== 'Steam' ? resenas.map(function (r) { return htmlResena(r); }) : [])
+        .concat(origen !== 'SaveSlot' ? steam.resenas.map(function (r) { return htmlResenaSteam(r); }) : []);
+      return filtro + (origen !== 'SaveSlot' ? resumen : '') + (lista.join('') ||
+        '<div class="vacio"><b>Todavía no hay reseñas' + (origen === 'Todas' ? '' : ' de ' + origen) + '.</b><span>Sé la primera persona en reseñar este juego.</span><a class="boton boton--sm" href="' + escribir + '">Escribir reseña</a></div>');
     } },
     { id: 'guias', nombre: 'Guías', numero: guias.length, html: function () {
       return guias.length ? guias.map(function (g) {
@@ -1336,7 +1376,9 @@ function pantallaJuego() {
     return '<button class="pestanas__boton" type="button" role="tab" id="pestana-' + p.id + '" aria-controls="panel-pestana" aria-selected="' + (i === 0) + '" data-pestana="' + p.id + '">' +
       p.nombre + ' <span class="contador">' + formatearNumero(p.numero) + '</span></button>';
   }).join('');
+  var pestanaActual = 'resenas';
   function mostrarPestana(idPestana) {
+    pestanaActual = idPestana;
     var elegida = pestanas.find(function (p) { return p.id === idPestana; });
     cajaPestanas.querySelectorAll('[data-pestana]').forEach(function (b) {
       b.setAttribute('aria-selected', String(b.dataset.pestana === idPestana));
@@ -1349,8 +1391,28 @@ function pantallaJuego() {
     var boton = e.target.closest('[data-pestana]');
     if (boton) mostrarPestana(boton.dataset.pestana);
   });
+  panel.addEventListener('click', function (e) {
+    var chip = e.target.closest('[data-origen]');
+    if (!chip) return;
+    origen = chip.dataset.origen;
+    mostrarPestana('resenas');
+  });
   activarResenas(panel);
   mostrarPestana('resenas');
+
+  // Trae las reseñas de Steam (busca el juego en Steam por su nombre)
+  fetch('/api/steam/resenas?' + (juego.appid ? 'appid=' + encodeURIComponent(juego.appid) : 'nombre=' + encodeURIComponent(juego.nombre)))
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (datos) {
+      if (!datos || !datos.appid) return;
+      steam = datos;
+      var pestana = pestanas[0];
+      pestana.numero = resenas.length + steam.resenas.length;
+      var contador = cajaPestanas.querySelector('[data-pestana="resenas"] .contador');
+      if (contador) contador.textContent = formatearNumero(pestana.numero);
+      if (pestanaActual === 'resenas') mostrarPestana('resenas');
+    })
+    .catch(function () { /* sin conexión con Steam: solo las de SaveSlot */ });
 
   // Ficha y "Si te gusta, prueba" (otros juegos del mismo género)
   document.getElementById('ficha').innerHTML = [
@@ -2041,7 +2103,7 @@ function pantallaEvento() {
    El navegador guarda los datos de una sola persona a la vez (perfil, reseñas,
    diario…). Al entrar con otra cuenta, se guardan los de la anterior aparte y se
    cargan los de la nueva. Si "duenoDatos" no existe, los datos son de samluq. */
-var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos', 'steamPerfil'];
+var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos', 'steamPerfil', 'steamResenas'];
 
 function cambiarDeCuenta(usuario, datosNuevos) {
   var dueno = leerMemoria('duenoDatos', 'samluq');
@@ -2369,7 +2431,7 @@ function pantallaPerfil() {
     // Con Steam vinculada, "Juegos" es tu biblioteca de Steam; si no, los juegos del diario
     (perfil.accounts || {}).Steam ? ['Juegos', bibliotecaSteam.length, 'biblioteca.html'] : ['Juegos', diario.length, 'diario.html'],
     ['Este año', diario.filter(function (d) { return String(d.fecha).slice(0, 4) === anio; }).length, 'diario.html'],
-    ['Reseñas', resenas.length, 'historial-resenas.html'],
+    ['Reseñas', resenas.length + ((perfil.accounts || {}).Steam ? (leerMemoria('steamResenas', null) || { reviews: [] }).reviews.length : 0), 'historial-resenas.html'],
     ['Logros', formatearNumero(logrosSteam ? logrosSteam.summary.unlocked : (resumenLogros ? resumenLogros.desbloqueados : 0)), 'logros.html'],
     ['Lista de deseos', perfil.wishlist.length + ((perfil.accounts || {}).Steam ? (leerMemoria('steamDeseos', null) || { games: [] }).games.length : 0), '#deseos']
   ].map(function (d) {
@@ -2750,14 +2812,31 @@ function pantallaHistorial() {
     return leerResenasPropias().filter(function (r) { return r.tipo === 'resena'; });
   }
 
+  // Tus reseñas escritas en Steam (se ven aquí; se editan en Steam)
+  var deSteam = tieneSteam() ? ((leerMemoria('steamResenas', null) || { reviews: [] }).reviews) : [];
+  function htmlFilaSteam(r) {
+    var j = juegoDeSteam({ appid: r.appid, name: r.name });
+    return '<article class="tarjeta tarjeta--resena fila-historial">' +
+      '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">' + imagenPortada(j) + '</a>' +
+      '<div class="fila-historial__cuerpo">' +
+        '<div class="en-fila en-fila--entre"><div><a href="' + escapar(r.enlace) + '" target="_blank" rel="noopener"><b class="tarjeta__titulo">' + escapar(j.nombre) + '</b></a> ' + etiquetaOrigen('Steam') + '<br>' +
+          '<span class="tarjeta__texto">' + (r.fecha ? formatearFecha(r.fecha) + ' · ' : '') + formatearNumero(r.horas) + ' h</span></div>' +
+          '<span class="etiqueta ' + (r.recomienda ? 'etiqueta--exito' : 'etiqueta--error') + '">' + (r.recomienda ? '👍 Recomendado' : '👎 No recomendado') + '</span></div>' +
+        '<p class="tarjeta__texto texto-corto">' + escapar(r.texto) + '</p>' +
+        '<div class="en-fila en-fila--entre"><span class="tarjeta__texto">Escrita en Steam: se edita desde Steam.</span>' +
+          '<a class="boton boton--secundario boton--sm" href="' + escapar(r.enlace) + '" target="_blank" rel="noopener">Ver en Steam</a></div>' +
+      '</div></article>';
+  }
+
   function htmlFila(r) {
+    if (r.deSteam) return htmlFilaSteam(r);
     var j = buscarPorId('juegos', r.juego);
     if (!j) return '';
     var comentarios = leerComentarios(r.id).length;
     return '<article class="tarjeta tarjeta--resena fila-historial"' + atributoColor(j.color) + '>' +
       '<a class="portada portada--enlace" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '" tabindex="-1" aria-hidden="true"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</a>' +
       '<div class="fila-historial__cuerpo">' +
-        '<div class="en-fila en-fila--entre"><div><a href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '"><b class="tarjeta__titulo">' + escapar(j.nombreCorto) + '</b></a><br>' +
+        '<div class="en-fila en-fila--entre"><div><a href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '"><b class="tarjeta__titulo">' + escapar(j.nombreCorto) + '</b></a> ' + etiquetaOrigen('SaveSlot') + '<br>' +
           '<span class="tarjeta__texto">' + formatearFecha(r.fecha) + ' · ' + escapar(r.estadoPartida || 'Terminado') + ' · ' + (r.horas || 0) + ' h' + (r.editada ? ' · Editada' : '') + '</span></div>' +
           '<span class="nota">' + escapar(r.calificacion) + '<small>/10</small></span></div>' +
         '<p class="tarjeta__texto texto-corto">' + (r.spoiler ? '<span class="etiqueta etiqueta--contorno">SPOILER</span> ' : '') + escapar(r.texto) + '</p>' +
@@ -2772,7 +2851,7 @@ function pantallaHistorial() {
     var todas = mias();
     var promedio = todas.length ? todas.reduce(function (s, r) { return s + r.calificacion; }, 0) / todas.length : 0;
     document.getElementById('resumen-historial').innerHTML = [
-      [todas.length, 'Reseñas'],
+      [todas.length + deSteam.length, 'Reseñas' + (deSteam.length ? ' (' + deSteam.length + ' en Steam)' : '')],
       [formatearNumero(todas.reduce(function (s, r) { return s + (r.meGusta || 0); }, 0)), 'Me gusta recibidos'],
       [formatearNumero(todas.reduce(function (s, r) { return s + (r.votosUtil || 0); }, 0)), 'Votos de “útil”'],
       [formatearPromedio(promedio), 'Nota promedio']
@@ -2790,9 +2869,15 @@ function pantallaHistorial() {
       nota: function (a, b) { return b.calificacion - a.calificacion; },
       utiles: function (a, b) { return (b.votosUtil || 0) - (a.votosUtil || 0); }
     }[orden];
+    // Las de Steam no tienen nota: se muestran con "Todas las notas"
+    if (banda === 'todas') {
+      elegidas = elegidas.concat(deSteam.filter(function (r) {
+        return !texto || (r.name + ' ' + r.texto).toLowerCase().indexOf(texto) !== -1;
+      }).map(function (r) { return Object.assign({ deSteam: true, calificacion: 0, votosUtil: 0 }, r); }));
+    }
     elegidas.sort(comparar);
-    document.getElementById('cantidad-historial').textContent = 'Mostrando ' + elegidas.length + ' de ' + todas.length + ' reseñas';
-    lista.innerHTML = elegidas.map(htmlFila).join('') || (todas.length
+    document.getElementById('cantidad-historial').textContent = 'Mostrando ' + elegidas.length + ' de ' + (todas.length + deSteam.length) + ' reseñas';
+    lista.innerHTML = elegidas.map(htmlFila).join('') || ((todas.length + deSteam.length)
       ? '<div class="vacio"><b>Ninguna reseña coincide con los filtros.</b><button class="boton boton--secundario boton--sm" type="button" id="limpiar-historial">Limpiar filtros</button></div>'
       : '<div class="vacio"><b>Aún no escribes reseñas.</b><span>Cuenta qué te pareció el último juego que terminaste.</span><a class="boton boton--sm" href="buscar-juegos.html">Escribir mi primera reseña</a></div>');
     aplicarColores(lista);
@@ -2832,6 +2917,14 @@ function pantallaHistorial() {
   });
   mostrar();
   aplicarColores(document);
+
+  if (tieneSteam()) {
+    pedirSteam('my_reviews').then(function (datos) {
+      guardarMemoria('steamResenas', datos);
+      deSteam = datos.reviews;
+      mostrar();
+    }).catch(function () { /* sin sesión de Steam o perfil privado */ });
+  }
 }
 
 // 23. Logros (Steam real; las demás plataformas, datos de ejemplo)
