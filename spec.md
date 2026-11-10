@@ -50,7 +50,13 @@ Se puede entrar y explorar sin cuenta. La cuenta se pide solo al escribir, comen
 
 Solo lo que se ve o se guarda en las pantallas. Entre paréntesis, de dónde sale.
 
-**Cómo se identifican:** cada elemento tiene un `id`. Las personas se enlazan por el id de su cuenta en Supabase Auth (el @usuario es el nombre visible, único, pero puede cambiar). Los juegos se enlazan por su id de IGDB (pendiente: pasar a ese id los 12 juegos de ejemplo). "Calculado" quiere decir que no se guarda: la app lo saca de otros datos.
+**Cómo se identifican:** cada elemento tiene un `id`. Las personas se enlazan por el id de su cuenta en Supabase Auth (el @usuario es el nombre visible, único, pero puede cambiar). Los juegos se enlazan por su id de IGDB: en las tablas de Supabase se guarda el **número** (`idIgdb`, por ejemplo 113112, que nunca cambia) y en las direcciones de la web va el **slug** (`id`, por ejemplo `detalle-juego.html?id=hades--1`, que se lee mejor). Los 12 juegos de ejemplo ya usan los dos. Los enlaces con los ids viejos (como `?id=hades`) siguen funcionando. "Calculado" quiere decir que no se guarda: la app lo saca de otros datos.
+
+### Vienen de IGDB
+
+- **juegos** (IGDB): id (slug de IGDB), idIgdb (número de IGDB), nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie: Indie si IGDB le pone ese género), horas de la historia ("Time to beat" de IGDB), descripción (en español, ver Integraciones), portada (de `assets/` o de IGDB), color de respaldo (solo los juegos con imagen en `assets/`; los demás usan el neutro del kit)
+  - Datos de ejemplo: logros totales (IGDB no los da)
+  - Calculados con nuestras reseñas (Supabase): dificultad promedio (1–10), calificación, número de votos, horas al 100 %
 
 ### Se guardan en Supabase
 

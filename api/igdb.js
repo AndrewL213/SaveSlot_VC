@@ -7,7 +7,7 @@
 //
 // Pedidos que acepta (solo estos tres):
 //   /api/igdb?buscar=zelda   → hasta 20 juegos que coinciden con el texto
-//   /api/igdb?id=hades       → la ficha de un juego (id = el "slug" de IGDB), con la descripción en español
+//   /api/igdb?id=hades--1    → la ficha de un juego (id = el "slug" o el número de IGDB), con la descripción en español
 //   /api/igdb?populares=1    → los 10 juegos más visitados en IGDB (Mejores juegos de la semana)
 //
 // Responde con los juegos en el mismo formato que js/data.js. Si algo falla, responde
@@ -185,9 +185,13 @@ async function buscar(texto) {
   return conHoras(await consultar('games', 'search "' + limpio + '"; ' + CAMPOS + ' where version_parent = null; limit 20;'));
 }
 
+// id puede ser el slug ("hades--1", el que va en las direcciones) o el número de IGDB (113112, el de las tablas).
 async function ficha(id) {
-  if (!/^[a-z0-9-]{1,100}$/.test(id)) throw falla('juego', 404);
-  const juegos = await consultar('games', CAMPOS + ' where slug = "' + id + '"; limit 1;');
+  let condicion;
+  if (/^\d{1,10}$/.test(id)) condicion = 'id = ' + id;
+  else if (/^[a-z0-9-]{1,100}$/.test(id)) condicion = 'slug = "' + id + '"';
+  else throw falla('juego', 404);
+  const juegos = await consultar('games', CAMPOS + ' where ' + condicion + '; limit 1;');
   if (!juegos.length) throw falla('juego', 404);
   return traducirDescripcion((await conHoras(juegos))[0]);
 }

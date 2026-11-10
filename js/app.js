@@ -87,6 +87,42 @@ function guardarVisita(clave, valor) {
   try { sessionStorage.setItem('ss.' + clave, valor); } catch (e) { /* modo privado */ }
 }
 
+// Los juegos de ejemplo ahora usan su id de IGDB (el "slug"). Cuatro cambiaron de id:
+// esta traducción corre una sola vez y pasa al id nuevo lo que ya estaba guardado
+// en el navegador (reseñas, diario, vistos, favoritos, borradores…).
+var IDS_VIEJOS_DE_JUEGOS = {
+  'zelda-totk': 'the-legend-of-zelda-tears-of-the-kingdom',
+  'pokemon-legends-za': 'pokemon-legends-z-a',
+  'fnaf-into-the-pit': 'five-nights-at-freddys-into-the-pit',
+  'hades': 'hades--1'
+};
+
+function traducirIdsViejos() {
+  try {
+    if (localStorage.getItem('ss.idsIgdb')) return;
+    Object.keys(localStorage).forEach(function (clave) {
+      if (clave.indexOf('ss.') !== 0) return;
+      var valor = localStorage.getItem(clave);
+      var nuevo = valor.replace(/"([a-z0-9-]+)"/g, function (todo, id) {
+        return IDS_VIEJOS_DE_JUEGOS[id] ? '"' + IDS_VIEJOS_DE_JUEGOS[id] + '"' : todo;
+      });
+      var claveNueva = clave.replace(/^ss.draft.(.+)$/, function (todo, id) {
+        return IDS_VIEJOS_DE_JUEGOS[id] ? 'ss.draft.' + IDS_VIEJOS_DE_JUEGOS[id] : todo;
+      });
+      if (claveNueva !== clave) localStorage.removeItem(clave);
+      if (nuevo !== valor || claveNueva !== clave) localStorage.setItem(claveNueva, nuevo);
+    });
+    localStorage.setItem('ss.idsIgdb', '1');
+  } catch (e) { /* modo privado */ }
+}
+traducirIdsViejos();
+
+// Id del juego que llega en la dirección (?id=…). Los enlaces viejos siguen funcionando.
+function idDeJuego(id) {
+  if (!id) return 'the-legend-of-zelda-tears-of-the-kingdom';
+  return IDS_VIEJOS_DE_JUEGOS[id] || id;
+}
+
 /* ---------- Sesión (hasta conectar Supabase) ---------- */
 
 function obtenerSesion() {
@@ -1032,7 +1068,7 @@ function htmlCalaveras(dificultad) {
 
 // 6. Detalle de juego (y 7. Ventana: Dificultad de 1 a 10)
 function pantallaJuego() {
-  var id = new URLSearchParams(location.search).get('id') || 'zelda-totk';
+  var id = idDeJuego(new URLSearchParams(location.search).get('id'));
   var juego = buscarPorId('juegos', id);
   if (!juego) { location.replace(rutaPagina('404.html') + '?tipo=juego'); return; }
   var sesion = obtenerSesion();
@@ -1187,7 +1223,7 @@ function pantallaJuego() {
 // 8. Escribir reseña (y 9. Ventana: Publicación confirmada)
 function pantallaEscribir() {
   var parametros = new URLSearchParams(location.search);
-  var juego = buscarPorId('juegos', parametros.get('id') || 'zelda-totk');
+  var juego = buscarPorId('juegos', idDeJuego(parametros.get('id')));
   if (!juego) { location.replace(rutaPagina('404.html') + '?tipo=juego'); return; }
   var MINIMO = 50;
   var tipo = ['guia', 'clip'].indexOf(parametros.get('tipo')) !== -1 ? parametros.get('tipo') : 'resena';

@@ -8,7 +8,8 @@
 const DATOS = {
   juegos: [
     {
-      id: "zelda-totk",
+      id: "the-legend-of-zelda-tears-of-the-kingdom",
+      idIgdb: 119388,
       nombre: "The Legend of Zelda: Tears of the Kingdom",
       nombreCorto: "Zelda: TOTK",
       generos: [
@@ -32,6 +33,7 @@ const DATOS = {
     },
     {
       id: "nier-automata",
+      idIgdb: 11208,
       nombre: "NieR: Automata",
       nombreCorto: "NieR: Automata",
       generos: [
@@ -59,6 +61,7 @@ const DATOS = {
     },
     {
       id: "rocket-league",
+      idIgdb: 11198,
       nombre: "Rocket League",
       nombreCorto: "Rocket League",
       generos: [
@@ -85,6 +88,7 @@ const DATOS = {
     },
     {
       id: "valorant",
+      idIgdb: 126459,
       nombre: "Valorant",
       nombreCorto: "Valorant",
       generos: [
@@ -109,7 +113,8 @@ const DATOS = {
       color: "#5B3F96"
     },
     {
-      id: "pokemon-legends-za",
+      id: "pokemon-legends-z-a",
+      idIgdb: 288327,
       nombre: "Pokémon Legends Z-A",
       nombreCorto: "Pokémon Legends Z-A",
       generos: [
@@ -132,7 +137,8 @@ const DATOS = {
       color: "#B8343E"
     },
     {
-      id: "fnaf-into-the-pit",
+      id: "five-nights-at-freddys-into-the-pit",
+      idIgdb: 283679,
       nombre: "Five Nights at Freddy's: Into the Pit",
       nombreCorto: "FNAF: Into the Pit",
       generos: [
@@ -159,6 +165,7 @@ const DATOS = {
     },
     {
       id: "hollow-knight",
+      idIgdb: 14593,
       nombre: "Hollow Knight",
       nombreCorto: "Hollow Knight",
       generos: [
@@ -185,7 +192,8 @@ const DATOS = {
       color: "#2B3A55"
     },
     {
-      id: "hades",
+      id: "hades--1",
+      idIgdb: 113112,
       nombre: "Hades",
       nombreCorto: "Hades",
       generos: [
@@ -213,6 +221,7 @@ const DATOS = {
     },
     {
       id: "elden-ring",
+      idIgdb: 119133,
       nombre: "Elden Ring",
       nombreCorto: "Elden Ring",
       generos: [
@@ -239,6 +248,7 @@ const DATOS = {
     },
     {
       id: "ghost-of-tsushima",
+      idIgdb: 75235,
       nombre: "Ghost of Tsushima",
       nombreCorto: "Ghost of Tsushima",
       generos: [
@@ -264,6 +274,7 @@ const DATOS = {
     },
     {
       id: "inside",
+      idIgdb: 7342,
       nombre: "Inside",
       nombreCorto: "Inside",
       generos: [
@@ -291,6 +302,7 @@ const DATOS = {
     },
     {
       id: "hades-ii",
+      idIgdb: 228525,
       nombre: "Hades II",
       nombreCorto: "Hades II",
       generos: [
@@ -352,7 +364,7 @@ const DATOS = {
     },
     {
       id: "r3",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       autor: "andresh",
       tipo: "resena",
       estado: "publicada",
@@ -369,7 +381,7 @@ const DATOS = {
     },
     {
       id: "r4",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       autor: "mlopez",
       tipo: "resena",
       estado: "publicada",
@@ -386,7 +398,7 @@ const DATOS = {
     },
     {
       id: "r5",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       autor: "valer1a",
       tipo: "resena",
       estado: "publicada",
@@ -420,7 +432,7 @@ const DATOS = {
     },
     {
       id: "r7",
-      juego: "hades",
+      juego: "hades--1",
       autor: "kenvel",
       tipo: "resena",
       estado: "publicada",
@@ -488,7 +500,7 @@ const DATOS = {
     },
     {
       id: "m1",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       autor: "samluq",
       tipo: "resena",
       estado: "publicada",
@@ -505,7 +517,7 @@ const DATOS = {
     },
     {
       id: "m2",
-      juego: "fnaf-into-the-pit",
+      juego: "five-nights-at-freddys-into-the-pit",
       autor: "samluq",
       tipo: "resena",
       estado: "publicada",
@@ -573,7 +585,7 @@ const DATOS = {
     },
     {
       id: "g1",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       autor: "cami.rpg",
       tipo: "guia",
       estado: "publicada",
@@ -591,7 +603,7 @@ const DATOS = {
     },
     {
       id: "g2",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       autor: "kenvel",
       tipo: "guia",
       estado: "publicada",
@@ -714,13 +726,13 @@ const DATOS = {
       nivel: 12,
       miembroDesde: "2024-03-14",
       sobreMi: "Gamer casual. Aventura, RPG y algo de terror los fines de semana.",
-      jugandoAhora: "zelda-totk",
+      jugandoAhora: "the-legend-of-zelda-tears-of-the-kingdom",
       estado: "en-linea",
       favoritos: [
         "nier-automata",
-        "zelda-totk",
+        "the-legend-of-zelda-tears-of-the-kingdom",
         "hollow-knight",
-        "fnaf-into-the-pit"
+        "five-nights-at-freddys-into-the-pit"
       ],
       xp: 1240,
       generosFavoritos: ["Aventura", "RPG", "Terror"],
@@ -743,14 +755,14 @@ const DATOS = {
       estado: "jugando",
       favoritos: [
         "nier-automata",
-        "hades",
+        "hades--1",
         "elden-ring",
         "hollow-knight"
       ],
       insignias: [],
       color: "#7C7566",
       id: "kenvel",
-      notas: {"nier-automata": 9, "hades": 10, "zelda-totk": 9, "hollow-knight": 8, "inside": 8},
+      notas: {"nier-automata": 9, "hades--1": 10, "the-legend-of-zelda-tears-of-the-kingdom": 9, "hollow-knight": 8, "inside": 8},
       ultimaConexion: null,
       amigosEnComun: 0
     },
@@ -767,12 +779,12 @@ const DATOS = {
         "rocket-league",
         "valorant",
         "elden-ring",
-        "zelda-totk"
+        "the-legend-of-zelda-tears-of-the-kingdom"
       ],
       insignias: [],
       color: "#2456C4",
       id: "juanvi",
-      notas: {"rocket-league": 8, "valorant": 7, "zelda-totk": 9, "nier-automata": 10},
+      notas: {"rocket-league": 8, "valorant": 7, "the-legend-of-zelda-tears-of-the-kingdom": 9, "nier-automata": 10},
       ultimaConexion: null,
       amigosEnComun: 0
     },
@@ -788,13 +800,13 @@ const DATOS = {
       favoritos: [
         "hollow-knight",
         "elden-ring",
-        "hades",
+        "hades--1",
         "inside"
       ],
       insignias: [],
       color: "#2B3A55",
       id: "d4ni",
-      notas: {"hollow-knight": 10, "elden-ring": 10, "hades": 9, "zelda-totk": 8},
+      notas: {"hollow-knight": 10, "elden-ring": 10, "hades--1": 9, "the-legend-of-zelda-tears-of-the-kingdom": 8},
       ultimaConexion: null,
       amigosEnComun: 0
     },
@@ -808,15 +820,15 @@ const DATOS = {
       jugandoAhora: null,
       estado: "en-linea",
       favoritos: [
-        "zelda-totk",
-        "pokemon-legends-za",
+        "the-legend-of-zelda-tears-of-the-kingdom",
+        "pokemon-legends-z-a",
         "inside",
         "ghost-of-tsushima"
       ],
       insignias: [],
       color: "#2F6B4F",
       id: "mlopez",
-      notas: {"zelda-totk": 8, "pokemon-legends-za": 9, "inside": 9},
+      notas: {"the-legend-of-zelda-tears-of-the-kingdom": 8, "pokemon-legends-z-a": 9, "inside": 9},
       ultimaConexion: null,
       amigosEnComun: 0
     },
@@ -831,14 +843,14 @@ const DATOS = {
       estado: "en-linea",
       favoritos: [
         "inside",
-        "fnaf-into-the-pit",
+        "five-nights-at-freddys-into-the-pit",
         "hades-ii",
         "hollow-knight"
       ],
       insignias: [],
       color: "#3A3F45",
       id: "lau_plays",
-      notas: {"inside": 9, "fnaf-into-the-pit": 8, "hollow-knight": 9},
+      notas: {"inside": 9, "five-nights-at-freddys-into-the-pit": 8, "hollow-knight": 9},
       ultimaConexion: null,
       amigosEnComun: 0
     },
@@ -852,15 +864,15 @@ const DATOS = {
       jugandoAhora: null,
       estado: "desconectado",
       favoritos: [
-        "zelda-totk",
+        "the-legend-of-zelda-tears-of-the-kingdom",
         "ghost-of-tsushima",
-        "pokemon-legends-za",
-        "hades"
+        "pokemon-legends-z-a",
+        "hades--1"
       ],
       insignias: [],
       color: "#7A2E2E",
       id: "valer1a",
-      notas: {"zelda-totk": 9, "ghost-of-tsushima": 10, "hades": 8},
+      notas: {"the-legend-of-zelda-tears-of-the-kingdom": 9, "ghost-of-tsushima": 10, "hades--1": 8},
       ultimaConexion: "hace 2 h",
       amigosEnComun: 0
     },
@@ -877,7 +889,7 @@ const DATOS = {
         "valorant",
         "rocket-league",
         "elden-ring",
-        "hades"
+        "hades--1"
       ],
       insignias: [],
       color: "#5B3F96",
@@ -897,14 +909,14 @@ const DATOS = {
       estado: "en-linea",
       favoritos: [
         "rocket-league",
-        "pokemon-legends-za",
-        "zelda-totk",
-        "hades"
+        "pokemon-legends-z-a",
+        "the-legend-of-zelda-tears-of-the-kingdom",
+        "hades--1"
       ],
       insignias: [],
       color: "#2456C4",
       id: "tatan",
-      notas: {"rocket-league": 8, "zelda-totk": 10},
+      notas: {"rocket-league": 8, "the-legend-of-zelda-tears-of-the-kingdom": 10},
       ultimaConexion: null,
       amigosEnComun: 2
     },
@@ -919,9 +931,9 @@ const DATOS = {
       estado: "desconectado",
       favoritos: [
         "nier-automata",
-        "pokemon-legends-za",
+        "pokemon-legends-z-a",
         "elden-ring",
-        "zelda-totk"
+        "the-legend-of-zelda-tears-of-the-kingdom"
       ],
       insignias: [],
       color: "#B8343E",
@@ -943,7 +955,7 @@ const DATOS = {
         "valorant",
         "rocket-league",
         "ghost-of-tsushima",
-        "hades"
+        "hades--1"
       ],
       insignias: [],
       color: "#5B3F96",
@@ -964,13 +976,13 @@ const DATOS = {
       favoritos: [
         "hollow-knight",
         "inside",
-        "hades",
+        "hades--1",
         "hades-ii"
       ],
       insignias: [],
       color: "#5A2D6B",
       id: "ana.indie",
-      notas: {"hollow-knight": 9, "inside": 10, "hades": 9},
+      notas: {"hollow-knight": 9, "inside": 10, "hades--1": 9},
       ultimaConexion: "hace 5 h",
       amigosEnComun: 2
     },
@@ -1201,7 +1213,7 @@ const DATOS = {
     {
       id: "speedrun-fnaf",
       tipo: "torneo",
-      juego: "fnaf-into-the-pit",
+      juego: "five-nights-at-freddys-into-the-pit",
       titulo: "Speedrun de Halloween",
       fechaHora: "Vie 30 oct · 6:00 p. m.",
       organizador: "[ORGANIZADOR] (independiente)",
@@ -1241,7 +1253,7 @@ const DATOS = {
     {
       id: "codigo-pokemon",
       tipo: "sorteo",
-      juego: "pokemon-legends-za",
+      juego: "pokemon-legends-z-a",
       titulo: "Código de descarga de Pokémon Legends Z-A",
       fechaHora: "Cierra el 31 oct",
       organizador: "[MARCA]",
@@ -1283,11 +1295,11 @@ const DATOS = {
   destacadosInicio: [
     {
       id: "d1",
-      juego: "zelda-totk"
+      juego: "the-legend-of-zelda-tears-of-the-kingdom"
     },
     {
       id: "d2",
-      juego: "hades"
+      juego: "hades--1"
     },
     {
       id: "d3",
@@ -1297,7 +1309,7 @@ const DATOS = {
   logros: [
     {
       id: "l1",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       nombre: "Primer santuario",
       descripcion: "Completa tu primer santuario",
       porcentaje: 92,
@@ -1306,7 +1318,7 @@ const DATOS = {
     },
     {
       id: "l2",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       nombre: "Explorador del cielo",
       descripcion: "Visita todas las islas del cielo",
       porcentaje: 14,
@@ -1315,7 +1327,7 @@ const DATOS = {
     },
     {
       id: "l3",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       nombre: "Maestro Zonai",
       descripcion: "Fusiona 50 dispositivos distintos",
       porcentaje: 8,
@@ -1324,7 +1336,7 @@ const DATOS = {
     },
     {
       id: "l4",
-      juego: "fnaf-into-the-pit",
+      juego: "five-nights-at-freddys-into-the-pit",
       nombre: "Sin un rasguño",
       descripcion: "Termina sin recibir daño",
       porcentaje: 3.1,
@@ -1477,7 +1489,7 @@ const DATOS = {
     {
       id: "dia1",
       usuario: "samluq",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       fecha: "2026-10-07",
       estado: "Terminado",
       horas: 48,
@@ -1488,7 +1500,7 @@ const DATOS = {
     {
       id: "dia2",
       usuario: "samluq",
-      juego: "fnaf-into-the-pit",
+      juego: "five-nights-at-freddys-into-the-pit",
       fecha: "2026-10-04",
       estado: "Terminado",
       horas: 6,
@@ -1510,7 +1522,7 @@ const DATOS = {
     {
       id: "dia4",
       usuario: "samluq",
-      juego: "hades",
+      juego: "hades--1",
       fecha: "2026-09-27",
       estado: "Terminado",
       horas: 24,
@@ -1532,7 +1544,7 @@ const DATOS = {
     {
       id: "dia6",
       usuario: "samluq",
-      juego: "pokemon-legends-za",
+      juego: "pokemon-legends-z-a",
       fecha: "2026-09-08",
       estado: "Terminado",
       horas: 31,
@@ -1567,7 +1579,7 @@ const DATOS = {
     {
       id: "p1",
       usuario: "samluq",
-      juego: "zelda-totk",
+      juego: "the-legend-of-zelda-tears-of-the-kingdom",
       obtenidos: 86,
       totales: 139,
       plataforma: "Nintendo"
@@ -1575,7 +1587,7 @@ const DATOS = {
     {
       id: "p2",
       usuario: "samluq",
-      juego: "fnaf-into-the-pit",
+      juego: "five-nights-at-freddys-into-the-pit",
       obtenidos: 24,
       totales: 24,
       plataforma: "Steam"
