@@ -1630,7 +1630,8 @@ const DATOS = {
       juegosCompletos: 7,
       raros: 24
     }
-  ],
+  ],
+
   /* ---------- Fijos de la app: listas que antes estaban escritas en el HTML ---------- */
   // Géneros que entiende IGDB (api/igdb.js). enBuscar: aparecen en los filtros de Buscar, en este orden;
   // Juego random usa todos, en orden alfabético.
