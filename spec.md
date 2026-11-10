@@ -81,6 +81,7 @@ Solo lo que se ve o se guarda en las pantallas. Entre paréntesis, de dónde sal
 
 ### Se guardan en Supabase
 
+- **usuarios_steam** (Supabase, ya creada; descrita en `supabase/usuarios_steam.sql`): id (cuenta de Supabase Auth), steam_id64 (único), steam_username, steam_avatar, sincronizado_el. Cualquiera la lee; cada persona solo escribe su fila. La llenan `api/steam/auth.js` al entrar con Steam y el Perfil (una vez por visita). Sirve para saber qué autores de reseñas de Steam tienen cuenta en SaveSlot; su @ se lee de `user_metadata.usuario`.
 - **juegos** (Supabase, ya creada; código en `supabase/juegos.sql`): igdb_id (clave), slug, nombre, steam_appid, steam_precio, steam_precio_original, steam_descuento, steam_gratis, steam_nota, steam_nota_pct, steam_resenas, steam_logros, steam_jugando, actualizado. Cualquiera la lee; solo el servidor (Vercel) escribe. La llenan `api/steam/juego.js` al abrir una ficha y `api/steam/sincronizar.js` cada día.
 
 - **usuarios** (Supabase): id, usuario (@, único), nombre visible, iniciales, correo, forma de entrar (correo, Google, Discord, Twitch o Steam), invitado (sí o no), sobre mí, jugando ahora (juego), miembro desde, nivel, XP, 4 juegos favoritos, géneros favoritos, lista de deseos, insignias, color del avatar
@@ -239,7 +240,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Ficha, datos y "Si te gusta, prueba": Real (IGDB)
   - Dificultad, calificación y horas al 100 %: Real (calculados con reseñas de Supabase)
   - Pestañas Reseñas y Guías, votar "útil": Real (Supabase)
-  - Reseñas de Steam en la pestaña Reseñas: Real (comunidad de Steam). Cada reseña lleva al lado del @ la etiqueta de su origen (SAVESLOT o STEAM) y se pueden filtrar por Todas, SaveSlot o Steam. Las de Steam muestran 👍/👎 (Steam no usa nota) y enlazan a la original.
+  - Reseñas de Steam en la pestaña Reseñas: Real (comunidad de Steam). Cada reseña lleva al lado del @ la etiqueta de su origen (SAVESLOT o STEAM) y se pueden filtrar por Todas, SaveSlot o Steam. Las de Steam muestran 👍/👎 (Steam no usa nota) y enlazan a la original. Además dicen si su autor tiene cuenta en SaveSlot: **EN SAVESLOT · @usuario** (su Steam está vinculado a una cuenta de SaveSlot, según la tabla **usuarios_steam**) o **SOLO STEAM**.
   - Línea de Steam (precio, nota, jugadores): Real (tabla **juegos**, se actualiza cada día)
   - Editar o eliminar mi reseña: Real (Supabase)
   - Lista de deseos: Real (Supabase)
