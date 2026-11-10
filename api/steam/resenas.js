@@ -5,10 +5,10 @@
 //   /api/steam/resenas?nombre=Hades        → busca el juego en la tienda de Steam por su nombre
 //
 // Responde { appid, nombre, resumen, resenas: [...] } con las 10 reseñas en español más útiles.
+// (El JSON oficial store.steampowered.com/appreviews ahora redirige a la tienda: ya no se puede usar.)
 // Si el juego no está en Steam: { appid: null, resenas: [] }.
-// Variables de entorno: STEAM_API_KEY (para poner el nombre de cada autor).
+// No necesita claves: usa la API pública de la tienda y la página pública de reseñas de la comunidad.
 
-const KEY = process.env.STEAM_API_KEY;
 
 function json(res, data, status = 200) {
   res.statusCode = status;
@@ -34,27 +34,10 @@ async function buscarAppid(nombre) {
   return item ? { appid: item.id, nombre: item.name } : null;
 }
 
-const RESUMEN = {
-  "Overwhelmingly Positive": "Extremadamente positivas", "Very Positive": "Muy positivas", "Positive": "Positivas",
-  "Mostly Positive": "Mayormente positivas", "Mixed": "Variadas", "Mostly Negative": "Mayormente negativas",
-  "Negative": "Negativas", "Very Negative": "Muy negativas", "Overwhelmingly Negative": "Extremadamente negativas",
-};
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   const url = new URL(req.url, "http://localhost");
-  // Diagnóstico: /api/steam/resenas?diagnostico=1 muestra qué responde Steam
-  if (url.searchParams.get("diagnostico")) {
-    const pruebas = {};
-    for (const [k, u] of Object.entries({
-      busqueda: "https://store.steampowered.com/api/storesearch/?term=Hades&l=spanish&cc=CO",
-      resenas: "https://store.steampowered.com/appreviews/1145360?json=1&language=all&num_per_page=0",
-    })) {
-      pruebas[k] = await fetch(u).then(async (r) => ({ status: r.status, url: r.url, inicio: (await r.text()).slice(0, 200) }))
-        .catch((e) => ({ error: String(e) }));
-    }
-    return json(res, pruebas);
-  }
   let appid = Number(url.searchParams.get("appid")) || null;
   let nombre = url.searchParams.get("nombre");
 
@@ -64,47 +47,53 @@ module.exports = async function handler(req, res) {
   }
   if (!appid) return json(res, { appid: null, resenas: [] });
 
-  const base = `https://store.steampowered.com/appreviews/${appid}?json=1&filter=all&purchase_type=all&review_type=all`;
-  const [todas, es, latam] = await Promise.all([
-    pedir(`${base}&language=all&num_per_page=0`),
-    pedir(`${base}&language=spanish&num_per_page=10`),
-    pedir(`${base}&language=latam&num_per_page=10`),
-  ]);
+  // Resumen (nota global de Steam) desde la API oficial de la tienda
+  const tienda = await pedir(`https://api.steampowered.com/IStoreBrowseService/GetItems/v1/?input_json=${encodeURIComponent(JSON.stringify({
+    ids: [{ appid }], context: { language: "spanish", country_code: "CO" }, data_request: { include_reviews: true },
+  }))}`);
+  const item = tienda?.response?.store_items?.[0] ?? {};
+  const global = item.reviews?.summary_filtered ?? {};
+  nombre = item.name ?? nombre;
 
-  // Las más útiles en español (de España y de Latinoamérica), sin repetir
-  const vistas = new Set();
-  const lista = [...(es?.reviews ?? []), ...(latam?.reviews ?? [])]
-    .filter((r) => !vistas.has(r.recommendationid) && vistas.add(r.recommendationid))
-    .sort((a, b) => b.votes_up - a.votes_up)
-    .slice(0, 10);
+  // Las reseñas más útiles en español. Steam ya no da un JSON público de reseñas,
+  // así que se leen de la página pública de reseñas de la comunidad (steamcommunity.com/app/<id>/reviews).
+  const html = await fetch(`https://steamcommunity.com/app/${appid}/homecontent/?userreviewsoffset=0&p=1&numperpage=10&browsefilter=toprated&appid=${appid}&appHubSubSection=10&l=spanish&filterLanguage=default&searchText=&maxInappropriateScore=50`)
+    .then((r) => (r.ok ? r.text() : "")).catch(() => "");
+  const MESES = { enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7, agosto: 8, septiembre: 9, octubre: 10, noviembre: 11, diciembre: 12 };
+  const limpiar = (t) => t.replace(/<div class="early_access_review">[\s\S]*?<\/div>/g, "")
+    .replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
+    .replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim();
+  const numero = (t) => {
+    if (!t) return 0;
+    const limpio = t.includes(",") && t.includes(".") ? t.replace(/,/g, "") : t.replace(",", ".");
+    return Number(limpio) || 0;
+  };
+  const resenas = html.split('class="apphub_Card ').slice(1).map((c, i) => {
+    const autor = c.match(/apphub_CardContentAuthorName[^"]*"><a href="([^"]+)">([^<]+)<\/a>/) || [];
+    const fecha = c.match(/date_posted">[^0-9<]*(\d{1,2}) de ([a-záéíóú]+)(?: de (\d{4}))?/i) || [];
+    const texto = limpiar((c.match(/class="date_posted">[\s\S]*?<\/div>([\s\S]*?)<\/div>/) || [])[1] || "");
+    return {
+      id: String(i),
+      autor: limpiar(autor[2] || "Jugador de Steam"),
+      perfil: autor[1] || null,
+      recomienda: /thumbsUp/i.test(c.split("apphub_CardTextContent")[0]),
+      texto: texto.length > 1200 ? texto.slice(0, 1200) + "…" : texto,
+      horas: numero((c.match(/class="hours">\s*([\d.,]+)/) || [])[1]),
+      fecha: fecha[1] ? `${fecha[3] || new Date().getFullYear()}-${String(MESES[fecha[2].toLowerCase()] || 1).padStart(2, "0")}-${fecha[1].padStart(2, "0")}` : null,
+      votosUtil: Number(((c.match(/found_helpful">[^0-9<]*([\d.,]+)/) || [])[1] || "0").replace(/[.,]/g, "")),
+      enlace: (c.match(/data-modal-content-url="([^"]+)"/) || [])[1] || `https://steamcommunity.com/app/${appid}/reviews/`,
+    };
+  }).filter((r) => r.texto);
 
-  // Nombre de cada autor
-  const nombres = new Map();
-  const ids = lista.map((r) => r.author.steamid).join(",");
-  if (KEY && ids) {
-    const d = await pedir(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${KEY}&steamids=${ids}`);
-    for (const p of d?.response?.players ?? []) nombres.set(p.steamid, p.personaname);
-  }
-
-  const q = todas?.query_summary ?? {};
   return json(res, {
     appid,
     nombre,
     resumen: {
-      texto: RESUMEN[q.review_score_desc] ?? q.review_score_desc ?? null,
-      positivas: q.total_positive ?? 0,
-      total: q.total_reviews ?? 0,
+      texto: global.review_score_label ?? null,
+      positivas: Math.round((global.review_count ?? 0) * (global.percent_positive ?? 0) / 100),
+      total: global.review_count ?? 0,
     },
-    resenas: lista.map((r) => ({
-      id: r.recommendationid,
-      autor: nombres.get(r.author.steamid) ?? "Jugador de Steam",
-      steamid: r.author.steamid,
-      recomienda: r.voted_up,
-      texto: r.review.length > 1200 ? r.review.slice(0, 1200) + "…" : r.review,
-      horas: Math.round(((r.author.playtime_at_review ?? r.author.playtime_forever ?? 0) / 60) * 10) / 10,
-      fecha: new Date(r.timestamp_created * 1000).toISOString().slice(0, 10),
-      votosUtil: r.votes_up,
-      enlace: `https://steamcommunity.com/profiles/${r.author.steamid}/recommended/${appid}/`,
-    })),
+    resenas,
   });
 };
