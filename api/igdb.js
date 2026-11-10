@@ -30,10 +30,6 @@ let permisoVence = 0;
 // Campos que se le piden a IGDB por cada juego.
 const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count;';
 
-// Tipos de juego de IGDB que sí mostramos: 0 juego principal, 4 expansión que se vende sola,
-// 8 remake, 9 remaster, 10 juego ampliado. Y nada de versiones (ediciones) de otro juego.
-const SOLO_JUEGOS = 'version_parent = null & game_type = (0,4,8,9,10)';
-
 const POR_PAGINA = 24;
 
 // IGDB nombra los géneros (y algunos temas) en inglés: aquí van los que usa SaveSlot.
@@ -88,6 +84,14 @@ const PLATAFORMAS = {
   'Xbox': [11, 12, 49, 169],
   'Nintendo': [130, 41, 5, 37, 20, 4, 21, 24, 33, 22, 18, 19]
 };
+
+// Qué juegos mostramos:
+// - Tipos de IGDB: 0 juego principal, 4 expansión que se vende sola, 8 remake, 9 remaster,
+//   10 juego ampliado. Nada de DLC, mods, packs, ports no oficiales ni ediciones de otro juego.
+// - SaveSlot es solo de PC y consolas: el juego debe salir en al menos una de esas plataformas
+//   (los que solo salen en celular o navegador no aparecen).
+const SOLO_JUEGOS = 'version_parent = null & game_type = (0,4,8,9,10) & platforms = (' +
+  [].concat(PLATAFORMAS.PC, PLATAFORMAS.PlayStation, PLATAFORMAS.Xbox, PLATAFORMAS.Nintendo).join(',') + ')';
 
 function plataformaDe(nombre) {
   if (/PlayStation|PS Vita/i.test(nombre)) return 'PlayStation';
@@ -146,14 +150,20 @@ async function consultar(seccion, consulta, reintento) {
   return r.json();
 }
 
+// Más horas que esto no es una historia, es un juego sin fin (MMO, sandbox…): no se muestran.
+const MAXIMO_DE_HORAS = 300;
+
 // Agrega las horas de la historia ("Time to beat" de IGDB, en segundos) a una lista de juegos.
+// Se usa "hastily" (terminar la historia principal, sin extras); si no está, "normally" (con algunos extras).
 async function conHoras(juegos) {
   if (!juegos.length) return [];
   const ids = juegos.map(function (j) { return j.id; }).join(',');
-  const tiempos = await consultar('game_time_to_beats', 'fields game_id, normally; where game_id = (' + ids + '); limit 500;');
+  const tiempos = await consultar('game_time_to_beats', 'fields game_id, hastily, normally; where game_id = (' + ids + '); limit 500;');
   return juegos.map(function (j) {
-    const t = tiempos.find(function (x) { return x.game_id === j.id; });
-    return traducir(j, t && t.normally ? Math.round(t.normally / 3600) : null);
+    const t = tiempos.find(function (x) { return x.game_id === j.id; }) || {};
+    const segundos = t.hastily || t.normally;
+    const horas = segundos ? Math.max(1, Math.round(segundos / 3600)) : null;
+    return traducir(j, horas && horas <= MAXIMO_DE_HORAS ? horas : null);
   });
 }
 
@@ -340,14 +350,20 @@ async function similares(ids) {
   return juegos.map(function (j) { return traducir(j, null); });
 }
 
+// Mejores juegos de la semana: los que más gente marca como "jugando ahora" en IGDB.
+// El número de ese tipo de popularidad se busca una vez por su nombre y se guarda.
+let numeroJugando = null;
 async function populares() {
-  // popularity_type 1 = visitas a la página del juego en IGDB.
-  const lista = await consultar('popularity_primitives', 'fields game_id, value; where popularity_type = 1; sort value desc; limit 10;');
+  if (!numeroJugando) {
+    const tipos = await consultar('popularity_types', 'fields id, name; where name = "Playing"; limit 1;');
+    numeroJugando = tipos.length ? tipos[0].id : 1; // si no lo encuentra, usa las visitas (1)
+  }
+  const lista = await consultar('popularity_primitives', 'fields game_id, value; where popularity_type = ' + numeroJugando + '; sort value desc; limit 20;');
   if (!lista.length) return [];
   const ids = lista.map(function (p) { return p.game_id; });
-  const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS + '; limit 10;');
+  const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS + '; limit 20;');
   juegos.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); });
-  return conHoras(juegos);
+  return conHoras(juegos.slice(0, 10));
 }
 
 module.exports = async function (req, res) {

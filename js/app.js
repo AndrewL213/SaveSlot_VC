@@ -1129,7 +1129,9 @@ function pantallaJuego() {
       '<span class="tarjeta__texto">Votada por la comunidad</span>' +
       '<button class="dato__ayuda" type="button" id="ayuda-dificultad">¿Cómo se calcula?</button>' +
     '</div>' +
-    '<div class="dato"><span class="dato__etiqueta">Historia principal</span><span class="dato__valor">' + (juego.horasHistoria ? juego.horasHistoria + ' h' : 'Online') + '</span><span class="tarjeta__texto">Promedio de jugadores</span></div>' +
+    '<div class="dato"><span class="dato__etiqueta">Historia principal</span><span class="dato__valor">' + (juego.horasHistoria ? juego.horasHistoria + ' h' : 'Online') + '</span><span class="tarjeta__texto">Promedio de jugadores</span>' +
+      // Enlace a HowLongToBeat (solo enlazamos: su web no permite leer sus datos con programas)
+      '<a class="dato__ayuda" href="https://howlongtobeat.com/?q=' + encodeURIComponent(juego.nombre) + '" target="_blank" rel="noopener">Ver en HowLongToBeat</a></div>' +
     '<div class="dato"><span class="dato__etiqueta">Completar 100%</span><span class="dato__valor">' + (juego.horas100 ? juego.horas100 + ' h' : '—') + '</span><span class="tarjeta__texto">Promedio de jugadores</span></div>' +
     '<div class="dato dato--destacado"><span class="dato__etiqueta">Tu progreso</span>' +
       (progreso
