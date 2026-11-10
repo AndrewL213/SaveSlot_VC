@@ -2363,8 +2363,8 @@ function pantallaPerfil() {
 
   // Actividad: qué está jugando
   document.getElementById('jugando-perfil').innerHTML = jugando
-    ? '<a class="fila fila--jugando" href="detalle-juego.html?id=' + encodeURIComponent(jugando.id) + '"><span class="portada portada--sm"' + atributoColor(jugando.color) + '>' + imagenPortada(jugando) + '</span>' +
-      '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(jugando.nombreCorto) + '</b><br><span class="tarjeta__texto">Dato de Steam (demo)</span></span></a>'
+    ? '<a class="fila fila--jugando" href="' + escapar(enlaceJuego(jugando)) + '"' + (jugando.steam ? ' target="_blank" rel="noopener"' : '') + '><span class="portada portada--sm"' + atributoColor(jugando.color) + '>' + imagenPortada(jugando) + '</span>' +
+      '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(jugando.nombreCorto) + '</b><br><span class="tarjeta__texto">Lo elegiste en tu perfil</span></span></a>'
     : '<p class="tarjeta__texto">No está jugando nada en este momento.</p>';
 
   // Si Steam está vinculada de verdad, se muestra lo que juega ahora en Steam
@@ -2645,9 +2645,28 @@ function pantallaEditar() {
   campoNombre.value = sesion.name;
   document.getElementById('usuario-fijo').value = sesion.user;
   document.getElementById('sobre-mi').value = perfil.bio || '';
-  document.getElementById('jugando-ahora').innerHTML = '<option value="">Nada por ahora</option>' + juegos.map(function (j) {
-    return '<option value="' + escapar(j.id) + '"' + (perfil.playing === j.id ? ' selected' : '') + '>' + escapar(j.nombreCorto) + '</option>';
-  }).join('');
+  // "¿Qué estás jugando ahora?": con Steam vinculada, lo automático es lo que juegues en Steam
+  var selectorJugando = document.getElementById('jugando-ahora');
+  var ayudaJugando = document.getElementById('ayuda-jugando');
+  function dibujarJugando() {
+    var opcion = function (j) {
+      return '<option value="' + escapar(j.id) + '"' + (perfil.playing === j.id ? ' selected' : '') + '>' + escapar(j.nombreCorto) + '</option>';
+    };
+    var conSteam = !!perfil.accounts.Steam;
+    var deSteam = bibliotecaSteam.slice().sort(function (a, b) { return b.ultimaVez - a.ultimaVez; });
+    selectorJugando.innerHTML = '<option value="">' + (conSteam ? 'Automático: lo que juegues en Steam' : 'Nada por ahora') + '</option>' +
+      (deSteam.length
+        ? '<optgroup label="Tu biblioteca de Steam (recientes primero)">' + deSteam.map(opcion).join('') + '</optgroup><optgroup label="Catálogo de SaveSlot">' + juegos.map(opcion).join('') + '</optgroup>'
+        : juegos.map(opcion).join(''));
+    if (!conSteam) {
+      ayudaJugando.innerHTML = 'Elígelo a mano, o <a href="#cuentas">vincula Steam</a> para que se muestre solo lo que estés jugando.';
+      return;
+    }
+    var steam = leerMemoria('steamPerfil', null);
+    var ahora = steam && steam.playing_now ? 'Ahora mismo Steam dice que juegas <b>' + escapar(steam.playing_now.name) + '</b>. ' : '';
+    ayudaJugando.innerHTML = ahora + 'Si estás jugando en Steam, tu perfil lo muestra solo. Si eliges un juego aquí, se muestra cuando no estés jugando en Steam.';
+  }
+  dibujarJugando();
 
   // Favoritos: máximo 4
   var cajaFavoritos = document.getElementById('favoritos-editar');
@@ -2697,6 +2716,9 @@ function pantallaEditar() {
     actualizarBibliotecaSteam().then(function (lista) {
       bibliotecaSteam = lista;
       dibujarFavoritos();
+      var elegido = selectorJugando.value;
+      dibujarJugando();
+      selectorJugando.value = elegido;
     }).catch(function () { /* sin sesión de Steam: solo el catálogo */ });
   }
 
