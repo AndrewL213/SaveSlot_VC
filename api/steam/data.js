@@ -39,6 +39,41 @@ const steam = (path, params) => {
   });
 };
 
+// Portadas reales de Steam. Muchos juegos ya no tienen la imagen en la dirección vieja
+// (cdn.cloudflare.steamstatic.com/steam/apps/<id>/library_600x900.jpg): Steam la guarda en una
+// carpeta con código propio. La tienda (GetItems con include_assets) dice cuál es.
+// Devuelve Map(appid → { cover: vertical 600x900, header: horizontal }).
+const CDN_ASSETS = "https://shared.fastly.steamstatic.com/store_item_assets/";
+async function portadas(appids) {
+  const mapa = new Map();
+  const unicos = [...new Set(appids.map(Number).filter(Boolean))];
+  for (let i = 0; i < unicos.length; i += 50) {
+    const r = await steam("IStoreBrowseService/GetItems/v1/", {
+      input_json: JSON.stringify({ ids: unicos.slice(i, i + 50).map((appid) => ({ appid })), context: { language: "spanish", country_code: "CO" }, data_request: { include_assets: true } }),
+    }).catch(() => null);
+    for (const it of r?.response?.store_items ?? []) {
+      const a = it.assets;
+      if (!a?.asset_url_format) continue;
+      const url = (archivo) => archivo ? CDN_ASSETS + a.asset_url_format.replace("${FILENAME}", archivo) : null;
+      mapa.set(it.appid ?? it.id, {
+        cover: url(a.library_capsule_2x || a.library_capsule),
+        header: url(a.header || a.main_capsule),
+      });
+    }
+  }
+  return mapa;
+}
+
+// Agrega cover y header a cada juego de una lista ({ appid, ... })
+async function conPortadas(lista) {
+  const mapa = await portadas(lista.map((g) => g.appid));
+  for (const g of lista) {
+    const p = mapa.get(Number(g.appid));
+    if (p) { if (p.cover) g.cover = p.cover; if (p.header) g.header = p.header; }
+  }
+  return lista;
+}
+
 // Valida el JWT de Supabase y devuelve el usuario
 async function getUser(authHeader) {
   if (!authHeader) return null;
@@ -80,15 +115,18 @@ module.exports = async function handler(req, res) {
           steam("IPlayerService/GetBadges/v1/", { steamid }).catch(() => ({ response: {} })),
         ]);
         const p = sum.response.players[0];
+        const recientes = (recent.response.games ?? []).map((g) => ({
+          appid: g.appid,
+          name: g.name,
+          hours_2weeks: Math.round((g.playtime_2weeks / 60) * 10) / 10,
+          hours: Math.round((g.playtime_forever / 60) * 10) / 10,
+        }));
+        const jugando = p.gameextrainfo ? { name: p.gameextrainfo, appid: p.gameid } : null;
+        await conPortadas(jugando ? recientes.concat(jugando) : recientes);
         return json(res, {
           ...p,
-          playing_now: p.gameextrainfo ? { name: p.gameextrainfo, appid: p.gameid } : null,
-          recent_games: (recent.response.games ?? []).map((g) => ({
-            appid: g.appid,
-            name: g.name,
-            hours_2weeks: Math.round((g.playtime_2weeks / 60) * 10) / 10,
-            hours: Math.round((g.playtime_forever / 60) * 10) / 10,
-          })),
+          playing_now: jugando,
+          recent_games: recientes,
           steam_level: insignias.response.player_level ?? null,
           badges: (insignias.response.badges ?? []).length,
           steam_xp: insignias.response.player_xp ?? null,
@@ -107,6 +145,7 @@ module.exports = async function handler(req, res) {
           cover: `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/library_600x900.jpg`,
           header: `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/header.jpg`,
         }));
+        await conPortadas(games); // cambia las direcciones viejas por las reales
         return json(res, { count: d.response.game_count ?? 0, games });
       }
 
@@ -183,6 +222,7 @@ module.exports = async function handler(req, res) {
         const average = games.length
           ? Math.round(games.reduce((s, g) => s + g.unlocked / g.total, 0) / games.length * 100)
           : 0;
+        await conPortadas(games);
         return json(res, {
           summary: {
             unlocked,
@@ -204,16 +244,20 @@ module.exports = async function handler(req, res) {
         for (let i = 0; i < items.length; i += 50) {
           const ids = items.slice(i, i + 50).map((x) => ({ appid: x.appid }));
           const r = await steam("IStoreBrowseService/GetItems/v1/", {
-            input_json: JSON.stringify({ ids, context: { language: "spanish", country_code: "CO" }, data_request: {} }),
+            input_json: JSON.stringify({ ids, context: { language: "spanish", country_code: "CO" }, data_request: { include_assets: true } }),
           }).catch(() => null);
           for (const it of r?.response?.store_items ?? []) datos.set(it.appid ?? it.id, it);
         }
         const games = items.map((x) => {
           const it = datos.get(x.appid) ?? {};
           const precio = it.best_purchase_option ?? {};
+          const a = it.assets;
+          const url = (archivo) => a?.asset_url_format && archivo ? CDN_ASSETS + a.asset_url_format.replace("${FILENAME}", archivo) : undefined;
           return {
             appid: x.appid,
             name: it.name ?? `App ${x.appid}`,
+            cover: url(a?.library_capsule_2x || a?.library_capsule),
+            header: url(a?.header || a?.main_capsule),
             added: x.date_added,
             price: precio.formatted_final_price ?? (it.is_free ? "Gratis" : null),
             original_price: precio.formatted_original_price ?? null,
@@ -263,10 +307,17 @@ module.exports = async function handler(req, res) {
         // Nombre de cada juego
         if (reviews.length) {
           const r = await steam("IStoreBrowseService/GetItems/v1/", {
-            input_json: JSON.stringify({ ids: reviews.map((x) => ({ appid: x.appid })), context: { language: "spanish", country_code: "CO" }, data_request: {} }),
+            input_json: JSON.stringify({ ids: reviews.map((x) => ({ appid: x.appid })), context: { language: "spanish", country_code: "CO" }, data_request: { include_assets: true } }),
           }).catch(() => null);
-          const nombres = new Map((r?.response?.store_items ?? []).map((it) => [it.appid ?? it.id, it.name]));
-          for (const x of reviews) x.name = nombres.get(x.appid) ?? `App ${x.appid}`;
+          const items = new Map((r?.response?.store_items ?? []).map((it) => [it.appid ?? it.id, it]));
+          for (const x of reviews) {
+            const it = items.get(x.appid) ?? {};
+            const a = it.assets;
+            const url = (archivo) => a?.asset_url_format && archivo ? CDN_ASSETS + a.asset_url_format.replace("${FILENAME}", archivo) : undefined;
+            x.name = it.name ?? `App ${x.appid}`;
+            x.cover = url(a?.library_capsule_2x || a?.library_capsule);
+            x.header = url(a?.header || a?.main_capsule);
+          }
         }
         return json(res, { count: reviews.length, reviews });
       }
