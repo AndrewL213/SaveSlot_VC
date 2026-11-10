@@ -92,6 +92,40 @@ function terminarVueltaDeSteam() {
   });
 }
 
+// Un juego de la biblioteca de Steam en el mismo formato que los de data.js.
+// Portadas: las oficiales de Steam (con crédito a Steam); si no hay vertical, la horizontal.
+function juegoDeSteam(g) {
+  var cdn = 'https://cdn.cloudflare.steamstatic.com/steam/apps/' + g.appid + '/';
+  return {
+    id: 'steam-' + g.appid, appid: g.appid, nombre: g.name, nombreCorto: g.name,
+    portada: cdn + 'library_600x900.jpg', portadaRespaldo: cdn + 'header.jpg', color: null,
+    generos: [], plataformas: ['PC (Steam)'], horas: g.hours || 0, ultimaVez: g.last_played || 0, steam: true
+  };
+}
+
+// Biblioteca de Steam guardada en el navegador (se actualiza al abrir Biblioteca o Editar perfil)
+function leerBibliotecaSteam() {
+  return (leerMemoria('steamBiblioteca', null) || { games: [] }).games.map(juegoDeSteam);
+}
+
+function actualizarBibliotecaSteam() {
+  return pedirSteam('library').then(function (datos) {
+    guardarMemoria('steamBiblioteca', { fecha: Date.now(), games: datos.games });
+    return datos.games.map(juegoDeSteam);
+  });
+}
+
+function tieneSteam() {
+  return !!(leerPerfil().accounts || {}).Steam;
+}
+
+// A dónde lleva un juego: su ficha en SaveSlot o, si viene de Steam, su página en la tienda de Steam
+function enlaceJuego(juego) {
+  return juego.steam
+    ? 'https://store.steampowered.com/app/' + juego.appid + '/'
+    : 'detalle-juego.html?id=' + encodeURIComponent(juego.id);
+}
+
 // Botón "Steam" de Iniciar sesión y Crear cuenta
 function activarBotonSteam() {
   var boton = document.querySelector('a[href*="servicio=Steam"]');
@@ -110,6 +144,9 @@ function obtenerDatos(tipo) {
 }
 
 function buscarPorId(tipo, id) {
+  if (tipo === 'juegos' && /^steam-/.test(id)) {
+    return leerBibliotecaSteam().find(function (j) { return j.id === id; }) || null;
+  }
   return obtenerDatos(tipo).find(function (x) { return x.id === id; }) || null;
 }
 
@@ -380,10 +417,24 @@ function aplicarColores(contenedor) {
 
 // Imagen de la portada, desde assets/.
 function imagenPortada(juego) {
-  return juego.portada
-    ? '<img class="portada__imagen" src="' + escapar(rutaRecurso(juego.portada)) + '" alt="Portada de ' + escapar(juego.nombre) + '">'
-    : '';
+  if (!juego.portada) return '';
+  var src = /^https?:/.test(juego.portada) ? juego.portada : rutaRecurso(juego.portada);
+  return '<img class="portada__imagen" src="' + escapar(src) + '"' +
+    (juego.portadaRespaldo ? ' data-respaldo="' + escapar(juego.portadaRespaldo) + '" loading="lazy"' : '') +
+    ' alt="Portada de ' + escapar(juego.nombre) + '">';
 }
+
+// Si una portada no carga, usa la de respaldo; si tampoco, se queda el recuadro neutro
+document.addEventListener('error', function (e) {
+  var img = e.target;
+  if (!img.classList || !img.classList.contains('portada__imagen')) return;
+  if (img.dataset.respaldo) {
+    img.src = img.dataset.respaldo;
+    delete img.dataset.respaldo;
+  } else if (/steamstatic/.test(img.src)) {
+    img.remove();
+  }
+}, true);
 
 function crearElemento(html) {
   var plantilla = document.createElement('template');
@@ -1978,7 +2029,7 @@ function pantallaEvento() {
    El navegador guarda los datos de una sola persona a la vez (perfil, reseñas,
    diario…). Al entrar con otra cuenta, se guardan los de la anterior aparte y se
    cargan los de la nueva. Si "duenoDatos" no existe, los datos son de samluq. */
-var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay'];
+var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros'];
 
 function cambiarDeCuenta(usuario, datosNuevos) {
   var dueno = leerMemoria('duenoDatos', 'samluq');
@@ -2281,11 +2332,14 @@ function pantallaPerfil() {
   var resenas = leerResenasPropias().filter(function (r) { return r.tipo === 'resena'; });
   var resumenLogros = obtenerDatos('resumenLogros').find(function (r) { return r.usuario === sesion.user; });
   var anio = String(new Date().getFullYear());
+  var logrosSteam = (perfil.accounts || {}).Steam ? leerMemoria('steamLogros', null) : null;
+  var bibliotecaSteam = (perfil.accounts || {}).Steam ? leerBibliotecaSteam() : [];
   document.getElementById('estadisticas-perfil').innerHTML = [
+    ['Biblioteca', bibliotecaSteam.length, 'biblioteca.html'],
     ['Juegos', diario.length, 'diario.html'],
     ['Este año', diario.filter(function (d) { return String(d.fecha).slice(0, 4) === anio; }).length, 'diario.html'],
     ['Reseñas', resenas.length, 'historial-resenas.html'],
-    ['Logros', formatearNumero(resumenLogros ? resumenLogros.desbloqueados : 0), 'logros.html'],
+    ['Logros', formatearNumero(logrosSteam ? logrosSteam.summary.unlocked : (resumenLogros ? resumenLogros.desbloqueados : 0)), 'logros.html'],
     ['Lista de deseos', perfil.wishlist.length, '#deseos']
   ].map(function (d) {
     return '<a class="dato" href="' + d[2] + '"><span class="dato__valor">' + d[1] + '</span><span class="dato__etiqueta">' + d[0] + '</span></a>';
@@ -2295,7 +2349,7 @@ function pantallaPerfil() {
   var favoritos = perfil.favorites.slice(0, 4).map(function (id) { return buscarPorId('juegos', id); }).filter(Boolean);
   document.getElementById('cantidad-favoritos').textContent = favoritos.length + ' de 4';
   document.getElementById('favoritos-perfil').innerHTML = favoritos.map(function (j) {
-    return '<a class="portada portada--enlace" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombreCorto) + '</b></a>';
+    return '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombreCorto) + '</b></a>';
   }).join('') + new Array(4 - favoritos.length + 1).join('<a class="vacio" href="editar-perfil.html#favoritos">+ Elegir favorito</a>');
 
   // Actividad reciente: los últimos 6 del diario
@@ -2384,6 +2438,7 @@ function pantallaEditar() {
   var perfil = leerPerfil();
   perfil.accounts = perfil.accounts || {};
   var juegos = obtenerDatos('juegos');
+  var bibliotecaSteam = perfil.accounts.Steam ? leerBibliotecaSteam() : [];
   var campoNombre = document.getElementById('nombre-visible');
 
   if (new URLSearchParams(location.search).get('nuevo')) document.getElementById('bienvenida').hidden = false;
@@ -2401,6 +2456,8 @@ function pantallaEditar() {
   var botonAgregar = document.getElementById('agregar-favorito');
   function dibujarFavoritos() {
     var lleno = perfil.favorites.length >= MAXIMO_FAVORITOS;
+    perfil.favorites = perfil.favorites.filter(function (id) { return buscarPorId('juegos', id); });
+    lleno = perfil.favorites.length >= MAXIMO_FAVORITOS;
     cajaFavoritos.innerHTML = perfil.favorites.map(function (id) {
       var j = buscarPorId('juegos', id);
       return '<div class="portada"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombreCorto) + '</b>' +
@@ -2411,9 +2468,15 @@ function pantallaEditar() {
       : 'Puedes elegir ' + (MAXIMO_FAVORITOS - perfil.favorites.length) + ' más (máximo 4).';
     botonAgregar.disabled = lleno;
     selector.disabled = lleno;
-    selector.innerHTML = '<option value="">Elige un juego</option>' + juegos.filter(function (j) { return perfil.favorites.indexOf(j.id) === -1; }).map(function (j) {
-      return '<option value="' + escapar(j.id) + '">' + escapar(j.nombreCorto) + '</option>';
-    }).join('');
+    function opciones(lista) {
+      return lista.filter(function (j) { return perfil.favorites.indexOf(j.id) === -1; }).map(function (j) {
+        return '<option value="' + escapar(j.id) + '">' + escapar(j.nombreCorto) + (j.steam && j.horas ? ' · ' + formatearNumero(j.horas) + ' h' : '') + '</option>';
+      }).join('');
+    }
+    var porHoras = bibliotecaSteam.slice().sort(function (a, b) { return b.horas - a.horas; });
+    selector.innerHTML = '<option value="">Elige un juego</option>' + (porHoras.length
+      ? '<optgroup label="Tu biblioteca de Steam">' + opciones(porHoras) + '</optgroup><optgroup label="Catálogo de SaveSlot">' + opciones(juegos) + '</optgroup>'
+      : opciones(juegos));
     aplicarColores(cajaFavoritos);
   }
   cajaFavoritos.addEventListener('click', function (e) {
@@ -2430,6 +2493,13 @@ function pantallaEditar() {
     dibujarFavoritos();
   });
   dibujarFavoritos();
+  // Trae la biblioteca de Steam al día para elegir favoritos de ahí
+  if (perfil.accounts.Steam) {
+    actualizarBibliotecaSteam().then(function (lista) {
+      bibliotecaSteam = lista;
+      dibujarFavoritos();
+    }).catch(function () { /* sin sesión de Steam: solo el catálogo */ });
+  }
 
   // Géneros favoritos
   var generos = [];
@@ -2671,26 +2741,33 @@ function pantallaHistorial() {
   aplicarColores(document);
 }
 
-// 23. Logros (datos de ejemplo)
+// 23. Logros (Steam real; las demás plataformas, datos de ejemplo)
 function pantallaLogros() {
   if (!exigirSesion()) return;
   var usuario = obtenerSesion().user;
   var plataforma = 'Todas';
   var progreso = obtenerDatos('progresoLogros').filter(function (p) { return p.usuario === usuario; });
   var resumen = obtenerDatos('resumenLogros').find(function (r) { return r.usuario === usuario; }) || { desbloqueados: 0, promedio: 0, juegosCompletos: 0, raros: 0 };
+  var raros = obtenerDatos('logros').map(function (l) {
+    var j = buscarPorId('juegos', l.juego);
+    return { nombre: l.nombre, juego: j ? j.nombreCorto : '', porcentaje: l.porcentaje, obtenido: l.obtenido };
+  });
   var caja = document.getElementById('logros-por-juego');
 
-  document.getElementById('resumen-logros').innerHTML = [
-    [formatearNumero(resumen.desbloqueados), 'Logros desbloqueados'], [resumen.promedio + '%', 'Completado en promedio'],
-    [resumen.juegosCompletos, 'Juegos al 100%'], [resumen.raros, 'Logros raros (menos del 10%)']
-  ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
+  function mostrarResumen() {
+    document.getElementById('resumen-logros').innerHTML = [
+      [formatearNumero(resumen.desbloqueados), 'Logros desbloqueados'], [resumen.promedio + '%', 'Completado en promedio'],
+      [resumen.juegosCompletos, 'Juegos al 100%'], [resumen.raros, 'Logros raros (menos del 10%)']
+    ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
+  }
 
   function mostrar() {
     var lista = progreso.filter(function (p) { return plataforma === 'Todas' || p.plataforma === plataforma; });
     caja.innerHTML = lista.map(function (p) {
-      var j = buscarPorId('juegos', p.juego);
+      var j = p.juegoSteam || buscarPorId('juegos', p.juego);
+      if (!j) return '';
       var porcentaje = Math.round(p.obtenidos / p.totales * 100);
-      return '<a class="tarjeta tarjeta--enlace progreso-juego" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '">' +
+      return '<a class="tarjeta tarjeta--enlace progreso-juego" href="' + escapar(enlaceJuego(j)) + '">' +
         '<span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
         '<span class="progreso-juego__nombre"><b class="tarjeta__titulo">' + escapar(j.nombreCorto) + '</b>' +
           '<span class="medidor' + (porcentaje === 100 ? ' medidor--exito' : '') + '" role="img" aria-label="' + porcentaje + '% de los logros"><span class="medidor__barra" data-ancho="' + porcentaje + '"></span></span></span>' +
@@ -2698,6 +2775,30 @@ function pantallaLogros() {
         '<span class="etiqueta etiqueta--contorno">' + escapar(p.plataforma.toUpperCase()) + '</span></a>';
     }).join('') || '<div class="vacio"><b>No tienes logros sincronizados de ' + escapar(plataforma) + '.</b><a href="editar-perfil.html#cuentas">Vincular cuenta</a></div>';
     aplicarColores(caja);
+  }
+
+  // Logros más raros: de menos a más común
+  function mostrarRaros() {
+    document.getElementById('logros-raros').innerHTML = raros.slice().sort(function (a, b) { return a.porcentaje - b.porcentaje; }).map(function (l) {
+      return '<div class="tarjeta logro-raro">' +
+        (l.obtenido ? '<span class="nota" aria-label="Obtenido">★</span>' : '<span class="etiqueta etiqueta--contorno" aria-label="Te falta">?</span>') +
+        '<span><b>' + escapar(l.nombre) + '</b><br><span class="tarjeta__texto">' + escapar(l.juego) + ' · ' + String(l.porcentaje).replace('.', ',') + '% lo tiene' + (l.obtenido ? '' : ' · te falta') + '</span></span></div>';
+    }).join('') || '<p class="tarjeta__texto">Aún no hay logros raros para mostrar.</p>';
+  }
+
+  // Logros reales de Steam: reemplazan los de ejemplo de Steam
+  function usarSteam(datos) {
+    progreso = progreso.filter(function (p) { return p.plataforma !== 'Steam'; }).concat(datos.games.map(function (g) {
+      return { juego: 'steam-' + g.appid, juegoSteam: juegoDeSteam(g), obtenidos: g.unlocked, totales: g.total, plataforma: 'Steam' };
+    }));
+    progreso.sort(function (a, b) { return b.obtenidos / b.totales - a.obtenidos / a.totales; });
+    resumen = { desbloqueados: datos.summary.unlocked, promedio: datos.summary.average, juegosCompletos: datos.summary.complete, raros: datos.summary.rare };
+    raros = datos.rarest.map(function (l) { return { nombre: l.name, juego: l.game, porcentaje: l.percent, obtenido: l.achieved }; });
+    var nota = document.getElementById('nota-logros');
+    if (nota) nota.textContent = 'Logros de Steam de tus 30 juegos más jugados (Steam Web API). Xbox llegará con OpenXBL.';
+    mostrarResumen();
+    mostrar();
+    mostrarRaros();
   }
 
   document.getElementById('filtro-plataforma').addEventListener('click', function (e) {
@@ -2708,15 +2809,80 @@ function pantallaLogros() {
     mostrar();
   });
 
-  // Logros más raros: de menos a más común
-  document.getElementById('logros-raros').innerHTML = obtenerDatos('logros').sort(function (a, b) { return a.porcentaje - b.porcentaje; }).map(function (l) {
-    var j = buscarPorId('juegos', l.juego);
-    return '<div class="tarjeta logro-raro">' +
-      (l.obtenido ? '<span class="nota" aria-label="Obtenido">★</span>' : '<span class="etiqueta etiqueta--contorno" aria-label="Te falta">?</span>') +
-      '<span><b>' + escapar(l.nombre) + '</b><br><span class="tarjeta__texto">' + escapar(j.nombreCorto) + ' · ' + String(l.porcentaje).replace('.', ',') + '% lo tiene' + (l.obtenido ? '' : ' · te falta') + '</span></span></div>';
-  }).join('');
+  var guardados = tieneSteam() ? leerMemoria('steamLogros', null) : null;
+  if (guardados) usarSteam(guardados);
+  else { mostrarResumen(); mostrar(); mostrarRaros(); }
 
-  mostrar();
+  if (tieneSteam()) {
+    if (!guardados) caja.insertAdjacentHTML('afterbegin', '<p class="tarjeta__texto" id="cargando-steam">Trayendo tus logros de Steam…</p>');
+    pedirSteam('achievements_summary').then(function (datos) {
+      guardarMemoria('steamLogros', datos);
+      usarSteam(datos);
+    }).catch(function () {
+      var cargando = document.getElementById('cargando-steam');
+      if (cargando) cargando.textContent = 'No pudimos traer tus logros de Steam. Revisa que tus detalles de juego sean públicos en Steam.';
+    });
+  }
+}
+
+// Biblioteca de Steam (pantalla nueva: pages/biblioteca.html)
+function pantallaBiblioteca() {
+  if (!exigirSesion()) return;
+  var caja = document.getElementById('biblioteca-juegos');
+  var buscador = document.getElementById('buscar-biblioteca');
+  var orden = 'horas';
+  var juegos = leerBibliotecaSteam();
+  var ORDENES = {
+    horas: function (a, b) { return b.horas - a.horas; },
+    recientes: function (a, b) { return b.ultimaVez - a.ultimaVez; },
+    nombre: function (a, b) { return a.nombre.localeCompare(b.nombre, 'es'); }
+  };
+
+  function dibujar() {
+    var total = juegos.reduce(function (s, j) { return s + j.horas; }, 0);
+    var jugados = juegos.filter(function (j) { return j.horas > 0; }).length;
+    document.getElementById('resumen-biblioteca').innerHTML = [
+      [formatearNumero(juegos.length), 'Juegos'], [formatearNumero(Math.round(total)), 'Horas jugadas'],
+      [formatearNumero(jugados), 'Jugados'], [formatearNumero(juegos.length - jugados), 'Sin estrenar']
+    ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
+
+    var texto = buscador.value.trim().toLowerCase();
+    var lista = juegos.filter(function (j) { return !texto || j.nombre.toLowerCase().indexOf(texto) !== -1; }).sort(ORDENES[orden]);
+    caja.innerHTML = lista.map(function (j) {
+      return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
+        '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
+        '<b>' + escapar(j.nombreCorto) + '</b>' +
+        '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
+    }).join('') || (juegos.length
+      ? '<div class="vacio">Ningún juego de tu biblioteca coincide con «' + escapar(buscador.value.trim()) + '».</div>'
+      : '');
+  }
+
+  if (!tieneSteam()) {
+    document.getElementById('resumen-biblioteca').hidden = true;
+    caja.outerHTML = '<div class="vacio"><b>Vincula tu cuenta de Steam para ver tu biblioteca.</b><a href="editar-perfil.html#cuentas">Vincular Steam</a></div>';
+    return;
+  }
+
+  document.getElementById('orden-biblioteca').addEventListener('click', function (e) {
+    var chip = e.target.closest('[data-orden]');
+    if (!chip) return;
+    orden = chip.dataset.orden;
+    document.querySelectorAll('[data-orden]').forEach(function (c) { c.setAttribute('aria-pressed', String(c === chip)); });
+    dibujar();
+  });
+  buscador.addEventListener('input', dibujar);
+
+  dibujar();
+  var estado = document.getElementById('estado-biblioteca');
+  estado.textContent = juegos.length ? 'Actualizando con Steam…' : 'Trayendo tu biblioteca de Steam…';
+  actualizarBibliotecaSteam().then(function (lista) {
+    juegos = lista;
+    estado.textContent = '';
+    dibujar();
+  }).catch(function () {
+    estado.textContent = 'No pudimos traer tu biblioteca. Revisa que tu perfil y tus detalles de juego sean públicos en Steam.';
+  });
 }
 
 // Texto del estado de una persona: "Jugando Hades", "En línea" o "Desconectado · hace 5 h"
@@ -3114,6 +3280,7 @@ var PANTALLAS = {
   diario: pantallaDiario,
   historial: pantallaHistorial,
   logros: pantallaLogros,
+  biblioteca: pantallaBiblioteca,
   amigos: pantallaAmigos,
   usuario: pantallaUsuario,
   contacto: pantallaContacto,
