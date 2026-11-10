@@ -28,7 +28,7 @@ let permiso = null;
 let permisoVence = 0;
 
 // Campos que se le piden a IGDB por cada juego.
-const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count;';
+const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count, external_games.uid, external_games.external_game_source, external_games.category;';
 
 const POR_PAGINA = 24;
 
@@ -174,9 +174,12 @@ function traducir(j, horas) {
   const palabras = (j.keywords || []).map(function (k) { return PALABRAS_CLAVE[k.slug]; });
   const generos = sinRepetidos(nombresIgdb.map(function (n) { return GENEROS[n]; }).concat(palabras)).filter(function (g) { return g !== 'Indie'; });
   const desarrolla = (j.involved_companies || []).find(function (c) { return c.developer && c.company; });
+  // Número del juego en Steam (IGDB lo guarda en external_games; Steam es la fuente 1)
+  const enSteam = (j.external_games || []).find(function (e) { return (e.external_game_source === 1 || e.category === 1) && /^\d+$/.test(e.uid); });
   return {
     id: j.slug,
     idIgdb: j.id,
+    appidSteam: enSteam ? Number(enSteam.uid) : null, // para precio, nota y reseñas de Steam (api/steam/)
     nombre: j.name,
     nombreCorto: j.name,
     generos: generos,
