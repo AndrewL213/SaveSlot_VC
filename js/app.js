@@ -19,6 +19,89 @@ var clienteSupabase = (window.supabase && typeof SUPABASE_URL !== 'undefined')
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_CLAVE_PUBLICA)
   : null;
 
+/* ---------- Steam (funciones de Vercel en api/steam) ----------
+   Entrar con Steam y leer sus datos pasa por /api/steam/auth y /api/steam/data,
+   que tienen la clave de Steam en Vercel (nunca en este código). Al volver de
+   Steam, la página trae ?steam=1&token_hash=…: aquí se convierte en una sesión
+   de Supabase y la cuenta queda vinculada en el perfil. */
+
+// Manda a la persona a Steam; al terminar vuelve a "destino" (una página de la app)
+function irASteam(destino) {
+  var vuelta = new URL(destino || location.href, location.href);
+  vuelta.searchParams.set('steam', '1');
+  location.href = '/api/steam/auth?action=login&redirect_to=' + encodeURIComponent(vuelta.href);
+}
+
+// Pide datos de Steam de la persona: 'profile', 'library', 'achievements' o 'stats' (+ appid)
+function pedirSteam(accion, appid) {
+  if (!clienteSupabase) return Promise.reject(new Error('Sin conexión con Supabase'));
+  return clienteSupabase.auth.getSession().then(function (r) {
+    var sesion = r.data && r.data.session;
+    if (!sesion) throw new Error('Sin sesión de Steam');
+    return fetch('/api/steam/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sesion.access_token },
+      body: JSON.stringify({ action: accion, appid: appid })
+    });
+  }).then(function (respuesta) {
+    return respuesta.json().then(function (datos) {
+      if (!respuesta.ok) throw new Error(datos.error || 'Steam no respondió');
+      return datos;
+    });
+  });
+}
+
+// Al volver de Steam: abre la sesión y vincula la cuenta. Devuelve el aviso a mostrar (o null).
+function terminarVueltaDeSteam() {
+  var params = new URLSearchParams(location.search);
+  if (!params.get('steam')) return Promise.resolve(null);
+  var token = params.get('token_hash');
+  var fallo = params.get('error');
+  ['steam', 'token_hash', 'type', 'error'].forEach(function (p) { params.delete(p); });
+  history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + location.hash);
+  if (fallo || !token || !clienteSupabase) return Promise.resolve('No pudimos conectar con Steam. Inténtalo de nuevo.');
+
+  return clienteSupabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' }).then(function (r) {
+    if (r.error) throw r.error;
+    return pedirSteam('profile');
+  }).then(function (steam) {
+    var nombre = steam.personaname || 'Steam';
+    if (!obtenerSesion()) {
+      // Entró con Steam: su cuenta de SaveSlot nace con Steam vinculada
+      var usuario = 'steam_' + steam.steamid;
+      iniciarSesion({ name: nombre, user: usuario, initials: inicialesDe(nombre), email: '', steam: true }, {
+        profile: { user: usuario, xp: XP_POR_CUENTA, level: 1, bio: '', since: hoy(), favorites: [], wishlist: [], genres: [], playing: null,
+          accounts: { Steam: nombre, PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: [] },
+        myReviews: [], diary: [], joined: [], inscripciones: [], friends: {}, chatsMatchplay: []
+      });
+      var propio = leerPerfil();
+      propio.accounts = propio.accounts || {};
+      propio.accounts.Steam = nombre;
+      guardarMemoria('profile', propio);
+      return 'Entraste con Steam · ' + nombre;
+    }
+    // Ya tenía sesión: se vincula Steam a su perfil
+    var yaEstaba = !!(leerPerfil().accounts || {}).Steam;
+    var perfil = yaEstaba ? leerPerfil() : sumarXp(XP_POR_CUENTA);
+    perfil.accounts = perfil.accounts || {};
+    perfil.accounts.Steam = nombre;
+    guardarMemoria('profile', perfil);
+    return 'Steam vinculada · ' + nombre + (yaEstaba ? '' : ' · +' + XP_POR_CUENTA + ' XP');
+  }).catch(function () {
+    return 'No pudimos conectar con Steam. Inténtalo de nuevo.';
+  });
+}
+
+// Botón "Steam" de Iniciar sesión y Crear cuenta
+function activarBotonSteam() {
+  var boton = document.querySelector('a[href*="servicio=Steam"]');
+  if (!boton || !clienteSupabase) return;
+  boton.addEventListener('click', function (e) {
+    e.preventDefault();
+    irASteam(destinoVolver());
+  });
+}
+
 /* ---------- Datos ---------- */
 
 // Devuelve una copia de la lista pedida ("juegos", "resenas", "eventos"…).
@@ -459,7 +542,9 @@ function prepararPie() {
   enlace.addEventListener('click', function (e) {
     e.preventDefault();
     guardarMemoria('session', null);
-    location.href = rutaPagina('index.html');
+    var salir = function () { location.href = rutaPagina('index.html'); };
+    if (clienteSupabase) clienteSupabase.auth.signOut().then(salir, salir);
+    else salir();
   });
 }
 
@@ -1957,6 +2042,7 @@ function activarOjo(boton, campo) {
 function pantallaEntrar() {
   if (obtenerSesion()) { location.replace(destinoVolver()); return; }
   document.getElementById('ir-a-crear').href = 'crear-cuenta.html' + location.search;
+  activarBotonSteam();
   var correo = document.getElementById('correo');
   var clave = document.getElementById('clave');
   activarOjo(document.getElementById('ver-clave'), clave);
@@ -1991,6 +2077,7 @@ function pantallaEntrar() {
 function pantallaRegistro() {
   if (obtenerSesion()) { location.replace('perfil.html'); return; }
   document.getElementById('ir-a-entrar').href = 'iniciar-sesion.html' + location.search;
+  activarBotonSteam();
   var nombre = document.getElementById('nombre');
   var correo = document.getElementById('correo');
   var usuario = document.getElementById('usuario');
@@ -2110,6 +2197,20 @@ function pantallaPerfil() {
     ? '<a class="fila fila--jugando" href="detalle-juego.html?id=' + encodeURIComponent(jugando.id) + '"><span class="portada portada--sm"' + atributoColor(jugando.color) + '>' + imagenPortada(jugando) + '</span>' +
       '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(jugando.nombreCorto) + '</b><br><span class="tarjeta__texto">Dato de Steam (demo)</span></span></a>'
     : '<p class="tarjeta__texto">No está jugando nada en este momento.</p>';
+
+  // Si Steam está vinculada de verdad, se muestra lo que juega ahora en Steam
+  if ((perfil.accounts || {}).Steam) {
+    pedirSteam('profile').then(function (steam) {
+      var caja = document.getElementById('jugando-perfil');
+      if (steam.playing_now) {
+        caja.innerHTML = '<div class="fila fila--jugando"><span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(steam.playing_now.name) + '</b><br><span class="tarjeta__texto">Dato de Steam</span></span></div>';
+      } else if (!jugando && steam.recent_games && steam.recent_games.length) {
+        var ultimo = steam.recent_games[0];
+        caja.innerHTML = '<p class="tarjeta__texto">No está jugando ahora. Último en Steam: <b>' + escapar(ultimo.name) + '</b> · ' +
+          formatearNumero(Math.round((ultimo.playtime_2weeks || 0) / 60)) + ' h en las últimas 2 semanas.</p>';
+      }
+    }).catch(function () { /* sin sesión de Steam (cuenta demo): se queda el dato de ejemplo */ });
+  }
 
   // Sobre mí, miembro desde y XP
   document.getElementById('sobre-perfil').textContent = perfil.bio || 'Todavía no escribiste nada sobre ti.';
@@ -2269,7 +2370,7 @@ function pantallaPerfil() {
 // 20. Editar perfil (pasos 2 y 3 al crear la cuenta)
 var MAXIMO_FAVORITOS = 4;
 var XP_POR_CUENTA = 100;
-// Steam y Xbox se pueden vincular (simulado); PlayStation y Nintendo no tienen conexión pública (Después)
+// Steam se vincula de verdad (api/steam); Xbox, simulado; PlayStation y Nintendo no tienen conexión pública (Después)
 var PLATAFORMAS = [
   { nombre: 'Steam', nota: 'Se conecta con tu cuenta de Steam', vincula: true },
   { nombre: 'PlayStation', nota: 'No tiene conexión pública: registra tus juegos a mano', vincula: false },
@@ -2372,6 +2473,13 @@ function pantallaEditar() {
         dibujarCuentas();
       } });
     }
+    if (vincular && vincular.dataset.vincular === 'Steam' && clienteSupabase) {
+      // Steam es real: se va a Steam y vuelve aquí ya vinculada
+      vincular.disabled = true;
+      vincular.textContent = 'Conectando…';
+      irASteam(location.href);
+      return;
+    }
     if (vincular) {
       vincular.disabled = true;
       vincular.textContent = 'Conectando…';
@@ -2397,6 +2505,7 @@ function pantallaEditar() {
     perfil.bio = document.getElementById('sobre-mi').value.trim().slice(0, 190);
     perfil.playing = document.getElementById('jugando-ahora').value || null;
     guardarMemoria('profile', perfil);
+    if (!perfil.accounts.Steam && clienteSupabase) clienteSupabase.auth.signOut();
     guardarMemoria('session', Object.assign({}, sesion, { name: campoNombre.value.trim(), initials: inicialesDe(campoNombre.value) }));
     mostrarAviso('Cambios guardados');
     setTimeout(function () { location.href = 'perfil.html'; }, 600);
@@ -3012,9 +3121,13 @@ var PANTALLAS = {
 };
 
 document.addEventListener('DOMContentLoaded', function () {
-  prepararEncabezado();
-  prepararFranja();
-  prepararPie();
-  var pantalla = PANTALLAS[document.body.dataset.pantalla];
-  if (pantalla) pantalla();
+  // Primero se termina la vuelta de Steam (si la hay), para que la pantalla ya vea la sesión
+  terminarVueltaDeSteam().then(function (aviso) {
+    prepararEncabezado();
+    prepararFranja();
+    prepararPie();
+    var pantalla = PANTALLAS[document.body.dataset.pantalla];
+    if (pantalla) pantalla();
+    if (aviso) mostrarAviso(aviso);
+  });
 });
