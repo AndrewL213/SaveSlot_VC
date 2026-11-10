@@ -6,7 +6,7 @@
 //   fetch("/api/steam/data", {
 //     method: "POST",
 //     headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-//     body: JSON.stringify({ action: "library" }),   // "profile" | "library" | "wishlist" | "achievements_summary" | "achievements" | "stats" (+ appid)
+//     body: JSON.stringify({ action: "library" }),   // "profile" | "library" | "wishlist" | "my_reviews" | "achievements_summary" | "achievements" | "stats" (+ appid)
 //   }).then(r => r.json());
 //
 // Variables de entorno: STEAM_API_KEY. Opcionales: SUPABASE_URL, SUPABASE_ANON_KEY
@@ -221,6 +221,47 @@ module.exports = async function handler(req, res) {
           };
         });
         return json(res, { count: games.length, games });
+      }
+
+      case "my_reviews": {
+        // Tus reseñas de Steam. Steam no tiene API para esto: se leen de la página pública
+        // steamcommunity.com/profiles/<id>/recommended (hasta 3 páginas de 10).
+        const MESES = { January: 1, February: 2, March: 3, April: 4, May: 5, June: 6, July: 7, August: 8, September: 9, October: 10, November: 11, December: 12 };
+        const limpiar = (html) => html.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")
+          .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+          .replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim();
+        const reviews = [];
+        for (let pagina = 1; pagina <= 3; pagina++) {
+          const html = await fetch(`https://steamcommunity.com/profiles/${steamid}/recommended/?p=${pagina}&l=english`, {
+            headers: { "Accept-Language": "en-US" },
+          }).then((r) => (r.ok ? r.text() : "")).catch(() => "");
+          const cajas = html.split('class="review_box"').slice(1);
+          for (const c of cajas) {
+            const appid = Number((c.match(/recommended\/(\d+)\//) || c.match(/steamcommunity\.com\/app\/(\d+)/) || [])[1]);
+            if (!appid) continue;
+            const horas = Number(((c.match(/class="hours[^"]*">\s*([\d,.]+)/) || [])[1] || "0").replace(/,/g, ""));
+            const fecha = (c.match(/Posted\s+(\d{1,2})\s+([A-Za-z]+)(?:,\s*(\d{4}))?/) || []);
+            const anio = fecha[3] || String(new Date().getFullYear());
+            reviews.push({
+              appid,
+              recomienda: /icon_thumbsUp/.test(c),
+              horas,
+              fecha: fecha[1] ? `${anio}-${String(MESES[fecha[2]] || 1).padStart(2, "0")}-${fecha[1].padStart(2, "0")}` : null,
+              texto: limpiar((c.match(/class="content[^"]*">([\s\S]*?)<\/div>/) || [])[1] || ""),
+              enlace: `https://steamcommunity.com/profiles/${steamid}/recommended/${appid}/`,
+            });
+          }
+          if (cajas.length < 10) break;
+        }
+        // Nombre de cada juego
+        if (reviews.length) {
+          const r = await steam("IStoreBrowseService/GetItems/v1/", {
+            input_json: JSON.stringify({ ids: reviews.map((x) => ({ appid: x.appid })), context: { language: "spanish", country_code: "CO" }, data_request: {} }),
+          }).catch(() => null);
+          const nombres = new Map((r?.response?.store_items ?? []).map((it) => [it.appid ?? it.id, it.name]));
+          for (const x of reviews) x.name = nombres.get(x.appid) ?? `App ${x.appid}`;
+        }
+        return json(res, { count: reviews.length, reviews });
       }
 
       case "stats": {
