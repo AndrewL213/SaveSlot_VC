@@ -2033,7 +2033,7 @@ function pantallaEvento() {
    El navegador guarda los datos de una sola persona a la vez (perfil, reseñas,
    diario…). Al entrar con otra cuenta, se guardan los de la anterior aparte y se
    cargan los de la nueva. Si "duenoDatos" no existe, los datos son de samluq. */
-var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros'];
+var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos'];
 
 function cambiarDeCuenta(usuario, datosNuevos) {
   var dueno = leerMemoria('duenoDatos', 'samluq');
@@ -2339,12 +2339,12 @@ function pantallaPerfil() {
   var logrosSteam = (perfil.accounts || {}).Steam ? leerMemoria('steamLogros', null) : null;
   var bibliotecaSteam = (perfil.accounts || {}).Steam ? leerBibliotecaSteam() : [];
   document.getElementById('estadisticas-perfil').innerHTML = [
-    ['Biblioteca', bibliotecaSteam.length, 'biblioteca.html'],
-    ['Juegos', diario.length, 'diario.html'],
+    // Con Steam vinculada, "Juegos" es tu biblioteca de Steam; si no, los juegos del diario
+    (perfil.accounts || {}).Steam ? ['Juegos', bibliotecaSteam.length, 'biblioteca.html'] : ['Juegos', diario.length, 'diario.html'],
     ['Este año', diario.filter(function (d) { return String(d.fecha).slice(0, 4) === anio; }).length, 'diario.html'],
     ['Reseñas', resenas.length, 'historial-resenas.html'],
     ['Logros', formatearNumero(logrosSteam ? logrosSteam.summary.unlocked : (resumenLogros ? resumenLogros.desbloqueados : 0)), 'logros.html'],
-    ['Lista de deseos', perfil.wishlist.length, '#deseos']
+    ['Lista de deseos', perfil.wishlist.length + ((perfil.accounts || {}).Steam ? (leerMemoria('steamDeseos', null) || { games: [] }).games.length : 0), '#deseos']
   ].map(function (d) {
     return '<a class="dato" href="' + d[2] + '"><span class="dato__valor">' + d[1] + '</span><span class="dato__etiqueta">' + d[0] + '</span></a>';
   }).join('');
@@ -2415,17 +2415,50 @@ function pantallaPerfil() {
 
   // Lista de deseos: quitar con deshacer
   var cajaDeseos = document.getElementById('deseos-perfil');
+  var DESEOS_STEAM_VISIBLES = 6;
+  var verTodosSteam = false;
   function dibujarDeseos() {
-    cajaDeseos.innerHTML = leerPerfil().wishlist.map(function (id) {
+    var propios = leerPerfil().wishlist.map(function (id) {
       var j = buscarPorId('juegos', id);
       if (!j) return '';
       return '<div class="tarjeta deseo"><span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
-        '<a href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"><b>' + escapar(j.nombreCorto) + '</b><br><span class="tarjeta__texto">' + escapar(j.plataformas.join(', ')) + '</span></a>' +
+        '<a href="' + escapar(enlaceJuego(j)) + '"><b>' + escapar(j.nombreCorto) + '</b><br><span class="tarjeta__texto">' + escapar(j.plataformas.join(', ')) + '</span></a>' +
         '<button class="boton boton--fantasma boton--sm al-final" type="button" data-quitar="' + escapar(j.id) + '" aria-label="Quitar ' + escapar(j.nombreCorto) + ' de la lista">Quitar</button></div>';
-    }).join('') || '<div class="vacio">Tu lista de deseos está vacía. Agrega juegos desde su página.</div>';
+    }).join('');
+
+    // Lista de deseos de Steam (solo se ve: se cambia desde Steam)
+    var deSteam = (perfil.accounts || {}).Steam ? (leerMemoria('steamDeseos', null) || { games: [] }).games : [];
+    var visibles = verTodosSteam ? deSteam : deSteam.slice(0, DESEOS_STEAM_VISIBLES);
+    var steam = visibles.map(function (g) {
+      var j = juegoDeSteam(g);
+      return '<div class="tarjeta deseo"><span class="portada portada--sm">' + imagenPortada(j) + '</span>' +
+        '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener"><b>' + escapar(j.nombre) + '</b><br><span class="tarjeta__texto">Steam' +
+          (g.price ? ' · ' + (g.original_price ? '<s>' + escapar(g.original_price) + '</s> ' : '') + escapar(g.price) : '') + '</span></a>' +
+        (g.discount_pct ? '<span class="etiqueta etiqueta--exito al-final">-' + escapar(g.discount_pct) + '%</span>' : '') + '</div>';
+    }).join('');
+
+    cajaDeseos.innerHTML = (propios + steam) || '<div class="vacio">Tu lista de deseos está vacía. Agrega juegos desde su página.</div>';
+    var boton = document.getElementById('ver-deseos-steam');
+    if (!boton && deSteam.length > DESEOS_STEAM_VISIBLES) {
+      cajaDeseos.insertAdjacentHTML('afterend', '<button class="boton boton--secundario boton--sm" type="button" id="ver-deseos-steam"></button>');
+      boton = document.getElementById('ver-deseos-steam');
+      boton.addEventListener('click', function () { verTodosSteam = !verTodosSteam; dibujarDeseos(); });
+    }
+    if (boton) {
+      boton.hidden = deSteam.length <= DESEOS_STEAM_VISIBLES;
+      boton.textContent = verTodosSteam ? 'Ver menos' : 'Ver los ' + deSteam.length + ' de Steam';
+    }
+    var dato = document.querySelector('#estadisticas-perfil a[href="#deseos"] .dato__valor');
+    if (dato) dato.textContent = leerPerfil().wishlist.length + deSteam.length;
     aplicarColores(cajaDeseos);
   }
   dibujarDeseos();
+  if ((perfil.accounts || {}).Steam) {
+    pedirSteam('wishlist').then(function (datos) {
+      guardarMemoria('steamDeseos', datos);
+      dibujarDeseos();
+    }).catch(function () { /* lista de Steam privada o sin sesión: solo la de SaveSlot */ });
+  }
   cajaDeseos.addEventListener('click', function (e) {
     var boton = e.target.closest('[data-quitar]');
     if (!boton) return;
@@ -2838,18 +2871,29 @@ function pantallaLogros() {
   if (guardados) usarSteam(guardados);
   else { mostrarResumen(); mostrar(); mostrarRaros(); }
 
-  if (tieneSteam()) {
-    if (!guardados) caja.insertAdjacentHTML('afterbegin', '<p class="tarjeta__texto" id="cargando-steam">Trayendo tus logros de Steam…</p>');
+  // Trae los logros de Steam (al abrir la página y con el botón Actualizar)
+  var botonActualizar = document.getElementById('actualizar-logros');
+  var estado = document.getElementById('estado-logros');
+  function cargarSteam() {
+    if (botonActualizar) { botonActualizar.disabled = true; botonActualizar.textContent = 'Actualizando…'; }
+    if (estado) estado.textContent = guardados ? '' : 'Trayendo tus logros de Steam…';
     pedirSteam('achievements_summary').then(function (datos) {
+      guardados = datos;
       guardarMemoria('steamLogros', datos);
       usarSteam(datos);
+      if (estado) estado.textContent = 'Actualizado a las ' + new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }) + '.';
     }).catch(function (error) {
-      if (error.privado) guardarMemoria('steamLogros', null);
-      if (!document.getElementById('cargando-steam')) caja.insertAdjacentHTML('afterbegin', '<p class="tarjeta__texto" id="cargando-steam"></p>');
-      document.getElementById('cargando-steam').innerHTML = error.privado
-        ? '<b>Tus logros de Steam están ocultos.</b> En Steam ve a tu perfil → Editar perfil → Configuración de privacidad y pon «Detalles de juego» en <b>Público</b>. Luego vuelve a abrir esta página.'
-        : 'No pudimos traer tus logros de Steam. Inténtalo de nuevo en un momento.';
+      if (error.privado) { guardados = null; guardarMemoria('steamLogros', null); }
+      if (estado) estado.innerHTML = error.privado
+        ? '<b>Steam todavía dice que tu perfil no es público.</b> Revisa que «Detalles de juego» esté en Público (Steam → Editar perfil → Configuración de privacidad). Si ya lo cambiaste, Steam puede tardar un rato en notarlo: vuelve a tocar Actualizar.'
+        : 'No pudimos traer tus logros de Steam. Toca Actualizar para intentarlo de nuevo.';
+    }).then(function () {
+      if (botonActualizar) { botonActualizar.disabled = false; botonActualizar.textContent = 'Actualizar'; }
     });
+  }
+  if (tieneSteam()) {
+    if (botonActualizar) { botonActualizar.hidden = false; botonActualizar.addEventListener('click', cargarSteam); }
+    cargarSteam();
   }
 }
 
