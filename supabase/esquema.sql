@@ -1028,3 +1028,20 @@ revoke all on function public.antes_de_inscribirse() from public, anon, authenti
 revoke all on function public.al_inscribirse() from public, anon, authenticated;
 revoke all on function public.al_cancelar_inscripcion() from public, anon, authenticated;
 revoke all on function public.al_votar_util() from public, anon, authenticated;
+
+-- Borrar cuenta (Editar perfil): la persona borra su propia cuenta y, en cascada, todo lo suyo. Ver supabase/borrar-cuenta.sql.
+create or replace function public.borrar_mi_cuenta()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Necesitas una sesión para borrar tu cuenta';
+  end if;
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+revoke all on function public.borrar_mi_cuenta() from public, anon;
+grant execute on function public.borrar_mi_cuenta() to authenticated;
