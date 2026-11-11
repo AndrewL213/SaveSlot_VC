@@ -102,7 +102,8 @@
         <div class="rejilla-cuatro" id="favoritos-editar"></div>
         <div class="en-fila en-fila--fija">
           <label class="solo-lectores" for="elegir-favorito">Agregar favorito</label>
-          <select class="campo" id="elegir-favorito" aria-describedby="pista-favoritos"></select>
+          <input class="campo" id="elegir-favorito" type="search" list="sugerencias-favorito" placeholder="Escribe el nombre de un juego" autocomplete="off" aria-describedby="pista-favoritos">
+          <datalist id="sugerencias-favorito"></datalist>
           <button class="boton boton--secundario" type="button" id="agregar-favorito">Agregar</button>
         </div>
         <span class="grupo-campo__ayuda" id="pista-favoritos" aria-live="polite"></span>
