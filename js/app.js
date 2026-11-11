@@ -3819,8 +3819,8 @@ function pantallaEditar() {
   }
   dibujarJugando();
 
-  // Favoritos: máximo 4. Se escribe el nombre y la lista sugiere juegos de tu biblioteca de Steam,
-  // del catálogo de ejemplo y de todo IGDB (se busca mientras escribes, desde 2 letras).
+  // Favoritos: máximo 4. Una búsqueda sencilla: se escribe el nombre y la lista sugiere cualquier juego
+  // de IGDB (lo tengas o no; se busca mientras escribes, desde 2 letras). Si IGDB no responde, sugiere el catálogo.
   var cajaFavoritos = document.getElementById('favoritos-editar');
   var selector = document.getElementById('elegir-favorito');
   var sugerencias = document.getElementById('sugerencias-favorito');
@@ -3836,18 +3836,17 @@ function pantallaEditar() {
       candidatos[texto.toLowerCase()] = j;
       lista.push(texto);
     }
-    bibliotecaSteam.slice().sort(function (a, b) { return b.horas - a.horas; }).forEach(function (j) {
-      sumar(j, j.nombre + ' · Steam' + (j.horas ? ', ' + formatearNumero(j.horas) + ' h' : ''));
-    });
-    juegos.forEach(function (j) { sumar(j, j.nombre); });
-    deIgdb.forEach(function (j) { sumar(j, j.nombre + (j.anio ? ' (' + j.anio + ')' : '')); });
+    (deIgdb.length ? deIgdb : juegos).forEach(function (j) { sumar(j, j.nombre + (j.anio ? ' (' + j.anio + ')' : '')); });
     sugerencias.innerHTML = lista.map(function (t) { return '<option value="' + escapar(t) + '"></option>'; }).join('');
   }
-  // El juego que corresponde a lo escrito: la sugerencia exacta o, si solo una lo contiene, esa
+  // El juego que corresponde a lo escrito: la sugerencia exacta, el mismo nombre o, si solo una lo contiene, esa
   function juegoEscrito() {
     var texto = selector.value.trim().toLowerCase();
     if (!texto) return null;
     if (candidatos[texto]) return candidatos[texto];
+    // el nombre exacto sin el año ("hades" → Hades (2020), no Hades II)
+    var mismos = Object.keys(candidatos).filter(function (t) { return String(candidatos[t].nombre).toLowerCase() === texto; });
+    if (mismos.length === 1) return candidatos[mismos[0]];
     var parecidos = Object.keys(candidatos).filter(function (t) { return t.indexOf(texto) !== -1; });
     return parecidos.length === 1 ? candidatos[parecidos[0]] : null;
   }
@@ -3861,7 +3860,7 @@ function pantallaEditar() {
     }).join('') + new Array(MAXIMO_FAVORITOS - perfil.favorites.length + 1).join('<div class="vacio">Espacio libre</div>');
     document.getElementById('pista-favoritos').textContent = lleno
       ? 'Ya tienes 4 favoritos. Quita uno para elegir otro.'
-      : 'Escribe y elige de la lista. Puedes elegir ' + (MAXIMO_FAVORITOS - perfil.favorites.length) + ' más (máximo 4).';
+      : 'Busca el juego y elígelo de la lista. Puedes elegir ' + (MAXIMO_FAVORITOS - perfil.favorites.length) + ' más (máximo 4).';
     botonAgregar.disabled = lleno;
     selector.disabled = lleno;
     dibujarSugerencias();
@@ -3872,21 +3871,31 @@ function pantallaEditar() {
   selector.addEventListener('input', function () {
     clearTimeout(esperaBusqueda);
     var texto = selector.value.trim();
-    if (texto.length < 2 || candidatos[texto.toLowerCase()]) return; // muy corto, o ya eligió de la lista
-    esperaBusqueda = setTimeout(function () {
-      var numero = ++busquedaActual;
-      preguntarIgdb({ buscar: texto }).then(function (d) {
-        if (numero !== busquedaActual) return;
-        deIgdb = (d.juegos || []).slice(0, 15).map(conDatosLocales);
-        dibujarSugerencias();
-      }).catch(function () { /* IGDB no respondió: quedan la biblioteca y el catálogo */ });
-    }, 350);
+    if (texto.length < 2) { if (deIgdb.length) { deIgdb = []; dibujarSugerencias(); } return; }
+    if (candidatos[texto.toLowerCase()]) return; // ya eligió de la lista
+    esperaBusqueda = setTimeout(function () { buscarFavorito(texto); }, 350);
   });
-  function agregarFavorito() {
+  // Busca en IGDB y llena las sugerencias (si llega otra búsqueda después, esta se ignora)
+  function buscarFavorito(texto) {
+    var numero = ++busquedaActual;
+    return preguntarIgdb({ buscar: texto }).then(function (d) {
+      if (numero !== busquedaActual) return;
+      deIgdb = (d.juegos || []).slice(0, 15).map(conDatosLocales);
+      dibujarSugerencias();
+    }).catch(function () { /* IGDB no respondió: queda el catálogo */ });
+  }
+  function agregarFavorito(yaBuscado) {
     if (perfil.favorites.length >= MAXIMO_FAVORITOS) return;
     var j = juegoEscrito();
-    if (!j) { mostrarAviso(selector.value.trim() ? 'Elige el juego de la lista de sugerencias' : 'Escribe el nombre de un juego'); selector.focus(); return; }
-    if (!j.steam && !buscarPorId('juegos', j.id)) guardarJuegoIgdb(j); // los de IGDB quedan guardados para verse en el perfil
+    var texto = selector.value.trim();
+    // Si pulsó Enter antes de que llegaran las sugerencias, busca ya y vuelve a intentar una vez
+    if (!j && texto.length >= 2 && yaBuscado !== true) {
+      clearTimeout(esperaBusqueda);
+      buscarFavorito(texto).then(function () { agregarFavorito(true); });
+      return;
+    }
+    if (!j) { mostrarAviso(texto ? 'Elige el juego de la lista de sugerencias' : 'Escribe el nombre de un juego'); selector.focus(); return; }
+    if (!buscarPorId('juegos', j.id)) guardarJuegoIgdb(j); // los de IGDB quedan guardados para verse en el perfil
     perfil.favorites.push(j.id);
     selector.value = '';
     dibujarFavoritos();
@@ -3903,9 +3912,9 @@ function pantallaEditar() {
     dibujarFavoritos();
     selector.focus();
   });
-  botonAgregar.addEventListener('click', agregarFavorito);
+  botonAgregar.addEventListener('click', function () { agregarFavorito(); });
   dibujarFavoritos();
-  // Trae la biblioteca de Steam al día para elegir favoritos de ahí
+  // Trae la biblioteca de Steam al día (para "¿Qué estás jugando ahora?" y las portadas de favoritos de Steam)
   if (perfil.accounts.Steam) {
     actualizarBibliotecaSteam().then(function (lista) {
       bibliotecaSteam = lista;
