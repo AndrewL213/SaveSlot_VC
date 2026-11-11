@@ -11,30 +11,30 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 1. Inicio | `index.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
+| 1. Inicio | `index.html` | ✅ | ✅ | ✅ (IGDB y Supabase) | ⬜ |
 | 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
-| 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ | ⬜ |
-| 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
+| 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ (tendencias de Supabase; chats en el navegador) | ⬜ |
+| 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ (IGDB y Supabase) | ⬜ |
 | 7. Ventana: Dificultad de 1 a 10 | dentro de `pages/detalle-juego.html` | ✅ | ✅ | ✅ | ⬜ |
 
 ## Opinar
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
+| 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ (IGDB y Supabase) | ⬜ |
 | 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ | ⬜ |
 | 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ✅ | ✅ | ⬜ |
-| 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ | ⬜ |
-| 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ✅ | ✅ | ⬜ |
+| 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 
 ## Eventos
 
 | Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
 |---|---|---|---|---|---|
-| 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ✅ | ✅ | ⬜ |
-| 13. Eventos | `pages/eventos.html` | ✅ | ✅ | ✅ | ⬜ |
-| 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ✅ | ✅ | ⬜ |
+| 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 13. Eventos | `pages/eventos.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ✅ | ✅ | ⬜ |
 
 ## Cuenta, perfil y amigos
@@ -43,14 +43,14 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 |---|---|---|---|---|---|
 | 16. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ✅ | ✅ | ⬜ |
 | 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ✅ | ✅ | ⬜ |
-| 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ | ⬜ |
-| 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ | ⬜ |
-| 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ | ⬜ |
-| 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ | ⬜ |
-| 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ | ⬜ |
+| 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam) | ⬜ |
+| 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ (misiones de Supabase) | ⬜ |
+| 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ | ⬜ |
-| 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ | ⬜ |
-| 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ | ⬜ |
+| 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ✅ | ✅ | ⬜ |
 | 30. Biblioteca | `pages/biblioteca.html` | ✅ | ✅ | ✅ (datos reales de Steam) | ⬜ |
 | 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ | ⬜ |
@@ -64,6 +64,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ | ⬜ |
 
 ## Pendientes para la revisión vs spec
+- **Datos de Supabase (noviembre)**: las pantallas leen de Supabase usuarios, reseñas, comentarios, diario, amistades, eventos, tendencias, destacados y misiones (`obtenerDatos()` en app.js; `js/data.js` queda como registro). Mientras llegan se ve «Cargando…» y, si Supabase falla, «No pudimos cargar la información». Chats, notificaciones, inscripciones y vistos recientes siguen en el navegador hasta el inicio de sesión real. Diferencias con los datos de ejemplo: los votos «útil» y me gusta empiezan en 0, nadie sale «en línea» ni «jugando» (llega con la presencia de Supabase), «juegos en común» solo cuenta el diario que hay en la base y las solicitudes de amistad pendientes solo las ven sus dos personas.
 - **Iniciar sesión y Crear cuenta**: los botones «Pronto» de Google y Discord del diseño ahora son cuatro (Google, Discord, Twitch y Steam) con su logo (`.boton__logo`), debajo del formulario de la cuenta de SaveSlot. Steam ya funciona (`api/steam/auth.js`); Google, Discord y Twitch llevan a la página de error hasta conectarlos en Supabase.
 - **404.html**: tiene 5 variantes nuevas de «no encontrado» (página, juego, evento, reseña y usuario) y una de «acceso» (entrar con Google, Discord o Twitch mientras no están conectados) que el diseño no traía; la de página es la que sale por defecto. En Vercel, una línea en el <head> hace que los archivos se busquen desde la raíz del sitio.
 - **Mensaje (Amigos y Perfil de otro usuario)**, clips y pagos: siguen visibles como en el diseño, aunque la spec los marca como **Después**.

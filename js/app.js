@@ -1,13 +1,14 @@
 /* ==========================================================================
    SaveSlot · app.js
    El comportamiento de las pantallas construidas con el design kit.
-   - Los datos se leen SOLO con obtenerDatos("…"). Hoy salen de js/data.js;
-     cuando se conecten Supabase e IGDB, solo cambia esa función.
+   - Los datos públicos se leen de Supabase: cada pantalla espera sus tablas al
+     empezar (obtenerDatos, TABLAS_DE_PANTALLA) y luego las usa con datosDe("…").
+     Lo fijo, lo simulado y el catálogo de ejemplo siguen en js/data.js; los
+     juegos vienen de IGDB (api/igdb.js).
    - Hay una función por pantalla. <body data-pantalla="…"> dice cuál se ejecuta.
-   - Mientras no haya backend, lo que la spec marca como Real se guarda en la
-     memoria del navegador con claves ss.… (session, profile, myReviews, diary…),
-     heredadas del prototipo. Al conectar Supabase, esas lecturas y escrituras se
-     reemplazan por consultas a la base de datos.
+   - Lo que hace cada persona (reseñas, diario, chats…) todavía se guarda en la
+     memoria del navegador con claves ss.…, heredadas del prototipo. Pasa a
+     Supabase en el paso de cuentas (inicio de sesión real).
    ========================================================================== */
 
 /* ---------- Supabase ----------
@@ -268,11 +269,222 @@ function activarBotonSteam() {
   });
 }
 
-/* ---------- Datos ---------- */
+/* ---------- Datos ----------
+   Las tablas públicas se leen de Supabase (sección Datos de spec.md: «Se guarda en: Supabase»).
+   - obtenerDatos(tipo) pide una tabla entera; obtenerUno(tipo, valor, columna) pide un solo elemento.
+   - Cada pantalla espera sus tablas al empezar (TABLAS_DE_PANTALLA) y después las lee con datosDe(tipo),
+     ya con la forma que usan las pantallas (TRADUCIR: autor = @, cronograma dentro del evento…).
+   - Lo demás sigue en js/data.js: el catálogo de ejemplo (juegos), lo simulado (logros, respuestas de
+     MatchPlay), las listas fijas, y lo personal que necesita una cuenta de verdad para leerse
+     (chats de MatchPlay y notificaciones), hasta el paso de cuentas.
+   - Si Supabase falla, la pantalla dice "No pudimos cargar la información" (nunca se usa data.js en su lugar). */
 
-// Devuelve una copia de la lista pedida ("juegos", "resenas", "eventos"…).
-function obtenerDatos(tipo) {
-  return (DATOS[tipo] || []).slice();
+// Tablas que se leen de Supabase (las que cualquiera puede ver)
+var TABLAS_SUPABASE = ['usuarios', 'resenas', 'comentarios', 'diario', 'amigos', 'eventos', 'tendencias_matchplay', 'destacados_inicio', 'misiones'];
+
+// Para armar cada una hacen falta también estas tablas de la base
+var TABLAS_NECESARIAS = {
+  usuarios: ['usuarios', 'usuarios_favoritos', 'usuarios_generos', 'lista_deseos', 'insignias', 'cuentas_vinculadas', 'diario', 'amigos'],
+  // las tarjetas de reseña también cuentan sus comentarios
+  resenas: ['resenas', 'usuarios', 'votos_util', 'me_gusta_resenas', 'comentarios'],
+  comentarios: ['comentarios', 'usuarios'],
+  diario: ['diario', 'usuarios'],
+  amigos: ['amigos', 'usuarios'],
+  eventos: ['eventos', 'eventos_cronograma', 'eventos_reglas'],
+  tendencias_matchplay: ['tendencias_matchplay'],
+  destacados_inicio: ['destacados_inicio'],
+  misiones: ['misiones']
+};
+
+var FILAS = {};          // lo que llegó de Supabase, tal cual (por tabla)
+var DATOS_ARMADOS = {};  // lo mismo, con la forma que usan las pantallas
+
+// Pide una tabla entera a Supabase. Si falla, lo escribe en la consola y lanza el error.
+async function obtenerDatos(tipo) {
+  if (!clienteSupabase) {
+    var sinConexion = new Error('No se pudo conectar con Supabase (no cargó la librería supabase-js)');
+    console.error(sinConexion);
+    throw sinConexion;
+  }
+  var respuesta = await clienteSupabase.from(tipo).select('*').order('id');
+  if (respuesta.error) {
+    console.error('Supabase no entregó la tabla ' + tipo + ':', respuesta.error);
+    throw respuesta.error;
+  }
+  return respuesta.data;
+}
+
+// Pide un solo elemento (por id, o por otra columna como slug o usuario). Devuelve null si no existe
+// (maybeSingle es como single, pero si no hay fila responde vacío en vez de un error 406).
+async function obtenerUno(tipo, valor, columna) {
+  if (!clienteSupabase) throw new Error('No se pudo conectar con Supabase');
+  var respuesta = await clienteSupabase.from(tipo).select('*').eq(columna || 'id', valor).maybeSingle();
+  if (respuesta.error) {
+    console.error('Supabase no entregó ' + tipo + ' (' + (columna || 'id') + ' = ' + valor + '):', respuesta.error);
+    throw respuesta.error;
+  }
+  return respuesta.data;
+}
+
+// Trae de Supabase (una sola vez por página) todo lo necesario para estas tablas
+async function cargarDatos(tipos) {
+  var faltan = [];
+  tipos.forEach(function (tipo) {
+    (TABLAS_NECESARIAS[tipo] || [tipo]).forEach(function (tabla) {
+      if (!FILAS[tabla] && faltan.indexOf(tabla) === -1) faltan.push(tabla);
+    });
+  });
+  var listas = await Promise.all(faltan.map(obtenerDatos));
+  faltan.forEach(function (tabla, i) { FILAS[tabla] = listas[i]; });
+  DATOS_ARMADOS = {}; // con tablas nuevas, se vuelven a armar
+}
+
+// Devuelve una copia de la lista pedida ("juegos", "resenas", "eventos"…): de Supabase si es una de
+// sus tablas (ya cargada con cargarDatos) o de js/data.js si no.
+function datosDe(tipo) {
+  if (TABLAS_SUPABASE.indexOf(tipo) === -1) return (DATOS[tipo] || []).slice();
+  if (!DATOS_ARMADOS[tipo]) {
+    if (!FILAS[tipo]) throw new Error('La tabla ' + tipo + ' no se cargó antes de usarla (agrégala en TABLAS_DE_PANTALLA)');
+    DATOS_ARMADOS[tipo] = TRADUCIR[tipo](FILAS[tipo]);
+  }
+  return DATOS_ARMADOS[tipo].slice();
+}
+
+/* ---------- De la forma de la base a la forma de las pantallas ---------- */
+
+function dosCifras(n) { return (n < 10 ? '0' : '') + n; }
+
+// '2026-10-05T05:00:00+00:00' → '2026-10-05' (día en la hora del navegador); las fechas sin hora quedan igual
+function fechaLocal(valor) {
+  if (!valor) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+  var d = new Date(valor);
+  if (isNaN(d)) return String(valor).slice(0, 10);
+  return d.getFullYear() + '-' + dosCifras(d.getMonth() + 1) + '-' + dosCifras(d.getDate());
+}
+
+// Fecha y hora de un evento, en hora de Colombia: "Sáb 17 oct · 3:00 p. m."
+var DIAS_CORTOS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+function textoFechaEvento(valor) {
+  var d = new Date(new Date(valor).getTime() - 5 * 3600 * 1000); // Colombia: UTC−5, sin horario de verano
+  if (isNaN(d)) return '';
+  var h = d.getUTCHours();
+  return DIAS_CORTOS[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MESES[d.getUTCMonth()] + ' · ' +
+    ((h % 12) || 12) + ':' + dosCifras(d.getUTCMinutes()) + (h < 12 ? ' a. m.' : ' p. m.');
+}
+
+// El @ de una persona a partir de su id numérico en la base
+function arrobaDe(idUsuario) {
+  var u = (FILAS.usuarios || []).find(function (x) { return x.id === idUsuario; });
+  return u ? u.usuario : null;
+}
+
+// Filas de una tabla que pertenecen a algo (por ejemplo, los favoritos de un usuario)
+function filasDe(tabla, columna, valor) {
+  return (FILAS[tabla] || []).filter(function (f) { return f[columna] === valor; });
+}
+
+function porOrden(a, b) { return a.orden - b.orden; }
+var NOMBRE_PLATAFORMA = { steam: 'Steam', xbox: 'Xbox', playstation: 'PlayStation', nintendo: 'Nintendo' };
+
+// Ids de los amigos (amistad aceptada) de una persona
+function amigosDeId(idUsuario) {
+  return (FILAS.amigos || []).filter(function (a) { return a.estado === 'aceptada' && (a.usuario_id === idUsuario || a.amigo_id === idUsuario); })
+    .map(function (a) { return a.usuario_id === idUsuario ? a.amigo_id : a.usuario_id; });
+}
+
+var TRADUCIR = {
+  usuarios: function (filas) {
+    var sesion = obtenerSesion();
+    var yo = sesion ? (FILAS.usuarios || []).find(function (u) { return u.usuario === sesion.user; }) : null;
+    var misAmigos = yo ? amigosDeId(yo.id) : [];
+    return filas.map(function (u) {
+      // Notas de cada juego: las del diario de la persona (la más reciente de cada juego)
+      var notas = {};
+      filasDe('diario', 'usuario_id', u.id).slice().sort(function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); }).forEach(function (d) {
+        var slug = slugDeJuego(d.juego_igdb);
+        if (d.calificacion && !(slug in notas)) notas[slug] = d.calificacion;
+      });
+      return {
+        id: u.usuario, id_base: u.id, usuario: u.usuario, nombre: u.nombre, iniciales: u.iniciales,
+        sobre_mi: u.sobre_mi, jugando_ahora: u.jugando_ahora, miembro_desde: u.miembro_desde,
+        nivel: u.nivel, xp: u.xp, color: u.color, invitado: u.invitado,
+        favoritos: filasDe('usuarios_favoritos', 'usuario_id', u.id).sort(porOrden).map(function (x) { return x.juego; }),
+        generos_favoritos: filasDe('usuarios_generos', 'usuario_id', u.id).map(function (x) { return x.genero; }),
+        lista_deseos: filasDe('lista_deseos', 'usuario_id', u.id).map(function (x) { return x.juego; }),
+        insignias: filasDe('insignias', 'usuario_id', u.id).map(function (x) { return x.texto; }),
+        cuentas_vinculadas: filasDe('cuentas_vinculadas', 'usuario_id', u.id).map(function (x) {
+          return { plataforma: NOMBRE_PLATAFORMA[x.plataforma] || x.plataforma, nombre: x.nombre, estado: x.estado };
+        }),
+        notas: notas,
+        // "En línea" y "jugando" llegarán con la presencia de Supabase (paso de cuentas)
+        estado: null, ultima_conexion: null,
+        amigos_en_comun: yo && yo.id !== u.id ? amigosDeId(u.id).filter(function (id) { return misAmigos.indexOf(id) !== -1; }).length : 0
+      };
+    });
+  },
+  resenas: function (filas) {
+    var cuenta = function (tabla, id) { return filasDe(tabla, 'resena_id', id).length; };
+    return filas.map(function (r) {
+      return {
+        id: r.id, juego_igdb: r.juego_igdb, autor: arrobaDe(r.usuario_id), tipo: r.tipo, estado: r.estado,
+        titulo: r.titulo, texto: r.texto, calificacion: r.calificacion, dificultad: r.dificultad,
+        horas: r.horas == null ? null : Number(r.horas), estado_partida: r.estado_partida, minutos_lectura: r.minutos_lectura,
+        spoiler: r.spoiler, editada: r.editada, fecha: fechaLocal(r.fecha),
+        votos_util: cuenta('votos_util', r.id), me_gusta: cuenta('me_gusta_resenas', r.id), porcentaje_util: null
+      };
+    });
+  },
+  comentarios: function (filas) {
+    return filas.map(function (x) { return { id: x.id, resena: x.resena_id, autor: arrobaDe(x.usuario_id), texto: x.texto, fecha: fechaLocal(x.fecha) }; });
+  },
+  diario: function (filas) {
+    return filas.map(function (d) {
+      return {
+        id: d.id, usuario: arrobaDe(d.usuario_id), juego_igdb: d.juego_igdb, fecha: d.fecha, estado: d.estado,
+        horas: d.horas == null ? null : Number(d.horas), calificacion: d.calificacion, me_gusta: d.me_gusta, tiene_resena: d.tiene_resena
+      };
+    });
+  },
+  // Una fila por pareja en la base → una por cada lado, como las lee la app ("amigos", "solicitud enviada/recibida")
+  amigos: function (filas) {
+    var lista = [];
+    filas.forEach(function (a) {
+      var de = arrobaDe(a.usuario_id), para = arrobaDe(a.amigo_id);
+      if (!de || !para) return;
+      var aceptada = a.estado === 'aceptada';
+      lista.push({ id: a.id + '-1', usuario: de, amigo: para, estado: aceptada ? 'amigos' : 'solicitud enviada', fecha: fechaLocal(a.fecha) });
+      lista.push({ id: a.id + '-2', usuario: para, amigo: de, estado: aceptada ? 'amigos' : 'solicitud recibida', fecha: fechaLocal(a.fecha) });
+    });
+    return lista;
+  },
+  eventos: function (filas) {
+    return filas.map(function (e) {
+      return {
+        id: e.slug, id_base: e.id, tipo: e.tipo, juego_igdb: e.juego_igdb, titulo: e.titulo, descripcion: e.descripcion,
+        fecha_hora: textoFechaEvento(e.fecha_hora), cierre_inscripciones: e.cierre_inscripciones,
+        organizador: e.organizador, tipo_organizador: e.tipo_organizador, cupos_ocupados: e.cupos_ocupados, cupos_maximos: e.cupos_maximos,
+        costo: e.costo, gratis: e.gratis, xp_para_entrar: e.xp_para_entrar, premio: e.premio,
+        dias_para_reclamar: e.dias_para_reclamar, color: e.color, destacado: e.destacado,
+        cronograma: filasDe('eventos_cronograma', 'evento_id', e.id).sort(porOrden).map(function (x) { return { paso: x.paso, cuando: x.cuando }; }),
+        reglas: filasDe('eventos_reglas', 'evento_id', e.id).sort(porOrden).map(function (x) { return x.texto; })
+      };
+    });
+  },
+  tendencias_matchplay: function (filas) {
+    return filas.map(function (t) { return { id: t.id, etiqueta: t.etiqueta, pregunta: t.pregunta, preguntas_hoy: t.preguntas_hoy }; });
+  },
+  destacados_inicio: function (filas) {
+    return filas.slice().sort(porOrden).map(function (d) { return { id: d.id, juego_igdb: d.juego_igdb }; });
+  },
+  misiones: function (filas) {
+    return filas.map(function (m) { return { id: m.id, clave: m.clave, texto: m.texto, xp: m.xp, repetible: m.repetible }; });
+  }
+};
+
+// ¿La lista (de ids guardados en el navegador) tiene este id? Los ids pueden venir como número o como texto.
+function contieneId(lista, id) {
+  return (lista || []).map(String).indexOf(String(id)) !== -1;
 }
 
 function buscarPorId(tipo, id) {
@@ -280,7 +492,7 @@ function buscarPorId(tipo, id) {
   if (tipo === 'juegos' && /^steam-/.test(id)) {
     return leerBibliotecaSteam().find(function (j) { return j.id === id; }) || null;
   }
-  var encontrado = obtenerDatos(tipo).find(function (x) { return x.id === id; }) || null;
+  var encontrado = datosDe(tipo).find(function (x) { return String(x.id) === String(id); }) || null;
   // Los juegos de IGDB que ya se abrieron quedan guardados (para reseñas, deseos, diario…)
   if (tipo === 'juegos') return unirConIgdb(encontrado, leerMemoria('juegos_igdb', {})[id] || null);
   return encontrado;
@@ -297,7 +509,7 @@ function esNumeroDeJuego(ref) {
 
 // Un juego por su número de IGDB: el de data.js y/o el que ya se abrió (copia del navegador)
 function juegoPorNumero(numero) {
-  var local = obtenerDatos('juegos').find(function (j) { return j.id_igdb === numero; }) || null;
+  var local = datosDe('juegos').find(function (j) { return j.id_igdb === numero; }) || null;
   var guardados = leerMemoria('juegos_igdb', {});
   var igdb = null;
   Object.keys(guardados).forEach(function (k) { if (guardados[k].id_igdb === numero) igdb = guardados[k]; });
@@ -394,7 +606,7 @@ function pedirJuego(id) {
   if (/^steam-/.test(id)) return local ? Promise.resolve(local) : Promise.reject({ estado: 404 });
   return preguntarIgdb({ id: id }).then(function (datos) {
     guardarJuegoIgdb(datos.juego);
-    return unirConIgdb(obtenerDatos('juegos').find(function (x) { return x.id === datos.juego.id; }) || null, datos.juego);
+    return unirConIgdb(datosDe('juegos').find(function (x) { return x.id === datos.juego.id; }) || null, datos.juego);
   }).catch(function (error) {
     if (local) return local;
     throw error;
@@ -404,7 +616,7 @@ function pedirJuego(id) {
 // Busca juegos de data.js con filtros: { texto, generos, plataformas, tipo, duracion, desde, hasta }.
 // Buscar juegos le pregunta a IGDB y usa esta función solo si IGDB no responde.
 function buscarJuegos(filtros) {
-  return filtrarJuegos(obtenerDatos('juegos'), filtros);
+  return filtrarJuegos(datosDe('juegos'), filtros);
 }
 
 // Filtra una lista de juegos (de data.js o de IGDB) con los filtros de Buscar.
@@ -528,7 +740,7 @@ function relacionCon(usuario) {
   if (!sesion || usuario === sesion.user) return 'ninguna';
   var cambios = leerMemoria('friends', {});
   if (cambios[usuario]) return RELACIONES[cambios[usuario]] || 'ninguna';
-  var dato = obtenerDatos('amigos').find(function (a) { return a.usuario === sesion.user && a.amigo === usuario; });
+  var dato = datosDe('amigos').find(function (a) { return a.usuario === sesion.user && a.amigo === usuario; });
   return dato ? dato.estado : 'ninguna';
 }
 
@@ -572,8 +784,8 @@ function resenaParaMemoria(r) {
 function leerResenasPropias() {
   var guardadas = leerMemoria('myReviews', null);
   if (guardadas) return guardadas.map(resenaDesdeMemoria);
-  return obtenerDatos('resenas').filter(function (r) { return r.autor === 'samluq'; }).map(function (r) {
-    var partida = obtenerDatos('diario').find(function (d) { return d.juego_igdb === r.juego_igdb; });
+  return datosDe('resenas').filter(function (r) { return r.autor === 'samluq'; }).map(function (r) {
+    var partida = diarioDeEjemplo().find(function (d) { return d.juego_igdb === r.juego_igdb; });
     return Object.assign({}, r, { autor: usuarioActual(), estado_partida: partida ? partida.estado : null, editada: false });
   });
 }
@@ -584,7 +796,7 @@ function guardarResenasPropias(lista) {
 
 // Todas las reseñas y guías: las de los demás (data.js) y las propias
 function obtenerResenas() {
-  return obtenerDatos('resenas').filter(function (r) { return r.autor !== 'samluq'; }).concat(leerResenasPropias());
+  return datosDe('resenas').filter(function (r) { return r.autor !== 'samluq'; }).concat(leerResenasPropias());
 }
 
 function esPropia(resena) {
@@ -593,7 +805,7 @@ function esPropia(resena) {
 
 function leerComentarios(idResena) {
   var guardados = leerMemoria('comments.' + idResena, null);
-  if (!guardados) return obtenerDatos('comentarios').filter(function (c) { return c.resena === idResena; });
+  if (!guardados) return datosDe('comentarios').filter(function (c) { return String(c.resena) === String(idResena); });
   return guardados.map(function (c, i) {
     return { id: c.id || idResena + '-' + i, resena: idResena, autor: c.user, texto: c.text, fecha: c.fecha || null, cuando: c.when || null };
   });
@@ -608,7 +820,7 @@ function guardarComentarios(idResena, lista) {
 
 // Suma una entrada al diario (formato del prototipo), la más reciente primero
 function agregarAlDiario(entrada) {
-  var diario = leerMemoria('diary', null) || obtenerDatos('diario').map(function (d) {
+  var diario = leerMemoria('diary', null) || diarioDeEjemplo().map(function (d) {
     return { game: d.juego_igdb, date: d.fecha, state: d.estado, hours: d.horas, score: d.calificacion, like: d.me_gusta, review: d.tiene_resena };
   });
   diario.unshift({ game: entrada.juego_igdb, date: entrada.fecha, state: entrada.estado, hours: entrada.horas, score: entrada.calificacion, like: entrada.me_gusta, review: entrada.tiene_resena });
@@ -813,8 +1025,8 @@ function prepararEncabezado() {
 
   var usuario = buscarPorId('usuarios', sesion.user);
   var nivel = leerMemoria('profile', {}).level || (usuario && usuario.nivel) || 1;
-  var avisos = obtenerDatos('notificaciones').filter(function (n) { return n.usuario === sesion.user; });
-  var solicitudes = obtenerDatos('usuarios').filter(function (u) { return relacionCon(u.usuario) === 'solicitud recibida'; });
+  var avisos = datosDe('notificaciones').filter(function (n) { return n.usuario === sesion.user; });
+  var solicitudes = datosDe('usuarios').filter(function (u) { return relacionCon(u.usuario) === 'solicitud recibida'; });
   var cantidad = avisos.length + (solicitudes.length ? 1 : 0);
 
   acciones.innerHTML =
@@ -941,7 +1153,7 @@ function htmlJuegoMini(juego, ranking, detalle) {
 
 // Juego de IGDB unido con su copia de data.js, si la hay (portada de assets/, nota de la comunidad…)
 function conDatosLocales(juego) {
-  return unirConIgdb(obtenerDatos('juegos').find(function (x) { return x.id === juego.id; }) || null, juego);
+  return unirConIgdb(datosDe('juegos').find(function (x) { return x.id === juego.id; }) || null, juego);
 }
 
 // "Lo más jugado en Steam" (api/igdb?steam=1): llena la rejilla.
@@ -1007,7 +1219,7 @@ function htmlResena(resena, opciones) {
   var juego = buscarPorId('juegos', resena.juego_igdb);
   var autor = buscarPorId('usuarios', resena.autor) || { usuario: resena.autor, iniciales: '?' };
   var comentarios = leerComentarios(resena.id).length;
-  var votado = leerMemoria('votosUtil', []).indexOf(resena.id) !== -1;
+  var votado = contieneId(leerMemoria('votosUtil', []), resena.id);
   var votos = resena.votos_util + (votado ? 1 : 0);
   return '<article class="tarjeta tarjeta--resena"' + atributoColor(juego && juego.color) + '>' +
     '<div class="en-fila">' +
@@ -1104,15 +1316,15 @@ function etiquetaTipoEvento(evento) {
 
 // 1. Inicio (y 2. Ventana: Evento del mes)
 function pantallaIndex() {
-  var juegos = obtenerDatos('juegos');
+  var juegos = datosDe('juegos');
 
   // Atajos bajo el buscador
-  document.getElementById('atajos').innerHTML = obtenerDatos('atajos_inicio').map(function (a) {
+  document.getElementById('atajos').innerHTML = datosDe('atajos_inicio').map(function (a) {
     return '<li><a class="chip" href="' + escapar(rutaRecurso(a.enlace)) + '">' + escapar(a.texto) + '</a></li>';
   }).join('');
 
   // Portadas de la bienvenida (decorativas: el texto ya dice de qué trata la página)
-  document.getElementById('portadas-heroe').innerHTML = obtenerDatos('destacados_inicio').map(function (d) {
+  document.getElementById('portadas-heroe').innerHTML = datosDe('destacados_inicio').map(function (d) {
     var juego = buscarPorId('juegos', d.juego_igdb);
     if (!juego) return '';
     return '<div class="portada heroe__portada"' + atributoColor(juego.color) + '>' + imagenPortada(juego) +
@@ -1153,7 +1365,7 @@ function pantallaIndex() {
   activarResenas(contenedorResenas);
 
   // Eventos: el evento del mes y un sorteo
-  var eventos = obtenerDatos('eventos');
+  var eventos = datosDe('eventos');
   var delMes = eventos.find(function (e) { return e.destacado; });
   var sorteo = eventos.find(function (e) { return e.tipo === 'sorteo'; });
   var htmlEventos = (delMes ? htmlEventoDestacado(delMes) : '') + (sorteo ? htmlEvento(sorteo) : '');
@@ -1184,8 +1396,8 @@ function htmlCasillas(nombre, lista) {
 function pantallaBuscar() {
   // Filtros de género y plataforma (antes de leer lo que llega en la dirección)
   document.getElementById('filtro-generos').insertAdjacentHTML('beforeend',
-    htmlCasillas('genero', obtenerDatos('generos').filter(function (g) { return g.en_buscar; })));
-  document.getElementById('filtro-plataformas').insertAdjacentHTML('beforeend', htmlCasillas('plataforma', obtenerDatos('plataformas')));
+    htmlCasillas('genero', datosDe('generos').filter(function (g) { return g.en_buscar; })));
+  document.getElementById('filtro-plataformas').insertAdjacentHTML('beforeend', htmlCasillas('plataforma', datosDe('plataformas')));
 
   var parametros = new URLSearchParams(location.search);
   var formularioBusqueda = document.getElementById('formulario-busqueda');
@@ -1376,7 +1588,7 @@ function pantallaBuscar() {
 // 4. Juego random
 function pantallaRandom() {
   // Todos los géneros que entiende IGDB, en orden alfabético
-  var generos = obtenerDatos('generos').map(function (g) { return g.nombre; }).sort(function (a, b) { return a.localeCompare(b, 'es'); });
+  var generos = datosDe('generos').map(function (g) { return g.nombre; }).sort(function (a, b) { return a.localeCompare(b, 'es'); });
   var parametro = new URLSearchParams(location.search).get('genero');
   var genero = generos.indexOf(parametro) !== -1 ? parametro : 'Aventura';
   var actual = null;
@@ -1390,7 +1602,7 @@ function pantallaRandom() {
 
   // Sin IGDB: un juego de data.js del género, distinto al que se ve ahora
   function sortearLocal() {
-    var opciones = obtenerDatos('juegos').filter(function (j) { return j.generos.indexOf(genero) !== -1; });
+    var opciones = datosDe('juegos').filter(function (j) { return j.generos.indexOf(genero) !== -1; });
     var otros = opciones.filter(function (j) { return !actual || j.id !== actual.id; });
     var lista = otros.length ? otros : opciones;
     return lista.length ? lista[Math.floor(Math.random() * lista.length)] : null;
@@ -1470,7 +1682,7 @@ function pantallaRandom() {
 // Cuando se conecte una IA de verdad, solo cambia esta función.
 function responderMatchplay(pregunta) {
   var texto = pregunta.toLowerCase();
-  var respuestas = obtenerDatos('respuestas_matchplay');
+  var respuestas = datosDe('respuestas_matchplay');
   var elegida = respuestas.find(function (r) {
     return r.palabras.some(function (p) { return texto.indexOf(p) !== -1; });
   }) || respuestas[respuestas.length - 1];
@@ -1484,7 +1696,7 @@ function pantallaMatchplay() {
   var HORA = 3600000;
   var ahora = Date.now();
   // Chats guardados en el navegador (hasta conectar Supabase); la primera vez, los de ejemplo
-  var chats = leerMemoria('chatsMatchplay', null) || obtenerDatos('chats_matchplay').map(function (c) {
+  var chats = leerMemoria('chatsMatchplay', null) || datosDe('chats_matchplay').map(function (c) {
     return { id: c.id, titulo: c.titulo, fecha: ahora - c.horas_atras * HORA, mensajes: c.mensajes };
   });
   var activo = null;
@@ -1497,7 +1709,7 @@ function pantallaMatchplay() {
   var hilo = document.getElementById('hilo');
   var campo = document.getElementById('mensaje');
   var botonChats = document.getElementById('boton-chats');
-  var tendencias = obtenerDatos('tendencias_matchplay');
+  var tendencias = datosDe('tendencias_matchplay');
 
   function guardar() { guardarMemoria('chatsMatchplay', chats); }
   function chatActivo() { return chats.find(function (c) { return c.id === activo; }) || null; }
@@ -1631,7 +1843,7 @@ function pantallaMatchplay() {
   });
 
   // Ideas para preguntar: escriben el comienzo de la pregunta
-  document.getElementById('ideas-matchplay').innerHTML = obtenerDatos('ideas_matchplay').map(function (i) {
+  document.getElementById('ideas-matchplay').innerHTML = datosDe('ideas_matchplay').map(function (i) {
     return '<button class="chip" type="button" data-idea="' + escapar(i.idea) + '">' + escapar(i.texto) + '</button>';
   }).join('');
   document.querySelectorAll('[data-idea]').forEach(function (chip) {
@@ -1700,10 +1912,15 @@ function leerPerfil() {
   };
 }
 
-// Diario propio: el guardado en el navegador o, si no hay, el de data.js
+// Diario de la cuenta de demostración (samluq), que viene de la base
+function diarioDeEjemplo() {
+  return datosDe('diario').filter(function (d) { return d.usuario === 'samluq'; });
+}
+
+// Diario propio: el guardado en el navegador o, si no hay, el de la cuenta de demostración
 function leerDiario() {
   var guardado = leerMemoria('diary', null);
-  if (!guardado) return obtenerDatos('diario');
+  if (!guardado) return diarioDeEjemplo();
   return guardado.map(function (d) {
     return { juego_igdb: numeroDeJuego(d.game), fecha: d.date, estado: d.state, horas: d.hours, calificacion: d.score, me_gusta: !!d.like, tiene_resena: !!d.review };
   });
@@ -1812,7 +2029,7 @@ function mostrarJuego(juego) {
   var publicadas = obtenerResenas().filter(function (r) { return esJuego(r.juego_igdb, juego) && r.estado === 'publicada'; });
   var resenas = publicadas.filter(function (r) { return r.tipo === 'resena'; });
   var guias = publicadas.filter(function (r) { return r.tipo === 'guia'; });
-  var logros = obtenerDatos('logros').filter(function (l) { return l.juego === juego.id; });
+  var logros = datosDe('logros').filter(function (l) { return l.juego === juego.id; });
   var escribir = 'escribir-resena.html?id=' + encodeURIComponent(juego.id);
   // Reseñas de Steam del juego (llegan después) y filtro por origen
   var steam = { resenas: [], resumen: null, appid: null };
@@ -1977,7 +2194,7 @@ function mostrarJuego(juego) {
   // Los parecidos que da IGDB; sin IGDB, otros juegos de data.js del mismo género
   var similares = (juego.similares && juego.similares.length ? juego.similares.map(function (j) {
     return buscarPorId('juegos', j.id) ? unirConIgdb(buscarPorId('juegos', j.id), j) : j;
-  }) : obtenerDatos('juegos').filter(function (j) {
+  }) : datosDe('juegos').filter(function (j) {
     return j.id !== juego.id && j.generos.some(function (g) { return juego.generos.indexOf(g) !== -1; });
   })).slice(0, 3);
   document.getElementById('similares').innerHTML = similares.length ? similares.map(function (j) {
@@ -2002,7 +2219,7 @@ function pantallaEscribir() {
 function mostrarEscribir(juego) {
   var parametros = new URLSearchParams(location.search);
   // Estados de la partida (antes de cargar una reseña que se edita)
-  document.getElementById('estado').innerHTML = obtenerDatos('estados_partida').map(function (e) {
+  document.getElementById('estado').innerHTML = datosDe('estados_partida').map(function (e) {
     return '<option>' + escapar(e.nombre) + '</option>';
   }).join('');
   var MINIMO = 50;
@@ -2280,9 +2497,17 @@ function enlacePerfil(usuario) {
 }
 
 // 12. Detalle de reseña
-function pantallaResena() {
+async function pantallaResena() {
   var id = new URLSearchParams(location.search).get('id');
-  var resena = obtenerResenas().find(function (r) { return r.id === id; });
+  var resena = null;
+  if (id && /^\d+$/.test(id)) {
+    // Reseña de la base (si es un borrador ajeno, la base no la entrega)
+    var fila = await obtenerUno('resenas', Number(id));
+    if (fila && fila.estado === 'publicada') resena = TRADUCIR.resenas([fila])[0];
+  } else if (id) {
+    // Reseña propia guardada en el navegador (todavía no se publican en la base)
+    resena = leerResenasPropias().find(function (r) { return String(r.id) === id; }) || null;
+  }
   if (!resena) { location.replace(rutaPagina('404.html') + '?tipo=resena'); return; }
   var juego = buscarPorId('juegos', resena.juego_igdb);
   var propia = esPropia(resena);
@@ -2329,8 +2554,8 @@ function pantallaResena() {
   // Acciones: me gusta, útil y compartir; editar y eliminar si es propia
   var acciones = document.getElementById('acciones-resena');
   function dibujarAcciones() {
-    var meGusta = leerMemoria('meGustaResenas', []).indexOf(resena.id) !== -1;
-    var votado = leerMemoria('votosUtil', []).indexOf(resena.id) !== -1;
+    var meGusta = contieneId(leerMemoria('meGustaResenas', []), resena.id);
+    var votado = contieneId(leerMemoria('votosUtil', []), resena.id);
     acciones.innerHTML =
       '<button class="boton boton--secundario boton--me-gusta" type="button" id="accion-me-gusta" aria-pressed="' + meGusta + '">' + ICONO_CORAZON + 'Me gusta · ' + formatearNumero(resena.me_gusta + (meGusta ? 1 : 0)) + '</button>' +
       '<button class="boton boton--secundario" type="button" data-util="' + escapar(resena.id) + '"' + (propia ? ' data-propia' : '') + ' aria-pressed="' + votado + '">Útil · <span>' + formatearNumero((resena.votos_util || 0) + (votado ? 1 : 0)) + '</span></button>' +
@@ -2353,7 +2578,7 @@ function pantallaResena() {
       if (!obtenerSesion()) { pedirCuenta('dar me gusta'); return; }
       if (propia) { mostrarAviso('No puedes dar me gusta a tu propia reseña'); return; }
       var meGustan = leerMemoria('meGustaResenas', []);
-      meGustan = meGustan.indexOf(resena.id) !== -1 ? meGustan.filter(function (x) { return x !== resena.id; }) : meGustan.concat(resena.id);
+      meGustan = contieneId(meGustan, resena.id) ? meGustan.filter(function (x) { return String(x) !== String(resena.id); }) : meGustan.concat(resena.id);
       guardarMemoria('meGustaResenas', meGustan);
       dibujarAcciones();
       document.getElementById('accion-me-gusta').focus();
@@ -2456,7 +2681,7 @@ function pantallaResena() {
   // Datos de la partida
   var partida = resena.estado_partida;
   if (!partida && resena.autor === 'samluq') {
-    var enDiario = obtenerDatos('diario').find(function (d) { return d.juego_igdb === resena.juego_igdb; });
+    var enDiario = datosDe('diario').find(function (d) { return d.juego_igdb === resena.juego_igdb && d.usuario === resena.autor; });
     partida = enDiario && enDiario.estado;
   }
   document.getElementById('datos-partida').innerHTML = [
@@ -2477,7 +2702,7 @@ function pantallaResena() {
 
 // 13. Eventos
 function pantallaEventos() {
-  var eventos = obtenerDatos('eventos');
+  var eventos = datosDe('eventos');
   var filtro = 'todos';
   var organiza = '';
   var lista = document.getElementById('lista-eventos');
@@ -2485,10 +2710,10 @@ function pantallaEventos() {
   var selectorOrganiza = document.getElementById('organiza');
 
   // Quién organiza (después de "Todos") y reglas de los eventos
-  selectorOrganiza.insertAdjacentHTML('beforeend', obtenerDatos('organizadores').map(function (o) {
+  selectorOrganiza.insertAdjacentHTML('beforeend', datosDe('organizadores').map(function (o) {
     return '<option>' + escapar(o.nombre) + '</option>';
   }).join(''));
-  document.getElementById('reglas-eventos').innerHTML = obtenerDatos('reglas_eventos').map(function (r) {
+  document.getElementById('reglas-eventos').innerHTML = datosDe('reglas_eventos').map(function (r) {
     return '<li>' + escapar(r.texto) + (r.enlace ? '<a href="' + escapar(rutaRecurso(r.enlace)) + '"><b>' + escapar(r.texto_enlace) + '</b></a>.' : '') + '</li>';
   }).join('');
 
@@ -2549,8 +2774,11 @@ function guardarInscripcion(inscripcion) {
 }
 
 // 14. Detalle de evento (y 15. Ventana: Inscripción confirmada)
-function pantallaEvento() {
-  var evento = buscarPorId('eventos', new URLSearchParams(location.search).get('id'));
+async function pantallaEvento() {
+  // El id de la dirección es el slug del evento (?id=copa-2v2)
+  var slug = new URLSearchParams(location.search).get('id');
+  var fila = slug ? await obtenerUno('eventos', slug, 'slug') : null;
+  var evento = fila ? TRADUCIR.eventos([fila])[0] : null;
   if (!evento) { location.replace(rutaPagina('404.html') + '?tipo=evento'); return; }
   var esTorneo = evento.tipo === 'torneo';
   var juego = evento.juego_igdb ? buscarPorId('juegos', evento.juego_igdb) : null;
@@ -2969,16 +3197,14 @@ function pantallaPerfil() {
     abrirModal({
       titulo: 'Cómo ganar XP',
       html: '<ul class="lista-puntos">' +
-        '<li>Publicar una reseña o guía: +50 XP</li>' +
-        '<li>Vincular una cuenta de juego: +100 XP</li>' +
-        '<li>Inscribirte en un torneo: +' + XP_POR_TORNEO + ' XP</li>' +
+        datosDe('misiones').map(function (m) { return '<li>' + escapar(m.texto) + ': +' + formatearNumero(m.xp) + ' XP</li>'; }).join('') +
         '<li>Cada ' + formatearNumero(XP_POR_NIVEL) + ' XP subes de nivel. Puedes usar ' + XP_SORTEO + ' XP para entrar gratis a un sorteo.</li></ul>',
       acciones: [{ texto: 'Entendido', principal: true }]
     });
   });
 
   // Amigos (primero los que juegan) y solicitudes pendientes
-  var personas = obtenerDatos('usuarios');
+  var personas = datosDe('usuarios');
   var amigos = ordenarPorEstado(personas.filter(function (u) { return relacionCon(u.usuario) === 'amigos'; }));
   var solicitudes = personas.filter(function (u) { return relacionCon(u.usuario) === 'solicitud recibida'; });
   document.getElementById('cantidad-amigos').textContent = '· ' + amigos.length;
@@ -3026,7 +3252,7 @@ function pantallaPerfil() {
 
   // Estadísticas
   var resenas = leerResenasPropias().filter(function (r) { return r.tipo === 'resena'; });
-  var resumenLogros = obtenerDatos('resumen_logros').find(function (r) { return r.usuario === sesion.user; });
+  var resumenLogros = datosDe('resumen_logros').find(function (r) { return r.usuario === sesion.user; });
   var anio = String(new Date().getFullYear());
   var logrosSteam = (perfil.accounts || {}).Steam ? leerMemoria('steamLogros', null) : null;
   var bibliotecaSteam = (perfil.accounts || {}).Steam ? leerBibliotecaSteam() : [];
@@ -3212,7 +3438,7 @@ function pantallaEditar() {
   var sesion = obtenerSesion();
   var perfil = leerPerfil();
   perfil.accounts = perfil.accounts || {};
-  var juegos = obtenerDatos('juegos');
+  var juegos = datosDe('juegos');
   var bibliotecaSteam = perfil.accounts.Steam ? leerBibliotecaSteam() : [];
   var campoNombre = document.getElementById('nombre-visible');
 
@@ -3369,7 +3595,7 @@ function pantallaEditar() {
   var cajaCuentas = document.getElementById('cuentas-editar');
   function dibujarCuentas() {
     // Cuentas que se pueden vincular (cuentas en data.js)
-    cajaCuentas.innerHTML = obtenerDatos('cuentas').map(function (p) {
+    cajaCuentas.innerHTML = datosDe('cuentas').map(function (p) {
       var nombre = perfil.accounts[p.nombre];
       return '<div class="fila fila--comparacion"><span><b>' + p.nombre + '</b><br><span class="tarjeta__texto">' + p.nota + '</span></span>' +
         (nombre
@@ -3445,7 +3671,7 @@ function pantallaEditar() {
 
 // Etiqueta de color para el estado de un juego en el diario (estados_partida en data.js)
 function claseEstado(nombre) {
-  var estado = obtenerDatos('estados_partida').find(function (e) { return e.nombre === nombre; });
+  var estado = datosDe('estados_partida').find(function (e) { return e.nombre === nombre; });
   return estado ? estado.etiqueta : 'etiqueta--contorno';
 }
 
@@ -3641,9 +3867,9 @@ function pantallaLogros() {
   if (!exigirSesion()) return;
   var usuario = obtenerSesion().user;
   var plataforma = 'Todas';
-  var progreso = obtenerDatos('progreso_logros').filter(function (p) { return p.usuario === usuario; });
-  var resumen = obtenerDatos('resumen_logros').find(function (r) { return r.usuario === usuario; }) || { desbloqueados: 0, promedio: 0, juegos_completos: 0, raros: 0 };
-  var raros = obtenerDatos('logros').map(function (l) {
+  var progreso = datosDe('progreso_logros').filter(function (p) { return p.usuario === usuario; });
+  var resumen = datosDe('resumen_logros').find(function (r) { return r.usuario === usuario; }) || { desbloqueados: 0, promedio: 0, juegos_completos: 0, raros: 0 };
+  var raros = datosDe('logros').map(function (l) {
     var j = buscarPorId('juegos', l.juego);
     return { nombre: l.nombre, juego: j ? j.nombre_corto : '', porcentaje: l.porcentaje, obtenido: l.obtenido };
   });
@@ -3833,7 +4059,7 @@ function pantallaAmigos() {
   var sesion = obtenerSesion();
   var pestana = ({ '#solicitudes': 'recibidas', '#sugerencias': 'sugerencias', '#en-linea': 'en-linea' })[location.hash] || 'todos';
   var texto = '';
-  var personas = obtenerDatos('usuarios').filter(function (u) { return u.usuario !== sesion.user && u.nivel; });
+  var personas = datosDe('usuarios').filter(function (u) { return u.usuario !== sesion.user && u.nivel; });
   var lista = document.getElementById('lista-amigos');
   var campoBuscar = document.getElementById('buscar-amigos');
 
@@ -3972,11 +4198,12 @@ function pantallaAmigos() {
 }
 
 // 25. Perfil de otro usuario (?id=usuario)
-function pantallaUsuario() {
+async function pantallaUsuario() {
   // El id es el @ de la persona (?id=juanvi); ?u= es la forma vieja y sigue funcionando
   var parametros = new URLSearchParams(location.search);
   var usuario = parametros.get('id') || parametros.get('u');
-  var persona = buscarPorId('usuarios', usuario);
+  var fila = usuario ? await obtenerUno('usuarios', usuario, 'usuario') : null;
+  var persona = fila ? TRADUCIR.usuarios([fila])[0] : null;
   if (!persona || !persona.nivel) { location.replace(rutaPagina('404.html') + '?tipo=usuario'); return; }
   var sesion = obtenerSesion();
   if (sesion && sesion.user === persona.usuario) { location.replace('perfil.html'); return; }
@@ -4030,7 +4257,7 @@ function pantallaUsuario() {
     : '<p class="tarjeta__texto">' + htmlEstado(persona) + '</p>';
   document.getElementById('sobre-usuario').textContent = persona.sobre_mi || '';
   document.getElementById('desde-usuario').textContent = 'Miembro desde ' + formatearFechaLarga(persona.miembro_desde);
-  var comunes = obtenerDatos('usuarios').filter(function (u) { return u.usuario !== persona.usuario && sonAmigos(u.usuario); }).slice(0, persona.amigos_en_comun || 3);
+  var comunes = datosDe('usuarios').filter(function (u) { return u.usuario !== persona.usuario && sonAmigos(u.usuario); }).slice(0, persona.amigos_en_comun || 3);
   document.getElementById('cantidad-comunes').textContent = comunes.length;
   document.getElementById('amigos-comunes').innerHTML = comunes.map(function (u) {
     return '<a href="perfil-usuario.html?id=' + encodeURIComponent(u.usuario) + '" title="' + escapar(u.nombre) + '"><span class="solo-lectores">' + escapar(u.nombre) + '</span>' + htmlAvatar(u) + '</a>';
@@ -4086,8 +4313,8 @@ function pantallaContacto() {
   var sesion = obtenerSesion();
 
   // Temas del formulario y preguntas frecuentes
-  tema.innerHTML = obtenerDatos('temas_contacto').map(function (t) { return '<option>' + escapar(t.nombre) + '</option>'; }).join('');
-  document.getElementById('preguntas-frecuentes').innerHTML = obtenerDatos('preguntas_frecuentes').map(function (p) {
+  tema.innerHTML = datosDe('temas_contacto').map(function (t) { return '<option>' + escapar(t.nombre) + '</option>'; }).join('');
+  document.getElementById('preguntas-frecuentes').innerHTML = datosDe('preguntas_frecuentes').map(function (p) {
     return '<details class="preguntas__item"><summary>' + escapar(p.pregunta) + '</summary><p>' + escapar(p.respuesta) + '</p></details>';
   }).join('');
 
@@ -4130,7 +4357,7 @@ var ETIQUETA_SERVICIO = { conectado: 'etiqueta--exito', demo: 'etiqueta--ia', pe
 
 function pantallaError() {
   var parametros = new URLSearchParams(location.search);
-  var variantes = obtenerDatos('variantes_error');
+  var variantes = datosDe('variantes_error');
   var tipo = parametros.get('tipo') || (navigator.onLine === false ? 'sin-conexion' : 'no-encontrado');
   var variante = variantes.find(function (v) { return v.id === tipo; }) || variantes.find(function (v) { return v.id === 'no-encontrado'; });
   var servicio = (parametros.get('servicio') || '').slice(0, 60);
@@ -4183,7 +4410,7 @@ function pantallaError() {
   }
 
   // Estado de los servicios (simulado)
-  document.getElementById('estado-servicios').innerHTML = obtenerDatos('estado_servicios').map(function (s) {
+  document.getElementById('estado-servicios').innerHTML = datosDe('estado_servicios').map(function (s) {
     // "Con fallas" solo cuando un servicio falló (no cuando una función no existe todavía)
     var falla = /^API-/.test(variante.codigo);
     var afectado = falla && servicio && (s.servicio.indexOf(servicio) !== -1 || s.proveedor.indexOf(servicio) !== -1);
@@ -4220,14 +4447,70 @@ var PANTALLAS = {
   error: pantallaError
 };
 
-document.addEventListener('DOMContentLoaded', function () {
-  // Primero se termina la vuelta de Steam (si la hay), para que la pantalla ya vea la sesión
-  terminarVueltaDeSteam().then(function (aviso) {
+// Tablas de Supabase que espera cada pantalla (además de las comunes, que usan la barra y el menú)
+var TABLAS_COMUNES = ['usuarios', 'amigos'];
+var TABLAS_DE_PANTALLA = {
+  index: ['destacados_inicio', 'resenas', 'eventos'],
+  matchplay: ['tendencias_matchplay'],
+  juego: ['resenas', 'diario'],
+  escribir: ['resenas', 'diario'],
+  comunidad: ['resenas', 'diario'],
+  resena: ['resenas', 'comentarios', 'diario'],
+  eventos: ['eventos'],
+  evento: ['eventos'],
+  perfil: ['resenas', 'diario', 'eventos', 'misiones'],
+  editar: ['resenas', 'diario'],
+  diario: ['resenas', 'diario'],
+  historial: ['resenas', 'diario'],
+  logros: ['resenas', 'diario'],
+  amigos: ['resenas', 'diario'],
+  usuario: ['resenas', 'diario']
+};
+
+// "Cargando…" arriba del contenido mientras llegan los datos
+function mostrarCargando() {
+  var principal = document.querySelector('main');
+  if (!principal) return null;
+  principal.insertAdjacentHTML('afterbegin', '<div class="vacio" id="estado-carga" role="status"><b>Cargando…</b></div>');
+  return document.getElementById('estado-carga');
+}
+
+// Si los datos no llegan: el mensaje de error en lugar del contenido, con un botón para intentar de nuevo
+function mostrarErrorDeCarga() {
+  var principal = document.querySelector('main');
+  if (!principal) return;
+  principal.innerHTML = '<div class="vacio" role="alert"><b>No pudimos cargar la información. Intenta de nuevo.</b>' +
+    '<button class="boton boton--secundario boton--sm" type="button" id="reintentar-carga">Intentar de nuevo</button></div>';
+  document.getElementById('reintentar-carga').addEventListener('click', function () { location.reload(); });
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+  var nombre = document.body.dataset.pantalla;
+  var pantalla = PANTALLAS[nombre];
+  var tablas = TABLAS_COMUNES.concat(TABLAS_DE_PANTALLA[nombre] || []);
+  // La página de error tiene que verse aunque la base no responda: si falla, sigue con las tablas vacías
+  var esError = nombre === 'error';
+  var cargando = esError ? null : mostrarCargando();
+  try {
+    // Primero se termina la vuelta de Steam (si la hay), para que la pantalla ya vea la sesión
+    var aviso = await terminarVueltaDeSteam();
+    if (esError) {
+      await cargarDatos(tablas).catch(function (error) {
+        console.error('La página de error sigue sin los datos de Supabase:', error);
+        tablas.forEach(function (t) { (TABLAS_NECESARIAS[t] || [t]).forEach(function (x) { if (!FILAS[x]) FILAS[x] = []; }); });
+      });
+    } else {
+      await cargarDatos(tablas);
+    }
+    if (cargando) cargando.remove();
     prepararEncabezado();
     prepararFranja();
     prepararPie();
-    var pantalla = PANTALLAS[document.body.dataset.pantalla];
-    if (pantalla) pantalla();
+    if (pantalla) await pantalla();
     if (aviso) mostrarAviso(aviso);
-  });
+  } catch (error) {
+    console.error('No se pudo mostrar la pantalla ' + nombre + ':', error);
+    if (cargando) cargando.remove();
+    mostrarErrorDeCarga();
+  }
 });
