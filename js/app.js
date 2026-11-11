@@ -3508,8 +3508,9 @@ async function cargarMisiones(alGanarXp) {
   }
   var conAvance = respuesta.ok && !!datos.usuario;
   lista.innerHTML = datos.periodos.map(function (p) {
-    return '<div class="pila pila--junta"><div class="en-fila en-fila--entre"><b>' + (p.frecuencia === 'diaria' ? 'Diarias' : 'Semanales') + '</b>' +
-      '<span class="tarjeta__texto">' + textoReinicio(p.termina) + '</span></div>' +
+    // Cada grupo empieza con una línea separadora (.separador del kit): "Diarias · se reinician en 5 h"
+    return '<div class="pila pila--junta">' +
+      '<p class="separador">' + (p.frecuencia === 'diaria' ? 'Diarias' : 'Semanales') + ' · ' + textoReinicio(p.termina).replace('Se reinician', 'se reinician') + '</p>' +
       p.misiones.map(function (m) { return htmlMision(m, conAvance); }).join('') + '</div>';
   }).join('');
   aplicarColores(lista);
