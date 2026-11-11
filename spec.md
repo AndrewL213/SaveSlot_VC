@@ -14,11 +14,14 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
 ## Integraciones de backend del MVP
 - **Supabase**: todo lo que se guarda.
   - Cuentas: crear cuenta, iniciar sesión y sesión de invitado (la "cuenta de demostración"). Se entra con la cuenta de SaveSlot (correo y contraseña) o con Google, Discord, Twitch o Steam (proveedores de inicio de sesión de Supabase; sus claves se guardan en Supabase, nunca en el código).
+    - En la consola de cada servicio (Google Cloud, Discord y Twitch) la dirección de regreso es `https://jzshrfiezzysbkzdsjzf.supabase.co/auth/v1/callback`. Google está en modo «Prueba»: solo entran sus usuarios de prueba hasta publicar la app.
+    - Una sola cuenta, varias formas de entrar: en Editar perfil se vinculan Google, Discord y Twitch a la misma cuenta (vinculación manual de Supabase Auth, activada) y Steam se guarda en la cuenta abierta (`app_metadata.steam_id`). Después se entra a esa cuenta con cualquiera de ellos.
+    - Borrar cuenta: la función `borrar_mi_cuenta()` (`supabase/borrar-cuenta.sql`, ya ejecutada) borra la cuenta de quien tiene la sesión y, en cascada, todo lo suyo en la base.
   - Base de datos: reseñas y borradores, votos, me gusta, comentarios, diario, perfil, cuentas vinculadas, misiones, amigos, eventos (torneos y sorteos), inscripciones, notificaciones, chats de MatchPlay, tendencias, destacados de Inicio, vistos recientemente, mensajes de contacto, traducciones y la copia de datos de Steam de cada juego (ver Datos).
   - Presencia: quién está en línea.
   - Su clave pública va en el código; los datos se protegen con reglas de acceso en la base.
 - **IGDB** (de Twitch): catálogo de juegos (búsqueda, filtros, ficha y tiempos para terminar). Sus claves (Client ID y Client Secret de Twitch) se guardan en Vercel y se usan solo desde una función en `api/`, que también renueva el token de acceso; nunca van en el código del navegador (IGDB tampoco acepta pedidos directos desde el navegador). Uso no comercial: si SaveSlot se vuelve comercial, hay que pedir permiso a Twitch.
-  - La función es `api/igdb.js`. Acepta solo seis pedidos: `?buscar=texto` (hasta 20 juegos, los más conocidos primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo, duración y año), `?random=1` (un juego al azar entre los 300 más conocidos de un género) y `?steam=1` (los 10 juegos más jugados en Steam: la lista pública de Steam, sin clave, con el pico de jugadores de ayer; IGDB pone los datos de cada juego). `?explorar` también dice cuántos juegos hay en total. Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`).
+  - La función es `api/igdb.js`. Acepta solo seis pedidos: `?buscar=texto` (hasta 20 juegos, los más conocidos primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo, duración y año), `?random=1` (un juego al azar entre los 300 más conocidos de un género) y `?steam=1` (los 10 juegos más jugados en Steam: la lista pública de Steam, sin clave, con el pico de jugadores de ayer; IGDB pone los datos de cada juego). `?explorar` también dice cuántos juegos hay en total. Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`). La app también elige la variante por el código de respuesta (429 límite, 408 o más de 15 s tiempo, 401/403 credenciales, 503 mantenimiento, sin internet) y la página de error trae «Reintentar» para volver.
   - Vercel guarda cada respuesta una hora, para hacer menos consultas a IGDB.
   - Las respuestas usan los mismos nombres de campos que las tablas (minúsculas con guion bajo). La app agrega `v=2` (la versión de ese formato) a cada consulta, para que Vercel no entregue respuestas guardadas con un formato viejo; si el formato cambia otra vez, se sube ese número (`VERSION_API` en `js/app.js`).
   - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) la traduce al español:
@@ -30,13 +33,15 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
   - Cada juego trae `appid_steam`, su número en Steam (IGDB lo guarda en `external_games`; Steam es la fuente 1), para pedirle a Steam precio, nota, logros y reseñas.
 - **Steam** (Steam Web API + OpenID): funciones de Vercel en `api/steam/`. La clave `STEAM_API_KEY` y la llave secreta de Supabase (`SUPABASE_SERVICE_ROLE_KEY`) están solo en Vercel. Antes eran Edge Functions de Supabase (`steam-auth` y `steam-data`); ya no se usan.
   - `api/steam/auth.js`: entrar con Steam (OpenID 2.0). Steam devuelve a la persona a la app con un token de un solo uso y la app abre la sesión de Supabase (`verifyOtp`). La cuenta queda con `app_metadata.steam_id`, su @ se guarda en `user_metadata.usuario` y su foto elegida en `user_metadata.foto`.
+    - Si esa cuenta de Steam está vinculada a una cuenta de Google, Discord, Twitch o correo, entrar con Steam abre esa cuenta (la busca en **usuarios_steam**). Si no, usa la cuenta creada con Steam (correo interno `steam-<número>@saveslot.invalid`).
+    - Vincular Steam a la cuenta abierta: `?action=preparar` (con la sesión) devuelve un permiso firmado que vale 10 minutos; con él, Steam se guarda en esa cuenta en vez de crear otra. Si esa cuenta de Steam ya es de otra cuenta de SaveSlot, vuelve con el error `steam_en_otra_cuenta`.
   - `api/steam/data.js` (con la sesión de Supabase): `profile` (perfil, jugando ahora, recientes de 2 semanas, nivel e insignias de Steam), `library` (biblioteca con horas), `wishlist` (lista de deseos con precio en COP y descuento), `achievements_summary` (logros de los 30 juegos más jugados y los más raros), `achievements`, `stats` y `my_reviews` (tus reseñas de Steam).
   - `api/steam/resenas.js` (sin sesión): las 10 reseñas en español más útiles de un juego y su nota global en Steam.
   - `api/steam/juego.js` (sin sesión): precio, descuento, nota, logros totales y jugadores conectados de un juego; los guarda en la tabla **juegos** de Supabase y no vuelve a preguntarle a Steam en 24 horas.
   - `api/steam/sincronizar.js`: Vercel la ejecuta cada día a las 9:00 UTC (4:00 a. m. en Colombia; `crons` en `vercel.json`) y actualiza hasta 200 juegos de la tabla **juegos**. Solo responde a Vercel (variable `CRON_SECRET`).
   - Steam ya no da un JSON público de reseñas: las reseñas de cada juego y las tuyas se leen de las páginas públicas de la comunidad de Steam. Funciona, pero si Steam cambia esas páginas hay que ajustar `resenas.js` y `my_reviews`.
   - Logros, lista de deseos y reseñas necesitan que en Steam «Detalles de juego» esté en **Público**. Si no, la app explica cómo cambiarlo.
-- Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros de otras plataformas (los de Steam son reales), la vinculación con Xbox y el estado de los servicios.
+- Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros de otras plataformas (los de Steam son reales), la vinculación con Xbox y el estado de los servicios que no se pueden revisar (los de IGDB, Steam y Supabase se revisan de verdad en la página de error).
 
 ## Flujo
 
@@ -52,6 +57,7 @@ Se puede entrar y explorar sin cuenta. La cuenta se pide solo al escribir, comen
    Inicio (ventana Evento del mes) → Eventos → Detalle de evento (torneo o sorteo) → [sin cuenta: Necesitas una cuenta] → Inscripción confirmada → Perfil (Mis eventos)
 4. **Cuenta, perfil y amigos** (flujograma "Cuenta y perfil")
    Crear cuenta (paso 1) → Editar perfil (pasos 2 y 3: vincular plataformas y elegir favoritos) → Perfil → Diario · Historial de reseñas · Logros · Biblioteca · Editar perfil
+   Editar perfil → Formas de entrar (vincular Google, Discord o Twitch a la misma cuenta) · Borrar cuenta → Inicio
    Entrar con Steam (Iniciar sesión o Crear cuenta) → Steam → Perfil, con Steam ya vinculada
    Menú de la cuenta (en la barra, en todas las páginas) → Mi perfil · Editar perfil · Cerrar sesión
    Perfil o Comunidad → Amigos → Perfil de otro usuario
@@ -317,6 +323,7 @@ Qué guarda: los avisos de cada persona.
 Tipo de dato: personal
 Se guarda en: Supabase
 Desde la app se puede: ver las propias y marcarlas como leídas (ventana Notificaciones). Las crea la base: con cada voto "útil" a una reseña tuya y cuando se acerca el cierre de inscripciones de un evento tuyo.
+Hoy: los avisos de ejemplo salen de `js/data.js`; los de baja de precio de la lista de deseos de Steam los crea la app y quedan en el navegador (7 días); "leída" también se guarda en el navegador (al abrir la ventana, todo queda visto).
 Campos:
 - id: número — obligatorio
 - usuario: texto — obligatorio
@@ -418,10 +425,10 @@ Se relaciona con: ninguna.
   - **temas_contacto** y **preguntas_frecuentes** (Contáctanos)
   - **atajos_inicio**, **ideas_matchplay**, **reglas_eventos** y **organizadores** (filtro de Eventos)
   - **variantes_error**: id, codigo, titulo, texto, consejos, reintentar, espera, accion, servicio_por_defecto
-  - **estado_servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto (Simulado)
+  - **estado_servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto, prueba (opcional: igdb, steam, base o cuentas; con ella la página de error revisa de verdad si el servicio responde)
   - Las opciones de orden y los rangos de los filtros ("Más recientes", "A–Z", "9–10", "< 10 h"…) son parte de la interfaz y siguen en el HTML.
 - **Simulados (`js/data.js`):** respuestas_matchplay (las respuestas de la IA), y logros, progreso_logros y resumen_logros de otras plataformas (los de Steam son reales).
-- **Archivos (Supabase Storage):** carpeta pública **avatares** (código en `supabase/avatares.sql`, ya creada): las fotos de perfil, en `avatares/<id de Auth>/avatar.jpg`. Cualquiera las ve; cada persona solo sube, cambia o borra la suya. Solo imágenes JPG, PNG o WebP de hasta 2 MB (la app las recorta a 256 px antes de subirlas).
+- **Archivos (Supabase Storage):** carpeta pública **avatares** (código en `supabase/avatares.sql`, ya creada): las fotos de perfil, en `avatares/<id de Auth>/avatar.jpg`. Cualquiera las ve; cada persona solo sube, cambia o borra la suya (al borrar la cuenta se borra también). Solo imágenes JPG, PNG o WebP de hasta 2 MB (la app las recorta a 256 px antes de subirlas).
 - **Después:** clips (necesitan Supabase Storage o Twitch), pagos de eventos y mensajes entre amigos.
 
 ### Hoy en el navegador → tabla de Supabase
@@ -445,6 +452,9 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 | `usuariosSteam` | Supabase Auth (`user_metadata.usuario`, ya se guarda ahí) |
 | `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos`, `steamResenas` | Ninguna: son copias de lo que da Steam, para mostrar algo mientras llega lo nuevo |
 | `juegos_igdb` | Ninguna: copia de los últimos 100 juegos de IGDB abiertos, para que reseñas, deseos y diario sepan su nombre y portada |
+| `avisosPrecio` | **notificaciones** (los avisos de baja de precio) |
+| `notisVistas` | **notificaciones** (campo `leida`) |
+| `steamPreciosAvisados`, `steamPreciosRevisados` | Ninguna: recuerdan qué descuento ya se avisó y cuándo se revisó la lista de deseos de Steam |
 | `hideDemo`, `datosDe.*`, `duenoDatos` | Ninguna: son ayudas del modo demo y se quitan |
 
 ## Pantallas
@@ -707,7 +717,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Qué funciona de verdad:**
   - Entrar con correo (cuenta de SaveSlot): Real (Supabase Auth, signInWithPassword). Si la contraseña no coincide o falta confirmar el correo, lo dice junto al campo.
   - Cuenta de demostración: Real (sesión de invitado de Supabase, sin contraseña, con los datos de ejemplo cargados)
-  - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). Vuelve a la pantalla donde estaba, con Steam vinculada.
+  - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). Vuelve a la pantalla donde estaba, con Steam vinculada. Si Steam está vinculada a una cuenta de Google, Discord, Twitch o correo, abre esa cuenta.
   - Google, Discord y Twitch: Real (proveedores de Supabase Auth, signInWithOAuth). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
@@ -749,7 +759,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   4. Actividad reciente: lo jugado en Steam las últimas 2 semanas y lo último del diario, con enlaces a Historial de reseñas y Diario
   5. Géneros más jugados y calificaciones
   6. Biblioteca de Steam: los 6 más jugados, con enlace a Biblioteca
-  7. Lista de deseos: la de SaveSlot y la de Steam (con precio y descuento; se ven 6 y "Ver los N de Steam")
+  7. Lista de deseos: la de SaveSlot y la de Steam (con precio y descuento; se ven 6 y "Ver los N de Steam"). "Te avisaremos si bajan de precio": con Steam vinculada, avisa cuando un juego de la lista de Steam entra en oferta (ver Notificaciones)
   8. Sobre mí, XP, Amigos, conexiones y Mis eventos
   9. Editar perfil y Compartir
 - **Qué funciona de verdad:**
