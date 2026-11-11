@@ -183,12 +183,18 @@ function actualizarBibliotecaSteam() {
   });
 }
 
-// Un juego reciente de Steam para las rejillas de actividad: portada + horas de las últimas 2 semanas
+// Un juego reciente de Steam para las rejillas de actividad: portada + tiempo de las últimas 2 semanas
+// (menos de 1 hora se dice en minutos, para que un juego recién probado no diga "0 h")
+function tiempoReciente(g) {
+  var minutos = g.minutes_2weeks != null ? g.minutes_2weeks : Math.round((g.hours_2weeks || 0) * 60);
+  return minutos < 60 ? Math.max(minutos, 1) + ' min' : formatearNumero(g.hours_2weeks) + ' h';
+}
 function htmlRecienteSteam(g) {
   var j = juegoDeSteam(g);
-  return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="' + escapar(j.nombre) + ': ' + formatearNumero(g.hours_2weeks) + ' h en las últimas 2 semanas">' +
+  var tiempo = tiempoReciente(g);
+  return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="' + escapar(j.nombre) + ': ' + tiempo + ' en las últimas 2 semanas">' +
     '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
-    '<span class="nota nota--texto">' + formatearNumero(g.hours_2weeks) + ' h</span></a>';
+    '<span class="nota nota--texto">' + tiempo + '</span></a>';
 }
 
 // ---------- Foto de perfil ----------
@@ -3469,7 +3475,7 @@ function pantallaPerfil() {
     } else if (!jugando && steam.recent_games && steam.recent_games.length) {
       var ultimo = steam.recent_games[0];
       caja.innerHTML = '<p class="tarjeta__texto">No está jugando ahora. Último en Steam: <b>' + escapar(ultimo.name) + '</b> · ' +
-        formatearNumero(ultimo.hours_2weeks) + ' h en las últimas 2 semanas.</p>';
+        tiempoReciente(ultimo) + ' en las últimas 2 semanas.</p>';
     }
     var insignias = document.getElementById('insignias-perfil');
     var nivel = insignias.querySelector('[data-steam]');
