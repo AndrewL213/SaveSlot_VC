@@ -140,9 +140,25 @@ module.exports = async function handler(req, res) {
           appid: g.appid,
           name: g.name,
           hours_2weeks: Math.round((g.playtime_2weeks / 60) * 10) / 10,
+          minutes_2weeks: g.playtime_2weeks ?? 0,
           hours: Math.round((g.playtime_forever / 60) * 10) / 10,
         }));
-        const jugando = p.gameextrainfo ? { name: p.gameextrainfo, appid: p.gameid } : null;
+        const jugando = p.gameextrainfo ? { name: p.gameextrainfo, appid: Number(p.gameid) } : null;
+        // Steam no ordena los recientes por fecha: se pide cuándo se jugó cada uno por última vez
+        // (GetOwnedGames, también con juegos gratis, de prueba y de fin de semana gratis) y se ordenan
+        // del más reciente al más antiguo. Lo que estás jugando ahora va primero.
+        if (recientes.length) {
+          const ultimas = await steam("IPlayerService/GetOwnedGames/v1/", {
+            input_json: JSON.stringify({
+              steamid, include_appinfo: false, include_played_free_games: true, include_free_sub: true,
+              skip_unvetted_apps: false, appids_filter: recientes.map((g) => g.appid),
+            }),
+          }).catch(() => ({ response: {} }));
+          const cuando = new Map((ultimas.response.games ?? []).map((g) => [g.appid, g.rtime_last_played || 0]));
+          recientes.forEach((g) => { g.last_played = cuando.get(g.appid) || null; });
+        }
+        const orden = (g) => (jugando && g.appid === jugando.appid ? Infinity : g.last_played || 0);
+        recientes.sort((a, b) => orden(b) - orden(a));
         await conPortadas(jugando ? recientes.concat(jugando) : recientes);
         return json(res, {
           ...p,
