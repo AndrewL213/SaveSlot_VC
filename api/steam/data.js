@@ -12,7 +12,7 @@
 // Variables de entorno: STEAM_API_KEY. Opcionales: SUPABASE_URL, SUPABASE_ANON_KEY
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://jzshrfiezzysbkzdsjzf.supabase.co";
-// Clave pública (la misma de js/config.js)
+// Clave pública (la misma de js/supabase.js)
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || "sb_publishable_jEY8jb8ffoEHueH1qxhwhg_W6Kl8Y20";
 const KEY = process.env.STEAM_API_KEY;
 const API = "https://api.steampowered.com";

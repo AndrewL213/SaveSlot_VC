@@ -15,7 +15,9 @@ Digitales 3. Más contexto en README.md.
   abriendo los archivos en el navegador. Las librerías (por ejemplo,
   supabase-js) se cargan como scripts normales, sin type="module".
 - La app se publicará en Vercel, conectada a este repositorio.
-- Cuentas y base de datos: Supabase. Catálogo de juegos: IGDB (de Twitch), con las
+- La base de datos es Supabase. La conexión está en js/supabase.js y las tablas y
+  reglas en supabase/esquema.sql. Las cuentas también son de Supabase (Supabase Auth).
+  Catálogo de juegos: IGDB (de Twitch), con las
   descripciones traducidas al español (por ahora con el enlace gratis de
   Google Translate, temporal; DeepL si se pone su clave). Steam (Steam Web
   API, desde api/steam/): inicio de sesión, perfil, biblioteca, logros, lista
@@ -33,9 +35,10 @@ Digitales 3. Más contexto en README.md.
 - css/: estilos. tokens.css (decisiones base), components.css
   (componentes) y styles.css (estilos generales de las pantallas).
 - js/: código. app.js (comportamiento), data.js (datos simulados,
-  separados del diseño) y config.js (dirección y clave pública de Supabase).
-  Cada página carga, en este orden: supabase-js (versión fija, con integrity),
-  js/config.js, js/data.js y js/app.js.
+  separados del diseño) y supabase.js (conexión con Supabase: dirección, llave
+  publicable y clienteSupabase).
+  Cada página carga, al final del <body> y en este orden: supabase-js (versión
+  fija, con integrity), js/supabase.js, js/data.js y js/app.js.
 - api/: funciones de Vercel que usan claves secretas (por ejemplo,
   api/igdb.js, la consulta a IGDB, y api/steam/, el inicio de sesión y los
   datos de Steam: perfil, biblioteca y logros). JavaScript sin paso de compilación.
@@ -68,6 +71,8 @@ Digitales 3. Más contexto en README.md.
    por qué. Somos un equipo aprendiendo.
 7. Antes de cada comando de git, explica en una frase qué hace.
 8. Al terminar cada pantalla, actualiza su fila en pantallas.md.
+9. Nunca uses la llave secreta de Supabase. Para cambiar una tabla o una
+   regla, primero se cambia supabase/esquema.sql y se ejecuta en el SQL Editor.
 
 ## Componentes disponibles
 Definidos en css/components.css (estilo v3); se ven todos en componentes.html.

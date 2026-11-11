@@ -34,7 +34,7 @@ Gamers casuales de 15 a 24 años en España y Latinoamérica que hoy tienen que 
 
 - `index.html` · La pantalla de inicio. Las demás pantallas están en `pages/`, y la página de error es `404.html`.
 - `disenos/` · Los diseños originales de las pantallas (inicio, buscador, ficha de juego, perfil, eventos, chat con IA y más). Son solo de referencia.
-- `js/` · El código de la app: `app.js` (cómo se comporta), `data.js` (datos de ejemplo) y `config.js` (conexión con Supabase).
+- `js/` · El código de la app: `app.js` (cómo se comporta), `data.js` (datos de ejemplo) y `supabase.js` (conexión con Supabase).
 - `api/` · Funciones de Vercel que usan claves secretas: `igdb.js` (catálogo de juegos) y `steam/` (inicio de sesión y datos de Steam).
 - `supabase/` · El código SQL de las tablas de Supabase.
 - `vercel.json` · Tareas automáticas de Vercel, como actualizar cada día los datos de Steam.

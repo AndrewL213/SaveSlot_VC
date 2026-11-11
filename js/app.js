@@ -10,14 +10,9 @@
      reemplazan por consultas a la base de datos.
    ========================================================================== */
 
-/* ---------- Supabase ---------- */
-
-// Cliente de Supabase: la librería supabase-js (cargada en cada página) con la
-// dirección y la clave pública de js/config.js. Si la librería no cargó (por
-// ejemplo, sin internet), queda en null y la app sigue con los datos de data.js.
-var clienteSupabase = (window.supabase && typeof SUPABASE_URL !== 'undefined')
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_CLAVE_PUBLICA)
-  : null;
+/* ---------- Supabase ----------
+   El cliente (clienteSupabase) se crea en js/supabase.js, que se carga antes que este archivo.
+   Si la librería no cargó, vale null y la app sigue con los datos de data.js. */
 
 /* ---------- Steam (funciones de Vercel en api/steam) ----------
    Entrar con Steam y leer sus datos pasa por /api/steam/auth y /api/steam/data,
