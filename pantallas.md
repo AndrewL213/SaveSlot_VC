@@ -61,8 +61,8 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
-| 27. Contáctanos | `pages/contacto.html` | ✅ | ✅ | ✅ (listas fijas de data.js; envío en el navegador) | ⬜ |
-| 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ✅ | ✅ (navegador) | ⬜ |
+| 27. Contáctanos | `pages/contacto.html` | ✅ | ✅ | ✅ (listas fijas de data.js; el mensaje se guarda en Supabase) | ⬜ |
+| 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (data.js + revisión en vivo de IGDB, Steam y Supabase) | ⬜ |
 
 ## Pendientes para la revisión vs spec

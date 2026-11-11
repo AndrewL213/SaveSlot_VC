@@ -929,7 +929,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   2. Acceso a MatchPlay
   3. Preguntas frecuentes
   (La tarjeta de correo y redes del diseño no va en el MVP.)
-- **Qué funciona de verdad:** Enviar mensaje: Real (Supabase)
+- **Qué funciona de verdad:** Enviar mensaje: Real (Supabase: se agrega a **mensajes_contacto** con guardarDatos(); el tema se guarda con su id. Mientras envía, el botón dice «Guardando…»; si falla, avisa «No pudimos guardar. Intenta de nuevo.» y conserva lo escrito)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, sin la tarjeta de correo y redes.
   - Funciona en celular (375 px de ancho).
@@ -940,6 +940,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 ### 28. Ventana: Mensaje guardado
 - **Archivo de diseño:** disenos/contacto.html (ventana emergente)
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda confirmar que su mensaje quedó guardado. Sabemos que funciona si la persona no envía el mismo mensaje dos veces.
+- **Texto:** «Tu mensaje le llegó al equipo de SaveSlot. Te responderemos a tu correo.»
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).

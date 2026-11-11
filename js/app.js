@@ -517,6 +517,28 @@ async function obtenerUno(tipo, valor, columna) {
   return respuesta.data;
 }
 
+// Tablas sensibles: se puede agregar, pero nadie las puede ver desde la app (spec.md, sección Datos)
+var TABLAS_SENSIBLES = ['mensajes_contacto'];
+
+// Agrega una fila a una tabla de Supabase. En las tablas que se pueden ver, devuelve la fila guardada
+// (con su id); en las sensibles no la pide, porque leerla está prohibido y fallaría. Si falla, lo escribe
+// en la consola y lanza el error.
+async function guardarDatos(tipo, fila) {
+  if (!clienteSupabase) {
+    var sinConexion = new Error('No se pudo conectar con Supabase (no cargó la librería supabase-js)');
+    console.error(sinConexion);
+    throw sinConexion;
+  }
+  var pedido = clienteSupabase.from(tipo).insert(fila);
+  var sensible = TABLAS_SENSIBLES.indexOf(tipo) !== -1;
+  var respuesta = sensible ? await pedido : await pedido.select();
+  if (respuesta.error) {
+    console.error('Supabase no guardó en ' + tipo + ':', respuesta.error);
+    throw respuesta.error;
+  }
+  return sensible ? null : respuesta.data;
+}
+
 // Trae de Supabase (una sola vez por página) todo lo necesario para estas tablas
 async function cargarDatos(tipos) {
   var faltan = [];
@@ -4858,20 +4880,21 @@ function pantallaContacto() {
   var sesion = obtenerSesion();
 
   // Temas del formulario y preguntas frecuentes
-  tema.innerHTML = datosDe('temas_contacto').map(function (t) { return '<option>' + escapar(t.nombre) + '</option>'; }).join('');
+  tema.innerHTML = datosDe('temas_contacto').map(function (t) { return '<option value="' + escapar(t.id) + '">' + escapar(t.nombre) + '</option>'; }).join('');
   document.getElementById('preguntas-frecuentes').innerHTML = datosDe('preguntas_frecuentes').map(function (p) {
     return '<details class="preguntas__item"><summary>' + escapar(p.pregunta) + '</summary><p>' + escapar(p.respuesta) + '</p></details>';
   }).join('');
 
   // Lo que ya sabemos: el tema desde el enlace (?tema=torneo) y el nombre si hay sesión
   var temaInicial = buscarPorId('temas_contacto', new URLSearchParams(location.search).get('tema'));
-  if (temaInicial) tema.value = temaInicial.nombre;
+  if (temaInicial) tema.value = temaInicial.id;
   if (sesion) {
     nombre.value = sesion.name || '';
     if (sesion.email && sesion.email.indexOf('@saveslot') === -1) correo.value = sesion.email;
   }
 
-  formulario.addEventListener('submit', function (e) {
+  var botonEnviar = formulario.querySelector('button[type="submit"]');
+  formulario.addEventListener('submit', async function (e) {
     e.preventDefault();
     var resultados = [
       [nombre, marcarError(nombre, document.getElementById('error-nombre-contacto'), nombre.value.trim() ? '' : 'Escribe tu nombre.')],
@@ -4881,18 +4904,27 @@ function pantallaContacto() {
     var primero = resultados.find(function (r) { return !r[1]; });
     if (primero) { primero[0].focus(); return; }
 
-    // Hasta conectar Supabase, el mensaje se guarda en el navegador
-    var guardados = leerMemoria('outbox', []);
-    guardados.push({ name: nombre.value.trim(), email: correo.value.trim(), topic: tema.value, msg: mensaje.value.trim(), at: new Date().toISOString() });
-    guardarMemoria('outbox', guardados);
-    formulario.reset();
-
-    // 28. Ventana: Mensaje guardado (el formulario queda vacío)
-    abrirModal({
-      titulo: 'Mensaje guardado',
-      texto: 'El prototipo todavía no tiene servidor de correo, así que tu mensaje quedó guardado en este navegador. Te responderemos cuando conectemos el servicio.',
-      acciones: [{ texto: 'Volver al inicio', href: rutaPagina('index.html'), principal: true }, { texto: 'Cerrar' }]
-    });
+    // Se guarda en Supabase (mensajes_contacto). Nadie lo puede leer desde la app: el equipo lo ve en el panel.
+    botonEnviar.disabled = true;
+    botonEnviar.textContent = 'Guardando…';
+    try {
+      await guardarDatos('mensajes_contacto', {
+        nombre: nombre.value.trim(), correo: correo.value.trim().toLowerCase(), tema: tema.value, mensaje: mensaje.value.trim()
+      });
+      formulario.reset();
+      // 28. Ventana: Mensaje guardado (el formulario queda vacío)
+      abrirModal({
+        titulo: 'Mensaje guardado',
+        texto: 'Tu mensaje le llegó al equipo de SaveSlot. Te responderemos a tu correo.',
+        acciones: [{ texto: 'Volver al inicio', href: rutaPagina('index.html'), principal: true }, { texto: 'Cerrar' }]
+      });
+    } catch (error) {
+      // Lo escrito se queda en el formulario para intentarlo de nuevo
+      mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+    } finally {
+      botonEnviar.disabled = false;
+      botonEnviar.textContent = 'Enviar mensaje';
+    }
   });
 }
 
