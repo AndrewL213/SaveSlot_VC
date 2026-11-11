@@ -863,6 +863,11 @@ body {
   max-width: calc(var(--espacio-8) * 22);
 }
 
+/* La tabla de estado cabe en el contenedor (sin barra para mover de lado ni etiquetas cortadas) */
+.contenedor--error .tabla table {
+  min-width: 0;
+}
+
 /* ---------- MatchPlay ---------- */
 .chat {
   display: flex;
