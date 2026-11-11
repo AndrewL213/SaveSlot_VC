@@ -1,67 +1,69 @@
 # Pantallas de SaveSlot
 
+Datos: conectados a Supabase (js/supabase.js y supabase/esquema.sql)
+
 Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de los diseños v3 (disenos/).
 
 - **Separada**: tiene su propia página (o vive dentro de la página indicada, si es una ventana).
 - **Con kit**: usa solo css/tokens.css y css/components.css, sin el andamio del prototipo (css/prototipo.css y js/prototipo.js, ya borrados).
-- **Datos en data.js**: sus datos simulados salen de js/data.js, separados del diseño (o de Supabase/IGDB, si son Real). También las listas fijas que antes estaban escritas en el HTML (géneros, plataformas, estados de partida, temas y preguntas de Contáctanos, atajos de Inicio, ideas de MatchPlay, reglas y organizadores de Eventos); en el HTML solo quedan las opciones de orden y filtros de la interfaz.
+- **Datos**: de dónde salen los datos de la pantalla: Supabase (tablas públicas: usuarios, reseñas, comentarios, diario, amistades, eventos, tendencias, destacados y misiones), IGDB (catálogo de juegos), Steam (la cuenta de Steam de la persona) o js/data.js (listas fijas, como géneros o preguntas frecuentes, y lo simulado, como logros de otras plataformas o respuestas de MatchPlay). Lo personal (chats, notificaciones, inscripciones y vistos recientemente) sigue en el navegador hasta el inicio de sesión real. En el HTML solo quedan las opciones de orden y filtros de la interfaz.
 - **Revisada vs spec**: cumple todos sus criterios de «Está lista cuando» en spec.md.
 
 ## Descubrir
 
-| Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
+| Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
 | 1. Inicio | `index.html` | ✅ | ✅ | ✅ (IGDB y Supabase) | ⬜ |
 | 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ (tendencias de Supabase; chats en el navegador) | ⬜ |
 | 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ (IGDB y Supabase) | ⬜ |
-| 7. Ventana: Dificultad de 1 a 10 | dentro de `pages/detalle-juego.html` | ✅ | ✅ | ✅ | ⬜ |
+| 7. Ventana: Dificultad de 1 a 10 | dentro de `pages/detalle-juego.html` | ✅ | ✅ | ✅ (texto fijo) | ⬜ |
 
 ## Opinar
 
-| Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
+| Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
 | 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ (IGDB y Supabase) | ⬜ |
-| 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ | ⬜ |
-| 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ✅ | ✅ | ⬜ |
+| 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ (navegador, hasta el inicio de sesión) | ⬜ |
+| 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ✅ | ✅ (texto fijo) | ⬜ |
 | 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 
 ## Eventos
 
-| Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
+| Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
 | 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 13. Eventos | `pages/eventos.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ✅ | ✅ | ⬜ |
+| 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ✅ | ✅ (navegador, hasta el inicio de sesión) | ⬜ |
 
 ## Cuenta, perfil y amigos
 
-| Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
+| Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
-| 16. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ✅ | ✅ | ⬜ |
-| 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ✅ | ✅ | ⬜ |
+| 16. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ⬜ |
+| 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ⬜ |
 | 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam) | ⬜ |
 | 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ (misiones de Supabase) | ⬜ |
 | 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ | ⬜ |
+| 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ (Steam; otras plataformas simuladas en data.js) | ⬜ |
 | 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ✅ | ✅ | ⬜ |
+| 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ✅ | ✅ (data.js, hasta el inicio de sesión) | ⬜ |
 | 30. Biblioteca | `pages/biblioteca.html` | ✅ | ✅ | ✅ (datos reales de Steam) | ⬜ |
-| 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ | ⬜ |
+| 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ (sesión) | ⬜ |
 
 ## Ayuda
 
-| Pantalla | Archivo | Separada | Con kit | Datos en data.js | Revisada vs spec |
+| Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
-| 27. Contáctanos | `pages/contacto.html` | ✅ | ✅ | ✅ | ⬜ |
-| 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ✅ | ✅ | ⬜ |
-| 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ | ⬜ |
+| 27. Contáctanos | `pages/contacto.html` | ✅ | ✅ | ✅ (listas fijas de data.js; envío en el navegador) | ⬜ |
+| 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ✅ | ✅ (navegador) | ⬜ |
+| 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (fijos de data.js) | ⬜ |
 
 ## Pendientes para la revisión vs spec
 - **Datos de Supabase (noviembre)**: las pantallas leen de Supabase usuarios, reseñas, comentarios, diario, amistades, eventos, tendencias, destacados y misiones (`obtenerDatos()` en app.js; `js/data.js` queda como registro). Mientras llegan se ve «Cargando…» y, si Supabase falla, «No pudimos cargar la información». Chats, notificaciones, inscripciones y vistos recientes siguen en el navegador hasta el inicio de sesión real. Diferencias con los datos de ejemplo: los votos «útil» y me gusta empiezan en 0, nadie sale «en línea» ni «jugando» (llega con la presencia de Supabase), «juegos en común» solo cuenta el diario que hay en la base y las solicitudes de amistad pendientes solo las ven sus dos personas.
