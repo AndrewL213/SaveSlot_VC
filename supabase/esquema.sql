@@ -30,6 +30,9 @@ create table if not exists public.usuarios (
   forma_de_entrar text not null default 'correo' check (forma_de_entrar in ('correo', 'google', 'discord', 'twitch', 'steam')),
   invitado boolean not null default false
 );
+-- foto: la foto de perfil que ven los demás (la subida a Storage, carpeta avatares, o la de Steam); vacía = iniciales.
+-- La pone la app de la propia persona (Editar perfil y al abrir cualquier página).
+alter table public.usuarios add column if not exists foto text check (foto is null or foto ~ '^https://');
 
 -- usuarios_favoritos: los 4 juegos favoritos de cada persona (tabla aparte porque son varios por persona)
 create table if not exists public.usuarios_favoritos (
@@ -397,7 +400,7 @@ create policy "usuarios: agregar el propio" on public.usuarios for insert to aut
 drop policy if exists "usuarios: cambiar el propio" on public.usuarios;
 create policy "usuarios: cambiar el propio" on public.usuarios for update to authenticated using (auth_id = auth.uid()) with check (auth_id = auth.uid());
 grant insert (auth_id, usuario, nombre, iniciales, sobre_mi, jugando_ahora, color, forma_de_entrar, invitado) on table public.usuarios to authenticated;
-grant update (usuario, nombre, iniciales, sobre_mi, jugando_ahora, color) on table public.usuarios to authenticated;
+grant update (usuario, nombre, iniciales, sobre_mi, jugando_ahora, color, foto) on table public.usuarios to authenticated;
 
 -- usuarios_favoritos: todos ven los favoritos; cada persona agrega y quita los suyos (Editar perfil, Detalle de juego, Perfil)
 drop policy if exists "usuarios_favoritos: ver" on public.usuarios_favoritos;
