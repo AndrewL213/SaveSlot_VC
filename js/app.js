@@ -1108,7 +1108,7 @@ function prepararEncabezado() {
 
   var usuario = buscarPorId('usuarios', sesion.user);
   var nivel = leerMemoria('profile', {}).level || (usuario && usuario.nivel) || 1;
-  var avisos = datosDe('notificaciones').filter(function (n) { return n.usuario === sesion.user; });
+  var avisos = avisosDePrecio().concat(datosDe('notificaciones').filter(function (n) { return n.usuario === sesion.user; }));
   var solicitudes = datosDe('usuarios').filter(function (u) { return relacionCon(u.usuario) === 'solicitud recibida'; });
   var cantidad = avisos.length + (solicitudes.length ? 1 : 0);
 
@@ -1154,6 +1154,63 @@ function prepararEncabezado() {
     enlaceCuenta.href = rutaPagina('perfil.html');
     enlaceCuenta.querySelector('[data-texto]').textContent = 'Perfil';
   }
+}
+
+/* ---------- Aviso de baja de precio (lista de deseos de Steam) ----------
+   Cada 6 horas, en cualquier página y con Steam vinculado, se vuelve a pedir la lista de deseos.
+   Si un juego entra en oferta (o su descuento sube) se avisa con un mensaje y queda en Notificaciones
+   durante 7 días. "ss.steamPreciosAvisados" guarda el descuento ya avisado de cada juego:
+   si la oferta termina se borra, para volver a avisar en la próxima. */
+var CADA_CUANTO_PRECIOS = 6 * 60 * 60 * 1000;
+var DIAS_AVISO_PRECIO = 7;
+
+// Los avisos de precio todavía vigentes, con la forma de una notificación
+function avisosDePrecio() {
+  var limite = Date.now() - DIAS_AVISO_PRECIO * 24 * 60 * 60 * 1000;
+  return (leerMemoria('avisosPrecio', []) || []).filter(function (n) { return new Date(n.fecha).getTime() >= limite; });
+}
+
+// Compara la lista nueva con lo ya avisado. Devuelve los avisos nuevos (y los guarda).
+function anotarBajasDePrecio(juegos) {
+  var avisados = leerMemoria('steamPreciosAvisados', {}) || {};
+  var nuevos = [];
+  var siguen = {};
+  juegos.forEach(function (g) {
+    var descuento = Number(g.discount_pct) || 0;
+    if (descuento <= 0) return; // sin oferta: se olvida lo avisado
+    siguen[g.appid] = Math.max(descuento, avisados[g.appid] || 0);
+    if (descuento > (avisados[g.appid] || 0)) {
+      nuevos.push({
+        id: 'precio-' + g.appid + '-' + descuento, appid: g.appid, tipo: 'baja-precio', fecha: hoy(), enlace: 'perfil.html#deseos',
+        texto: g.name + ' bajó de precio en Steam: -' + descuento + '%' + (g.price ? ', ahora ' + g.price : '') + '.'
+      });
+    }
+  });
+  guardarMemoria('steamPreciosAvisados', siguen);
+  if (nuevos.length) {
+    // un solo aviso por juego: el nuevo reemplaza al anterior
+    var juegosNuevos = nuevos.map(function (n) { return n.appid; });
+    guardarMemoria('avisosPrecio', nuevos.concat(avisosDePrecio().filter(function (n) { return juegosNuevos.indexOf(n.appid) === -1; })).slice(0, 20));
+  }
+  return nuevos;
+}
+
+// Revisa la lista de deseos de Steam si ya pasó el tiempo (o si "ahora" es true)
+function revisarBajasDePrecio(ahora) {
+  var perfil = leerMemoria('profile', {}) || {};
+  if (!obtenerSesion() || !(perfil.accounts || {}).Steam) return Promise.resolve([]);
+  if (!ahora && Date.now() - (leerMemoria('steamPreciosRevisados', 0) || 0) < CADA_CUANTO_PRECIOS) return Promise.resolve([]);
+  return pedirSteam('wishlist').then(function (datos) {
+    guardarMemoria('steamDeseos', datos);
+    guardarMemoria('steamPreciosRevisados', Date.now());
+    var nuevos = anotarBajasDePrecio(datos.games || []);
+    if (nuevos.length) {
+      prepararEncabezado(); // la campana cuenta los avisos nuevos
+      mostrarAviso(nuevos.length === 1 ? nuevos[0].texto : nuevos.length + ' juegos de tu lista de deseos bajaron de precio',
+        { texto: 'Ver', alTocar: function () { location.href = rutaPagina('perfil.html') + '#deseos'; } });
+    }
+    return nuevos;
+  }).catch(function () { return []; }); // lista privada o sin sesión de Steam: no se avisa
 }
 
 // Cierra la sesión (la de SaveSlot y la de Steam/Supabase) y vuelve al inicio
@@ -3544,10 +3601,7 @@ function pantallaPerfil() {
   }
   dibujarDeseos();
   if ((perfil.accounts || {}).Steam) {
-    pedirSteam('wishlist').then(function (datos) {
-      guardarMemoria('steamDeseos', datos);
-      dibujarDeseos();
-    }).catch(function () { /* lista de Steam privada o sin sesión: solo la de SaveSlot */ });
+    revisarBajasDePrecio(true).then(dibujarDeseos);
   }
   cajaDeseos.addEventListener('click', function (e) {
     var boton = e.target.closest('[data-quitar]');
@@ -4651,6 +4705,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     prepararPie();
     if (pantalla) await pantalla();
     if (aviso) mostrarAviso(aviso);
+    else if (!esError && nombre !== 'perfil') revisarBajasDePrecio(false);
   } catch (error) {
     console.error('No se pudo mostrar la pantalla ' + nombre + ':', error);
     if (cargando) cargando.remove();
