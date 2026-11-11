@@ -1148,7 +1148,8 @@ var RELACIONES = { friend: 'amigos', 'in': 'solicitud recibida', out: 'solicitud
 function relacionCon(usuario) {
   var sesion = obtenerSesion();
   if (!sesion || usuario === sesion.user) return 'ninguna';
-  var cambios = leerMemoria('friends', {});
+  // Cuenta real: lo que dice la base. Invitado: lo que cambió en este navegador.
+  var cambios = MI_FILA ? {} : leerMemoria('friends', {});
   if (cambios[usuario]) return RELACIONES[cambios[usuario]] || 'ninguna';
   var dato = datosDe('amigos').find(function (a) { return a.usuario === sesion.user && a.amigo === usuario; });
   return dato ? dato.estado : 'ninguna';
@@ -1162,6 +1163,51 @@ function cambiarRelacion(usuario, codigo) {
 
 function sonAmigos(usuario) {
   return relacionCon(usuario) === 'amigos';
+}
+
+// La fila de la tabla amigos entre la cuenta propia y otra persona (id numérico de usuarios), o null
+function filaDeAmistad(idOtro) {
+  if (!MI_FILA) return null;
+  return (FILAS.amigos || []).find(function (a) {
+    return (a.usuario_id === MI_FILA.id && a.amigo_id === idOtro) || (a.usuario_id === idOtro && a.amigo_id === MI_FILA.id);
+  }) || null;
+}
+
+// Cambia la amistad con una persona: 'agregar', 'aceptar', 'rechazar', 'cancelar' o 'eliminar'.
+// Cuenta real: en la base (una fila por pareja). Enviar agrega la fila "pendiente"; aceptar la cambia a
+// "aceptada" por su id (la base suma +10 XP); rechazar, cancelar y eliminar la borran por su id.
+// Si quien recibe "agregar" ya me había enviado una solicitud, se acepta. Invitado: en este navegador.
+// Devuelve la acción que se hizo de verdad.
+async function cambiarAmistad(usuario, accion) {
+  if (!MI_FILA) {
+    cambiarRelacion(usuario, { agregar: 'out', aceptar: 'friend', rechazar: 'none', cancelar: 'none', eliminar: 'none' }[accion]);
+    return accion;
+  }
+  var otra = datosDe('usuarios').find(function (u) { return u.usuario === usuario; });
+  if (!otra) throw new Error('No encontramos a @' + usuario);
+  var fila = filaDeAmistad(otra.id_base);
+  if (accion === 'agregar') {
+    if (fila && fila.estado === 'pendiente' && fila.usuario_id === otra.id_base) {
+      accion = 'aceptar'; // ya me la había enviado
+    } else {
+      if (fila) return 'agregar'; // ya existe (amigos o solicitud enviada)
+      var nueva = (await guardarDatos('amigos', { usuario_id: MI_FILA.id, amigo_id: otra.id_base, estado: 'pendiente' }))[0];
+      FILAS.amigos = (FILAS.amigos || []).concat(nueva);
+      DATOS_ARMADOS = {};
+      return 'agregar';
+    }
+  }
+  if (!fila) return accion;
+  if (accion === 'aceptar') {
+    var aceptada = await actualizarDatos('amigos', fila.id, { estado: 'aceptada' });
+    FILAS.amigos = FILAS.amigos.map(function (a) { return a.id === fila.id ? aceptada : a; });
+    await traerMiXp().catch(function () { /* el XP se verá al recargar */ });
+  } else {
+    await eliminarDatos('amigos', fila.id);
+    FILAS.amigos = FILAS.amigos.filter(function (a) { return a.id !== fila.id; });
+  }
+  DATOS_ARMADOS = {};
+  return accion;
 }
 
 /* ---------- Reseñas propias y comentarios (hasta conectar Supabase) ----------
@@ -3315,9 +3361,16 @@ async function pantallaResena() {
     (relacion === 'enviada' ? '<span><span class="etiqueta etiqueta--contorno">Solicitud enviada</span></span>' : '') +
     (relacion === 'ninguna' && autor.nivel ? '<span><button class="boton boton--secundario boton--sm" type="button" id="agregar-amigo">+ Agregar amigo</button></span>' : '');
   var botonAmigo = document.getElementById('agregar-amigo');
-  if (botonAmigo) botonAmigo.addEventListener('click', function () {
+  if (botonAmigo) botonAmigo.addEventListener('click', async function () {
     if (!obtenerSesion()) { pedirCuenta('agregar amigos'); return; }
-    cambiarRelacion(autor.usuario, 'out');
+    botonAmigo.disabled = true;
+    try {
+      await cambiarAmistad(autor.usuario, 'agregar');
+    } catch (error) {
+      botonAmigo.disabled = false;
+      mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+      return;
+    }
     botonAmigo.outerHTML = '<span class="etiqueta etiqueta--contorno">Solicitud enviada</span>';
     mostrarAviso('Solicitud enviada a ' + autor.nombre);
   });
@@ -5170,7 +5223,7 @@ function pantallaAmigos() {
   campoBuscar.addEventListener('input', function () { texto = campoBuscar.value.trim().toLowerCase().replace(/^@/, ''); mostrar(); });
 
   // Acciones de las tarjetas (con deshacer cuando se pierde algo)
-  lista.addEventListener('click', function (e) {
+  lista.addEventListener('click', async function (e) {
     if (e.target.closest('#limpiar-amigos')) { texto = ''; campoBuscar.value = ''; mostrar(); return; }
     var boton = e.target.closest('button');
     if (!boton) return;
@@ -5180,6 +5233,31 @@ function pantallaAmigos() {
     var antes = ({ amigos: 'friend', 'solicitud recibida': 'in', 'solicitud enviada': 'out', ninguna: 'none' })[relacionCon(usuario)];
     var deshacer = { texto: 'Deshacer', alTocar: function () { cambiarRelacion(usuario, antes); mostrar(); } };
     if (boton.dataset.mensaje) { mostrarAviso('Los mensajes directos llegarán en una próxima versión'); return; }
+    if (MI_FILA) {
+      // Cuenta real: en la base. Eliminar pide confirmación (en la base no se puede deshacer).
+      var accion = boton.dataset.eliminarAmigo ? 'eliminar' : boton.dataset.aceptar ? 'aceptar' : boton.dataset.rechazar ? 'rechazar' : boton.dataset.agregar ? 'agregar' : 'cancelar';
+      var textos = { eliminar: persona.nombre + ' ya no está en tus amigos', aceptar: 'Ahora eres amigo de ' + persona.nombre + ' · +10 XP', rechazar: 'Solicitud rechazada', agregar: 'Solicitud enviada a ' + persona.nombre, cancelar: 'Solicitud cancelada' };
+      var hacer = async function () {
+        boton.disabled = true;
+        try {
+          var hecha = await cambiarAmistad(usuario, accion);
+          mostrarAviso(textos[hecha], hecha === 'agregar' ? { texto: 'Deshacer', alTocar: async function () {
+            try { await cambiarAmistad(usuario, 'cancelar'); } catch (error) { mostrarAviso('No pudimos guardar. Intenta de nuevo.'); }
+            mostrar();
+          } } : null);
+        } catch (error) {
+          mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+        }
+        mostrar();
+      };
+      if (accion === 'eliminar') {
+        abrirModal({ titulo: '¿Eliminar a ' + persona.nombre + ' de tus amigos?', texto: 'Para volver a ser amigos, uno de los dos tendrá que enviar otra solicitud.',
+          acciones: [{ texto: 'Cancelar' }, { texto: 'Eliminar', peligro: true, alTocar: hacer }] });
+      } else {
+        await hacer();
+      }
+      return;
+    }
     if (boton.dataset.eliminarAmigo) { cambiarRelacion(usuario, 'none'); mostrarAviso(persona.nombre + ' ya no está en tus amigos', deshacer); }
     if (boton.dataset.aceptar) { cambiarRelacion(usuario, 'friend'); sumarXp(10); mostrarAviso('Ahora eres amigo de ' + persona.nombre + ' · +10 XP'); }
     if (boton.dataset.rechazar) { cambiarRelacion(usuario, 'none'); mostrarAviso('Solicitud rechazada', deshacer); }
@@ -5191,7 +5269,7 @@ function pantallaAmigos() {
   // Agregar amigo por @usuario
   var campoUsuario = document.getElementById('usuario-amigo');
   var error = document.getElementById('error-agregar');
-  document.getElementById('formulario-agregar').addEventListener('submit', function (e) {
+  document.getElementById('formulario-agregar').addEventListener('submit', async function (e) {
     e.preventDefault();
     var valor = campoUsuario.value.trim().replace(/^@/, '').toLowerCase();
     var persona = personas.find(function (p) { return p.usuario.toLowerCase() === valor; });
@@ -5200,12 +5278,26 @@ function pantallaAmigos() {
         : (!persona ? 'No encontramos a @' + valor + '. Revisa que esté bien escrito; también puedes ver la pestaña Sugerencias.'
           : (relacionCon(persona.usuario) === 'amigos' ? '@' + persona.usuario + ' ya está en tus amigos.' : '')));
     if (!marcarError(campoUsuario, error, mensaje)) { campoUsuario.focus(); return; }
-    if (relacionCon(persona.usuario) === 'solicitud recibida') {
-      cambiarRelacion(persona.usuario, 'friend');
+    var recibida = relacionCon(persona.usuario) === 'solicitud recibida';
+    if (MI_FILA) {
+      // Cuenta real: en la base (si ya te había enviado una, se acepta)
+      var botonAgregar = e.target.querySelector('button[type="submit"]');
+      if (botonAgregar) botonAgregar.disabled = true;
+      try {
+        await cambiarAmistad(persona.usuario, recibida ? 'aceptar' : 'agregar');
+      } catch (falla) {
+        mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+        return;
+      } finally {
+        if (botonAgregar) botonAgregar.disabled = false;
+      }
+    }
+    if (recibida) {
+      if (!MI_FILA) cambiarRelacion(persona.usuario, 'friend');
       mostrarAviso('Tenía una solicitud tuya pendiente: ahora son amigos');
       pestana = 'todos';
     } else {
-      cambiarRelacion(persona.usuario, 'out');
+      if (!MI_FILA) cambiarRelacion(persona.usuario, 'out');
       mostrarAviso('Solicitud enviada a ' + persona.nombre);
       pestana = 'sugerencias';
     }
@@ -5270,17 +5362,41 @@ async function pantallaUsuario() {
     })[relacionCon(persona.usuario)] + compartir;
   }
   dibujarAcciones();
-  acciones.addEventListener('click', function (e) {
+  acciones.addEventListener('click', async function (e) {
     var boton = e.target.closest('[data-accion]');
     if (!boton) return;
     var accion = boton.dataset.accion;
     if (accion === 'compartir') { copiarEnlace(location.href, 'Enlace del perfil copiado'); return; }
     if (!obtenerSesion()) { pedirCuenta('agregar amigos'); return; }
     if (accion === 'mensaje') { mostrarAviso('Los mensajes directos llegarán en una próxima versión'); return; }
+    var mensajes = { eliminar: 'Eliminado de tus amigos', aceptar: 'Ahora son amigos', rechazar: 'Solicitud rechazada', cancelar: 'Solicitud cancelada', agregar: 'Solicitud enviada' };
+    if (MI_FILA) {
+      // Cuenta real: en la base. Eliminar pide confirmación (en la base no se puede deshacer).
+      var hacer = async function () {
+        boton.disabled = true;
+        try {
+          var hecha = await cambiarAmistad(persona.usuario, accion);
+          dibujarAcciones();
+          mostrarAviso(mensajes[hecha], hecha === 'agregar' ? { texto: 'Deshacer', alTocar: async function () {
+            try { await cambiarAmistad(persona.usuario, 'cancelar'); } catch (error) { mostrarAviso('No pudimos guardar. Intenta de nuevo.'); }
+            dibujarAcciones();
+          } } : null);
+        } catch (error) {
+          boton.disabled = false;
+          mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+        }
+      };
+      if (accion === 'eliminar') {
+        abrirModal({ titulo: '¿Eliminar a ' + persona.nombre + ' de tus amigos?', texto: 'Para volver a ser amigos, uno de los dos tendrá que enviar otra solicitud.',
+          acciones: [{ texto: 'Cancelar' }, { texto: 'Eliminar', peligro: true, alTocar: hacer }] });
+      } else {
+        await hacer();
+      }
+      return;
+    }
     var antes = ({ amigos: 'friend', 'solicitud recibida': 'in', 'solicitud enviada': 'out', ninguna: 'none' })[relacionCon(persona.usuario)];
     cambiarRelacion(persona.usuario, { eliminar: 'none', aceptar: 'friend', rechazar: 'none', cancelar: 'none', agregar: 'out' }[accion]);
     dibujarAcciones();
-    var mensajes = { eliminar: 'Eliminado de tus amigos', aceptar: 'Ahora son amigos', rechazar: 'Solicitud rechazada', cancelar: 'Solicitud cancelada', agregar: 'Solicitud enviada' };
     mostrarAviso(mensajes[accion], accion === 'eliminar' || accion === 'agregar'
       ? { texto: 'Deshacer', alTocar: function () { cambiarRelacion(persona.usuario, antes); dibujarAcciones(); } }
       : null);

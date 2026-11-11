@@ -900,7 +900,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   5. Agregar amigo por @usuario y copiar tu usuario
   6. Actividad de amigos
 - **Qué funciona de verdad:**
-  - Amigos, solicitudes (enviar, aceptar, rechazar, cancelar), eliminar y sugerencias: Real (Supabase)
+  - Amigos, solicitudes (enviar, aceptar, rechazar, cancelar), eliminar y sugerencias: Real (Supabase: tabla **amigos**, una fila por pareja. Enviar agrega la fila "pendiente"; aceptar la cambia a "aceptada" por su id y la base suma +10 XP; rechazar, cancelar y eliminar la borran por su id. Agregar por @ a quien ya te envió una solicitud la acepta. Eliminar pide confirmación porque en la base no se puede deshacer; deshacer "enviar" cancela la solicitud). Como invitado, en el navegador
   - Estado "en línea": Real (presencia de Supabase)
   - Estado "jugando": Real (sale de "jugando ahora" en Supabase)
   - Actividad de amigos: Real (Supabase)
@@ -925,7 +925,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   7. Actividad, sobre y amigos en común
 - **Qué funciona de verdad:**
   - Perfil, favoritos, reseñas, juegos en común, actividad y amigos en común: Real (Supabase)
-  - Agregar o eliminar amigo: Real (Supabase)
+  - Agregar o eliminar amigo: Real (Supabase, igual que en Amigos: eliminar pide confirmación)
   - Compartir (copiar enlace): Simulado
   - Mensaje: Después
 - **Está lista cuando:**
