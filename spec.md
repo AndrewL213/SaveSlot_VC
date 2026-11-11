@@ -705,17 +705,17 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   4. Explorar sin cuenta
   5. Google, Discord, Twitch y Steam (cuatro botones con su logo, debajo del botón principal: primero va la cuenta de SaveSlot)
 - **Qué funciona de verdad:**
-  - Entrar con correo (cuenta de SaveSlot): Real (Supabase)
+  - Entrar con correo (cuenta de SaveSlot): Real (Supabase Auth, signInWithPassword). Si la contraseña no coincide o falta confirmar el correo, lo dice junto al campo.
   - Cuenta de demostración: Real (sesión de invitado de Supabase, sin contraseña, con los datos de ejemplo cargados)
   - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). Vuelve a la pantalla donde estaba, con Steam vinculada.
-  - Google, Discord y Twitch: Real (proveedores de Supabase Auth). Mientras no estén conectados, cada botón lleva a la página de error con la variante «acceso» y el nombre del servicio.
+  - Google, Discord y Twitch: Real (proveedores de Supabase Auth, signInWithOAuth). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
   - Con el correo mal escrito o sin contraseña, muestra el error junto al campo.
   - Al entrar, el encabezado muestra al usuario en vez de los botones de acceso.
   - La cuenta de demostración entra sin pedir datos y muestra el perfil de ejemplo.
-  - Cada botón de servicio lleva a entrar con ese servicio (sin Supabase: a la página de error con su nombre).
+  - Cada botón de servicio lleva a entrar con ese servicio (si falla: a la página de error con su nombre).
 
 ### 17. Crear cuenta
 - **Archivo de diseño:** disenos/registro.html (paso 1 de 3)
@@ -727,17 +727,17 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   4. Crear cuenta
   5. Google, Discord, Twitch y Steam (cuatro botones con su logo, debajo del botón principal: primero va la cuenta de SaveSlot)
 - **Qué funciona de verdad:**
-  - Crear cuenta con correo (cuenta de SaveSlot): Real (Supabase)
+  - Crear cuenta con correo (cuenta de SaveSlot): Real (Supabase Auth, signUp). Supabase pide confirmar el correo: después de crearla, la pantalla dice "Te enviamos un correo a…" y el enlace del correo lleva a Editar perfil con "¡Cuenta creada!". El @ y el nombre quedan en la cuenta y la fila de **usuarios** se crea al confirmar.
   - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). La cuenta nace con Steam vinculada y un @ sacado de su nombre de Steam, que puede cambiar en Editar perfil.
-  - Google, Discord y Twitch: Real (proveedores de Supabase Auth). Mientras no estén conectados, cada botón lleva a la página de error con la variante «acceso» y el nombre del servicio.
-  - Quien entra por primera vez con un servicio elige su @usuario y sigue a Editar perfil (pasos 2 y 3), igual que con el correo.
+  - Google, Discord y Twitch: Real (proveedores de Supabase Auth, signInWithOAuth). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
+  - Quien entra por primera vez con Google, Discord o Twitch recibe un @ libre sacado de su nombre en ese servicio (si está ocupado, con números), se crea su fila en **usuarios** y sigue a Editar perfil (pasos 2 y 3) con "¡Cuenta creada!", donde puede cambiar el @. Si ya tenía cuenta, entra con su perfil de la base aunque use otro navegador.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
   - Cada campo vacío o inválido muestra su error.
   - El medidor cambia según la contraseña.
-  - Cada botón de servicio lleva a crear la cuenta con ese servicio (sin Supabase: a la página de error con su nombre).
-  - Al crear la cuenta lleva a Editar perfil con el aviso "¡Cuenta creada!".
+  - Cada botón de servicio lleva a crear la cuenta con ese servicio (si falla: a la página de error con su nombre).
+  - Al crear la cuenta con correo, avisa que revise su correo; al confirmarlo (o al entrar por primera vez con un servicio) lleva a Editar perfil con el aviso "¡Cuenta creada!".
 
 ### 18. Perfil
 - **Archivo de diseño:** disenos/perfil.html (y la ventana "Cómo ganar XP")

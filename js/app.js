@@ -259,6 +259,89 @@ function anotarCuentaSteam(steam) {
   }).catch(function () {});
 }
 
+/* ---------- Cuentas de Supabase (correo, invitado, Google, Discord y Twitch) ----------
+   Supabase Auth guarda la cuenta (correo, contraseña o el servicio con que entró). La app
+   la conoce por su fila en la tabla usuarios (auth_id = id de la cuenta). Steam tiene su
+   propio camino (api/steam/auth.js y terminarVueltaDeSteam, arriba). */
+
+var SERVICIOS_SUPABASE = { Google: 'google', Discord: 'discord', Twitch: 'twitch' };
+var FORMA_DE_ENTRAR = { email: 'correo', google: 'google', discord: 'discord', twitch: 'twitch' };
+
+// Dirección completa de una página de la app (para que Supabase vuelva a ella)
+function direccionCompleta(ruta) {
+  return new URL(ruta, location.href).href;
+}
+
+// Un @ libre a partir de un nombre ("Ana María" → "anamaria"); si no sirve, se le agregan números
+function usuarioPropuesto(nombre, semilla) {
+  var base = String(nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_.]/g, '').slice(0, 15);
+  if (base.length < 3) base = 'jugador';
+  if (usuarioLibre(base)) return base;
+  var numeros = String(semilla || '').replace(/[^0-9]/g, '') + String(Date.now());
+  for (var i = 0; i + 4 <= numeros.length; i++) {
+    var intento = base + numeros.slice(i, i + 4);
+    if (usuarioLibre(intento)) return intento;
+  }
+  return base + String(Date.now()).slice(-4);
+}
+
+// El perfil del navegador a partir de la fila de usuarios (para quien entra desde un navegador nuevo)
+function perfilDesdeFila(persona) {
+  return {
+    user: persona.usuario, xp: persona.xp || 0, level: persona.nivel || 1, bio: persona.sobre_mi || '', since: persona.miembro_desde || hoy(),
+    favorites: persona.favoritos || [], wishlist: persona.lista_deseos || [], genres: persona.generos_favoritos || [], playing: persona.jugando_ahora || null,
+    accounts: { Steam: null, PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: []
+  };
+}
+
+// Si Supabase tiene una sesión que la app todavía no conoce (al volver de Google, Discord o Twitch,
+// o del correo de confirmación), la abre en la app. La primera vez crea la fila en usuarios.
+// Devuelve a dónde ir después ("¡Cuenta creada!" en Editar perfil) o null.
+async function sincronizarSesionSupabase() {
+  if (!clienteSupabase) return null;
+  var respuesta = await clienteSupabase.auth.getSession();
+  var cuenta = respuesta.data && respuesta.data.session && respuesta.data.session.user;
+  if (!cuenta || cuenta.is_anonymous) return null;                      // sin sesión, o la de demostración
+  if (cuenta.app_metadata && cuenta.app_metadata.steam_id) return null; // Steam tiene su propio camino
+  var local = obtenerSesion();
+  if (local && local.auth_id === cuenta.id) return null;                // ya la conoce
+
+  var fila = await obtenerUno('usuarios', cuenta.id, 'auth_id');
+  var nueva = !fila;
+  if (nueva) {
+    var meta = cuenta.user_metadata || {};
+    var nombre = meta.nombre || meta.full_name || meta.name || meta.preferred_username || meta.user_name || String(cuenta.email || '').split('@')[0] || 'Jugador';
+    var usuario = meta.usuario && usuarioLibre(meta.usuario) ? meta.usuario : usuarioPropuesto(meta.usuario || nombre, cuenta.id);
+    var creada = await clienteSupabase.from('usuarios').insert({
+      auth_id: cuenta.id, usuario: usuario, nombre: nombre, iniciales: inicialesDe(nombre),
+      forma_de_entrar: FORMA_DE_ENTRAR[(cuenta.app_metadata || {}).provider] || 'correo'
+    }).select().single();
+    if (creada.error) { console.error('No se pudo crear el perfil en usuarios:', creada.error); throw creada.error; }
+    fila = creada.data;
+    FILAS.usuarios = (FILAS.usuarios || []).concat(fila); // para que las pantallas ya la vean
+    DATOS_ARMADOS = {};
+  }
+  var persona = TRADUCIR.usuarios([fila])[0];
+  iniciarSesion({ name: persona.nombre, user: persona.usuario, initials: persona.iniciales, email: cuenta.email || '', auth_id: cuenta.id },
+    { profile: perfilDesdeFila(persona), myReviews: [], diary: [], joined: [], inscripciones: [], friends: {}, chatsMatchplay: [] });
+  return nueva ? rutaPagina('editar-perfil.html') + '?nuevo=1' : null;
+}
+
+// Botones de Google, Discord y Twitch: entran con ese servicio y vuelven a "destino".
+// Si algo falla, siguen a su dirección del HTML (la página de error con el nombre del servicio).
+function activarBotonesServicios(destino) {
+  Object.keys(SERVICIOS_SUPABASE).forEach(function (nombre) {
+    var boton = document.querySelector('a[href*="servicio=' + nombre + '"]');
+    if (!boton || !clienteSupabase) return;
+    boton.addEventListener('click', function (e) {
+      e.preventDefault();
+      clienteSupabase.auth.signInWithOAuth({ provider: SERVICIOS_SUPABASE[nombre], options: { redirectTo: direccionCompleta(destino) } })
+        .then(function (r) { if (r.error) throw r.error; })
+        .catch(function (error) { console.error('No se pudo entrar con ' + nombre + ':', error); location.href = boton.href; });
+    });
+  });
+}
+
 // Botón "Steam" de Iniciar sesión y Crear cuenta
 function activarBotonSteam() {
   var boton = document.querySelector('a[href*="servicio=Steam"]');
@@ -2972,33 +3055,64 @@ function pantallaEntrar() {
   if (obtenerSesion()) { location.replace(destinoVolver()); return; }
   document.getElementById('ir-a-crear').href = 'crear-cuenta.html' + location.search;
   activarBotonSteam();
+  activarBotonesServicios(destinoVolver());
+  var formulario = document.getElementById('formulario-entrar');
+  var botonEntrar = formulario.querySelector('button[type="submit"]');
   var correo = document.getElementById('correo');
   var clave = document.getElementById('clave');
+  var errorCorreo = document.getElementById('error-correo');
+  var errorClave = document.getElementById('error-clave');
   activarOjo(document.getElementById('ver-clave'), clave);
 
-  document.getElementById('formulario-entrar').addEventListener('submit', function (e) {
+  formulario.addEventListener('submit', async function (e) {
     e.preventDefault();
-    var errorCorreo = document.getElementById('error-correo');
     var correoOk = marcarError(correo, errorCorreo, correoValido(correo.value.trim()) ? '' :
       (correo.value.trim() ? 'Al correo le falta algo. Ejemplo: samuel@correo.com' : 'Escribe tu correo.'));
-    var claveOk = marcarError(clave, document.getElementById('error-clave'), clave.value.length >= 8 ? '' : 'La contraseña tiene al menos 8 caracteres.');
+    var claveOk = marcarError(clave, errorClave, clave.value.length >= 8 ? '' : 'La contraseña tiene al menos 8 caracteres.');
     if (!correoOk) { correo.focus(); return; }
     if (!claveOk) { clave.focus(); return; }
-    var cuenta = leerMemoria('accounts', {})[correo.value.trim().toLowerCase()];
-    if (!cuenta) {
-      marcarError(correo, errorCorreo, 'x');
-      errorCorreo.innerHTML = 'No hay una cuenta con ' + escapar(correo.value.trim()) + '. Revisa si está bien escrito o <a href="crear-cuenta.html' + escapar(location.search) + '">crea una cuenta</a>.';
-      correo.focus();
-      return;
+    botonEntrar.disabled = true;
+    botonEntrar.textContent = 'Entrando…';
+    try {
+      // Supabase revisa el correo y la contraseña
+      var r = await clienteSupabase.auth.signInWithPassword({ email: correo.value.trim().toLowerCase(), password: clave.value });
+      if (r.error) {
+        if (/not confirmed/i.test(r.error.message)) {
+          marcarError(correo, errorCorreo, 'Primero confirma tu correo: abre el enlace que te enviamos.');
+          correo.focus();
+        } else if (/invalid login credentials/i.test(r.error.message)) {
+          marcarError(clave, errorClave, 'El correo o la contraseña no coinciden. Revísalos o crea una cuenta.');
+          clave.focus();
+        } else {
+          throw r.error;
+        }
+        return;
+      }
+      var siguiente = await sincronizarSesionSupabase();
+      location.href = siguiente || destinoVolver();
+    } catch (error) {
+      console.error('No se pudo iniciar sesión:', error);
+      marcarError(clave, errorClave, 'No pudimos entrar. Intenta de nuevo en un momento.');
+    } finally {
+      botonEntrar.disabled = false;
+      botonEntrar.textContent = 'Entrar';
     }
-    iniciarSesion({ name: cuenta.name, user: cuenta.user, initials: inicialesDe(cuenta.name), email: correo.value.trim().toLowerCase() });
-    location.href = destinoVolver();
   });
 
-  // Cuenta de demostración: entra sin pedir datos, con el perfil de ejemplo
-  document.getElementById('entrar-demo').addEventListener('click', function () {
-    iniciarSesion({ name: 'Samuel D Luq', user: 'samluq', initials: 'SL', email: 'demo@saveslot' });
-    location.href = destinoVolver();
+  // Cuenta de demostración: una sesión de invitado de Supabase, sin pedir datos, con el perfil de ejemplo
+  var botonDemo = document.getElementById('entrar-demo');
+  botonDemo.addEventListener('click', async function () {
+    botonDemo.disabled = true;
+    try {
+      var r = await clienteSupabase.auth.signInAnonymously();
+      if (r.error) throw r.error;
+      iniciarSesion({ name: 'Samuel D Luq', user: 'samluq', initials: 'SL', email: 'demo@saveslot', invitado: true });
+      location.href = destinoVolver();
+    } catch (error) {
+      console.error('No se pudo abrir la cuenta de demostración:', error);
+      mostrarAviso('No pudimos abrir la cuenta de demostración. Intenta de nuevo.');
+      botonDemo.disabled = false;
+    }
   });
 }
 
@@ -3007,6 +3121,8 @@ function pantallaRegistro() {
   if (obtenerSesion()) { location.replace('perfil.html'); return; }
   document.getElementById('ir-a-entrar').href = 'iniciar-sesion.html' + location.search;
   activarBotonSteam();
+  // Con Google, Discord o Twitch la cuenta se crea al volver; luego sigue a Editar perfil
+  activarBotonesServicios('editar-perfil.html?nuevo=1');
   var nombre = document.getElementById('nombre');
   var correo = document.getElementById('correo');
   var usuario = document.getElementById('usuario');
@@ -3032,7 +3148,7 @@ function pantallaRegistro() {
     usuario.classList.toggle('campo--error', !!valor && !libre);
   });
 
-  document.getElementById('formulario-registro').addEventListener('submit', function (e) {
+  document.getElementById('formulario-registro').addEventListener('submit', async function (e) {
     e.preventDefault();
     var valorUsuario = usuario.value.trim();
     var usuarioOk = usuarioLibre(valorUsuario);
@@ -3047,22 +3163,46 @@ function pantallaRegistro() {
     var primero = resultados.find(function (r) { return !r[1]; });
     if (primero) { primero[0].focus(); return; }
 
-    var cuentas = leerMemoria('accounts', {});
+    var formulario = document.getElementById('formulario-registro');
+    var botonCrear = formulario.querySelector('button[type="submit"]');
     var llave = correo.value.trim().toLowerCase();
-    if (cuentas[llave]) {
-      marcarError(correo, document.getElementById('error-correo'), 'Ya existe una cuenta con ese correo. Inicia sesión.');
-      correo.focus();
-      return;
+    botonCrear.disabled = true;
+    botonCrear.textContent = 'Creando tu cuenta…';
+    try {
+      // Supabase crea la cuenta y manda un correo para confirmarla. El @ y el nombre quedan en la cuenta:
+      // la fila de usuarios se crea al confirmar (sincronizarSesionSupabase). La contraseña solo la guarda Supabase.
+      var r = await clienteSupabase.auth.signUp({
+        email: llave, password: clave.value,
+        options: { data: { usuario: valorUsuario, nombre: nombre.value.trim() }, emailRedirectTo: direccionCompleta('editar-perfil.html?nuevo=1') }
+      });
+      if (r.error) {
+        if (/already registered|already exists/i.test(r.error.message)) {
+          marcarError(correo, document.getElementById('error-correo'), 'Ya existe una cuenta con ese correo. Inicia sesión.');
+          correo.focus();
+          return;
+        }
+        if (/password/i.test(r.error.message)) {
+          marcarError(clave, document.getElementById('error-clave'), 'Supabase no aceptó esa contraseña: prueba una más larga o con más variedad.');
+          clave.focus();
+          return;
+        }
+        throw r.error;
+      }
+      // Si el proyecto no pide confirmar el correo, la cuenta ya tiene sesión
+      if (r.data && r.data.session) {
+        location.href = (await sincronizarSesionSupabase()) || 'editar-perfil.html?nuevo=1';
+        return;
+      }
+      // Pide confirmar: se reemplaza el formulario por el aviso
+      formulario.innerHTML = '<div class="vacio" role="status"><b>Te enviamos un correo a ' + escapar(llave) + '</b>' +
+        '<span>Ábrelo y toca el enlace para activar tu cuenta. Después seguirás con tu perfil.</span>' +
+        '<a href="iniciar-sesion.html">Ya la confirmé: iniciar sesión</a></div>';
+    } catch (error) {
+      console.error('No se pudo crear la cuenta:', error);
+      marcarError(correo, document.getElementById('error-correo'), 'No pudimos crear la cuenta. Intenta de nuevo en un momento.');
+    } finally {
+      if (botonCrear.isConnected) { botonCrear.disabled = false; botonCrear.textContent = 'Crear cuenta'; }
     }
-    // La contraseña NO se guarda: la cuenta real la manejará Supabase.
-    cuentas[llave] = { name: nombre.value.trim(), user: valorUsuario };
-    guardarMemoria('accounts', cuentas);
-    iniciarSesion({ name: nombre.value.trim(), user: valorUsuario, initials: inicialesDe(nombre.value), email: llave }, {
-      profile: { user: valorUsuario, xp: 0, level: 1, bio: '', since: hoy(), favorites: [], wishlist: [], genres: [], playing: null,
-        accounts: { Steam: null, PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: [] },
-      myReviews: [], diary: [], joined: [], inscripciones: [], friends: {}, chatsMatchplay: []
-    });
-    location.href = 'editar-perfil.html?nuevo=1';
   });
 }
 
@@ -4502,6 +4642,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     } else {
       await cargarDatos(tablas);
     }
+    // Sesión de Supabase que la app todavía no conoce (vuelta de Google, Discord, Twitch o del correo)
+    var siguiente = esError ? null : await sincronizarSesionSupabase();
+    if (siguiente && direccionCompleta(siguiente) !== location.href) { location.replace(siguiente); return; }
     if (cargando) cargando.remove();
     prepararEncabezado();
     prepararFranja();
