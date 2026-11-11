@@ -22,10 +22,36 @@
    de Supabase y la cuenta queda vinculada en el perfil. */
 
 // Manda a la persona a Steam; al terminar vuelve a "destino" (una página de la app)
-function irASteam(destino) {
+function irASteam(destino, estado) {
   var vuelta = new URL(destino || location.href, location.href);
   vuelta.searchParams.set('steam', '1');
-  location.href = '/api/steam/auth?action=login&redirect_to=' + encodeURIComponent(vuelta.href);
+  location.href = '/api/steam/auth?action=login&redirect_to=' + encodeURIComponent(vuelta.href) +
+    (estado ? '&vincular=' + encodeURIComponent(estado) : '');
+}
+
+// Cuenta de Supabase "de verdad" (Google, Discord, Twitch o correo; no invitado ni solo-Steam), o null
+function cuentaSupabase() {
+  if (!clienteSupabase) return Promise.resolve(null);
+  return clienteSupabase.auth.getSession().then(function (r) {
+    var cuenta = r.data && r.data.session && r.data.session.user;
+    if (!cuenta || cuenta.is_anonymous || esCuentaSoloSteam(cuenta)) return null;
+    return r.data.session;
+  });
+}
+
+// Las cuentas creadas al entrar con Steam usan un correo interno (steam-<número>@saveslot.invalid)
+function esCuentaSoloSteam(cuenta) {
+  return /@saveslot\.invalid$/.test(String((cuenta && cuenta.email) || ''));
+}
+
+// Vincula Steam a la cuenta abierta (no crea otra): pide al servidor un permiso firmado y va a Steam
+function vincularSteam(destino) {
+  return cuentaSupabase().then(function (sesion) {
+    if (!sesion) { irASteam(destino); return; } // sin cuenta de verdad: Steam abre su propia cuenta
+    return fetch('/api/steam/auth?action=preparar', { method: 'POST', headers: { Authorization: 'Bearer ' + sesion.access_token } })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok || !d.estado) throw new Error(d.error || 'Sin permiso'); return d.estado; }); })
+      .then(function (estado) { irASteam(destino, estado); });
+  });
 }
 
 // Pide datos de Steam de la persona: 'profile', 'library', 'achievements' o 'stats' (+ appid)
@@ -57,17 +83,48 @@ function terminarVueltaDeSteam() {
   if (!params.get('steam')) return Promise.resolve(null);
   var token = params.get('token_hash');
   var fallo = params.get('error');
-  ['steam', 'token_hash', 'type', 'error'].forEach(function (p) { params.delete(p); });
+  var vinculada = params.get('vinculada');
+  ['steam', 'token_hash', 'type', 'error', 'vinculada'].forEach(function (p) { params.delete(p); });
   history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + location.hash);
+  if (fallo === 'steam_en_otra_cuenta') {
+    return Promise.resolve('Esa cuenta de Steam ya está en otra cuenta de SaveSlot. Entra con Steam, borra esa cuenta en Editar perfil y vuelve a vincularla aquí.');
+  }
+  if (vinculada && clienteSupabase) {
+    // Steam quedó guardada en esta misma cuenta: se refresca la sesión para que la traiga
+    return clienteSupabase.auth.refreshSession().then(function () { return pedirSteam('profile'); }).then(function (steam) {
+      var nombre = steam.personaname || 'Steam';
+      var yaEstaba = !!(leerPerfil().accounts || {}).Steam;
+      var perfil = yaEstaba ? leerPerfil() : sumarXp(XP_POR_CUENTA);
+      perfil.accounts = perfil.accounts || {};
+      perfil.accounts.Steam = nombre;
+      guardarMemoria('profile', perfil);
+      return 'Steam vinculada · ' + nombre + (yaEstaba ? '' : ' · +' + XP_POR_CUENTA + ' XP');
+    }).catch(function () { return 'No pudimos conectar con Steam. Inténtalo de nuevo.'; });
+  }
   if (fallo || !token || !clienteSupabase) return Promise.resolve('No pudimos conectar con Steam. Inténtalo de nuevo.');
 
   var metadatos = {};
+  var cuentaVinculada = false;
   return clienteSupabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' }).then(function (r) {
     if (r.error) throw r.error;
     metadatos = (r.data && r.data.user && r.data.user.user_metadata) || {};
+    // Steam vinculada a una cuenta de Google, Discord, Twitch o correo: se abre esa cuenta
+    cuentaVinculada = !esCuentaSoloSteam(r.data && r.data.user);
+    if (cuentaVinculada) {
+      var local = obtenerSesion();
+      if (local && local.auth_id !== r.data.user.id) guardarMemoria('session', null);
+      return cargarDatos(['usuarios']).then(sincronizarSesionSupabase).then(function () { return pedirSteam('profile'); });
+    }
     return pedirSteam('profile');
   }).then(function (steam) {
     var nombre = steam.personaname || 'Steam';
+    if (cuentaVinculada) {
+      var suyo = leerPerfil();
+      suyo.accounts = suyo.accounts || {};
+      suyo.accounts.Steam = nombre;
+      guardarMemoria('profile', suyo);
+      return 'Entraste con Steam · ' + nombre;
+    }
     if (!obtenerSesion()) {
       // Entró con Steam: su cuenta de SaveSlot nace con Steam vinculada
       // Su @: el que eligió antes (Supabase o este navegador); si es nueva, uno a partir de su nombre de Steam.
@@ -302,7 +359,7 @@ async function sincronizarSesionSupabase() {
   var respuesta = await clienteSupabase.auth.getSession();
   var cuenta = respuesta.data && respuesta.data.session && respuesta.data.session.user;
   if (!cuenta || cuenta.is_anonymous) return null;                      // sin sesión, o la de demostración
-  if (cuenta.app_metadata && cuenta.app_metadata.steam_id) return null; // Steam tiene su propio camino
+  if (esCuentaSoloSteam(cuenta)) return null;                          // la cuenta creada al entrar con Steam tiene su propio camino
   var local = obtenerSesion();
   if (local && local.auth_id === cuenta.id) return null;                // ya la conoce
 
@@ -3814,10 +3871,14 @@ function pantallaEditar() {
       } });
     }
     if (vincular && vincular.dataset.vincular === 'Steam' && clienteSupabase) {
-      // Steam es real: se va a Steam y vuelve aquí ya vinculada
+      // Steam es real: se va a Steam y vuelve aquí ya vinculada (a esta misma cuenta)
       vincular.disabled = true;
       vincular.textContent = 'Conectando…';
-      irASteam(location.href);
+      vincularSteam(location.href).catch(function () {
+        vincular.disabled = false;
+        vincular.textContent = 'Vincular';
+        mostrarAviso('No pudimos conectar con Steam. Inténtalo de nuevo.');
+      });
       return;
     }
     if (vincular) {
@@ -3834,6 +3895,8 @@ function pantallaEditar() {
     }
   });
   dibujarCuentas();
+  activarFormasDeEntrar(document.getElementById('formas-entrar'));
+  document.getElementById('borrar-cuenta').addEventListener('click', preguntarBorrarCuenta);
 
   // Guardar: se ve en el Perfil
   document.getElementById('formulario-perfil').addEventListener('submit', function (e) {
@@ -3853,13 +3916,140 @@ function pantallaEditar() {
     guardarMemoria('profile', perfil);
     // La foto también se guarda en la cuenta de Supabase (user_metadata.foto), para verla en otros navegadores.
     // Las fotos guardadas solo en el navegador (data:) no se suben a la cuenta.
-    if (perfil.accounts.Steam && clienteSupabase && !/^data:/.test(perfil.foto || '')) {
-      clienteSupabase.auth.updateUser({ data: { foto: perfil.foto || null } }).catch(function () {});
+    if (clienteSupabase && !/^data:/.test(perfil.foto || '')) {
+      clienteSupabase.auth.getSession().then(function (r) {
+        var cuenta = r.data && r.data.session && r.data.session.user;
+        if (cuenta && !cuenta.is_anonymous) return clienteSupabase.auth.updateUser({ data: { foto: perfil.foto || null } });
+      }).catch(function () {});
     }
-    if (!perfil.accounts.Steam && clienteSupabase) clienteSupabase.auth.signOut();
     guardarMemoria('session', Object.assign({}, sesion, { user: nuevoUsuario, name: campoNombre.value.trim(), initials: inicialesDe(campoNombre.value) }));
     mostrarAviso('Cambios guardados');
     setTimeout(function () { location.href = 'perfil.html'; }, 600);
+  });
+}
+
+// Formas de entrar (Editar perfil): Google, Discord y Twitch vinculados a la misma cuenta de Supabase.
+// Vincular usa linkIdentity (Supabase → Authentication → "Allow manual linking" activado): va al servicio
+// y vuelve aquí con ?vinculo=<servicio>. Si esa cuenta del servicio ya es de otra cuenta de SaveSlot,
+// Supabase vuelve con un error: hay que entrar con ella, borrarla y vincularla de nuevo aquí.
+function activarFormasDeEntrar(caja) {
+  if (!caja) return;
+  var params = new URLSearchParams(location.search);
+  var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+  var vuelta = params.get('vinculo');
+  var error = params.get('error_code') || hash.get('error_code') || params.get('error') || hash.get('error');
+  if (vuelta) {
+    params.delete('vinculo');
+    ['error', 'error_code', 'error_description'].forEach(function (p) { params.delete(p); });
+    history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + (error ? '' : location.hash));
+    mostrarAviso(error
+      ? (/already|exists/i.test(error + (params.get('error_description') || hash.get('error_description') || ''))
+        ? 'Esa cuenta de ' + vuelta + ' ya está en otra cuenta de SaveSlot. Entra con ella, bórrala y vuelve a vincularla aquí.'
+        : 'No pudimos vincular ' + vuelta + '. Inténtalo de nuevo.')
+      : vuelta + ' vinculada: ya puedes entrar con ella.');
+  }
+
+  var identidades = [];
+  function dibujar() {
+    caja.innerHTML = Object.keys(SERVICIOS_SUPABASE).map(function (nombre) {
+      var id = identidades.find(function (i) { return i.provider === SERVICIOS_SUPABASE[nombre]; });
+      var datos = (id && id.identity_data) || {};
+      var quien = datos.email || datos.full_name || datos.name || datos.preferred_username || '';
+      return '<div class="fila fila--comparacion"><span><b>' + nombre + '</b></span>' +
+        (id
+          ? '<span class="estado estado--jugando al-final">Vinculada' + (quien ? ' · ' + escapar(quien) : '') + '</span>' +
+            (identidades.length > 1 ? '<button class="boton boton--secundario boton--sm" type="button" data-quitar-forma="' + nombre + '">Desvincular</button>' : '')
+          : '<button class="boton boton--sm al-final" type="button" data-forma="' + nombre + '">Vincular</button>') +
+        '</div>';
+    }).join('');
+  }
+  function cargar() {
+    return cuentaSupabase().then(function (sesion) {
+      if (!sesion) {
+        caja.innerHTML = '<div class="vacio">Para vincularlas, entra con Google, Discord, Twitch o tu correo.</div>';
+        return;
+      }
+      return clienteSupabase.auth.getUserIdentities().then(function (r) {
+        if (r.error) throw r.error;
+        identidades = (r.data && r.data.identities) || [];
+        dibujar();
+      });
+    }).catch(function () { caja.innerHTML = '<div class="vacio">No pudimos cargar tus formas de entrar.</div>'; });
+  }
+  caja.addEventListener('click', function (e) {
+    var vincular = e.target.closest('[data-forma]');
+    var quitar = e.target.closest('[data-quitar-forma]');
+    if (vincular) {
+      var nombre = vincular.dataset.forma;
+      vincular.disabled = true;
+      vincular.textContent = 'Conectando…';
+      var destino = new URL(location.href);
+      destino.hash = '';
+      destino.searchParams.set('vinculo', nombre);
+      clienteSupabase.auth.linkIdentity({ provider: SERVICIOS_SUPABASE[nombre], options: { redirectTo: destino.href } }).then(function (r) {
+        if (r.error) throw r.error;
+      }).catch(function (error) {
+        console.error('No se pudo vincular ' + nombre + ':', error);
+        vincular.disabled = false;
+        vincular.textContent = 'Vincular';
+        mostrarAviso('No pudimos vincular ' + nombre + '. Inténtalo de nuevo.');
+      });
+    }
+    if (quitar) {
+      var servicio = quitar.dataset.quitarForma;
+      var identidad = identidades.find(function (i) { return i.provider === SERVICIOS_SUPABASE[servicio]; });
+      quitar.disabled = true;
+      clienteSupabase.auth.unlinkIdentity(identidad).then(function (r) {
+        if (r.error) throw r.error;
+        mostrarAviso(servicio + ' desvinculada');
+        return cargar();
+      }).catch(function (error) {
+        console.error('No se pudo desvincular ' + servicio + ':', error);
+        quitar.disabled = false;
+        mostrarAviso('No pudimos desvincular ' + servicio + '. Inténtalo de nuevo.');
+      });
+    }
+  });
+  cargar();
+}
+
+// Borrar cuenta (Editar perfil): confirma, borra la cuenta en Supabase (función borrar_mi_cuenta,
+// ver supabase/borrar-cuenta.sql: con ella se borran en cascada su perfil, reseñas, diario, amigos y Steam),
+// su foto subida y lo guardado en este navegador, y vuelve al inicio.
+function preguntarBorrarCuenta() {
+  var sesion = obtenerSesion();
+  abrirModal({
+    titulo: '¿Borrar tu cuenta?',
+    texto: 'Se borran tu cuenta @' + (sesion ? sesion.user : '') + ', tu perfil, reseñas, diario, amigos y cuentas vinculadas, y lo guardado en este navegador. No se puede deshacer.',
+    acciones: [
+      { texto: 'Cancelar' },
+      { texto: 'Borrar mi cuenta', peligro: true, alTocar: borrarCuenta }
+    ]
+  });
+}
+
+function borrarCuenta() {
+  var borrarEnLaBase = !clienteSupabase ? Promise.resolve() : clienteSupabase.auth.getSession().then(function (r) {
+    var cuenta = r.data && r.data.session && r.data.session.user;
+    if (!cuenta) return; // sesión solo de este navegador (demostración)
+    // La foto subida (avatares/<id>/avatar.jpg); si no hay, no pasa nada
+    return clienteSupabase.storage.from('avatares').remove([cuenta.id + '/avatar.jpg']).catch(function () {}).then(function () {
+      return clienteSupabase.rpc('borrar_mi_cuenta');
+    }).then(function (res) {
+      if (res.error) throw res.error;
+    });
+  });
+  borrarEnLaBase.then(function () {
+    // Lo guardado en este navegador (todo lo que empieza con "ss.")
+    try {
+      Object.keys(localStorage).forEach(function (k) { if (k.indexOf('ss.') === 0) localStorage.removeItem(k); });
+      Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf('ss.') === 0) sessionStorage.removeItem(k); });
+    } catch (e) { /* modo privado */ }
+    var salir = function () { location.href = rutaPagina('index.html'); };
+    if (clienteSupabase) clienteSupabase.auth.signOut().then(salir, salir); else salir();
+  }).catch(function (error) {
+    console.error('No se pudo borrar la cuenta:', error);
+    mostrarAviso('No pudimos borrar tu cuenta. Inténtalo de nuevo.');
   });
 }
 
