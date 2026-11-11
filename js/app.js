@@ -691,7 +691,7 @@ var TRADUCIR = {
     return filas.slice().sort(porOrden).map(function (d) { return { id: d.id, juego_igdb: d.juego_igdb }; });
   },
   misiones: function (filas) {
-    return filas.map(function (m) { return { id: m.id, clave: m.clave, texto: m.texto, xp: m.xp, repetible: m.repetible }; });
+    return filas.map(function (m) { return { id: m.id, clave: m.clave, texto: m.texto, xp: m.xp, repetible: m.repetible, frecuencia: m.frecuencia || 'siempre', tipo: m.tipo, meta: m.meta }; });
   }
 };
 
@@ -3453,6 +3453,79 @@ function copiarEnlace(enlace, mensaje) {
   else mostrarAviso(enlace);
 }
 
+/* ---------- Misiones diarias y semanales (Perfil) ----------
+   Las elige y las comprueba api/steam/misiones.js: sin Steam solo se ven; con Steam se mide el
+   avance (horas y logros) y la base suma el XP de las cumplidas. */
+
+// Avance en palabras: "1 h 10 min de 2 h", "1 de 3 logros"…
+function textoAvance(m) {
+  var progreso = m.progreso || 0;
+  if (m.tipo === 'horas') {
+    var horas = function (min) { var h = Math.floor(min / 60), r = min % 60; return (h ? h + ' h' : '') + (r || !h ? (h ? ' ' : '') + r + ' min' : ''); };
+    return horas(progreso) + ' de ' + horas(m.meta);
+  }
+  var nombre = { logros: ['logro', 'logros'], juegos: ['juego', 'juegos'], logros_raros: ['logro raro', 'logros raros'] }[m.tipo] || ['', ''];
+  return progreso + ' de ' + m.meta + ' ' + nombre[m.meta === 1 ? 0 : 1];
+}
+
+// "Se reinician en 5 h" / "en 3 días"
+function textoReinicio(termina) {
+  var falta = new Date(termina).getTime() - Date.now();
+  if (falta <= 0) return 'Se reinician ahora';
+  var horas = Math.ceil(falta / 3600000);
+  return 'Se reinician en ' + (horas <= 24 ? horas + ' h' : Math.ceil(horas / 24) + ' días');
+}
+
+function htmlMision(m, conAvance) {
+  var hecha = conAvance && m.cumplida;
+  return '<div class="pila pila--minima">' +
+    '<div class="en-fila en-fila--entre"><span>' + escapar(m.texto) + '</span>' +
+      '<span class="etiqueta ' + (hecha ? 'etiqueta--exito">✓ +' : 'etiqueta--contorno">+') + formatearNumero(m.xp) + ' XP</span></div>' +
+    (conAvance
+      ? '<div class="medidor' + (hecha ? ' medidor--exito' : '') + '"><span class="medidor__barra" data-ancho="' + Math.round((m.progreso || 0) / m.meta * 100) + '"></span></div>' +
+        '<span class="tarjeta__texto">' + escapar(hecha ? 'Cumplida' : textoAvance(m)) + '</span>'
+      : '') +
+  '</div>';
+}
+
+// Pide las misiones (con avance si hay sesión de Steam) y las dibuja. alGanarXp(usuario) avisa el XP nuevo.
+async function cargarMisiones(alGanarXp) {
+  var estado = document.getElementById('estado-misiones');
+  var lista = document.getElementById('lista-misiones');
+  if (!estado || !lista) return;
+  var respuesta, datos;
+  try {
+    var sesion = tieneSteam() && clienteSupabase ? (await clienteSupabase.auth.getSession()).data.session : null;
+    respuesta = await fetch('/api/steam/misiones', sesion
+      ? { method: 'POST', headers: { 'Authorization': 'Bearer ' + sesion.access_token } }
+      : { method: 'GET' });
+    datos = await respuesta.json();
+    if (!datos.periodos) throw new Error(datos.error || 'Sin misiones');
+  } catch (error) {
+    console.error('No se pudieron cargar las misiones:', error);
+    estado.textContent = 'No pudimos cargar las misiones. Intenta de nuevo más tarde.';
+    return;
+  }
+  var conAvance = respuesta.ok && !!datos.usuario;
+  lista.innerHTML = datos.periodos.map(function (p) {
+    return '<div class="pila pila--junta"><div class="en-fila en-fila--entre"><b>' + (p.frecuencia === 'diaria' ? 'Diarias' : 'Semanales') + '</b>' +
+      '<span class="tarjeta__texto">' + textoReinicio(p.termina) + '</span></div>' +
+      p.misiones.map(function (m) { return htmlMision(m, conAvance); }).join('') + '</div>';
+  }).join('');
+  aplicarColores(lista);
+  if (conAvance) {
+    estado.innerHTML = 'Se cuentan con tus horas y logros de Steam.';
+    if (datos.nuevas && datos.nuevas.length) {
+      mostrarAviso('Misión cumplida: ' + datos.nuevas.map(function (n) { return n.texto + ' (+' + n.xp + ' XP)'; }).join(' · '));
+      if (alGanarXp) alGanarXp(datos.usuario);
+    }
+  } else if (datos.privado) {
+    estado.innerHTML = 'Tus detalles de juego en Steam son privados: hazlos públicos para que contemos tus horas y logros. <a href="logros.html">Cómo hacerlo</a>';
+  } else {
+    estado.innerHTML = 'Se comprueban con tus horas y logros de Steam. <a href="editar-perfil.html#cuentas">Vincula Steam</a> para hacerlas.';
+  }
+}
+
 // 18. Perfil (y 19. Ventana: Cómo ganar XP)
 function pantallaPerfil() {
   if (!exigirSesion()) return;
@@ -3549,14 +3622,29 @@ function pantallaPerfil() {
   // Sobre mí, miembro desde y XP
   document.getElementById('sobre-perfil').textContent = perfil.bio || 'Todavía no escribiste nada sobre ti.';
   document.getElementById('desde-perfil').textContent = formatearFechaLarga(perfil.since);
-  document.getElementById('barra-xp').dataset.ancho = Math.round(perfil.xp / XP_POR_NIVEL * 100);
-  document.getElementById('texto-xp').textContent = formatearNumero(perfil.xp) + ' / ' + formatearNumero(XP_POR_NIVEL) + ' XP · nivel ' + (perfil.level + 1) + ' a ' + formatearNumero(XP_POR_NIVEL - perfil.xp) + ' XP';
+  function dibujarXp(p) {
+    var barra = document.getElementById('barra-xp');
+    barra.dataset.ancho = Math.round(p.xp / XP_POR_NIVEL * 100);
+    aplicarColores(barra.parentNode);
+    document.getElementById('texto-xp').textContent = formatearNumero(p.xp) + ' / ' + formatearNumero(XP_POR_NIVEL) + ' XP · nivel ' + (p.level + 1) + ' a ' + formatearNumero(XP_POR_NIVEL - p.xp) + ' XP';
+  }
+  dibujarXp(perfil);
+  // Misiones diarias y semanales (con Steam vinculada se comprueban y dan XP)
+  cargarMisiones(function (usuario) {
+    // La base sumó XP: el perfil del navegador se pone igual que el de la base
+    var p = leerPerfil();
+    p.xp = usuario.xp;
+    p.level = usuario.nivel;
+    guardarMemoria('profile', p);
+    dibujarXp(p);
+  });
   // 19. Ventana: Cómo ganar XP (se cierra con la X, "Entendido" o Escape)
   document.getElementById('ayuda-xp').addEventListener('click', function () {
     abrirModal({
       titulo: 'Cómo ganar XP',
       html: '<ul class="lista-puntos">' +
-        datosDe('misiones').map(function (m) { return '<li>' + escapar(m.texto) + ': +' + formatearNumero(m.xp) + ' XP</li>'; }).join('') +
+        datosDe('misiones').filter(function (m) { return m.frecuencia === 'siempre'; }).map(function (m) { return '<li>' + escapar(m.texto) + ': +' + formatearNumero(m.xp) + ' XP</li>'; }).join('') +
+        '<li>Misiones diarias y semanales de tus juegos (horas y logros de Steam): están en tu perfil y se reinician a las 00:00.</li>' +
         '<li>Cada ' + formatearNumero(XP_POR_NIVEL) + ' XP subes de nivel. Puedes usar ' + XP_SORTEO + ' XP para entrar gratis a un sorteo.</li></ul>',
       acciones: [{ texto: 'Entendido', principal: true }]
     });

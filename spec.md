@@ -38,6 +38,7 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
   - `api/steam/data.js` (con la sesión de Supabase): `profile` (perfil, jugando ahora, recientes de 2 semanas ordenados del último jugado al más antiguo, con sus minutos; nivel e insignias de Steam), `library` (biblioteca con horas), `wishlist` (lista de deseos con precio en COP y descuento), `achievements_summary` (logros de los 30 juegos más jugados y los más raros), `achievements`, `stats` y `my_reviews` (tus reseñas de Steam).
   - `api/steam/resenas.js` (sin sesión): las 10 reseñas en español más útiles de un juego y su nota global en Steam.
   - `api/steam/juego.js` (sin sesión): precio, descuento, nota, logros totales y jugadores conectados de un juego; los guarda en la tabla **juegos** de Supabase y no vuelve a preguntarle a Steam en 24 horas.
+  - `api/steam/misiones.js`: las misiones diarias y semanales. Sin sesión dice cuáles salen hoy y esta semana; con la sesión de Steam mide el avance (horas con la foto de **horas_steam**, logros por su hora de desbloqueo y logros raros con el % global de Steam), anota las cumplidas con `cumplir_mision` (la base suma el XP) y, si la persona de Steam no tiene fila en **usuarios**, se la crea.
   - `api/steam/sincronizar.js`: Vercel la ejecuta cada día a las 9:00 UTC (4:00 a. m. en Colombia; `crons` en `vercel.json`) y actualiza hasta 200 juegos de la tabla **juegos**. Solo responde a Vercel (variable `CRON_SECRET`).
   - Steam ya no da un JSON público de reseñas: las reseñas de cada juego y las tuyas se leen de las páginas públicas de la comunidad de Steam. Funciona, pero si Steam cambia esas páginas hay que ajustar `resenas.js` y `my_reviews`.
   - Logros, lista de deseos y reseñas necesitan que en Steam «Detalles de juego» esté en **Público**. Si no, la app explica cómo cambiarlo.
@@ -161,16 +162,25 @@ Campos:
 Se relaciona con: usuarios.id. Una por persona y plataforma. Steam es real (su número queda en `app_metadata.steam_id`); Xbox es simulada.
 
 ### misiones
-Qué guarda: las formas de ganar XP (ventana "Cómo ganar XP").
+Qué guarda: las formas de ganar XP: las de siempre (ventana "Cómo ganar XP") y el grupo de misiones diarias y semanales de juegos (panel "Misiones" del Perfil).
 Tipo de dato: compartida
 Se guarda en: Supabase
 Desde la app se puede: ver (Perfil, ventana "Cómo ganar XP"). Las carga el equipo.
 Campos:
-- id: texto — publicar, vincular, torneo, amistad — obligatorio
-- texto: texto — "Publicar una reseña o guía" — obligatorio
-- xp: número — cuánto XP da (50, 100, 100, 10) — obligatorio
-- repetible: sí/no — si se gana cada vez (publicar, torneo, amistad) o una vez por cosa (vincular, una vez por cuenta) — obligatorio
+- id: número — obligatorio
+- clave: texto, única — crear_cuenta, publicar, vincular, torneo, amistad, dia_horas_1… — obligatorio
+- texto: texto — "Juega 1 h hoy" — obligatorio
+- xp: número — cuánto XP da — obligatorio
+- repetible: sí/no — si se gana cada vez o una vez por cosa (vincular: una vez por cuenta) — obligatorio
+- frecuencia: opción (siempre, diaria, semanal) — obligatorio
+- tipo: opción (horas, logros, logros_raros, juegos) — qué se mide (solo diarias y semanales) — opcional
+- meta: número — cuánto hay que lograr (horas en minutos, o cuántos logros o juegos) — opcional
 Se relaciona con: ninguna.
+Las misiones:
+- De siempre: Crear tu cuenta (+50, una vez), Publicar una reseña o guía (+50), Vincular una cuenta de juego (+100, una vez por plataforma), Inscribirte en un torneo (+100) y Aceptar una solicitud de amistad (+10).
+- Diarias (cada día salen 3, las mismas para todos): Juega 1 h hoy (+20), Juega 2 h hoy (+35), Consigue 1 logro hoy (+20), Consigue 3 logros hoy (+40), Juega 2 juegos distintos hoy (+30).
+- Semanales (cada lunes salen 3): Juega 5 h (+70), Juega 10 h (+120), Consigue 5 logros (+70), Consigue 10 logros (+120), Juega 3 juegos distintos (+80), Consigue un logro raro, de menos del 10 % de jugadores (+150).
+- Las diarias y semanales se reinician a las 00:00 de Colombia, se ganan una vez por día o por semana y solo se pueden hacer con Steam vinculada: las elige y las comprueba `api/steam/misiones.js` (ver Integraciones).
 
 ### misiones_cumplidas
 Qué guarda: qué misiones cumplió cada persona y cuándo; con cada una, la base suma su XP.
@@ -181,9 +191,21 @@ Campos:
 - id: número — obligatorio
 - usuario: texto — obligatorio
 - mision: texto — la misión — obligatorio
-- referencia: texto — la reseña, cuenta, evento o amistad que la cumplió (para no contarla dos veces) — opcional
+- referencia: texto — la reseña, cuenta, evento o amistad que la cumplió, o el día o la semana ("dia:2026-11-11", "semana:2026-11-09") en las diarias y semanales (para no contarla dos veces) — opcional
 - fecha: fecha y hora — obligatorio
-Se relaciona con: usuarios.id y misiones.id.
+Se relaciona con: usuarios.id y misiones.id. "Crear tu cuenta" la anota la base al crear la fila de usuarios; las diarias y semanales, el servidor (`api/steam/misiones.js`).
+
+### horas_steam
+Qué guarda: la foto de las horas de Steam de cada persona al empezar el día y la semana (Steam solo da horas totales: lo jugado hoy es lo de ahora menos esta foto).
+Tipo de dato: personal
+Se guarda en: Supabase
+Desde la app se puede: nada. Solo la usa el servidor (`api/steam/misiones.js`, con la llave secreta).
+Campos:
+- id: número — obligatorio
+- usuario: texto — obligatorio
+- periodo: texto — "dia:2026-11-11" o "semana:2026-11-09" — obligatorio
+- minutos: texto — los minutos jugados de cada juego ("appid:minutos,…") en ese momento — obligatorio
+Se relaciona con: usuarios.id. Una por persona y periodo. Solo cuenta lo jugado desde la primera vez que la persona abre SaveSlot ese día o esa semana.
 
 ### resenas
 Qué guarda: reseñas y guías publicadas, y los borradores.
@@ -763,7 +785,9 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   7. Lista de deseos: la de SaveSlot y la de Steam (con precio y descuento; se ven 6 y "Ver los N de Steam"). "Te avisaremos si bajan de precio": con Steam vinculada, avisa cuando un juego de la lista de Steam entra en oferta (ver Notificaciones)
   8. Sobre mí, XP, Amigos, conexiones y Mis eventos
   9. Editar perfil y Compartir
+  10. Misiones: 3 diarias y 3 semanales de juegos, con su XP, su avance (con Steam vinculada) y cuándo se reinician
 - **Qué funciona de verdad:**
+  - Misiones diarias y semanales: Real (`api/steam/misiones.js` con Steam; la base suma el XP). Sin Steam vinculada se ven con "Vincula Steam para hacerlas"
   - Datos del perfil, favoritos, actividad, lista de deseos, amigos y Mis eventos: Real (Supabase)
   - Jugando ahora, recientes, nivel e insignias, biblioteca y lista de deseos de Steam: Real (Steam)
   - Quitar de lista de deseos y cancelar inscripción: Real (Supabase; la lista de Steam solo se ve)
