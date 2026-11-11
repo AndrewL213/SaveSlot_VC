@@ -61,7 +61,18 @@
       <h1 class="titulo-pagina">Editar perfil</h1>
 
       <section class="panel" id="datos" aria-label="Perfil público">
-        <div class="en-fila"><span class="avatar avatar--md" id="avatar-editar" aria-hidden="true"></span><span class="tarjeta__texto">La foto de perfil llegará con el almacenamiento de archivos.</span></div>
+        <div class="en-fila">
+          <span class="avatar avatar--md" id="avatar-editar" aria-hidden="true"></span>
+          <div class="pila pila--minima">
+            <div class="en-fila">
+              <label class="boton boton--secundario boton--sm" for="foto-archivo">Cambiar foto</label>
+              <input class="solo-lectores" id="foto-archivo" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="foto-ayuda">
+              <button class="boton boton--fantasma boton--sm" type="button" id="foto-steam" hidden>Usar la de Steam</button>
+              <button class="boton boton--fantasma boton--sm" type="button" id="foto-quitar" hidden>Quitar foto</button>
+            </div>
+            <span class="tarjeta__texto" id="foto-ayuda" aria-live="polite">JPG, PNG o WebP. Se recorta en un cuadrado.</span>
+          </div>
+        </div>
         <div class="rejilla-dos rejilla-dos--campos">
           <div class="grupo-campo">
             <label class="grupo-campo__etiqueta" for="nombre-visible">Nombre visible</label>
