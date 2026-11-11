@@ -14,19 +14,20 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
 ## Integraciones de backend del MVP
 - **Supabase**: todo lo que se guarda.
   - Cuentas: crear cuenta, iniciar sesión y sesión de invitado (la "cuenta de demostración"). Se entra con la cuenta de SaveSlot (correo y contraseña) o con Google, Discord, Twitch o Steam (proveedores de inicio de sesión de Supabase; sus claves se guardan en Supabase, nunca en el código).
-  - Base de datos: reseñas y borradores, comentarios, diario, perfil, amigos, eventos, inscripciones, notificaciones, chats de MatchPlay, tendencias, vistos recientemente y mensajes de contacto.
+  - Base de datos: reseñas y borradores, votos, me gusta, comentarios, diario, perfil, cuentas vinculadas, misiones, amigos, eventos (torneos y sorteos), inscripciones, notificaciones, chats de MatchPlay, tendencias, destacados de Inicio, vistos recientemente, mensajes de contacto, traducciones y la copia de datos de Steam de cada juego (ver Datos).
   - Presencia: quién está en línea.
   - Su clave pública va en el código; los datos se protegen con reglas de acceso en la base.
 - **IGDB** (de Twitch): catálogo de juegos (búsqueda, filtros, ficha y tiempos para terminar). Sus claves (Client ID y Client Secret de Twitch) se guardan en Vercel y se usan solo desde una función en `api/`, que también renueva el token de acceso; nunca van en el código del navegador (IGDB tampoco acepta pedidos directos desde el navegador). Uso no comercial: si SaveSlot se vuelve comercial, hay que pedir permiso a Twitch.
   - La función es `api/igdb.js`. Acepta solo seis pedidos: `?buscar=texto` (hasta 20 juegos, los más conocidos primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo, duración y año), `?random=1` (un juego al azar entre los 300 más conocidos de un género) y `?steam=1` (los 10 juegos más jugados en Steam: la lista pública de Steam, sin clave, con el pico de jugadores de ayer; IGDB pone los datos de cada juego). `?explorar` también dice cuántos juegos hay en total. Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`).
   - Vercel guarda cada respuesta una hora, para hacer menos consultas a IGDB.
+  - Las respuestas usan los mismos nombres de campos que las tablas (minúsculas con guion bajo). La app agrega `v=2` (la versión de ese formato) a cada consulta, para que Vercel no entregue respuestas guardadas con un formato viejo; si el formato cambia otra vez, se sube ese número (`VERSION_API` en `js/app.js`).
   - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) la traduce al español:
     - **Por ahora (temporal):** con el enlace gratis de Google Translate, sin clave. No es oficial: va contra las condiciones de Google y puede dejar de funcionar en cualquier momento. Se reemplaza al conectar Supabase.
     - **Al conectar Supabase:** cada traducción se guarda una sola vez y se usa un traductor oficial: **DeepL** (plan gratis de 500.000 caracteres al mes; basta con poner la clave `DEEPL_API_KEY` en Vercel, y la función la usa en lugar de Google).
-    - En las listas (`?buscar=` y `?populares=1`) la descripción queda en inglés, para no hacer 20 traducciones por búsqueda. Cada juego trae `idiomaDescripcion` (`es` o `en`).
+    - En las listas (`?buscar=` y `?populares=1`) la descripción queda en inglés, para no hacer 20 traducciones por búsqueda. Cada juego trae `idioma_descripcion` (`es` o `en`).
     - Si la traducción falla, la ficha llega igual, en inglés.
   - Mientras no esté conectada (o abriendo los archivos directo en el navegador), la app usa los juegos de `js/data.js`.
-  - Cada juego trae `appidSteam`, su número en Steam (IGDB lo guarda en `external_games`; Steam es la fuente 1), para pedirle a Steam precio, nota, logros y reseñas.
+  - Cada juego trae `appid_steam`, su número en Steam (IGDB lo guarda en `external_games`; Steam es la fuente 1), para pedirle a Steam precio, nota, logros y reseñas.
 - **Steam** (Steam Web API + OpenID): funciones de Vercel en `api/steam/`. La clave `STEAM_API_KEY` y la llave secreta de Supabase (`SUPABASE_SERVICE_ROLE_KEY`) están solo en Vercel. Antes eran Edge Functions de Supabase (`steam-auth` y `steam-data`); ya no se usan.
   - `api/steam/auth.js`: entrar con Steam (OpenID 2.0). Steam devuelve a la persona a la app con un token de un solo uso y la app abre la sesión de Supabase (`verifyOtp`). La cuenta queda con `app_metadata.steam_id`, y su @ se guarda en `user_metadata.usuario`.
   - `api/steam/data.js` (con la sesión de Supabase): `profile` (perfil, jugando ahora, recientes de 2 semanas, nivel e insignias de Steam), `library` (biblioteca con horas), `wishlist` (lista de deseos con precio en COP y descuento), `achievements_summary` (logros de los 30 juegos más jugados y los más raros), `achievements`, `stats` y `my_reviews` (tus reseñas de Steam).
@@ -59,72 +60,367 @@ Se puede entrar y explorar sin cuenta. La cuenta se pide solo al escribir, comen
 
 ## Datos
 
-Solo lo que se ve o se guarda en las pantallas. Entre paréntesis, de dónde sale.
+Solo lo que se ve o se guarda en las pantallas.
 
-**Cómo se identifican:** cada elemento tiene un `id`. Las personas se enlazan por el id de su cuenta en Supabase Auth (el @usuario es el nombre visible, único, pero puede cambiar). Los juegos se enlazan por su id de IGDB: en las tablas de Supabase se guarda el **número** (`idIgdb`, por ejemplo 113112, que nunca cambia) y en las direcciones de la web va el **slug** (`id`, por ejemplo `detalle-juego.html?id=hades--1`, que se lee mejor). Los 12 juegos de ejemplo ya usan los dos. Los enlaces con los ids viejos (como `?id=hades`) siguen funcionando. "Calculado" quiere decir que no se guarda: la app lo saca de otros datos.
+**Reglas comunes**
+- **Cómo se identifican:** las personas, por el id de su cuenta en Supabase Auth (`usuarios.id`); el @usuario es el nombre visible, único, pero puede cambiar. Los juegos, por su número de IGDB (`juego_igdb`, por ejemplo 113112, que nunca cambia); en las direcciones de la web va el slug (`detalle-juego.html?id=hades--1`). El catálogo vive en IGDB: un `juego_igdb` no tiene que estar en la tabla **juegos**. Los ids numéricos los pone Supabase. Las pantallas de detalle reciben el id en la dirección: `?id=…`.
+- **Nombres:** tablas y campos en minúsculas, sin tildes, con guion bajo; los mismos en Supabase, `js/data.js` y `js/app.js`.
+- **Permisos:** sin sesión solo se puede **ver** lo público. Para agregar, cambiar o borrar hace falta sesión (también la de invitado de la cuenta de demostración). Cada persona solo cambia o borra lo suyo (reglas de acceso de Supabase).
+- **Lo que cambia solo la base:** nivel, XP, insignias, misiones cumplidas, cupos ocupados y notificaciones los cambia la base de datos con reglas en SQL; nadie los toca desde la app (así nadie puede subirse el XP ni llenar cupos desde el navegador).
+- **Tipos de campo:** texto, texto largo, número, sí/no, fecha, fecha y hora, enlace (URL), imagen (ruta en `assets/`), opción de una lista fija, o lista (varios valores).
+- "Calculado" quiere decir que no se guarda: la app o la base lo saca de otros datos.
 
-### Vienen de IGDB
+### juegos
+Qué guarda: copia de los datos de Steam de cada juego, para no preguntarle a Steam en cada visita (ya creada; código en `supabase/juegos.sql`).
+Tipo de dato: compartida
+Se guarda en: Supabase
+Desde la app se puede: ver (Detalle de juego). Solo el servidor agrega y cambia (`api/steam/juego.js` al abrir una ficha y `api/steam/sincronizar.js` cada día).
+Campos:
+- igdb_id: número — el juego (clave) — obligatorio
+- slug: texto — el slug de IGDB — opcional
+- nombre: texto — nombre del juego — obligatorio
+- steam_appid: número — su número en Steam — opcional
+- steam_precio, steam_precio_original: texto — precio en COP — opcional
+- steam_descuento: número — porcentaje — opcional
+- steam_gratis: sí/no — si es gratis — opcional
+- steam_nota: texto — "Muy positivas"… — opcional
+- steam_nota_pct, steam_resenas: número — % positivo y total de reseñas — opcional
+- steam_logros: número — logros totales — opcional
+- steam_jugando: número — jugadores conectados — opcional
+- actualizado: fecha y hora — última vez que se le preguntó a Steam — obligatorio
+Se relaciona con: ninguna.
 
-- **juegos** (IGDB): id (slug de IGDB), idIgdb (número de IGDB), nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie: Indie si IGDB le pone ese género), horas de la historia ("Time to beat" de IGDB: el tiempo de solo la historia principal; se muestra solo si lo reportaron 10 jugadores o más y si no pasa de 300 h; si no, la pantalla dice "Sin datos"), solo online (sí o no: sin modo de un jugador; en vez de horas dice "Online"), descripción (en español, ver Integraciones), portada (de `assets/` o de IGDB), color de respaldo (solo los juegos con imagen en `assets/`; los demás usan el neutro del kit)
-  - De Steam (si el juego está en Steam): número de Steam (`appidSteam`), logros totales, precio, nota y jugadores conectados (ver la tabla **juegos**)
-  - Datos de ejemplo: logros totales de los juegos que no están en Steam (IGDB no los da)
-  - Calculados con nuestras reseñas (Supabase): dificultad promedio (1–10), calificación, número de votos, horas al 100 %
+### traducciones
+Qué guarda: la descripción de cada juego ya traducida al español, para traducirla una sola vez.
+Tipo de dato: compartida
+Se guarda en: Supabase
+Desde la app se puede: ver (Detalle de juego, a través de `api/igdb.js`). Solo el servidor agrega.
+Campos:
+- igdb_id: número — el juego — obligatorio
+- idioma: opción (es) — idioma de la traducción — obligatorio
+- texto: texto largo — la descripción traducida — obligatorio
+- traductor: opción (deepl, google) — quién la tradujo — obligatorio
+- creada_el: fecha y hora — cuándo se tradujo — obligatorio
+Se relaciona con: el juego (igdb_id).
 
-### Vienen de Steam (de la cuenta de la persona, sin guardarse en tablas)
+### usuarios_steam
+Qué guarda: las cuentas de SaveSlot vinculadas a Steam, para saber qué autores de reseñas de Steam tienen cuenta en SaveSlot (ya creada; código en `supabase/usuarios_steam.sql`).
+Tipo de dato: compartida
+Se guarda en: Supabase
+Desde la app se puede: ver (Detalle de juego: EN SAVESLOT o SOLO STEAM) · agregar y cambiar la propia (`api/steam/auth.js` al entrar con Steam y el Perfil, una vez por visita).
+Campos:
+- id: texto — la cuenta de Supabase Auth — obligatorio
+- steam_id64: texto, único — su número de Steam — obligatorio
+- steam_username: texto — nombre en Steam — opcional
+- steam_avatar: enlace — foto de Steam — opcional
+- sincronizado_el: fecha y hora — última vez que se anotó — opcional
+Se relaciona con: usuarios.id (el @ se lee de `user_metadata.usuario` de Supabase Auth).
 
-- **perfil de Steam**: nombre y enlace del perfil, jugando ahora, juegos recientes (horas de las últimas 2 semanas), nivel e insignias
-- **biblioteca de Steam**: juegos con horas jugadas y última vez jugado
-- **logros de Steam**: por juego (obtenidos y totales), resumen y logros más raros (% global de jugadores)
-- **lista de deseos de Steam**: juegos con precio, precio anterior y descuento. Se ve en el Perfil; se cambia desde Steam.
-- **reseñas de Steam**: las de cada juego (autor, recomienda o no, horas, fecha, votos de "útil") y las de la persona
-- El navegador guarda una copia para mostrar algo mientras llegan los datos nuevos (claves `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos` y `steamResenas`).
+### usuarios
+Qué guarda: el perfil público de cada cuenta. El correo y la contraseña no van aquí: quedan solo en Supabase Auth.
+Tipo de dato: aporte (lo ven todos)
+Se guarda en: Supabase
+Desde la app se puede: ver (Perfil, Perfil de otro usuario, Amigos, Comunidad, barra) · agregar la propia (Crear cuenta) · cambiar la propia (Editar perfil; lista de deseos desde Detalle de juego y Perfil). Nivel, XP e insignias solo los cambia la base.
+Campos:
+- id: texto — id de Supabase Auth — obligatorio
+- usuario: texto, único — el @ (de 3 a 20 letras, números, punto o guion bajo) — obligatorio
+- nombre: texto — nombre visible — obligatorio
+- iniciales: texto — para el avatar — obligatorio
+- sobre_mi: texto largo — "Sobre mí" — opcional
+- jugando_ahora: texto — el juego (slug de IGDB o `steam-<número>`; "steam" = automático con Steam) — opcional
+- miembro_desde: fecha — cuándo se creó la cuenta — obligatorio
+- nivel: número — sube cada 1.500 XP (lo cambia la base) — obligatorio
+- xp: número — XP dentro del nivel (lo cambia la base) — obligatorio
+- favoritos: lista de hasta 4 juegos (slug de IGDB o `steam-<número>`) — opcional
+- generos_favoritos: lista de opciones de **generos** — opcional
+- lista_deseos: lista de juegos (slug de IGDB) — lista de deseos de SaveSlot — opcional
+- insignias: lista de textos — "Fundador beta"… (las pone la base) — opcional
+- color: texto (#RRGGBB) — color del avatar — opcional
+- forma_de_entrar: opción (correo, google, discord, twitch, steam) — obligatorio
+- invitado: sí/no — cuenta de demostración — obligatorio
+Se relaciona con: Supabase Auth (id).
+- Calculados: estado "en línea" y última conexión (presencia de Supabase), "jugando" (de `jugando_ahora` o de Steam), amigos en común, notas de cada juego (del diario).
 
-### Se guardan en Supabase
+### cuentas_vinculadas
+Qué guarda: las cuentas de juego que cada persona vinculó.
+Tipo de dato: personal (se ve en su perfil)
+Se guarda en: Supabase
+Desde la app se puede: ver (Perfil, Perfil de otro usuario) · agregar, cambiar y borrar las propias (Editar perfil). Quien entra con Steam la tiene desde el inicio.
+Campos:
+- usuario: texto — dueño — obligatorio
+- plataforma: opción de **cuentas** (steam o xbox; playstation y nintendo son Después) — obligatorio
+- nombre: texto — nombre en la plataforma — obligatorio
+- estado: opción (verificada, pendiente) — obligatorio
+Se relaciona con: usuarios.id. Una por persona y plataforma. Steam es real (su número queda en `app_metadata.steam_id`); Xbox es simulada.
 
-- **usuarios_steam** (Supabase, ya creada; descrita en `supabase/usuarios_steam.sql`): id (cuenta de Supabase Auth), steam_id64 (único), steam_username, steam_avatar, sincronizado_el. Cualquiera la lee; cada persona solo escribe su fila. La llenan `api/steam/auth.js` al entrar con Steam y el Perfil (una vez por visita). Sirve para saber qué autores de reseñas de Steam tienen cuenta en SaveSlot; su @ se lee de `user_metadata.usuario`.
-- **juegos** (Supabase, ya creada; código en `supabase/juegos.sql`): igdb_id (clave), slug, nombre, steam_appid, steam_precio, steam_precio_original, steam_descuento, steam_gratis, steam_nota, steam_nota_pct, steam_resenas, steam_logros, steam_jugando, actualizado. Cualquiera la lee; solo el servidor (Vercel) escribe. La llenan `api/steam/juego.js` al abrir una ficha y `api/steam/sincronizar.js` cada día.
+### misiones
+Qué guarda: las formas de ganar XP (ventana "Cómo ganar XP").
+Tipo de dato: compartida
+Se guarda en: Supabase
+Desde la app se puede: ver (Perfil, ventana "Cómo ganar XP"). Las carga el equipo.
+Campos:
+- id: texto — publicar, vincular, torneo, amistad — obligatorio
+- texto: texto — "Publicar una reseña o guía" — obligatorio
+- xp: número — cuánto XP da (50, 100, 100, 10) — obligatorio
+- repetible: sí/no — si se gana cada vez (publicar, torneo, amistad) o una vez por cosa (vincular, una vez por cuenta) — obligatorio
+Se relaciona con: ninguna.
 
-- **usuarios** (Supabase): id, usuario (@, único), nombre visible, iniciales, correo, forma de entrar (correo, Google, Discord, Twitch o Steam), invitado (sí o no), sobre mí, jugando ahora (juego), miembro desde, nivel, XP, 4 juegos favoritos, géneros favoritos, lista de deseos, insignias, color del avatar
-  - Estado: "en línea" y última conexión salen de la presencia de Supabase; "jugando" sale de "jugando ahora"
-  - Calculado: amigos en común, notas de cada juego (del diario; en los datos de ejemplo están en `notas`)
-- **cuentas vinculadas** (Supabase; hoy dentro del perfil en el navegador): usuario, plataforma (Steam, Xbox, PlayStation o Nintendo), nombre en la plataforma, estado (verificada o pendiente). Quien entra con Steam la tiene vinculada desde el inicio. Steam es real (su número queda en `app_metadata.steam_id` de Supabase Auth); Xbox es simulada.
-- **reseñas** (Supabase): id, juego, autor, tipo (reseña o guía), estado (publicada o borrador), título (opcional), texto, calificación (1–10), dificultad (1–10), horas jugadas, estado de la partida (Terminado, Rejugado, En progreso o Abandonado), minutos de lectura (guías), contiene spoilers, editada (sí o no), fecha
-  - Calculado: votos de "útil" y me gusta (se cuentan en sus tablas), porcentaje de "útil" de las guías
-  - Borradores: un borrador por persona y juego, con los mismos campos (estado "borrador")
-- **votos "útil"** (Supabase): usuario, reseña, fecha. Uno por persona y reseña; nadie vota su propia reseña.
-- **me gusta de reseñas** (Supabase): usuario, reseña, fecha. Uno por persona y reseña; se puede quitar.
-- **comentarios** (Supabase): id, reseña, autor, texto, fecha
-- **diario** (Supabase): id, usuario, juego, fecha, estado (Terminado, Rejugado, En progreso o Abandonado), horas, calificación, me gusta, tiene reseña
-- **amigos** (Supabase): id, usuario, amigo, estado (amigos, solicitud enviada o solicitud recibida), fecha
-- **eventos** (Supabase): id, tipo (torneo o sorteo), juego, título, descripción, fecha y hora, organizador, tipo de organizador, cupos ocupados, cupos máximos, costo, gratis (sí o no), premio, cronograma (pasos con su fecha), reglas, color, destacado (el "evento del mes" de Inicio)
-- **inscripciones** (Supabase): id, usuario, evento, nombre del equipo, compañero, forma de participar (XP o pago), fecha
-- **notificaciones** (Supabase): id, usuario, tipo (voto "útil" a una reseña tuya o cierre de inscripciones de un evento tuyo), texto, enlace, fecha, leída (sí o no)
-- **chats de MatchPlay** (Supabase): id, usuario, título, fecha, mensajes (quién habla, texto y voto de "útil" en cada respuesta). Las respuestas de la IA son simuladas.
-- **tendencias de MatchPlay** (Supabase): id, etiqueta, pregunta, cantidad de preguntas hoy
-- **destacados de Inicio** (Supabase): id, juego, orden (las 3 portadas del título de Inicio)
-- **vistos recientemente** (Supabase; sin sesión, en el navegador): usuario, los últimos 6 juegos abiertos
-- **mensajes de contacto** (Supabase): id, nombre, correo, tema, mensaje, fecha
+### misiones_cumplidas
+Qué guarda: qué misiones cumplió cada persona y cuándo; con cada una, la base suma su XP.
+Tipo de dato: personal
+Se guarda en: Supabase
+Desde la app se puede: ver las propias (Perfil). La llena la base sola al publicar, vincular, inscribirse o aceptar una amistad.
+Campos:
+- id: número — obligatorio
+- usuario: texto — obligatorio
+- mision: texto — la misión — obligatorio
+- referencia: texto — la reseña, cuenta, evento o amistad que la cumplió (para no contarla dos veces) — opcional
+- fecha: fecha y hora — obligatorio
+Se relaciona con: usuarios.id y misiones.id.
 
-### Siguen como datos de ejemplo (en `js/data.js`)
+### resenas
+Qué guarda: reseñas y guías publicadas, y los borradores.
+Tipo de dato: aporte (los borradores son personales)
+Se guarda en: Supabase
+Desde la app se puede: ver las publicadas (Inicio, Detalle de juego, Comunidad, Detalle de reseña, Historial, Perfil de otro usuario); los borradores, solo su autor (Escribir reseña) · agregar (Escribir reseña) · cambiar y borrar las propias (Detalle de reseña, Historial, Escribir reseña).
+Campos:
+- id: número — obligatorio
+- juego_igdb: número — el juego — obligatorio
+- autor: texto — obligatorio
+- tipo: opción (resena, guia) — obligatorio
+- estado: opción (publicada, borrador) — obligatorio
+- titulo: texto — opcional
+- texto: texto largo — 50 caracteres o más para publicar — obligatorio al publicar
+- calificacion: número del 1 al 10 — opcional en guías
+- dificultad: número del 1 al 10 — opcional
+- horas: número — horas jugadas — opcional
+- estado_partida: opción de **estados_partida** — opcional
+- minutos_lectura: número — solo guías — opcional
+- spoiler: sí/no — contiene spoilers — obligatorio
+- editada: sí/no — obligatorio
+- fecha: fecha y hora — obligatorio
+Se relaciona con: usuarios.id (autor) y el juego. Un borrador por persona y juego.
+- Calculados: votos "útil", porcentaje de "útil" (guías) y me gusta.
 
-- **logros** (datos de ejemplo): id, juego, nombre, descripción, % de jugadores que lo tienen, obtenido (sí o no), plataforma
-- **progreso de logros** (datos de ejemplo): id, usuario, juego, obtenidos, totales, plataforma
-- **resumen de logros** (datos de ejemplo): id, usuario, desbloqueados, % promedio, juegos completos, logros raros
-- **respuestas de MatchPlay** (datos de ejemplo): id, palabras que las activan, texto. Son las respuestas simuladas de la IA.
+### votos_util
+Qué guarda: quién marcó una reseña como útil.
+Tipo de dato: aporte
+Se guarda en: Supabase
+Desde la app se puede: ver (para contarlos) · agregar (Inicio, Detalle de juego, Comunidad, Detalle de reseña). No se cambia ni se borra.
+Campos:
+- usuario: texto — obligatorio
+- resena: número — obligatorio
+- fecha: fecha y hora — obligatorio
+Se relaciona con: usuarios.id y resenas.id. Uno por persona y reseña; nadie vota su propia reseña. Cada voto crea una notificación para el autor (la base).
 
-### Fijos de la app (no son datos de usuarios; se quedan en `js/data.js`)
+### me_gusta_resenas
+Qué guarda: a quién le gusta una reseña.
+Tipo de dato: aporte
+Se guarda en: Supabase
+Desde la app se puede: ver (para contarlos) · agregar y borrar el propio (Detalle de reseña).
+Campos:
+- usuario: texto — obligatorio
+- resena: número — obligatorio
+- fecha: fecha y hora — obligatorio
+Se relaciona con: usuarios.id y resenas.id. Uno por persona y reseña.
 
-Las listas de `js/data.js` se llaman en minúsculas con guion bajo (`variantes_error`, `estado_servicios`…). Los ids son texto: el slug de IGDB en los juegos, el @ en los usuarios y un nombre corto en lo demás (Supabase pondrá los suyos al crear las tablas). Las pantallas de detalle reciben el id en la dirección: `?id=…`.
+### comentarios
+Qué guarda: los comentarios de las reseñas.
+Tipo de dato: aporte
+Se guarda en: Supabase
+Desde la app se puede: ver y agregar (Detalle de reseña).
+Campos:
+- id: número — obligatorio
+- resena: número — obligatorio
+- autor: texto — obligatorio
+- texto: texto largo — obligatorio
+- fecha: fecha y hora — obligatorio
+Se relaciona con: resenas.id y usuarios.id.
 
-- **géneros** (`generos`): id, nombre, si sale en los filtros de Buscar (Juego random usa todos)
-- **plataformas** (`plataformas`): id, nombre (PC, PlayStation, Xbox, Nintendo)
-- **cuentas** (`cuentas`): id, nombre, nota, si se puede vincular (Editar perfil)
-- **estados de partida** (`estados_partida`): id, nombre, color de su etiqueta (Escribir reseña y Diario)
-- **temas de contacto** (`temas_contacto`) y **preguntas frecuentes** (`preguntas_frecuentes`): Contáctanos
-- **atajos de Inicio** (`atajos_inicio`), **ideas de MatchPlay** (`ideas_matchplay`), **reglas de eventos** (`reglas_eventos`) y **organizadores** (`organizadores`, filtro de Eventos)
-- Las opciones de orden y los rangos de los filtros ("Más recientes", "A–Z", "9–10", "< 10 h"…) son parte de la interfaz y siguen en el HTML.
-- **variantes de error**: id, código, título, texto, consejos, reintentar (sí o no), segundos de espera, botón de la variante, servicio por defecto
-- **estado de los servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto
+### diario
+Qué guarda: los juegos que cada persona registró.
+Tipo de dato: personal (lo ven otros en su perfil: juegos en común y actividad)
+Se guarda en: Supabase
+Desde la app se puede: ver (Diario, Perfil, Perfil de otro usuario, Amigos, Detalle de juego: "Tu progreso") · agregar, cambiar y borrar los propios (Escribir reseña).
+Campos:
+- id: número — obligatorio
+- usuario: texto — obligatorio
+- juego_igdb: número — obligatorio
+- fecha: fecha — obligatorio
+- estado: opción de **estados_partida** — obligatorio
+- horas: número — opcional
+- calificacion: número del 1 al 10 — opcional
+- me_gusta: sí/no — obligatorio
+- tiene_resena: sí/no — obligatorio
+Se relaciona con: usuarios.id y el juego.
+
+### amigos
+Qué guarda: las amistades y las solicitudes, una fila por pareja.
+Tipo de dato: personal (entre dos personas)
+Se guarda en: Supabase
+Desde la app se puede: ver (Amigos, Perfil de otro usuario, Comunidad: las amistades las ven todos; las solicitudes pendientes, solo las dos personas) · agregar (enviar solicitud, en Amigos y Perfil de otro usuario) · cambiar (aceptar: solo quien la recibe) · borrar (rechazar, cancelar o eliminar: cualquiera de los dos).
+Campos:
+- id: número — obligatorio
+- usuario: texto — quien envía la solicitud — obligatorio
+- amigo: texto — quien la recibe — obligatorio
+- estado: opción (pendiente, aceptada) — obligatorio
+- fecha: fecha y hora — obligatorio
+Se relaciona con: usuarios.id (dos veces). Una fila por pareja. "Solicitud enviada" o "recibida" lo calcula la app según quién mira.
+
+### eventos
+Qué guarda: torneos y sorteos.
+Tipo de dato: compartida
+Se guarda en: Supabase. Al crear la tabla se cargan los 6 eventos de ejemplo de `js/data.js` (torneos y sorteos).
+Desde la app se puede: ver (Inicio, Eventos, Detalle de evento). Los crea el equipo desde el panel de Supabase. Los cupos ocupados los cambia la base.
+Campos:
+- id: texto — nombre corto, va en la dirección (`copa-2v2`) — obligatorio
+- tipo: opción (torneo, sorteo) — obligatorio
+- juego_igdb: número — el juego — opcional
+- titulo: texto — obligatorio
+- descripcion: texto largo — obligatorio
+- fecha_hora: fecha y hora — cuándo es (la app arma el texto "Sáb 17 oct · 3:00 p. m.") — obligatorio
+- cierre_inscripciones: fecha y hora — hasta cuándo se puede inscribir (también avisa en Notificaciones) — opcional
+- organizador: texto — quién lo organiza — obligatorio
+- tipo_organizador: opción de **organizadores** — obligatorio
+- cupos_ocupados: número — suma uno con cada inscripción (la base) — opcional
+- cupos_maximos: número — opcional
+- costo: texto — obligatorio
+- gratis: sí/no — obligatorio
+- xp_para_entrar: número — solo sorteos: XP para entrar gratis (300); al inscribirse, la base lo descuenta — opcional
+- premio: texto — obligatorio
+- ganador: texto — solo sorteos: la cuenta ganadora, elegida al azar al cierre — opcional
+- dias_para_reclamar: número — solo sorteos: días que tiene el ganador para reclamar el premio (7) — opcional
+- cronograma: lista de pasos (paso y cuándo) — opcional
+- reglas: lista de textos — opcional
+- color: texto (#RRGGBB) — color de respaldo — opcional
+- destacado: sí/no — el "evento del mes" de Inicio — obligatorio
+Se relaciona con: el juego y usuarios.id (ganador).
+
+### inscripciones
+Qué guarda: quién se inscribió a cada evento.
+Tipo de dato: aporte (cada persona ve las suyas; los demás solo ven cuántos cupos quedan)
+Se guarda en: Supabase
+Desde la app se puede: ver las propias (Perfil: Mis eventos; Detalle de evento) · agregar (Detalle de evento) · borrar la propia (cancelar, desde el Perfil).
+Campos:
+- id: número — obligatorio
+- usuario: texto — obligatorio
+- evento: texto — obligatorio
+- equipo: texto — nombre del equipo (solo torneos) — opcional
+- companero: texto — @ del compañero (solo torneos) — opcional
+- forma: opción (xp; pago es Después) — forma de participar — obligatorio
+- fecha: fecha y hora — obligatorio
+Se relaciona con: usuarios.id y eventos.id. Una por persona y evento. Inscribirse a un torneo cumple la misión "torneo"; a un sorteo, gasta `xp_para_entrar` (la base).
+
+### notificaciones
+Qué guarda: los avisos de cada persona.
+Tipo de dato: personal
+Se guarda en: Supabase
+Desde la app se puede: ver las propias y marcarlas como leídas (ventana Notificaciones). Las crea la base: con cada voto "útil" a una reseña tuya y cuando se acerca el cierre de inscripciones de un evento tuyo.
+Campos:
+- id: número — obligatorio
+- usuario: texto — obligatorio
+- tipo: opción (voto_util, cierre_inscripciones) — obligatorio
+- texto: texto — obligatorio
+- enlace: enlace — a dónde lleva — obligatorio
+- fecha: fecha y hora — obligatorio
+- leida: sí/no — obligatorio
+Se relaciona con: usuarios.id.
+
+### chats_matchplay
+Qué guarda: las conversaciones de cada persona con MatchPlay.
+Tipo de dato: personal
+Se guarda en: Supabase
+Desde la app se puede: ver, agregar y borrar los propios (MatchPlay).
+Campos:
+- id: número — obligatorio
+- usuario: texto — obligatorio
+- titulo: texto — obligatorio
+- fecha: fecha y hora — obligatorio
+Se relaciona con: usuarios.id. Un chat tiene varios mensajes (**mensajes_matchplay**); al borrarlo se borran sus mensajes.
+
+### mensajes_matchplay
+Qué guarda: cada mensaje de un chat de MatchPlay (las respuestas de la IA son simuladas).
+Tipo de dato: personal
+Se guarda en: Supabase
+Desde la app se puede: ver y agregar en los chats propios · cambiar el voto de una respuesta (MatchPlay).
+Campos:
+- id: número — obligatorio
+- chat: número — obligatorio
+- quien: opción (usuario, ia) — obligatorio
+- texto: texto largo — obligatorio
+- voto: opción (util, no_sirve) — solo respuestas de la IA — opcional
+- fecha: fecha y hora — obligatorio
+Se relaciona con: chats_matchplay.id.
+
+### tendencias_matchplay
+Qué guarda: las preguntas más hechas hoy en MatchPlay.
+Tipo de dato: compartida
+Se guarda en: Supabase
+Desde la app se puede: ver (MatchPlay). Las carga el equipo.
+Campos:
+- id: número — obligatorio
+- etiqueta: texto — obligatorio
+- pregunta: texto — obligatorio
+- preguntas_hoy: número — obligatorio
+Se relaciona con: ninguna.
+
+### destacados_inicio
+Qué guarda: las 3 portadas del título de Inicio.
+Tipo de dato: compartida
+Se guarda en: Supabase
+Desde la app se puede: ver (Inicio). Las elige el equipo.
+Campos:
+- id: número — obligatorio
+- juego_igdb: número — obligatorio
+- orden: número — obligatorio
+Se relaciona con: el juego.
+
+### vistos_recientes
+Qué guarda: los últimos 6 juegos que abrió cada persona.
+Tipo de dato: personal
+Se guarda en: Supabase con sesión; sin sesión, en el navegador (localStorage)
+Desde la app se puede: ver (Inicio) · agregar (Detalle de juego).
+Campos:
+- usuario: texto — obligatorio
+- juego_igdb: número — obligatorio
+- fecha: fecha y hora — obligatorio
+Se relaciona con: usuarios.id y el juego.
+
+### mensajes_contacto
+Qué guarda: lo que la gente escribe en Contáctanos.
+Tipo de dato: sensible
+Se guarda en: Supabase
+Desde la app se puede: solo agregar (Contáctanos), con o sin cuenta. Nadie puede ver la lista desde la app; el equipo la lee en el panel de Supabase.
+Campos:
+- id: número — obligatorio
+- nombre: texto — obligatorio
+- correo: texto (correo) — obligatorio
+- tema: opción de **temas_contacto** — obligatorio
+- mensaje: texto largo — obligatorio
+- fecha: fecha y hora — obligatorio
+Se relaciona con: ninguna.
+
+### No va en Supabase
+
+- **Externos (se piden cada vez):**
+  - Catálogo de IGDB: nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie), horas de la historia ("Time to beat": solo la historia principal, con 10 reportes o más y hasta 300 h; si no, "Sin datos"), solo online (en vez de horas dice "Online"), descripción y portada. Ver Integraciones.
+  - Mejores juegos de la semana (IGDB) y Lo más jugado en Steam.
+  - Cuenta de Steam de la persona: perfil (nombre, enlace, jugando ahora, recientes, nivel e insignias), biblioteca (horas y última vez), logros (por juego, resumen y más raros), lista de deseos (precio y descuento; se cambia desde Steam) y sus reseñas. El navegador guarda una copia para mostrar algo mientras llegan los nuevos.
+  - Reseñas de Steam de cada juego (autor, recomienda o no, horas, fecha, votos de "útil").
+  - Presencia ("en línea" y última conexión): en tiempo real, no se guarda.
+- **Calculados:** dificultad promedio, calificación, número de votos y horas al 100 % de un juego (de las reseñas); estadísticas del perfil; amigos y juegos en común; géneros más jugados.
+- **Fijos en el código (`js/data.js`):** son listas cortas que solo cambian con una nueva versión de la app.
+  - **generos**: id, nombre, en_buscar (sí/no: sale en los filtros de Buscar; Juego random usa todos)
+  - **plataformas**: id, nombre (PC, PlayStation, Xbox, Nintendo)
+  - **cuentas**: id, nombre, nota, vincula (sí/no) (Editar perfil)
+  - **estados_partida**: id, nombre, etiqueta (color) (Escribir reseña y Diario)
+  - **temas_contacto** y **preguntas_frecuentes** (Contáctanos)
+  - **atajos_inicio**, **ideas_matchplay**, **reglas_eventos** y **organizadores** (filtro de Eventos)
+  - **variantes_error**: id, codigo, titulo, texto, consejos, reintentar, espera, accion, servicio_por_defecto
+  - **estado_servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto (Simulado)
+  - Las opciones de orden y los rangos de los filtros ("Más recientes", "A–Z", "9–10", "< 10 h"…) son parte de la interfaz y siguen en el HTML.
+- **Simulados (`js/data.js`):** respuestas_matchplay (las respuestas de la IA), y logros, progreso_logros y resumen_logros de otras plataformas (los de Steam son reales).
+- **Después:** clips y foto de perfil (necesitan Supabase Storage), pagos de eventos y mensajes entre amigos.
 
 ### Hoy en el navegador → tabla de Supabase
 
@@ -133,20 +429,20 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 | Clave en el navegador | Tabla de Supabase |
 |---|---|
 | `session`, `accounts` | Supabase Auth y **usuarios** |
-| `profile` | **usuarios** (y **cuentas vinculadas**) |
-| `myReviews`, `draft.<juego>` | **reseñas** (publicadas y borradores) |
-| `votosUtil` | **votos "útil"** |
-| `meGustaResenas` | **me gusta de reseñas** |
+| `profile` | **usuarios** (con su lista de deseos), **cuentas_vinculadas** y **misiones_cumplidas** (`missionsDone`) |
+| `myReviews`, `draft.<juego>` | **resenas** (publicadas y borradores) |
+| `votosUtil` | **votos_util** |
+| `meGustaResenas` | **me_gusta_resenas** |
 | `comments.<reseña>` | **comentarios** |
 | `diary` | **diario** |
 | `friends` | **amigos** |
 | `joined`, `inscripciones` | **inscripciones** |
-| `chatsMatchplay` | **chats de MatchPlay** |
-| `recentGames` | **vistos recientemente** (sin sesión sigue en el navegador) |
-| `outbox` | **mensajes de contacto** |
+| `chatsMatchplay` | **chats_matchplay** y **mensajes_matchplay** |
+| `recentGames` | **vistos_recientes** (sin sesión sigue en el navegador) |
+| `outbox` | **mensajes_contacto** |
 | `usuariosSteam` | Supabase Auth (`user_metadata.usuario`, ya se guarda ahí) |
 | `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos`, `steamResenas` | Ninguna: son copias de lo que da Steam, para mostrar algo mientras llega lo nuevo |
-| `juegosIgdb` | Ninguna: copia de los últimos 100 juegos de IGDB abiertos, para que reseñas, deseos y diario sepan su nombre y portada |
+| `juegos_igdb` | Ninguna: copia de los últimos 100 juegos de IGDB abiertos, para que reseñas, deseos y diario sepan su nombre y portada |
 | `hideDemo`, `datosDe.*`, `duenoDatos` | Ninguna: son ayudas del modo demo y se quitan |
 
 ## Pantallas
