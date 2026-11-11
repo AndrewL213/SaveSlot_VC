@@ -1167,7 +1167,12 @@ function prepararEncabezado() {
   var nivel = leerMemoria('profile', {}).level || (usuario && usuario.nivel) || 1;
   var avisos = avisosDePrecio().concat(datosDe('notificaciones').filter(function (n) { return n.usuario === sesion.user; }));
   var solicitudes = datosDe('usuarios').filter(function (u) { return relacionCon(u.usuario) === 'solicitud recibida'; });
-  var cantidad = avisos.length + (solicitudes.length ? 1 : 0);
+  // El número de la campana cuenta solo lo que todavía no has visto (al abrir la ventana se marca como visto).
+  // Lo visto se guarda en este navegador ("ss.notisVistas": ids de avisos y @ de quienes te enviaron solicitud).
+  var vistas = leerMemoria('notisVistas', []) || [];
+  var claves = avisos.map(function (n) { return 'aviso:' + n.id; })
+    .concat(solicitudes.map(function (u) { return 'solicitud:' + u.usuario; }));
+  var cantidad = claves.filter(function (c) { return vistas.indexOf(c) === -1; }).length;
 
   acciones.innerHTML =
     '<a class="boton boton--secundario boton--icono navegacion__ocultar-movil" href="' + rutaPagina('amigos.html') + '" aria-label="Amigos">' + ICONO_AMIGOS + '</a>' +
@@ -1191,6 +1196,12 @@ function prepararEncabezado() {
   activarMenuCuenta(acciones);
 
   acciones.querySelector('[data-notificaciones]').addEventListener('click', function () {
+    // Todo lo que está ahora queda visto: se quita el número de la campana
+    guardarMemoria('notisVistas', vistas.concat(claves.filter(function (c) { return vistas.indexOf(c) === -1; })).slice(-200));
+    var campana = this;
+    var numero = campana.querySelector('.navegacion__contador');
+    if (numero) numero.remove();
+    campana.setAttribute('aria-label', 'Notificaciones, 0 nuevas');
     // 26. Ventana: Notificaciones (solicitudes de amistad y avisos, cada uno con su enlace)
     var html = (solicitudes.length
       ? '<a class="tarjeta tarjeta--enlace" href="' + rutaPagina('amigos.html') + '#solicitudes"><b>' + solicitudes.length + (solicitudes.length === 1 ? ' solicitud' : ' solicitudes') + ' de amistad</b>' +
