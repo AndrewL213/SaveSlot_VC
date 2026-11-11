@@ -3844,9 +3844,9 @@ function pantallaEditar() {
     var texto = selector.value.trim().toLowerCase();
     if (!texto) return null;
     if (candidatos[texto]) return candidatos[texto];
-    // el nombre exacto sin el año ("hades" → Hades (2020), no Hades II)
+    // el nombre exacto sin el año ("hades" → Hades (2020), no Hades II); si hay varios, el primero de IGDB (el más conocido)
     var mismos = Object.keys(candidatos).filter(function (t) { return String(candidatos[t].nombre).toLowerCase() === texto; });
-    if (mismos.length === 1) return candidatos[mismos[0]];
+    if (mismos.length) return candidatos[mismos[0]];
     var parecidos = Object.keys(candidatos).filter(function (t) { return t.indexOf(texto) !== -1; });
     return parecidos.length === 1 ? candidatos[parecidos[0]] : null;
   }
