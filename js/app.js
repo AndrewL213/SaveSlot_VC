@@ -88,6 +88,8 @@ function terminarVueltaDeSteam() {
       var propio = leerPerfil();
       propio.accounts = propio.accounts || {};
       propio.accounts.Steam = nombre;
+      // La foto que eligió antes (guardada en su cuenta de Supabase) vuelve en cualquier navegador
+      if (metadatos.foto) propio.foto = metadatos.foto;
       guardarMemoria('profile', propio);
       return 'Entraste con Steam · ' + nombre;
     }
@@ -133,6 +135,64 @@ function htmlRecienteSteam(g) {
   return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="' + escapar(j.nombre) + ': ' + formatearNumero(g.hours_2weeks) + ' h en las últimas 2 semanas">' +
     '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
     '<span class="nota nota--texto">' + formatearNumero(g.hours_2weeks) + ' h</span></a>';
+}
+
+// ---------- Foto de perfil ----------
+// perfil.foto: null = la de Steam (si hay); 'iniciales' = sin foto; una dirección = la que subió la persona.
+function fotoDePerfil(perfil) {
+  perfil = perfil || leerPerfil();
+  if (perfil.foto === 'iniciales') return null;
+  if (perfil.foto) return perfil.foto;
+  var steam = (perfil.accounts || {}).Steam ? leerMemoria('steamPerfil', null) : null;
+  return (steam && steam.avatarfull) || null;
+}
+
+// Lo de adentro de un .avatar propio: la foto (el kit ya la recorta en círculo) o las iniciales
+function htmlAvatarPropio(iniciales, perfil) {
+  var foto = fotoDePerfil(perfil);
+  return foto ? '<img src="' + escapar(foto) + '" alt="">' : escapar(iniciales);
+}
+
+// Recorta la imagen al centro en un cuadrado de 256 px (JPEG): pesa poco y se ve nítida en el avatar grande
+function recortarFoto(archivo) {
+  return new Promise(function (listo, falla) {
+    var url = URL.createObjectURL(archivo);
+    var img = new Image();
+    img.onload = function () {
+      var lado = Math.min(img.naturalWidth, img.naturalHeight);
+      var lienzo = document.createElement('canvas');
+      lienzo.width = lienzo.height = 256;
+      lienzo.getContext('2d').drawImage(img, (img.naturalWidth - lado) / 2, (img.naturalHeight - lado) / 2, lado, lado, 0, 0, 256, 256);
+      URL.revokeObjectURL(url);
+      lienzo.toBlob(function (b) { if (b) listo(b); else falla(new Error('lienzo')); }, 'image/jpeg', 0.88);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); falla(new Error('imagen')); };
+    img.src = url;
+  });
+}
+
+// Sube la foto a Supabase Storage (avatares/<id de la cuenta>/avatar.jpg; ver supabase/avatares.sql).
+// Sin sesión de Supabase (cuenta de correo de prueba o de demostración) o si falla,
+// queda guardada solo en este navegador. Devuelve { url, local }.
+function subirFoto(blob) {
+  function local() {
+    return new Promise(function (listo) {
+      var lector = new FileReader();
+      lector.onload = function () { listo({ url: lector.result, local: true }); };
+      lector.readAsDataURL(blob);
+    });
+  }
+  if (!clienteSupabase) return local();
+  return clienteSupabase.auth.getUser().then(function (r) {
+    var cuenta = r.data && r.data.user;
+    if (!cuenta) return local();
+    var ruta = cuenta.id + '/avatar.jpg';
+    return clienteSupabase.storage.from('avatares').upload(ruta, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' }).then(function (res) {
+      if (res.error) return local();
+      // ?v= cambia en cada subida, para que el navegador no muestre la foto vieja
+      return { url: clienteSupabase.storage.from('avatares').getPublicUrl(ruta).data.publicUrl + '?v=' + Date.now(), local: false };
+    });
+  }).catch(local);
 }
 
 function tieneSteam() {
@@ -769,7 +829,7 @@ function prepararEncabezado() {
     // Menú de la cuenta: Mi perfil, Editar perfil y Cerrar sesión
     '<div class="menu-usuario">' +
       '<button class="navegacion__usuario" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-cuenta" data-menu-cuenta>' +
-        '<span class="avatar avatar--sm">' + escapar(sesion.initials) + '</span>' +
+        '<span class="avatar avatar--sm">' + htmlAvatarPropio(sesion.initials) + '</span>' +
         '<span><span class="navegacion__nombre">' + escapar(String(sesion.name || '').split(' ')[0]) + '</span>' +
         '<span class="navegacion__nivel">Nivel ' + escapar(nivel) + '</span></span>' +
       '</button>' +
@@ -2824,7 +2884,13 @@ function pantallaPerfil() {
   // Cabecera
   colorearBanda(document.getElementById('banda-perfil'), perfil.favorites);
   var avatar = document.getElementById('avatar-perfil');
-  avatar.textContent = sesion.initials;
+  // Foto (la elegida o la de Steam) o iniciales; el punto de "jugando" se conserva al volver a pintar
+  function pintarAvatar() {
+    var punto = avatar.querySelector('.avatar__punto');
+    avatar.innerHTML = htmlAvatarPropio(sesion.initials, perfil);
+    if (punto) avatar.appendChild(punto);
+  }
+  pintarAvatar();
   if (jugando) {
     avatar.classList.add('avatar--jugando');
     avatar.insertAdjacentHTML('beforeend', '<span class="avatar__punto"></span>');
@@ -2865,6 +2931,9 @@ function pantallaPerfil() {
   var perfilSteam = null;
   function usarPerfilSteam(steam) {
     perfilSteam = steam;
+    pintarAvatar(); // por si llegó la foto de Steam
+    var avatarBarra = document.querySelector('.navegacion__usuario .avatar');
+    if (avatarBarra) avatarBarra.innerHTML = htmlAvatarPropio(sesion.initials, perfil);
     dibujarCuentas(steam);
     anotarCuentaSteam(steam);
     var caja = document.getElementById('jugando-perfil');
@@ -3153,7 +3222,41 @@ function pantallaEditar() {
   var campoNombre = document.getElementById('nombre-visible');
 
   if (new URLSearchParams(location.search).get('nuevo')) document.getElementById('bienvenida').hidden = false;
-  document.getElementById('avatar-editar').textContent = sesion.initials;
+  // Foto de perfil: subir una propia, volver a la de Steam o quitarla (iniciales)
+  var cajaAvatar = document.getElementById('avatar-editar');
+  var ayudaFoto = document.getElementById('foto-ayuda');
+  function dibujarFoto() {
+    cajaAvatar.innerHTML = htmlAvatarPropio(sesion.initials, perfil);
+    var hayFotoSteam = !!perfil.accounts.Steam && !!(leerMemoria('steamPerfil', null) || {}).avatarfull;
+    document.getElementById('foto-steam').hidden = !(hayFotoSteam && perfil.foto);
+    document.getElementById('foto-quitar').hidden = !fotoDePerfil(perfil);
+  }
+  document.getElementById('foto-archivo').addEventListener('change', function (e) {
+    var archivo = e.target.files[0];
+    e.target.value = '';
+    if (!archivo) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(archivo.type)) { ayudaFoto.textContent = 'Usa una imagen JPG, PNG o WebP.'; return; }
+    if (archivo.size > 8 * 1024 * 1024) { ayudaFoto.textContent = 'La imagen pesa más de 8 MB. Prueba con una más liviana.'; return; }
+    ayudaFoto.textContent = 'Preparando tu foto…';
+    recortarFoto(archivo).then(subirFoto).then(function (r) {
+      perfil.foto = r.url;
+      dibujarFoto();
+      ayudaFoto.textContent = r.local
+        ? 'Lista. Toca Guardar cambios. Por ahora se guarda solo en este navegador (no se pudo subir a tu cuenta).'
+        : 'Lista. Toca Guardar cambios para usarla.';
+    }).catch(function () { ayudaFoto.textContent = 'No pudimos usar esa imagen. Prueba con otra.'; });
+  });
+  document.getElementById('foto-steam').addEventListener('click', function () {
+    perfil.foto = null;
+    dibujarFoto();
+    ayudaFoto.textContent = 'Se usará tu foto de Steam. Toca Guardar cambios.';
+  });
+  document.getElementById('foto-quitar').addEventListener('click', function () {
+    perfil.foto = 'iniciales';
+    dibujarFoto();
+    ayudaFoto.textContent = 'Se mostrarán tus iniciales. Toca Guardar cambios.';
+  });
+  dibujarFoto();
   campoNombre.value = sesion.name;
   // Usuario (@): se puede cambiar (menos en la cuenta de demostración)
   var campoUsuario = document.getElementById('usuario-fijo');
@@ -3333,6 +3436,11 @@ function pantallaEditar() {
     perfil.bio = document.getElementById('sobre-mi').value.trim().slice(0, 190);
     perfil.playing = document.getElementById('jugando-ahora').value || null;
     guardarMemoria('profile', perfil);
+    // La foto también se guarda en la cuenta de Supabase (user_metadata.foto), para verla en otros navegadores.
+    // Las fotos guardadas solo en el navegador (data:) no se suben a la cuenta.
+    if (perfil.accounts.Steam && clienteSupabase && !/^data:/.test(perfil.foto || '')) {
+      clienteSupabase.auth.updateUser({ data: { foto: perfil.foto || null } }).catch(function () {});
+    }
     if (!perfil.accounts.Steam && clienteSupabase) clienteSupabase.auth.signOut();
     guardarMemoria('session', Object.assign({}, sesion, { user: nuevoUsuario, name: campoNombre.value.trim(), initials: inicialesDe(campoNombre.value) }));
     mostrarAviso('Cambios guardados');
