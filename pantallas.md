@@ -24,8 +24,8 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
-| 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ (IGDB y Supabase) | ⬜ |
-| 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ (navegador, hasta el inicio de sesión) | ⬜ |
+| 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ (IGDB y Supabase: guarda reseñas, borradores y diario) | ⬜ |
+| 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ (Supabase; XP de la base) | ⬜ |
 | 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ✅ | ✅ (texto fijo) | ⬜ |
 | 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
@@ -66,6 +66,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (data.js + revisión en vivo de IGDB, Steam y Supabase) | ⬜ |
 
 ## Pendientes para la revisión vs spec
+- **Escribir reseña (noviembre)**: con una cuenta real (correo, servicio o Steam) publica, edita y guarda borradores en Supabase, y registra el juego en el diario; lo propio (mis reseñas y mi diario) se lee de la base. La cuenta de demostración sigue guardando en el navegador. Las reseñas y el diario que las cuentas reales tenían solo en el navegador ya no se muestran. Borrar una reseña (Detalle de reseña e Historial) todavía es del navegador.
 - **Perfil, panel Misiones (noviembre)**: no está en el diseño. 3 diarias y 3 semanales de juegos (horas y logros de Steam) con su barra de avance (`.medidor`), XP y cuándo se reinician; cada grupo empieza con un `.separador` («Diarias · se reinician en 5 h»); se comprueban en `api/steam/misiones.js`. Las horas solo cuentan desde la primera vez que la persona abre SaveSlot ese día o esa semana.
 - **Datos de Supabase (noviembre)**: las pantallas leen de Supabase usuarios, reseñas, comentarios, diario, amistades, eventos, tendencias, destacados y misiones (`obtenerDatos()` en app.js; `js/data.js` queda como registro). Mientras llegan se ve «Cargando…» y, si Supabase falla, «No pudimos cargar la información». Chats, notificaciones, inscripciones y vistos recientes siguen en el navegador hasta el inicio de sesión real. Diferencias con los datos de ejemplo: los votos «útil» y me gusta empiezan en 0, nadie sale «en línea» ni «jugando» (llega con la presencia de Supabase), «juegos en común» solo cuenta el diario que hay en la base y las solicitudes de amistad pendientes solo las ven sus dos personas.
 - **Iniciar sesión y Crear cuenta**: los botones «Pronto» de Google y Discord del diseño ahora son cuatro (Google, Discord, Twitch y Steam) con su logo (`.boton__logo`), debajo del formulario de la cuenta de SaveSlot. Todos funcionan: Steam con `api/steam/auth.js` y Google, Discord y Twitch con Supabase Auth (si fallan, llevan a la página de error). El correo usa Supabase Auth y pide confirmar la cuenta por correo (el diseño pasaba directo a Editar perfil); la cuenta de demostración abre una sesión de invitado de Supabase. Lo que hace cada persona todavía se guarda en el navegador.

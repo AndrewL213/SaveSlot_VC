@@ -539,6 +539,59 @@ async function guardarDatos(tipo, fila) {
   return sensible ? null : respuesta.data;
 }
 
+// Cambia una fila de una tabla de Supabase, siempre filtrando por su id (nunca toda la tabla).
+// Devuelve la fila cambiada. Si falla, lo escribe en la consola y lanza el error.
+async function actualizarDatos(tipo, id, cambios) {
+  if (!clienteSupabase) throw new Error('No se pudo conectar con Supabase');
+  var respuesta = await clienteSupabase.from(tipo).update(cambios).eq('id', id).select();
+  if (respuesta.error) {
+    console.error('Supabase no cambió ' + tipo + ' ' + id + ':', respuesta.error);
+    throw respuesta.error;
+  }
+  if (!respuesta.data || !respuesta.data.length) {
+    var sinPermiso = new Error('No se encontró ' + tipo + ' ' + id + ' (o no es tuya)');
+    console.error(sinPermiso);
+    throw sinPermiso;
+  }
+  return respuesta.data[0];
+}
+
+// La fila de usuarios de la cuenta con sesión (correo, Google, Discord, Twitch o Steam), o null
+// (sin sesión, o la cuenta de demostración, que sigue guardando en el navegador).
+// Con crear = true, si la cuenta todavía no tiene fila (por ejemplo, una de Steam), se la crea.
+var MI_FILA = null;
+async function reconocerMiFila(crear) {
+  if (!clienteSupabase || !obtenerSesion()) { MI_FILA = null; return null; }
+  var sesion = (await clienteSupabase.auth.getSession()).data.session;
+  var cuenta = sesion && sesion.user;
+  if (!cuenta || cuenta.is_anonymous) { MI_FILA = null; return null; }
+  var fila = (FILAS.usuarios || []).find(function (u) { return u.auth_id === cuenta.id; }) || null;
+  if (!fila) fila = await obtenerUno('usuarios', cuenta.id, 'auth_id');
+  if (!fila && crear) {
+    var local = obtenerSesion();
+    var nombre = local.name || 'Jugador';
+    var usuario = usuarioLibre(local.user) ? local.user : usuarioPropuesto(local.user || nombre, cuenta.id);
+    var esSteam = !!(cuenta.app_metadata && cuenta.app_metadata.steam_id);
+    fila = (await guardarDatos('usuarios', {
+      auth_id: cuenta.id, usuario: usuario, nombre: nombre, iniciales: local.initials || inicialesDe(nombre),
+      forma_de_entrar: esSteam ? 'steam' : (FORMA_DE_ENTRAR[(cuenta.app_metadata || {}).provider] || 'correo')
+    }))[0];
+    FILAS.usuarios = (FILAS.usuarios || []).concat(fila);
+    DATOS_ARMADOS = {};
+  }
+  MI_FILA = fila || null;
+  return MI_FILA;
+}
+
+// Pone el XP y el nivel del navegador igual que los de la base (la base los cambia con las misiones)
+async function traerMiXp() {
+  if (!MI_FILA) return leerPerfil();
+  var fila = await obtenerUno('usuarios', MI_FILA.id);
+  var perfil = leerPerfil();
+  if (fila) { perfil.xp = fila.xp; perfil.level = fila.nivel; guardarMemoria('profile', perfil); }
+  return perfil;
+}
+
 // Trae de Supabase (una sola vez por página) todo lo necesario para estas tablas
 async function cargarDatos(tipos) {
   var faltan = [];
@@ -1013,8 +1066,12 @@ function resenaParaMemoria(r) {
   };
 }
 
-// Las reseñas propias: las guardadas o, si no hay, las de samluq en data.js
+// Las reseñas propias publicadas. Cuenta real: las de la base. Demostración: las del navegador o, si no hay, las de samluq.
 function leerResenasPropias() {
+  if (MI_FILA) {
+    if (!FILAS.resenas) return [];
+    return datosDe('resenas').filter(function (r) { return r.autor === MI_FILA.usuario && r.estado === 'publicada'; });
+  }
   var guardadas = leerMemoria('myReviews', null);
   if (guardadas) return guardadas.map(resenaDesdeMemoria);
   return datosDe('resenas').filter(function (r) { return r.autor === 'samluq'; }).map(function (r) {
@@ -1027,13 +1084,14 @@ function guardarResenasPropias(lista) {
   guardarMemoria('myReviews', lista.map(resenaParaMemoria));
 }
 
-// Todas las reseñas y guías: las de los demás (data.js) y las propias
+// Todas las reseñas y guías publicadas: las de los demás y las propias
 function obtenerResenas() {
+  if (MI_FILA) return datosDe('resenas').filter(function (r) { return r.estado === 'publicada'; });
   return datosDe('resenas').filter(function (r) { return r.autor !== 'samluq'; }).concat(leerResenasPropias());
 }
 
 function esPropia(resena) {
-  return leerResenasPropias().some(function (r) { return r.id === resena.id; });
+  return leerResenasPropias().some(function (r) { return String(r.id) === String(resena.id); });
 }
 
 function leerComentarios(idResena) {
@@ -2218,8 +2276,12 @@ function diarioDeEjemplo() {
   return datosDe('diario').filter(function (d) { return d.usuario === 'samluq'; });
 }
 
-// Diario propio: el guardado en el navegador o, si no hay, el de la cuenta de demostración
+// Diario propio. Cuenta real: el de la base. Demostración: el del navegador o, si no hay, el de ejemplo.
 function leerDiario() {
+  if (MI_FILA) {
+    if (!FILAS.diario) return [];
+    return datosDe('diario').filter(function (d) { return d.usuario === MI_FILA.usuario; });
+  }
   var guardado = leerMemoria('diary', null);
   if (!guardado) return diarioDeEjemplo();
   return guardado.map(function (d) {
@@ -2529,7 +2591,11 @@ function mostrarEscribir(juego) {
   var dificultad = juego.dificultad || 5;
   var meGusta = false;
   var claveBorrador = 'draft.' + juego.id;
-  var editando = leerResenasPropias().find(function (r) { return r.id === parametros.get('editar') && esJuego(r.juego_igdb, juego); }) || null;
+  var editando = leerResenasPropias().find(function (r) { return String(r.id) === parametros.get('editar') && esJuego(r.juego_igdb, juego); }) || null;
+  // Cuenta real: su borrador de este juego en la base (uno por juego)
+  var borradorBase = MI_FILA && FILAS.resenas ? datosDe('resenas').find(function (r) {
+    return r.autor === MI_FILA.usuario && r.estado === 'borrador' && esJuego(r.juego_igdb, juego);
+  }) || null : null;
 
   var formulario = document.getElementById('formulario-resena');
   var campoTexto = document.getElementById('texto');
@@ -2564,7 +2630,10 @@ function mostrarEscribir(juego) {
     document.getElementById('cancelar').href = 'detalle-resena.html?id=' + encodeURIComponent(editando.id);
     botonPublicar.textContent = 'Guardar cambios';
   } else {
-    var borrador = leerMemoria(claveBorrador, null);
+    // El borrador del navegador (guardado automático) o, si no hay, el de la base
+    var borrador = leerMemoria(claveBorrador, null) || (borradorBase ? {
+      text: borradorBase.texto, title: borradorBase.titulo, score: borradorBase.calificacion, diff: borradorBase.dificultad, hours: borradorBase.horas
+    } : null);
     if (borrador) {
       campoTexto.value = borrador.text || '';
       campoTitulo.value = borrador.title || '';
@@ -2647,14 +2716,94 @@ function mostrarEscribir(juego) {
   campoTexto.addEventListener('input', function () { contar(); guardarBorrador(); });
   campoTitulo.addEventListener('input', guardarBorrador);
   document.getElementById('horas').addEventListener('input', function () { if (campoTexto.value.trim()) guardarBorrador(); });
-  document.getElementById('guardar-borrador').addEventListener('click', function () {
+  var botonBorrador = document.getElementById('guardar-borrador');
+  botonBorrador.addEventListener('click', async function () {
     guardarBorrador();
-    mostrarAviso('Borrador guardado');
+    if (!MI_FILA) { mostrarAviso('Borrador guardado'); return; }
+    // Cuenta real: el borrador también queda en la base (se crea o se actualiza el de este juego)
+    var textoBoton = botonBorrador.textContent;
+    botonBorrador.disabled = true;
+    botonBorrador.textContent = 'Guardando…';
+    try {
+      var cambios = camposDeResena('borrador');
+      borradorBase = borradorBase ? await actualizarDatos('resenas', borradorBase.id, cambios)
+        : (await guardarDatos('resenas', Object.assign({ usuario_id: MI_FILA.id, juego_igdb: Number(juego.id_igdb) }, cambios)))[0];
+      mostrarAviso('Borrador guardado en tu cuenta');
+    } catch (error) {
+      mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+    } finally {
+      botonBorrador.disabled = false;
+      botonBorrador.textContent = textoBoton;
+    }
   });
+
+  // Los campos de la reseña como los guarda la tabla resenas (sin usuario_id: ese no se cambia)
+  function camposDeResena(estado) {
+    var texto = campoTexto.value.trim();
+    return {
+      tipo: tipo === 'guia' ? 'guia' : 'resena', estado: estado, titulo: campoTitulo.value.trim() || null, texto: texto || null,
+      calificacion: calificacion, dificultad: dificultad, horas: Number(document.getElementById('horas').value) || null,
+      estado_partida: document.getElementById('estado').value, spoiler: document.getElementById('spoiler').checked,
+      minutos_lectura: tipo === 'guia' ? Math.max(1, Math.round(texto.split(/\s+/).length / 200)) : null,
+      fecha: new Date().toISOString()
+    };
+  }
   contar();
 
   // Publicar
-  formulario.addEventListener('submit', function (e) {
+  // Publica (o guarda los cambios de) la reseña en Supabase, con su entrada del diario
+  async function publicarEnLaBase(datos) {
+    var textoBoton = editando ? 'Guardar cambios' : 'Publicar';
+    try {
+      if (!Number(juego.id_igdb)) throw new Error('El juego no tiene número de IGDB');
+      var campos = camposDeResena('publicada');
+      var guardada;
+      if (editando) {
+        delete campos.fecha; // al editar se conserva la fecha en que se publicó
+        guardada = await actualizarDatos('resenas', editando.id, Object.assign(campos, { editada: true }));
+      } else if (borradorBase) {
+        // El borrador de este juego pasa a publicado (la tabla solo deja uno por juego)
+        guardada = await actualizarDatos('resenas', borradorBase.id, campos);
+        borradorBase = null;
+      } else {
+        guardada = (await guardarDatos('resenas', Object.assign({ usuario_id: MI_FILA.id, juego_igdb: Number(juego.id_igdb) }, campos)))[0];
+      }
+      if (!editando) {
+        // Registro en el diario
+        await guardarDatos('diario', {
+          usuario_id: MI_FILA.id, juego_igdb: Number(juego.id_igdb), fecha: campoFecha.value || hoy(), estado: datos.estado_partida,
+          horas: datos.horas || null, calificacion: calificacion, me_gusta: meGusta, tiene_resena: tipo === 'resena'
+        });
+        guardarMemoria(claveBorrador, null);
+        avisoBorrador.hidden = true;
+      }
+      if (editando) {
+        abrirModal({
+          titulo: 'Reseña actualizada',
+          texto: 'Los cambios ya se ven en tu historial y en la página del juego.',
+          acciones: [{ texto: 'Ver reseña', href: 'detalle-resena.html?id=' + encodeURIComponent(guardada.id), principal: true }, { texto: 'Ir al historial', href: 'historial-resenas.html' }]
+        });
+        return;
+      }
+      // La base sumó el XP de la misión "publicar": se trae para mostrarlo
+      var perfil = await traerMiXp().catch(function () { return leerPerfil(); });
+      // 9. Ventana: Publicación confirmada
+      abrirModal({
+        titulo: (tipo === 'guia' ? 'Guía' : 'Reseña') + ' publicada',
+        texto: 'Ganaste 50 XP. Vas en ' + formatearNumero(perfil.xp) + ' / ' + formatearNumero(XP_POR_NIVEL) + ' XP del nivel ' + perfil.level + '.',
+        acciones: tipo === 'guia'
+          ? [{ texto: 'Ver en el juego', href: 'detalle-juego.html?id=' + encodeURIComponent(juego.id), principal: true }, { texto: 'Ver mi diario', href: 'diario.html' }]
+          : [{ texto: 'Ver mi reseña', href: 'detalle-resena.html?id=' + encodeURIComponent(guardada.id), principal: true }, { texto: 'Ir al historial', href: 'historial-resenas.html' }]
+      });
+    } catch (error) {
+      mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+    } finally {
+      botonPublicar.disabled = false;
+      botonPublicar.textContent = textoBoton;
+    }
+  }
+
+  formulario.addEventListener('submit', async function (e) {
     e.preventDefault();
     if (tipo === 'clip') {
       abrirModal({ titulo: 'Los clips llegan pronto', texto: 'Subir clips todavía no está disponible. Mientras tanto puedes publicar una reseña o una guía.', acciones: [{ texto: 'Entendido', principal: true }] });
@@ -2672,10 +2821,14 @@ function mostrarEscribir(juego) {
       dificultad: dificultad, horas: Number(document.getElementById('horas').value) || 0,
       spoiler: document.getElementById('spoiler').checked, estado_partida: document.getElementById('estado').value
     };
-    var propias = leerResenasPropias();
     botonPublicar.disabled = true;
-    botonPublicar.textContent = editando ? 'Guardando…' : 'Publicando…';
+    botonPublicar.textContent = 'Guardando…';
+    // Cuenta real (correo, servicio o Steam): se guarda en Supabase. Si es de Steam y no tiene fila, se le crea.
+    var miFila = null;
+    try { miFila = await reconocerMiFila(true); } catch (error) { console.error(error); }
+    if (miFila) { await publicarEnLaBase(datos); return; }
 
+    var propias = leerResenasPropias();
     setTimeout(function () {
       botonPublicar.disabled = false;
       if (editando) {
@@ -5195,6 +5348,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Sesión de Supabase que la app todavía no conoce (vuelta de Google, Discord, Twitch o del correo)
     var siguiente = esError ? null : await sincronizarSesionSupabase();
     if (siguiente && direccionCompleta(siguiente) !== location.href) { location.replace(siguiente); return; }
+    // ¿La sesión es de una cuenta real con fila en usuarios? Entonces lo propio se lee y se guarda en la base
+    if (!esError) await reconocerMiFila(false);
     if (cargando) cargando.remove();
     prepararEncabezado();
     prepararFranja();

@@ -622,8 +622,8 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   6. Título y texto (mínimo 50 caracteres), spoilers
   7. Guardar borrador y Publicar (+50 XP)
 - **Qué funciona de verdad:**
-  - Publicar o editar reseña o guía y registrar en el diario: Real (Supabase)
-  - Guardar borrador: Real (Supabase)
+  - Publicar o editar reseña o guía y registrar en el diario: Real (Supabase: tablas **resenas** y **diario**; editar cambia la reseña por su id y la marca como editada; la base suma +50 XP al publicar). Mientras guarda, el botón dice «Guardando…»; si falla, avisa «No pudimos guardar. Intenta de nuevo.» y conserva lo escrito. Con la cuenta de demostración se guarda en el navegador
+  - Guardar borrador: Real (Supabase: el botón crea o actualiza el borrador de ese juego, uno por juego; al publicar, ese borrador pasa a publicado). El guardado automático mientras se escribe queda en el navegador
   - Subir clip: Después
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
