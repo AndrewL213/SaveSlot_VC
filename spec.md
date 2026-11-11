@@ -899,7 +899,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 ### 26. Ventana: Notificaciones
 - **Archivo de diseño:** sale desde disenos/js/app.js (campana del encabezado, solo con sesión iniciada)
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda ver sus avisos. Sabemos que funciona si la persona abre la ventana desde la campana.
-- **Qué funciona de verdad:** Avisos: Real (Supabase): votos "útil" a tus reseñas y cierre de inscripciones de tus eventos
+- **Qué funciona de verdad:** Avisos: Real (Supabase): votos "útil" a tus reseñas y cierre de inscripciones de tus eventos. Real (Steam): baja de precio de un juego de tu lista de deseos de Steam (se revisa cada 6 horas al abrir cualquier página; el aviso queda 7 días y se guarda en el navegador)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
