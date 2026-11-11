@@ -3820,7 +3820,7 @@ function pantallaEditar() {
   dibujarJugando();
 
   // Favoritos: máximo 4. Una búsqueda sencilla: se escribe el nombre y la lista sugiere cualquier juego
-  // de IGDB (lo tengas o no; se busca mientras escribes, desde 2 letras). Si IGDB no responde, sugiere el catálogo.
+  // de IGDB, lo tengas o no (autocompletado: se busca mientras escribes, desde 2 letras). Sin texto, no sugiere nada.
   var cajaFavoritos = document.getElementById('favoritos-editar');
   var selector = document.getElementById('elegir-favorito');
   var sugerencias = document.getElementById('sugerencias-favorito');
@@ -3836,7 +3836,7 @@ function pantallaEditar() {
       candidatos[texto.toLowerCase()] = j;
       lista.push(texto);
     }
-    (deIgdb.length ? deIgdb : juegos).forEach(function (j) { sumar(j, j.nombre + (j.anio ? ' (' + j.anio + ')' : '')); });
+    deIgdb.forEach(function (j) { sumar(j, j.nombre + (j.anio ? ' (' + j.anio + ')' : '')); });
     sugerencias.innerHTML = lista.map(function (t) { return '<option value="' + escapar(t) + '"></option>'; }).join('');
   }
   // El juego que corresponde a lo escrito: la sugerencia exacta, el mismo nombre o, si solo una lo contiene, esa
@@ -3873,7 +3873,7 @@ function pantallaEditar() {
     var texto = selector.value.trim();
     if (texto.length < 2) { if (deIgdb.length) { deIgdb = []; dibujarSugerencias(); } return; }
     if (candidatos[texto.toLowerCase()]) return; // ya eligió de la lista
-    esperaBusqueda = setTimeout(function () { buscarFavorito(texto); }, 350);
+    esperaBusqueda = setTimeout(function () { buscarFavorito(texto); }, 250);
   });
   // Busca en IGDB y llena las sugerencias (si llega otra búsqueda después, esta se ignora)
   function buscarFavorito(texto) {
@@ -3882,7 +3882,7 @@ function pantallaEditar() {
       if (numero !== busquedaActual) return;
       deIgdb = (d.juegos || []).slice(0, 15).map(conDatosLocales);
       dibujarSugerencias();
-    }).catch(function () { /* IGDB no respondió: queda el catálogo */ });
+    }).catch(function () { /* IGDB no respondió: sin sugerencias */ });
   }
   function agregarFavorito(yaBuscado) {
     if (perfil.favorites.length >= MAXIMO_FAVORITOS) return;
