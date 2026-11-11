@@ -13,7 +13,7 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
 
 ## Integraciones de backend del MVP
 - **Supabase**: todo lo que se guarda.
-  - Cuentas: crear cuenta, iniciar sesión y sesión de invitado (la "cuenta de demostración"). Se entra con la cuenta de SaveSlot (correo y contraseña) o con Google, Discord, Twitch o Steam (proveedores de inicio de sesión de Supabase; sus claves se guardan en Supabase, nunca en el código).
+  - Cuentas: crear cuenta e iniciar sesión. También se puede "Entrar como invitado": sin cuenta, con un perfil vacío que se guarda solo en el navegador. Se entra con la cuenta de SaveSlot (correo y contraseña) o con Google, Discord, Twitch o Steam (proveedores de inicio de sesión de Supabase; sus claves se guardan en Supabase, nunca en el código).
     - En la consola de cada servicio (Google Cloud, Discord y Twitch) la dirección de regreso es `https://jzshrfiezzysbkzdsjzf.supabase.co/auth/v1/callback`. Google está en modo «Prueba»: solo entran sus usuarios de prueba hasta publicar la app.
     - Una sola cuenta, varias formas de entrar: en Editar perfil se vinculan Google, Discord y Twitch a la misma cuenta (vinculación manual de Supabase Auth, activada) y Steam se guarda en la cuenta abierta (`app_metadata.steam_id`). Después se entra a esa cuenta con cualquiera de ellos.
     - Borrar cuenta: la función `borrar_mi_cuenta()` (`supabase/borrar-cuenta.sql`, ya ejecutada) borra la cuenta de quien tiene la sesión y, en cascada, todo lo suyo en la base.
@@ -72,7 +72,7 @@ Solo lo que se ve o se guarda en las pantallas.
 **Reglas comunes**
 - **Cómo se identifican:** las personas, por el id de su cuenta en Supabase Auth (`usuarios.id`); el @usuario es el nombre visible, único, pero puede cambiar. Los juegos, por su número de IGDB (`juego_igdb`, por ejemplo 113112, que nunca cambia); en las direcciones de la web va el slug (`detalle-juego.html?id=hades--1`). El catálogo vive en IGDB: un `juego_igdb` no tiene que estar en la tabla **juegos**. Los ids numéricos los pone Supabase. Las pantallas de detalle reciben el id en la dirección: `?id=…`.
 - **Nombres:** tablas y campos en minúsculas, sin tildes, con guion bajo; los mismos en Supabase, `js/data.js` y `js/app.js`.
-- **Permisos:** sin sesión solo se puede **ver** lo público. Para agregar, cambiar o borrar hace falta sesión (también la de invitado de la cuenta de demostración). Cada persona solo cambia o borra lo suyo (reglas de acceso de Supabase).
+- **Permisos:** sin sesión solo se puede **ver** lo público. Para agregar, cambiar o borrar hace falta sesión (el invitado no tiene sesión de Supabase: lo que hace queda en su navegador). Cada persona solo cambia o borra lo suyo (reglas de acceso de Supabase).
 - **Lo que cambia solo la base:** nivel, XP, insignias, misiones cumplidas, cupos ocupados y notificaciones los cambia la base de datos con reglas en SQL; nadie los toca desde la app (así nadie puede subirse el XP ni llenar cupos desde el navegador).
 - **Tipos de campo:** texto, texto largo, número, sí/no, fecha, fecha y hora, enlace (URL), imagen (ruta en `assets/`), opción de una lista fija, o lista (varios valores).
 - "Calculado" quiere decir que no se guarda: la app o la base lo saca de otros datos.
@@ -145,7 +145,7 @@ Campos:
 - insignias: lista de textos — "Fundador beta"… (las pone la base) — opcional
 - color: texto (#RRGGBB) — color del avatar — opcional
 - forma_de_entrar: opción (correo, google, discord, twitch, steam) — obligatorio
-- invitado: sí/no — cuenta de demostración — obligatorio
+- invitado: sí/no — para un futuro invitado con cuenta (hoy el invitado no tiene fila en usuarios) — obligatorio
 Se relaciona con: Supabase Auth (id).
 - Calculados: estado "en línea" y última conexión (presencia de Supabase), "jugando" (de `jugando_ahora` o de Steam), amigos en común, notas de cada juego (del diario).
 
@@ -449,7 +449,7 @@ Se relaciona con: ninguna.
   - **variantes_error**: id, codigo, titulo, texto, consejos, reintentar, espera, accion, servicio_por_defecto
   - **estado_servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto, prueba (opcional: igdb, steam, base o cuentas; con ella la página de error revisa de verdad si el servicio responde)
   - Las opciones de orden y los rangos de los filtros ("Más recientes", "A–Z", "9–10", "< 10 h"…) son parte de la interfaz y siguen en el HTML.
-- **Cuenta de demostración (`js/data.js`):** el perfil, las reseñas y el diario de samluq. Las personas de ejemplo ya no están en Supabase (se borraron con `supabase/limpiar-ejemplos.sql` y `esquema.sql` ya no las carga): la comunidad es de cuentas reales.
+- **Datos de ejemplo (`js/data.js`):** quedan solo como registro (la app ya no los muestra). Las personas de ejemplo ya no están en Supabase (se borraron con `supabase/limpiar-ejemplos.sql` y `esquema.sql` ya no las carga): la comunidad es de cuentas reales.
 - **Simulados (`js/data.js`):** respuestas_matchplay (las respuestas de la IA), y logros, progreso_logros y resumen_logros de otras plataformas (los de Steam son reales).
 - **Archivos (Supabase Storage):** carpeta pública **avatares** (código en `supabase/avatares.sql`, ya creada): las fotos de perfil, en `avatares/<id de Auth>/avatar.jpg`. Cualquiera las ve; cada persona solo sube, cambia o borra la suya (al borrar la cuenta se borra también). Solo imágenes JPG, PNG o WebP de hasta 2 MB (la app las recorta a 256 px antes de subirlas).
 - **Después:** clips (necesitan Supabase Storage o Twitch), pagos de eventos y mensajes entre amigos.
@@ -623,7 +623,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   6. Título y texto (mínimo 50 caracteres), spoilers
   7. Guardar borrador y Publicar (+50 XP)
 - **Qué funciona de verdad:**
-  - Publicar o editar reseña o guía y registrar en el diario: Real (Supabase: tablas **resenas** y **diario**; editar cambia la reseña por su id y la marca como editada; la base suma +50 XP al publicar). Mientras guarda, el botón dice «Guardando…»; si falla, avisa «No pudimos guardar. Intenta de nuevo.» y conserva lo escrito. Con la cuenta de demostración se guarda en el navegador
+  - Publicar o editar reseña o guía y registrar en el diario: Real (Supabase: tablas **resenas** y **diario**; editar cambia la reseña por su id y la marca como editada; la base suma +50 XP al publicar). Mientras guarda, el botón dice «Guardando…»; si falla, avisa «No pudimos guardar. Intenta de nuevo.» y conserva lo escrito. Como invitado se guarda en el navegador
   - Guardar borrador: Real (Supabase: el botón crea o actualiza el borrador de ese juego, uno por juego; al publicar, ese borrador pasa a publicado). El guardado automático mientras se escribe queda en el navegador
   - Subir clip: Después
 - **Está lista cuando:**
@@ -735,12 +735,12 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Contenido:**
   1. Correo y contraseña (con mostrar u ocultar)
   2. Entrar
-  3. Entrar con la cuenta de demostración
+  3. Entrar como invitado
   4. Explorar sin cuenta
   5. Google, Discord, Twitch y Steam (cuatro botones con su logo, debajo del botón principal: primero va la cuenta de SaveSlot)
 - **Qué funciona de verdad:**
   - Entrar con correo (cuenta de SaveSlot): Real (Supabase Auth, signInWithPassword). Si la contraseña no coincide o falta confirmar el correo, lo dice junto al campo.
-  - Cuenta de demostración: Real (sesión de invitado de Supabase, sin contraseña, con los datos de ejemplo de `js/data.js`: perfil, reseñas y diario de samluq; lo que hace se guarda en el navegador)
+  - Entrar como invitado: sin cuenta y sin pedir datos, con un perfil vacío ("Invitado", @invitado). No crea nada en Supabase: lo que hace (reseñas, diario, favoritos…) se guarda solo en ese navegador y no puede cambiar el @. Para guardar en la base, hay que crear una cuenta
   - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). Vuelve a la pantalla donde estaba, con Steam vinculada. Si Steam está vinculada a una cuenta de Google, Discord, Twitch o correo, abre esa cuenta.
   - Google, Discord y Twitch: Real (proveedores de Supabase Auth, signInWithOAuth). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
 - **Está lista cuando:**
@@ -748,7 +748,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Funciona en celular (375 px de ancho).
   - Con el correo mal escrito o sin contraseña, muestra el error junto al campo.
   - Al entrar, el encabezado muestra al usuario en vez de los botones de acceso.
-  - La cuenta de demostración entra sin pedir datos y muestra el perfil de ejemplo.
+  - "Entrar como invitado" entra sin pedir datos y muestra un perfil vacío.
   - Cada botón de servicio lleva a entrar con ese servicio (si falla: a la página de error con su nombre).
 
 ### 17. Crear cuenta

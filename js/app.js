@@ -262,7 +262,7 @@ function recortarFoto(archivo) {
 }
 
 // Sube la foto a Supabase Storage (avatares/<id de la cuenta>/avatar.jpg; ver supabase/avatares.sql).
-// Sin sesión de Supabase (cuenta de correo de prueba o de demostración) o si falla,
+// Sin sesión de Supabase (por ejemplo, invitado) o si falla,
 // queda guardada solo en este navegador. Devuelve { url, local }.
 function subirFoto(blob) {
   function local() {
@@ -395,7 +395,7 @@ async function sincronizarSesionSupabase() {
   if (!clienteSupabase) return null;
   var respuesta = await clienteSupabase.auth.getSession();
   var cuenta = respuesta.data && respuesta.data.session && respuesta.data.session.user;
-  if (!cuenta || cuenta.is_anonymous) return null;                      // sin sesión, o la de demostración
+  if (!cuenta || cuenta.is_anonymous) return null;                      // sin sesión de Supabase (por ejemplo, invitado)
   var local = obtenerSesion();
   if (local && local.auth_id === cuenta.id) return null;                // ya la conoce
   // La cuenta creada al entrar con Steam: si entró con Steam, ese camino ya abrió la sesión.
@@ -557,7 +557,7 @@ async function actualizarDatos(tipo, id, cambios) {
 }
 
 // La fila de usuarios de la cuenta con sesión (correo, Google, Discord, Twitch o Steam), o null
-// (sin sesión, o la cuenta de demostración, que sigue guardando en el navegador).
+// (sin sesión, o invitado: lo que hace queda en el navegador).
 // Con crear = true, si la cuenta todavía no tiene fila (por ejemplo, una de Steam), se la crea.
 var MI_FILA = null;
 async function reconocerMiFila(crear) {
@@ -1045,7 +1045,7 @@ function sonAmigos(usuario) {
    comments.…) y lo leen el Diario, el Historial, el Perfil y el Detalle de juego. */
 
 function usuarioActual() {
-  return (obtenerSesion() || { user: 'samluq' }).user;
+  return (obtenerSesion() || { user: 'invitado' }).user;
 }
 
 // Reseña guardada (formato del prototipo) → formato de data.js
@@ -1066,18 +1066,13 @@ function resenaParaMemoria(r) {
   };
 }
 
-// Las reseñas propias publicadas. Cuenta real: las de la base. Demostración: las del navegador o, si no hay, las de samluq.
+// Las reseñas propias publicadas. Cuenta real: las de la base. Invitado: las de este navegador.
 function leerResenasPropias() {
   if (MI_FILA) {
     if (!FILAS.resenas) return [];
     return datosDe('resenas').filter(function (r) { return r.autor === MI_FILA.usuario && r.estado === 'publicada'; });
   }
-  var guardadas = leerMemoria('myReviews', null);
-  if (guardadas) return guardadas.map(resenaDesdeMemoria);
-  return datosDeLaDemostracion('resenas').filter(function (r) { return r.autor === 'samluq'; }).map(function (r) {
-    var partida = diarioDeEjemplo().find(function (d) { return d.juego_igdb === r.juego_igdb; });
-    return Object.assign({}, r, { autor: usuarioActual(), estado_partida: partida ? partida.estado : null, editada: false });
-  });
+  return (leerMemoria('myReviews', null) || []).map(resenaDesdeMemoria);
 }
 
 function guardarResenasPropias(lista) {
@@ -1087,7 +1082,7 @@ function guardarResenasPropias(lista) {
 // Todas las reseñas y guías publicadas: las de los demás y las propias
 function obtenerResenas() {
   if (MI_FILA) return datosDe('resenas').filter(function (r) { return r.estado === 'publicada'; });
-  return datosDe('resenas').filter(function (r) { return r.autor !== 'samluq'; }).concat(leerResenasPropias());
+  return datosDe('resenas').filter(function (r) { return r.estado === 'publicada'; }).concat(leerResenasPropias());
 }
 
 function esPropia(resena) {
@@ -1111,9 +1106,7 @@ function guardarComentarios(idResena, lista) {
 
 // Suma una entrada al diario (formato del prototipo), la más reciente primero
 function agregarAlDiario(entrada) {
-  var diario = leerMemoria('diary', null) || diarioDeEjemplo().map(function (d) {
-    return { game: d.juego_igdb, date: d.fecha, state: d.estado, hours: d.horas, score: d.calificacion, like: d.me_gusta, review: d.tiene_resena };
-  });
+  var diario = leerMemoria('diary', null) || [];
   diario.unshift({ game: entrada.juego_igdb, date: entrada.fecha, state: entrada.estado, hours: entrada.horas, score: entrada.calificacion, like: entrada.me_gusta, review: entrada.tiene_resena });
   diario.sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
   guardarMemoria('diary', diario);
@@ -2259,38 +2252,29 @@ function pantallaMatchplay() {
   }
 }
 
-// Datos de la cuenta de demostración: los de ejemplo de js/data.js (perfil, reseñas y diario de samluq).
-// Las personas de ejemplo ya no están en Supabase: la comunidad es de cuentas reales.
-function datosDeLaDemostracion(tipo) {
-  return (DATOS[tipo] || []).slice();
-}
-
-// Perfil propio guardado en el navegador.
-// La primera vez se arma con los datos de samluq en data.js (cuenta de demostración).
-function leerPerfil() {
-  var guardado = leerMemoria('profile', null);
-  if (guardado) return guardado;
-  var yo = datosDeLaDemostracion('usuarios').find(function (u) { return u.id === 'samluq'; });
+// Un perfil vacío (para quien entra como invitado o todavía no tiene perfil en este navegador)
+function perfilVacio(usuario) {
   return {
-    user: 'samluq', xp: yo.xp, level: yo.nivel, bio: yo.sobre_mi, since: yo.miembro_desde, favorites: yo.favoritos.slice(),
-    wishlist: yo.lista_deseos.slice(), genres: yo.generos_favoritos.slice(), playing: yo.jugando_ahora,
-    accounts: { Steam: 'samluq_steam', PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: ['calificar', 'guia']
+    user: usuario, xp: 0, level: 1, bio: '', since: hoy(), favorites: [], wishlist: [], genres: [], playing: null,
+    accounts: { Steam: null, PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: []
   };
 }
 
-// Diario de la cuenta de demostración (samluq), de js/data.js
-function diarioDeEjemplo() {
-  return datosDeLaDemostracion('diario').filter(function (d) { return d.usuario === 'samluq'; });
+// Perfil propio guardado en el navegador (si no hay, uno vacío)
+function leerPerfil() {
+  var guardado = leerMemoria('profile', null);
+  if (guardado) return guardado;
+  return perfilVacio(usuarioActual());
 }
 
-// Diario propio. Cuenta real: el de la base. Demostración: el del navegador o, si no hay, el de ejemplo.
+// Diario propio. Cuenta real: el de la base. Invitado: el de este navegador.
 function leerDiario() {
   if (MI_FILA) {
     if (!FILAS.diario) return [];
     return datosDe('diario').filter(function (d) { return d.usuario === MI_FILA.usuario; });
   }
   var guardado = leerMemoria('diary', null);
-  if (!guardado) return diarioDeEjemplo();
+  if (!guardado) return [];
   return guardado.map(function (d) {
     return { juego_igdb: numeroDeJuego(d.game), fecha: d.date, estado: d.state, horas: d.hours, calificacion: d.score, me_gusta: !!d.like, tiene_resena: !!d.review };
   });
@@ -3141,7 +3125,7 @@ async function pantallaResena() {
 
   // Datos de la partida
   var partida = resena.estado_partida;
-  if (!partida && resena.autor === 'samluq') {
+  if (!partida && resena.autor) {
     var enDiario = datosDe('diario').find(function (d) { return d.juego_igdb === resena.juego_igdb && d.usuario === resena.autor; });
     partida = enDiario && enDiario.estado;
   }
@@ -3477,20 +3461,13 @@ function pantallaEntrar() {
     }
   });
 
-  // Cuenta de demostración: una sesión de invitado de Supabase, sin pedir datos, con el perfil de ejemplo
-  var botonDemo = document.getElementById('entrar-demo');
-  botonDemo.addEventListener('click', async function () {
-    botonDemo.disabled = true;
-    try {
-      var r = await clienteSupabase.auth.signInAnonymously();
-      if (r.error) throw r.error;
-      iniciarSesion({ name: 'Samuel D Luq', user: 'samluq', initials: 'SL', email: 'demo@saveslot', invitado: true });
-      location.href = destinoVolver();
-    } catch (error) {
-      console.error('No se pudo abrir la cuenta de demostración:', error);
-      mostrarAviso('No pudimos abrir la cuenta de demostración. Intenta de nuevo.');
-      botonDemo.disabled = false;
-    }
+  // Entrar como invitado: sin pedir datos, con un perfil vacío. No crea cuenta en Supabase:
+  // lo que haga el invitado queda solo en este navegador.
+  document.getElementById('entrar-demo').addEventListener('click', function () {
+    iniciarSesion({ name: 'Invitado', user: 'invitado', initials: 'IN', email: '', invitado: true }, {
+      profile: perfilVacio('invitado'), myReviews: [], diary: [], joined: [], inscripciones: [], friends: {}, chatsMatchplay: []
+    });
+    location.href = destinoVolver();
   });
 }
 
@@ -4104,17 +4081,17 @@ function pantallaEditar() {
   });
   dibujarFoto();
   campoNombre.value = sesion.name;
-  // Usuario (@): se puede cambiar (menos en la cuenta de demostración)
+  // Usuario (@): se puede cambiar (menos como invitado)
   var campoUsuario = document.getElementById('usuario-fijo');
   var ayudaUsuario = document.getElementById('ayuda-usuario');
-  var esDemo = sesion.email === 'demo@saveslot';
+  var esDemo = !!sesion.invitado || sesion.email === 'demo@saveslot'; // invitado (o la antigua cuenta de demostración)
   campoUsuario.value = sesion.user;
   campoUsuario.disabled = esDemo;
   function revisarUsuario() {
     var valor = campoUsuario.value.trim();
     var libre = usuarioLibre(valor, sesion.user);
     ayudaUsuario.className = valor === sesion.user ? 'grupo-campo__ayuda' : (libre ? 'grupo-campo__ayuda grupo-campo__ayuda--listo' : 'grupo-campo__error');
-    ayudaUsuario.textContent = esDemo ? 'La cuenta de demostración no puede cambiar de usuario.'
+    ayudaUsuario.textContent = esDemo ? 'Como invitado no tienes un @ propio: crea una cuenta para elegirlo.'
       : valor === sesion.user ? (USUARIO_VALIDO.test(valor) ? 'Tu @ en SaveSlot. De 3 a 20 letras, números, punto o guion bajo.' : 'Elige un @ más corto: de 3 a 20 letras, números, punto o guion bajo.')
       : libre ? '✓ Disponible' : (USUARIO_VALIDO.test(valor) ? 'Ese usuario ya existe. Prueba otro.' : 'Usa de 3 a 20 letras, números, punto o guion bajo.');
     campoUsuario.classList.toggle('campo--error', !esDemo && valor !== sesion.user && !libre);
@@ -4457,7 +4434,7 @@ function preguntarBorrarCuenta() {
 function borrarCuenta() {
   var borrarEnLaBase = !clienteSupabase ? Promise.resolve() : clienteSupabase.auth.getSession().then(function (r) {
     var cuenta = r.data && r.data.session && r.data.session.user;
-    if (!cuenta) return; // sesión solo de este navegador (demostración)
+    if (!cuenta) return; // sesión solo de este navegador (invitado)
     // La foto subida (avatares/<id>/avatar.jpg); si no hay, no pasa nada
     return clienteSupabase.storage.from('avatares').remove([cuenta.id + '/avatar.jpg']).catch(function () {}).then(function () {
       return clienteSupabase.rpc('borrar_mi_cuenta');

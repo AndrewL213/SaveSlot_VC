@@ -6,7 +6,8 @@
 --   · Las personas de ejemplo (las que no tienen cuenta: auth_id vacío), como samluq o kenvel. En cascada se
 --     borra todo lo suyo: reseñas, borradores, comentarios, diario, amistades, favoritos, géneros, lista de
 --     deseos, insignias, cuentas vinculadas, inscripciones, avisos, chats y misiones cumplidas.
---   · Las cuentas de invitado (las que crea el botón "Entrar con la cuenta de demostración").
+--   · Las cuentas de invitado de Supabase (las creaba el antiguo botón "Entrar con la cuenta de demostración";
+--     el botón "Entrar como invitado" ya no crea cuentas).
 --   · Los mensajes de prueba de Contáctanos (los que empiezan por "PRUEBA").
 -- Qué NO borra: las cuentas reales (correo, Google, Discord, Twitch o Steam) y lo suyo, ni los eventos,
 -- misiones, tendencias y destacados.
@@ -24,7 +25,7 @@ select
   (select count(*) from public.comentarios c join public.usuarios u on u.id = c.usuario_id where u.auth_id is null) as comentarios,
   (select count(*) from public.diario d join public.usuarios u on u.id = d.usuario_id where u.auth_id is null) as diario;
 
--- Cuentas de invitado (demostración) que se van a borrar
+-- Cuentas de invitado de Supabase que se van a borrar
 select count(*) as cuentas_de_invitado from auth.users where is_anonymous;
 
 -- Mensajes de prueba de Contáctanos que se van a borrar

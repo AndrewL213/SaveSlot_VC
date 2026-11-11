@@ -1865,7 +1865,7 @@ const DATOS = {
       consejos: [
         "Vuelve a intentarlo: a veces el servicio tarda o la ventana se cerró antes de tiempo.",
         "Revisa que tu navegador no esté bloqueando las cookies de {servicio}.",
-        "Mientras tanto, entra con tu correo, otro servicio o la cuenta de demostración."
+        "Mientras tanto, entra con tu correo, otro servicio o entra como invitado."
       ],
       reintentar: true,
       servicio_por_defecto: "ese servicio",
