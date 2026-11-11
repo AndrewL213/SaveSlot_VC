@@ -35,7 +35,7 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
   - `api/steam/auth.js`: entrar con Steam (OpenID 2.0). Steam devuelve a la persona a la app con un token de un solo uso y la app abre la sesión de Supabase (`verifyOtp`). La cuenta queda con `app_metadata.steam_id`, su @ se guarda en `user_metadata.usuario` y su foto elegida en `user_metadata.foto`.
     - Si esa cuenta de Steam está vinculada a una cuenta de Google, Discord, Twitch o correo, entrar con Steam abre esa cuenta (la busca en **usuarios_steam**). Si no, usa la cuenta creada con Steam (correo interno `steam-<número>@saveslot.invalid`).
     - Vincular Steam a la cuenta abierta: `?action=preparar` (con la sesión) devuelve un permiso firmado que vale 10 minutos; con él, Steam se guarda en esa cuenta en vez de crear otra. Si esa cuenta de Steam ya es de otra cuenta de SaveSlot, vuelve con el error `steam_en_otra_cuenta`.
-  - `api/steam/data.js` (con la sesión de Supabase): `profile` (perfil, jugando ahora, recientes de 2 semanas, nivel e insignias de Steam), `library` (biblioteca con horas), `wishlist` (lista de deseos con precio en COP y descuento), `achievements_summary` (logros de los 30 juegos más jugados y los más raros), `achievements`, `stats` y `my_reviews` (tus reseñas de Steam).
+  - `api/steam/data.js` (con la sesión de Supabase): `profile` (perfil, jugando ahora, recientes de 2 semanas ordenados del último jugado al más antiguo, con sus minutos; nivel e insignias de Steam), `library` (biblioteca con horas), `wishlist` (lista de deseos con precio en COP y descuento), `achievements_summary` (logros de los 30 juegos más jugados y los más raros), `achievements`, `stats` y `my_reviews` (tus reseñas de Steam).
   - `api/steam/resenas.js` (sin sesión): las 10 reseñas en español más útiles de un juego y su nota global en Steam.
   - `api/steam/juego.js` (sin sesión): precio, descuento, nota, logros totales y jugadores conectados de un juego; los guarda en la tabla **juegos** de Supabase y no vuelve a preguntarle a Steam en 24 horas.
   - `api/steam/sincronizar.js`: Vercel la ejecuta cada día a las 9:00 UTC (4:00 a. m. en Colombia; `crons` en `vercel.json`) y actualiza hasta 200 juegos de la tabla **juegos**. Solo responde a Vercel (variable `CRON_SECRET`).
@@ -454,6 +454,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 | `juegos_igdb` | Ninguna: copia de los últimos 100 juegos de IGDB abiertos, para que reseñas, deseos y diario sepan su nombre y portada |
 | `avisosPrecio` | **notificaciones** (los avisos de baja de precio) |
 | `notisVistas` | **notificaciones** (campo `leida`) |
+| `steamRecientesVistos` | Ninguna: cuándo vio la app crecer el tiempo de cada juego reciente de Steam, para ordenarlos del último jugado al más antiguo (Steam no da la fecha de los juegos prestados o de prueba) |
 | `steamPreciosAvisados`, `steamPreciosRevisados` | Ninguna: recuerdan qué descuento ya se avisó y cuándo se revisó la lista de deseos de Steam |
 | `hideDemo`, `datosDe.*`, `duenoDatos` | Ninguna: son ayudas del modo demo y se quitan |
 
