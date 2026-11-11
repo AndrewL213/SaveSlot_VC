@@ -29,7 +29,7 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
   - Mientras no esté conectada (o abriendo los archivos directo en el navegador), la app usa los juegos de `js/data.js`.
   - Cada juego trae `appid_steam`, su número en Steam (IGDB lo guarda en `external_games`; Steam es la fuente 1), para pedirle a Steam precio, nota, logros y reseñas.
 - **Steam** (Steam Web API + OpenID): funciones de Vercel en `api/steam/`. La clave `STEAM_API_KEY` y la llave secreta de Supabase (`SUPABASE_SERVICE_ROLE_KEY`) están solo en Vercel. Antes eran Edge Functions de Supabase (`steam-auth` y `steam-data`); ya no se usan.
-  - `api/steam/auth.js`: entrar con Steam (OpenID 2.0). Steam devuelve a la persona a la app con un token de un solo uso y la app abre la sesión de Supabase (`verifyOtp`). La cuenta queda con `app_metadata.steam_id`, y su @ se guarda en `user_metadata.usuario`.
+  - `api/steam/auth.js`: entrar con Steam (OpenID 2.0). Steam devuelve a la persona a la app con un token de un solo uso y la app abre la sesión de Supabase (`verifyOtp`). La cuenta queda con `app_metadata.steam_id`, su @ se guarda en `user_metadata.usuario` y su foto elegida en `user_metadata.foto`.
   - `api/steam/data.js` (con la sesión de Supabase): `profile` (perfil, jugando ahora, recientes de 2 semanas, nivel e insignias de Steam), `library` (biblioteca con horas), `wishlist` (lista de deseos con precio en COP y descuento), `achievements_summary` (logros de los 30 juegos más jugados y los más raros), `achievements`, `stats` y `my_reviews` (tus reseñas de Steam).
   - `api/steam/resenas.js` (sin sesión): las 10 reseñas en español más útiles de un juego y su nota global en Steam.
   - `api/steam/juego.js` (sin sesión): precio, descuento, nota, logros totales y jugadores conectados de un juego; los guarda en la tabla **juegos** de Supabase y no vuelve a preguntarle a Steam en 24 horas.
@@ -107,7 +107,7 @@ Se relaciona con: el juego (igdb_id).
 Qué guarda: las cuentas de SaveSlot vinculadas a Steam, para saber qué autores de reseñas de Steam tienen cuenta en SaveSlot (ya creada; código en `supabase/usuarios_steam.sql`).
 Tipo de dato: compartida
 Se guarda en: Supabase
-Desde la app se puede: ver (Detalle de juego: EN SAVESLOT o SOLO STEAM) · agregar y cambiar la propia (`api/steam/auth.js` al entrar con Steam y el Perfil, una vez por visita).
+Desde la app se puede: ver (Detalle de juego: «También en SaveSlot · @usuario» en las reseñas de Steam de quienes tienen cuenta) · agregar y cambiar la propia (`api/steam/auth.js` al entrar con Steam y el Perfil, una vez por visita). Cada persona solo puede anotar su propio número de Steam: la regla lo compara con `app_metadata.steam_id`.
 Campos:
 - id: texto — la cuenta de Supabase Auth — obligatorio
 - steam_id64: texto, único — su número de Steam — obligatorio
@@ -126,6 +126,7 @@ Campos:
 - usuario: texto, único — el @ (de 3 a 20 letras, números, punto o guion bajo) — obligatorio
 - nombre: texto — nombre visible — obligatorio
 - iniciales: texto — para el avatar — obligatorio
+- foto: enlace — foto de perfil que subió la persona (en Supabase Storage, carpeta **avatares**). Vacía = la foto de Steam si la tiene, o las iniciales; «iniciales» = sin foto aunque tenga Steam. Hoy se guarda en `user_metadata.foto` de Supabase Auth — opcional
 - sobre_mi: texto largo — "Sobre mí" — opcional
 - jugando_ahora: texto — el juego (slug de IGDB o `steam-<número>`; "steam" = automático con Steam) — opcional
 - miembro_desde: fecha — cuándo se creó la cuenta — obligatorio
@@ -420,7 +421,8 @@ Se relaciona con: ninguna.
   - **estado_servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto (Simulado)
   - Las opciones de orden y los rangos de los filtros ("Más recientes", "A–Z", "9–10", "< 10 h"…) son parte de la interfaz y siguen en el HTML.
 - **Simulados (`js/data.js`):** respuestas_matchplay (las respuestas de la IA), y logros, progreso_logros y resumen_logros de otras plataformas (los de Steam son reales).
-- **Después:** clips y foto de perfil (necesitan Supabase Storage), pagos de eventos y mensajes entre amigos.
+- **Archivos (Supabase Storage):** carpeta pública **avatares** (código en `supabase/avatares.sql`, ya creada): las fotos de perfil, en `avatares/<id de Auth>/avatar.jpg`. Cualquiera las ve; cada persona solo sube, cambia o borra la suya. Solo imágenes JPG, PNG o WebP de hasta 2 MB (la app las recorta a 256 px antes de subirlas).
+- **Después:** clips (necesitan Supabase Storage o Twitch), pagos de eventos y mensajes entre amigos.
 
 ### Hoy en el navegador → tabla de Supabase
 
@@ -774,7 +776,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Archivo de diseño:** disenos/editar-perfil.html
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda personalizar su perfil y vincular sus plataformas. Sabemos que funciona si la persona guarda al menos un cambio.
 - **Contenido:**
-  1. Perfil público: nombre, usuario (@), sobre mí, qué estás jugando
+  1. Perfil público: foto, nombre, usuario (@), sobre mí, qué estás jugando
   2. 4 juegos favoritos
   3. Géneros favoritos
   4. Cuentas vinculadas
@@ -786,13 +788,14 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Favoritos: se pueden elegir de la biblioteca de Steam (ordenada por horas) o del catálogo.
   - Vincular Steam: Real (Steam). Vincular Xbox: Simulado
   - Vincular PlayStation o Nintendo: Después (no tienen conexión pública, según el diseño)
-  - Foto de perfil: Después (el diseño dice que llega con el almacenamiento de archivos)
+  - Foto de perfil: Real (Supabase Storage). Por defecto se usa la foto de Steam (si está vinculada) o las iniciales. "Cambiar foto" sube una imagen propia, recortada en cuadrado; "Usar la de Steam" vuelve a la de Steam y "Quitar foto" deja las iniciales. Al guardar, queda en la cuenta (`user_metadata.foto`) y se ve en el Perfil y en la barra. Sin sesión de Supabase (cuentas de correo de prueba y la de demostración), o si la subida falla, la foto queda solo en ese navegador y la app lo avisa.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
   - No deja agregar un quinto favorito.
   - Los cambios guardados se ven en el Perfil.
   - Un @ inválido u ocupado muestra su error y no deja guardar.
+  - Una foto que no es JPG, PNG o WebP, o de más de 8 MB, muestra su error; una foto guardada se ve en el Perfil y en la barra.
 
 ### 21. Diario
 - **Archivo de diseño:** disenos/diario.html

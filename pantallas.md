@@ -66,7 +66,8 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 ## Pendientes para la revisión vs spec
 - **Iniciar sesión y Crear cuenta**: los botones «Pronto» de Google y Discord del diseño ahora son cuatro (Google, Discord, Twitch y Steam) con su logo (`.boton__logo`), debajo del formulario de la cuenta de SaveSlot. Steam ya funciona (`api/steam/auth.js`); Google, Discord y Twitch llevan a la página de error hasta conectarlos en Supabase.
 - **404.html**: tiene 5 variantes nuevas de «no encontrado» (página, juego, evento, reseña y usuario) y una de «acceso» (entrar con Google, Discord o Twitch mientras no están conectados) que el diseño no traía; la de página es la que sale por defecto. En Vercel, una línea en el <head> hace que los archivos se busquen desde la raíz del sitio.
-- **Mensaje (Amigos y Perfil de otro usuario)**, clips, pagos y foto de perfil: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
+- **Mensaje (Amigos y Perfil de otro usuario)**, clips y pagos: siguen visibles como en el diseño, aunque la spec los marca como **Después**.
+- **Foto de perfil (Editar perfil)**: ya funciona con Supabase Storage (carpeta `avatares`), aunque el diseño decía que llegaba después. Por ahora solo se ve en el Perfil propio y en la barra; en reseñas y perfiles de otros se verá cuando la app lea la tabla **usuarios**.
 - **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).
 - **Comunidad, pestaña Guías**: cada guía abre su juego (como en el diseño), no un Detalle de reseña; las guías de ejemplo no tienen texto completo.
 - **Detalle de evento**: la banda usa el color de cada evento (el diseño usa azul fijo para torneos y verde para sorteos). Premio, costo y organizadores siguen con los textos entre corchetes del diseño hasta tener los datos reales en Supabase.
