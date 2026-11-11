@@ -1818,7 +1818,7 @@ const DATOS = {
       id: "tiempo",
       codigo: "API-408",
       titulo: "La respuesta tardó demasiado",
-      texto: "{servicio} tardó más de 8 segundos en responder, así que dejamos de esperar.",
+      texto: "{servicio} tardó más de 15 segundos en responder, así que dejamos de esperar.",
       consejos: [
         "Revisa tu conexión.",
         "Vuelve a intentarlo."
@@ -1858,62 +1858,19 @@ const DATOS = {
       reintentar: true
     },
     {
-      id: "plataforma",
-      servicio_por_defecto: "Esta plataforma",
-      codigo: "LIM-PLAT",
-      titulo: "{servicio} todavía no se puede vincular",
-      texto: "{servicio} no ofrece una API pública para que webs como SaveSlot lean tus juegos, logros o actividad. No vamos a usar métodos no oficiales que pidan tus credenciales.",
-      consejos: [
-        "Registra tus juegos a mano en tu diario.",
-        "Vincula Steam o Xbox, que sí están disponibles.",
-        "Te avisaremos si la plataforma abre su API."
-      ],
-      reintentar: false,
-      accion: {
-        texto: "Registrar en mi diario",
-        pagina: "buscar-juegos.html"
-      }
-    },
-    {
-      id: "pagos",
-      codigo: "LIM-PAY",
-      titulo: "Los pagos aún no están disponibles",
-      texto: "SaveSlot es un prototipo académico y no tiene una pasarela de pagos conectada. Ningún cobro se realizó.",
-      consejos: [
-        "Usa la opción gratis con XP cuando el evento la tenga.",
-        "Revisa los eventos gratuitos en la pestaña “Gratis”."
-      ],
-      reintentar: false,
-      accion: {
-        texto: "Ver eventos gratis",
-        pagina: "eventos.html"
-      }
-    },
-    {
-      id: "funcion",
-      codigo: "LIM-FEAT",
-      titulo: "{servicio} aún no está disponible",
-      texto: "Esta función depende de una API que el equipo todavía está solicitando. Por ahora no la puedes usar.",
-      consejos: [
-        "Usa la alternativa disponible (correo y contraseña, o subir texto).",
-        "Revisa el estado de los servicios abajo."
-      ],
-      reintentar: false
-    },
-    {
       id: "acceso",
-      codigo: "LIM-AUTH",
-      titulo: "Entrar con {servicio} aún no está disponible",
-      texto: "Estamos conectando el inicio de sesión con {servicio}. Mientras tanto, entra o crea tu cuenta con tu correo, o prueba la cuenta de demostración.",
+      codigo: "AUTH-ERR",
+      titulo: "No pudimos entrar con {servicio}",
+      texto: "{servicio} no respondió o el inicio de sesión se canceló. Tu cuenta está bien: no se cambió nada.",
       consejos: [
-        "Entra con tu correo y contraseña de SaveSlot.",
-        "Usa la cuenta de demostración para ver todo sin registrarte.",
-        "Cuando conectes {servicio}, tu progreso se queda en la misma cuenta."
+        "Vuelve a intentarlo: a veces el servicio tarda o la ventana se cerró antes de tiempo.",
+        "Revisa que tu navegador no esté bloqueando las cookies de {servicio}.",
+        "Mientras tanto, entra con tu correo, otro servicio o la cuenta de demostración."
       ],
-      reintentar: false,
-      servicio_por_defecto: "este servicio",
+      reintentar: true,
+      servicio_por_defecto: "ese servicio",
       accion: {
-        texto: "Entrar con tu correo",
+        texto: "Entrar de otra forma",
         pagina: "iniciar-sesion.html"
       }
     },
@@ -1921,11 +1878,11 @@ const DATOS = {
       id: "demo",
       codigo: "DEMO",
       titulo: "Estás viendo el prototipo de SaveSlot",
-      texto: "Steam ya está conectado: si entras con Steam, tu biblioteca, logros, lista de deseos, juegos recientes y reseñas son reales. El catálogo de juegos también es real (IGDB). El resto (cuentas con correo, eventos, amigos e IA) todavía usa datos de ejemplo y guarda tu actividad solo en este navegador.",
+      texto: "Ya son reales: el catálogo de juegos (IGDB), las cuentas (correo, Google, Discord, Twitch y Steam) y todo lo de Steam: biblioteca, logros, lista de deseos con aviso de ofertas, juegos recientes, reseñas y precios. Perfiles, reseñas, eventos y misiones se leen de la base de datos, pero muchos son de ejemplo. MatchPlay (IA) responde con ejemplos, y lo que haces (reseñar, tu diario, inscripciones y chats) todavía se guarda solo en este navegador.",
       consejos: [
-        "Entra con Steam para ver tus datos reales, o usa la cuenta de demostración para probar todo lo demás.",
-        "Puedes crear una cuenta, reseñar, llenar tu diario y chatear con MatchPlay en modo demo.",
-        "Borrar los datos del navegador borra tu actividad."
+        "Entra con tu correo, Google, Discord, Twitch o Steam; en Editar perfil puedes unirlos en una sola cuenta.",
+        "Vincula Steam para ver tu biblioteca, tus logros y tu lista de deseos reales.",
+        "Borrar los datos del navegador borra tu actividad que todavía no está en la base."
       ],
       reintentar: false,
       accion: {
@@ -1937,95 +1894,24 @@ const DATOS = {
       id: "estado",
       codigo: "STATUS",
       titulo: "Estado de los servicios",
-      texto: "Qué partes de SaveSlot están conectadas a servicios reales y cuáles funcionan en modo demo.",
+      texto: "Qué partes de SaveSlot están conectadas a servicios reales y cuáles funcionan en modo demo. Los servicios conectados se revisan al abrir esta página.",
       consejos: [],
       reintentar: false
     }
   ],
+  // prueba: qué revisa 404.html al abrirse (ver revisarServicio en app.js); sin prueba, el estado es fijo
   estado_servicios: [
-    {
-      id: "s1",
-      servicio: "Catálogo de juegos",
-      proveedor: "IGDB (Twitch) + lo más jugado en Steam",
-      estado: "conectado",
-      texto: "Conectado"
-    },
-    {
-      id: "s2",
-      servicio: "Cuentas y actividad del usuario",
-      proveedor: "Supabase",
-      estado: "demo",
-      texto: "Modo demo (navegador)"
-    },
-    {
-      id: "s3",
-      servicio: "MatchPlay (IA)",
-      proveedor: "Por definir",
-      estado: "demo",
-      texto: "Modo demo"
-    },
-    {
-      id: "s4",
-      servicio: "Cuentas: Steam (perfil, biblioteca, logros, deseos y reseñas)",
-      proveedor: "Steam Web API + OpenID (Vercel)",
-      estado: "conectado",
-      texto: "Conectado"
-    },
-    {
-      id: "s5",
-      servicio: "Cuentas: Xbox",
-      proveedor: "OpenXBL (tercero)",
-      estado: "pendiente",
-      texto: "Pendiente de clave"
-    },
-    {
-      id: "s6",
-      servicio: "Cuentas: PlayStation",
-      proveedor: "—",
-      estado: "no-disponible",
-      texto: "Sin API pública"
-    },
-    {
-      id: "s7",
-      servicio: "Cuentas: Nintendo",
-      proveedor: "—",
-      estado: "no-disponible",
-      texto: "Sin API pública"
-    },
-    {
-      id: "s8",
-      servicio: "Inicio de sesión con Steam",
-      proveedor: "Steam OpenID + Supabase Auth",
-      estado: "conectado",
-      texto: "Conectado"
-    },
-    {
-      id: "s11",
-      servicio: "Inicio de sesión con Google, Discord y Twitch",
-      proveedor: "Supabase Auth",
-      estado: "pendiente",
-      texto: "Pendiente"
-    },
-    {
-      id: "s12",
-      servicio: "Precios, notas, jugadores y reseñas de Steam en cada juego",
-      proveedor: "Steam (tienda y comunidad) + Supabase",
-      estado: "conectado",
-      texto: "Conectado · se actualiza cada día"
-    },
-    {
-      id: "s9",
-      servicio: "Clips y transmisiones",
-      proveedor: "Twitch API",
-      estado: "pendiente",
-      texto: "Pendiente de clave"
-    },
-    {
-      id: "s10",
-      servicio: "Pagos de eventos",
-      proveedor: "Pasarela de pagos",
-      estado: "no-disponible",
-      texto: "No disponible"
-    }
+    { id: "s1", servicio: "Catálogo de juegos", proveedor: "IGDB (Twitch), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "igdb" },
+    { id: "s12", servicio: "Lo más jugado, precios, notas y reseñas de Steam (se actualiza cada día)", proveedor: "Steam (tienda y comunidad) + Supabase", estado: "conectado", texto: "Conectado", prueba: "steam" },
+    { id: "s2", servicio: "Base de datos (perfiles, reseñas, eventos, misiones)", proveedor: "Supabase", estado: "conectado", texto: "Conectado", prueba: "base" },
+    { id: "s8", servicio: "Cuentas: correo, Google, Discord, Twitch y Steam", proveedor: "Supabase Auth + Steam OpenID", estado: "conectado", texto: "Conectado", prueba: "cuentas" },
+    { id: "s4", servicio: "Tu Steam: perfil, biblioteca, logros, deseos y reseñas", proveedor: "Steam Web API (Vercel)", estado: "conectado", texto: "Conectado" },
+    { id: "s13", servicio: "Tu actividad: reseñar, diario, inscripciones, chats y avisos", proveedor: "Este navegador", estado: "demo", texto: "Modo demo" },
+    { id: "s3", servicio: "MatchPlay (IA)", proveedor: "Por definir", estado: "demo", texto: "Modo demo" },
+    { id: "s5", servicio: "Cuentas: Xbox", proveedor: "OpenXBL (tercero)", estado: "pendiente", texto: "Sin clave" },
+    { id: "s6", servicio: "Cuentas: PlayStation", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
+    { id: "s7", servicio: "Cuentas: Nintendo", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
+    { id: "s9", servicio: "Clips y transmisiones", proveedor: "Twitch API", estado: "pendiente", texto: "Pendiente" },
+    { id: "s10", servicio: "Pagos de eventos", proveedor: "Pasarela de pagos", estado: "no-disponible", texto: "No disponible" }
   ]
 };

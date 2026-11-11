@@ -394,7 +394,10 @@ function activarBotonesServicios(destino) {
       e.preventDefault();
       clienteSupabase.auth.signInWithOAuth({ provider: SERVICIOS_SUPABASE[nombre], options: { redirectTo: direccionCompleta(destino) } })
         .then(function (r) { if (r.error) throw r.error; })
-        .catch(function (error) { console.error('No se pudo entrar con ' + nombre + ':', error); location.href = boton.href; });
+        .catch(function (error) {
+          console.error('No se pudo entrar con ' + nombre + ':', error);
+          location.href = boton.href + '&volver=' + encodeURIComponent(location.pathname.split('/').pop() + location.search);
+        });
     });
   });
 }
@@ -731,11 +734,31 @@ var VERSION_API = 2;
 })();
 
 // Le pregunta a api/igdb.js. Devuelve una promesa con la respuesta, o falla con el código de error.
+// Si tarda más de 15 segundos deja de esperar y falla con estado 408 (la página de error lo explica).
 function preguntarIgdb(parametros) {
-  return fetch('/api/igdb?' + new URLSearchParams(Object.assign({}, parametros, { v: VERSION_API }))).then(function (r) {
+  var control = window.AbortController ? new AbortController() : null;
+  var reloj = control ? setTimeout(function () { control.abort(); }, 15000) : null;
+  return fetch('/api/igdb?' + new URLSearchParams(Object.assign({}, parametros, { v: VERSION_API })), control ? { signal: control.signal } : {}).then(function (r) {
+    clearTimeout(reloj);
     if (!r.ok) { var error = new Error('IGDB ' + r.status); error.estado = r.status; throw error; }
     return r.json();
+  }, function (e) {
+    clearTimeout(reloj);
+    var error = new Error('IGDB sin respuesta');
+    error.estado = e && e.name === 'AbortError' ? 408 : 0;
+    throw error;
   });
+}
+
+// La página de error para un servicio externo que falló, según lo que respondió:
+// 429 límite de consultas · 408 tardó demasiado · 401/403 clave vencida · 503 mantenimiento ·
+// 0 sin internet · lo demás, "no está respondiendo". Con "Reintentar" para volver a esta página.
+function direccionErrorServicio(error, servicio) {
+  var estado = error && error.estado;
+  var tipo = estado === 429 ? 'limite' : estado === 408 ? 'tiempo' : (estado === 401 || estado === 403) ? 'credenciales' :
+    estado === 503 ? 'mantenimiento' : (estado === 0 && navigator.onLine === false) ? 'sin-conexion' : 'api';
+  var volver = location.pathname.split('/').pop() + location.search;
+  return rutaPagina('404.html') + '?tipo=' + tipo + '&servicio=' + encodeURIComponent(servicio) + '&volver=' + encodeURIComponent(volver);
 }
 
 // Un juego por su id (slug de IGDB), ya unido con data.js.
@@ -2151,7 +2174,7 @@ function htmlCalaveras(dificultad) {
 function pantallaJuego() {
   var id = idDeJuego(new URLSearchParams(location.search).get('id'));
   pedirJuego(id).then(mostrarJuego, function (error) {
-    location.replace(rutaPagina('404.html') + (error && error.estado === 404 ? '?tipo=juego' : '?tipo=api&servicio=IGDB'));
+    location.replace(error && error.estado === 404 ? rutaPagina('404.html') + '?tipo=juego' : direccionErrorServicio(error, 'IGDB'));
   });
 }
 
@@ -2420,7 +2443,7 @@ function pantallaEscribir() {
   var id = idDeJuego(new URLSearchParams(location.search).get('id'));
   // Cualquier juego de IGDB (queda guardado, para que la reseña y el diario sepan su nombre y portada)
   pedirJuego(id).then(mostrarEscribir, function (error) {
-    location.replace(rutaPagina('404.html') + (error && error.estado === 404 ? '?tipo=juego' : '?tipo=api&servicio=IGDB'));
+    location.replace(error && error.estado === 404 ? rutaPagina('404.html') + '?tipo=juego' : direccionErrorServicio(error, 'IGDB'));
   });
 }
 
@@ -4804,15 +4827,38 @@ function pantallaError() {
     }
   }
 
-  // Estado de los servicios (simulado)
-  document.getElementById('estado-servicios').innerHTML = datosDe('estado_servicios').map(function (s) {
-    // "Con fallas" solo cuando un servicio falló (no cuando una función no existe todavía)
-    var falla = /^API-/.test(variante.codigo);
+  // Estado de los servicios: los que tienen "prueba" (data.js) se revisan de verdad al abrir la página
+  var falla = /^API-/.test(variante.codigo); // "Con fallas" del servicio que nombra la dirección
+  var filas = datosDe('estado_servicios');
+  function celdaEstado(s, resultado) {
+    if (resultado === 'revisando') return '<span class="etiqueta etiqueta--contorno">Revisando…</span>';
+    if (resultado === false) return '<span class="etiqueta etiqueta--error">Con fallas</span>';
+    return '<span class="etiqueta ' + (ETIQUETA_SERVICIO[s.estado] || 'etiqueta--contorno') + '">' + escapar(s.texto) + '</span>';
+  }
+  document.getElementById('estado-servicios').innerHTML = filas.map(function (s) {
     var afectado = falla && servicio && (s.servicio.indexOf(servicio) !== -1 || s.proveedor.indexOf(servicio) !== -1);
-    return '<tr><td>' + (afectado ? '<b>' + escapar(s.servicio) + '</b> <span class="etiqueta etiqueta--error">Con fallas</span>' : '<b>' + escapar(s.servicio) + '</b>') + '</td>' +
+    return '<tr><td><b>' + escapar(s.servicio) + '</b>' + (afectado ? ' <span class="etiqueta etiqueta--error">Con fallas</span>' : '') + '</td>' +
       '<td class="tarjeta__texto">' + escapar(s.proveedor) + '</td>' +
-      '<td><span class="etiqueta ' + (ETIQUETA_SERVICIO[s.estado] || 'etiqueta--contorno') + '">' + escapar(s.texto) + '</span></td></tr>';
+      '<td data-estado-servicio="' + escapar(s.id) + '">' + celdaEstado(s, s.prueba ? 'revisando' : null) + '</td></tr>';
   }).join('');
+  filas.filter(function (s) { return s.prueba; }).forEach(function (s) {
+    revisarServicio(s.prueba).then(function (bien) {
+      document.querySelector('[data-estado-servicio="' + s.id + '"]').innerHTML = celdaEstado(s, bien);
+    });
+  });
+}
+
+// Revisa si un servicio responde ahora. Devuelve una promesa con true o false (nunca falla).
+function revisarServicio(prueba) {
+  var pedido;
+  if ((prueba === 'base' || prueba === 'cuentas') && !clienteSupabase) return Promise.resolve(false);
+  if (prueba === 'igdb') pedido = preguntarIgdb({ populares: 1 });
+  else if (prueba === 'steam') pedido = preguntarIgdb({ steam: 1 }).then(function (d) { if (!(d.juegos || []).length) throw new Error('vacío'); });
+  else if (prueba === 'base') pedido = clienteSupabase.from('misiones').select('id').limit(1).then(function (r) { if (r.error) throw r.error; });
+  else if (prueba === 'cuentas') pedido = fetch(SUPABASE_URL + '/auth/v1/health', { headers: { apikey: SUPABASE_LLAVE_PUBLICABLE } })
+    .then(function (r) { if (!r.ok) throw new Error('Auth ' + r.status); });
+  else return Promise.resolve(true);
+  return pedido.then(function () { return true; }, function (e) { console.error('Servicio ' + prueba + ' con fallas:', e); return false; });
 }
 
 /* ---------- Arranque ---------- */
@@ -4875,7 +4921,8 @@ function mostrarErrorDeCarga() {
   var principal = document.querySelector('main');
   if (!principal) return;
   principal.innerHTML = '<div class="vacio" role="alert"><b>No pudimos cargar la información. Intenta de nuevo.</b>' +
-    '<button class="boton boton--secundario boton--sm" type="button" id="reintentar-carga">Intentar de nuevo</button></div>';
+    '<button class="boton boton--secundario boton--sm" type="button" id="reintentar-carga">Intentar de nuevo</button>' +
+    '<a class="boton boton--fantasma boton--sm" href="' + rutaPagina('404.html') + '?tipo=estado">Ver el estado de los servicios</a></div>';
   document.getElementById('reintentar-carga').addEventListener('click', function () { location.reload(); });
 }
 
