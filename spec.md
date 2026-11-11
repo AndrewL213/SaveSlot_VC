@@ -755,7 +755,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda ver su actividad y sus juegos en un solo lugar. Sabemos que funciona si la persona entra a Editar perfil, Diario o Logros desde aquí.
 - **Contenido:**
   1. Portada, avatar, nombre con el @ de SaveSlot al lado; debajo, los @ de las cuentas vinculadas (Steam con su logo y enlace a su perfil); luego el nivel de SaveSlot y el de Steam (con sus insignias), y "jugando ahora"
-  2. Estadísticas (Juegos = biblioteca de Steam si está vinculada; Logros, Reseñas y Lista de deseos suman los de Steam)
+  2. Estadísticas (Juegos = biblioteca de Steam si está vinculada; Este año = juegos distintos que jugaste este año en Steam (biblioteca y recientes, también prestados o de prueba) y en tu diario, porque Steam no da la fecha de compra; Logros, Reseñas y Lista de deseos suman los de Steam)
   3. 4 juegos favoritos (pueden ser del catálogo o de la biblioteca de Steam)
   4. Actividad reciente: lo jugado en Steam las últimas 2 semanas y lo último del diario, con enlaces a Historial de reseñas y Diario
   5. Géneros más jugados y calificaciones
