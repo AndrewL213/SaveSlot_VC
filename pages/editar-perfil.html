@@ -55,6 +55,7 @@
       <a class="menu-lateral__enlace" href="#favoritos">Juegos favoritos</a>
       <a class="menu-lateral__enlace" href="#generos">Géneros favoritos</a>
       <a class="menu-lateral__enlace" href="#cuentas">Cuentas vinculadas</a>
+      <a class="menu-lateral__enlace" href="#borrar">Borrar cuenta</a>
     </nav>
 
     <form class="division__principal" id="formulario-perfil" novalidate>
@@ -115,12 +116,21 @@
       <section class="panel" id="cuentas" aria-labelledby="titulo-cuentas">
         <div class="en-fila en-fila--entre"><h2 class="tarjeta__titulo" id="titulo-cuentas">Cuentas vinculadas</h2><span class="tarjeta__texto">+100 XP por cada una</span></div>
         <div class="pila pila--junta" id="cuentas-editar"></div>
+        <p class="separador">Formas de entrar</p>
+        <span class="tarjeta__texto">Vincula Google, Discord o Twitch para entrar a esta misma cuenta con cualquiera de ellos.</span>
+        <div class="pila pila--junta" id="formas-entrar" aria-live="polite"></div>
       </section>
 
       <div class="en-fila al-derecha">
         <a class="boton boton--secundario" href="perfil.html">Cancelar</a>
         <button class="boton" type="submit">Guardar cambios</button>
       </div>
+
+      <section class="panel" id="borrar" aria-labelledby="titulo-borrar">
+        <h2 class="tarjeta__titulo" id="titulo-borrar">Borrar cuenta</h2>
+        <p class="tarjeta__texto">Borra tu cuenta de SaveSlot con tu perfil, reseñas, diario, amigos y cuentas vinculadas. No se puede deshacer. Tus cuentas de Steam, Google, Discord y Twitch no se tocan.</p>
+        <div><button class="boton boton--peligro" type="button" id="borrar-cuenta">Borrar mi cuenta</button></div>
+      </section>
     </form>
   </div>
 
