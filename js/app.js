@@ -3514,6 +3514,7 @@ function pantallaPerfil() {
       nivel.textContent = 'STEAM NIVEL ' + steam.steam_level + (steam.badges ? ' · ' + steam.badges + ' INSIGNIAS' : '');
     }
     dibujarRecientes();
+    if (typeof actualizarEsteAnio === 'function') actualizarEsteAnio();
   }
   if ((perfil.accounts || {}).Steam) {
     var guardadoSteam = leerMemoria('steamPerfil', null);
@@ -3595,13 +3596,31 @@ function pantallaPerfil() {
   document.getElementById('estadisticas-perfil').innerHTML = [
     // Con Steam vinculada, "Juegos" es tu biblioteca de Steam; si no, los juegos del diario
     (perfil.accounts || {}).Steam ? ['Juegos', bibliotecaSteam.length, 'biblioteca.html'] : ['Juegos', diario.length, 'diario.html'],
-    ['Este año', diario.filter(function (d) { return String(d.fecha).slice(0, 4) === anio; }).length, 'diario.html'],
+    ['Este año', juegosEsteAnio(bibliotecaSteam, leerMemoria('steamPerfil', null)), (perfil.accounts || {}).Steam ? 'biblioteca.html?orden=recientes' : 'diario.html'],
     ['Reseñas', resenas.length + ((perfil.accounts || {}).Steam ? (leerMemoria('steamResenas', null) || { reviews: [] }).reviews.length : 0), 'historial-resenas.html'],
     ['Logros', formatearNumero(logrosSteam ? logrosSteam.summary.unlocked : (resumenLogros ? resumenLogros.desbloqueados : 0)), 'logros.html'],
     ['Lista de deseos', perfil.wishlist.length + ((perfil.accounts || {}).Steam ? (leerMemoria('steamDeseos', null) || { games: [] }).games.length : 0), '#deseos']
   ].map(function (d) {
-    return '<a class="dato" href="' + d[2] + '"><span class="dato__valor">' + d[1] + '</span><span class="dato__etiqueta">' + d[0] + '</span></a>';
+    return '<a class="dato" href="' + d[2] + '"' + (d[0] === 'Este año' ? ' data-este-anio title="Juegos que jugaste este año: en Steam y en tu diario"' : '') + '>' +
+      '<span class="dato__valor">' + d[1] + '</span><span class="dato__etiqueta">' + d[0] + '</span></a>';
   }).join('');
+
+  // "Este año": juegos distintos que jugaste este año. Steam no dice cuándo compraste un juego,
+  // así que cuenta los de tu biblioteca jugados desde el 1 de enero, los recientes de Steam
+  // (aunque no estén en tu biblioteca, como los prestados o de prueba) y los del diario de este año.
+  function juegosEsteAnio(biblioteca, steam) {
+    var desde = new Date(Number(anio), 0, 1).getTime() / 1000;
+    var vistos = {};
+    biblioteca.forEach(function (j) { if (j.ultima_vez >= desde) vistos['steam-' + j.appid] = true; });
+    var hace2Semanas = Date.now() / 1000 - 14 * 24 * 3600;
+    if (hace2Semanas >= desde) ((steam && steam.recent_games) || []).forEach(function (g) { vistos['steam-' + g.appid] = true; });
+    diario.forEach(function (d) { if (String(d.fecha).slice(0, 4) === anio) vistos['diario-' + d.juego_igdb] = true; });
+    return Object.keys(vistos).length;
+  }
+  function actualizarEsteAnio() {
+    var dato = document.querySelector('#estadisticas-perfil [data-este-anio] .dato__valor');
+    if (dato) dato.textContent = juegosEsteAnio(bibliotecaSteam, perfilSteam || leerMemoria('steamPerfil', null));
+  }
 
   // Juegos favoritos (4 lugares)
   var favoritos = perfil.favorites.slice(0, 4).map(function (id) { return buscarPorId('juegos', id); }).filter(Boolean);
@@ -3690,6 +3709,8 @@ function pantallaPerfil() {
     }).join('') || '<div class="vacio">Trayendo tu biblioteca de Steam…</div>';
     var dato = document.querySelector('#estadisticas-perfil a[href="biblioteca.html"] .dato__valor');
     if (dato) dato.textContent = lista.length;
+    bibliotecaSteam = lista;
+    actualizarEsteAnio();
     dibujarGeneros(lista);
   }
   if ((perfil.accounts || {}).Steam) {
@@ -4485,6 +4506,8 @@ function pantallaBiblioteca() {
   var buscador = document.getElementById('buscar-biblioteca');
   var orden = 'horas';
   var juegos = leerBibliotecaSteam();
+  // ?orden=recientes (desde "Este año" del Perfil) abre la biblioteca ya ordenada
+  var ordenPedido = new URLSearchParams(location.search).get('orden');
   var ORDENES = {
     horas: function (a, b) { return b.horas - a.horas; },
     recientes: function (a, b) { return b.ultima_vez - a.ultima_vez; },
@@ -4527,6 +4550,10 @@ function pantallaBiblioteca() {
     dibujar();
   });
   buscador.addEventListener('input', dibujar);
+  if (ordenPedido && ORDENES[ordenPedido]) {
+    orden = ordenPedido;
+    document.querySelectorAll('[data-orden]').forEach(function (c) { c.setAttribute('aria-pressed', String(c.dataset.orden === orden)); });
+  }
 
   dibujar();
 
