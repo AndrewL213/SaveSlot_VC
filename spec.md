@@ -257,7 +257,7 @@ Se relaciona con: usuarios.id y resenas.id. Uno por persona y reseña.
 Qué guarda: los comentarios de las reseñas.
 Tipo de dato: aporte
 Se guarda en: Supabase
-Desde la app se puede: ver y agregar (Detalle de reseña).
+Desde la app se puede: ver y agregar (Detalle de reseña) · borrar los propios (Detalle de reseña, con confirmación).
 Campos:
 - id: número — obligatorio
 - resena: número — obligatorio
@@ -676,9 +676,9 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   4. Comentarios: escribir uno y ver la lista
   5. Sobre el juego, datos de la partida y más reseñas del juego
 - **Qué funciona de verdad:**
-  - Reseña y votar "útil": Real (Supabase)
-  - Comentarios: Real (Supabase)
-  - Editar o eliminar la reseña propia: Real (Supabase)
+  - Reseña y votar "útil": Real (Supabase: **votos_util**; tocar "Útil" otra vez quita el voto). También en Inicio, Detalle de juego y Comunidad
+  - Comentarios: Real (Supabase: **comentarios**; cada persona puede borrar los suyos, con confirmación) · Me gusta: Real (Supabase: **me_gusta_resenas**; se pone y se quita)
+  - Editar o eliminar la reseña propia: Real (Supabase; eliminar pide confirmación, borra con ella sus votos, me gusta y comentarios, y su entrada del diario deja de decir que tiene reseña). Mientras guarda, el botón se desactiva; si falla, avisa «No pudimos guardar» o «No pudimos borrar». Como invitado, todo se guarda en el navegador
   - Compartir (copiar enlace): Simulado
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
@@ -862,7 +862,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   5. Botón + Escribir reseña
 - **Qué funciona de verdad:**
   - Lista, búsqueda y filtros: Real (Supabase)
-  - Editar o eliminar una reseña: Real (Supabase)
+  - Editar o eliminar una reseña: Real (Supabase; eliminar pide confirmación, porque en la base no se puede deshacer)
   - Tus reseñas de Steam: Real (comunidad de Steam). Llevan la etiqueta Steam (con su logo), muestran si recomiendas el juego y se editan desde Steam; salen con el filtro "Todas" (no tienen nota). Las de SaveSlot llevan la etiqueta SaveSlot (con su logo).
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).

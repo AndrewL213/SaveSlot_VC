@@ -504,13 +504,16 @@ drop policy if exists "me_gusta_resenas: borrar el propio" on public.me_gusta_re
 create policy "me_gusta_resenas: borrar el propio" on public.me_gusta_resenas for delete to authenticated using (usuario_id = (select public.mi_usuario_id()));
 grant insert, delete on table public.me_gusta_resenas to authenticated;
 
--- comentarios: todos los ven; con sesión se comenta (Detalle de reseña)
+-- comentarios: todos los ven; con sesión se comenta y cada persona puede borrar los suyos (Detalle de reseña)
 drop policy if exists "comentarios: ver" on public.comentarios;
 create policy "comentarios: ver" on public.comentarios for select to anon, authenticated using (true);
 grant select on table public.comentarios to anon, authenticated;
 drop policy if exists "comentarios: agregar los propios" on public.comentarios;
 create policy "comentarios: agregar los propios" on public.comentarios for insert to authenticated with check (usuario_id = (select public.mi_usuario_id()));
 grant insert on table public.comentarios to authenticated;
+drop policy if exists "comentarios: borrar los propios" on public.comentarios;
+create policy "comentarios: borrar los propios" on public.comentarios for delete to authenticated using (usuario_id = (select public.mi_usuario_id()));
+grant delete on table public.comentarios to authenticated;
 
 -- diario: todos lo ven (juegos en común y actividad); cada persona agrega, cambia y borra lo suyo
 drop policy if exists "diario: ver" on public.diario;

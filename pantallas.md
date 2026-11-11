@@ -28,7 +28,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ (Supabase; XP de la base) | ⬜ |
 | 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ✅ | ✅ (texto fijo) | ⬜ |
 | 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ✅ | ✅ (Supabase: lee y guarda útil, me gusta, comentarios y eliminar) | ⬜ |
 
 ## Eventos
 
@@ -49,7 +49,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ (misiones de Supabase) | ⬜ |
 | 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ (Supabase: eliminar en la base) | ⬜ |
 | 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ (Steam; otras plataformas simuladas en data.js) | ⬜ |
 | 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
@@ -66,6 +66,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (data.js + revisión en vivo de IGDB, Steam y Supabase) | ⬜ |
 
 ## Pendientes para la revisión vs spec
+- **Detalle de reseña e Historial (noviembre)**: con una cuenta real, el «útil» (en todas las pantallas), el me gusta, los comentarios y eliminar la reseña propia se guardan en Supabase. Borrar el comentario propio es nuevo (spec.md solo dejaba agregar). Eliminar, en el Historial y en los comentarios, pide confirmación en vez de «Deshacer», porque en la base no se puede deshacer.
 - **Invitado (noviembre)**: «Entrar con la cuenta de demostración» ahora es «Entrar como invitado»: perfil vacío, solo en el navegador, sin cuenta en Supabase (ya no muestra el perfil de ejemplo de samluq).
 - **Datos de ejemplo (noviembre)**: las personas de ejemplo (samluq, kenvel…) y lo suyo se borraron de Supabase (`supabase/limpiar-ejemplos.sql`) y `esquema.sql` ya no las carga: Inicio, Comunidad y los perfiles muestran solo cuentas reales (pueden verse casi vacíos al principio). La cuenta de demostración usa el perfil, las reseñas y el diario de samluq de `js/data.js`. El voto «útil» ahora se puede quitar tocándolo otra vez (spec.md lo prohibía; se cambió).
 - **Escribir reseña (noviembre)**: con una cuenta real (correo, servicio o Steam) publica, edita y guarda borradores en Supabase, y registra el juego en el diario; lo propio (mis reseñas y mi diario) se lee de la base. El invitado guarda en el navegador. Las reseñas y el diario que las cuentas reales tenían solo en el navegador ya no se muestran. Borrar una reseña (Detalle de reseña e Historial) todavía es del navegador.

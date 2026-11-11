@@ -556,6 +556,61 @@ async function actualizarDatos(tipo, id, cambios) {
   return respuesta.data[0];
 }
 
+// Borra una fila de una tabla de Supabase, siempre filtrando por su id (nunca toda la tabla).
+// Si falla, o si no se borró nada (no existe o no es tuya), lo escribe en la consola y lanza el error.
+async function eliminarDatos(tipo, id) {
+  if (!clienteSupabase) throw new Error('No se pudo conectar con Supabase');
+  var respuesta = await clienteSupabase.from(tipo).delete().eq('id', id).select();
+  if (respuesta.error) {
+    console.error('Supabase no borró ' + tipo + ' ' + id + ':', respuesta.error);
+    throw respuesta.error;
+  }
+  if (!respuesta.data || !respuesta.data.length) {
+    var nada = new Error('No se borró ' + tipo + ' ' + id + ' (no existe o no es tuya)');
+    console.error(nada);
+    throw nada;
+  }
+  return respuesta.data[0];
+}
+
+// Mi voto "útil" o mi me gusta en una reseña (fila de la base), o null
+function miMarca(tabla, idResena) {
+  if (!MI_FILA) return null;
+  return (FILAS[tabla] || []).find(function (v) { return String(v.resena_id) === String(idResena) && v.usuario_id === MI_FILA.id; }) || null;
+}
+// ¿Ya marqué "útil" / me gusta? Cuenta real: en la base. Invitado: en este navegador.
+function marqueUtil(idResena) { return MI_FILA ? !!miMarca('votos_util', idResena) : contieneId(leerMemoria('votosUtil', []), idResena); }
+function marqueMeGusta(idResena) { return MI_FILA ? !!miMarca('me_gusta_resenas', idResena) : contieneId(leerMemoria('meGustaResenas', []), idResena); }
+// Cuántos "útil" o me gusta tiene una reseña: los de la base (al día) y, si soy invitado, el mío del navegador
+function cuantasMarcas(tabla, resena) {
+  var enLaBase = FILAS[tabla] && /^\d+$/.test(String(resena.id))
+    ? FILAS[tabla].filter(function (v) { return String(v.resena_id) === String(resena.id); }).length
+    : (tabla === 'votos_util' ? resena.votos_util : resena.me_gusta) || 0;
+  var propia = !MI_FILA && (tabla === 'votos_util' ? marqueUtil(resena.id) : marqueMeGusta(resena.id));
+  return enLaBase + (propia ? 1 : 0);
+}
+// Pone o quita mi marca en la base (votos_util o me_gusta_resenas). Devuelve true si quedó puesta.
+async function cambiarMarca(tabla, idResena) {
+  var mia = miMarca(tabla, idResena);
+  if (mia) {
+    await eliminarDatos(tabla, mia.id);
+    FILAS[tabla] = FILAS[tabla].filter(function (v) { return v.id !== mia.id; });
+  } else {
+    var nueva = (await guardarDatos(tabla, { usuario_id: MI_FILA.id, resena_id: Number(idResena) }))[0];
+    FILAS[tabla] = (FILAS[tabla] || []).concat(nueva);
+  }
+  DATOS_ARMADOS = {};
+  return !mia;
+}
+
+// Borra mi reseña de la base (con ella se borran sus votos, me gusta y comentarios) y, en mi diario,
+// esa entrada deja de decir que tiene reseña
+async function borrarMiResena(resena) {
+  await eliminarDatos('resenas', resena.id);
+  var entrada = leerDiario().find(function (d) { return d.tiene_resena && d.juego_igdb === resena.juego_igdb; });
+  if (entrada && entrada.id) await actualizarDatos('diario', entrada.id, { tiene_resena: false }).catch(function () { /* la reseña ya se borró */ });
+}
+
 // La fila de usuarios de la cuenta con sesión (correo, Google, Discord, Twitch o Steam), o null
 // (sin sesión, o invitado: lo que hace queda en el navegador).
 // Con crear = true, si la cuenta todavía no tiene fila (por ejemplo, una de Steam), se la crea.
@@ -1571,8 +1626,8 @@ function htmlResena(resena, opciones) {
   var juego = buscarPorId('juegos', resena.juego_igdb);
   var autor = buscarPorId('usuarios', resena.autor) || { usuario: resena.autor, iniciales: '?' };
   var comentarios = leerComentarios(resena.id).length;
-  var votado = contieneId(leerMemoria('votosUtil', []), resena.id);
-  var votos = resena.votos_util + (votado ? 1 : 0);
+  var votado = marqueUtil(resena.id);
+  var votos = cuantasMarcas('votos_util', resena);
   return '<article class="tarjeta tarjeta--resena"' + atributoColor(juego && juego.color) + '>' +
     '<div class="en-fila">' +
       '<span class="avatar' + (autor.estado ? ' avatar--' + autor.estado : '') + '" aria-hidden="true">' + escapar(autor.iniciales) + (autor.estado ? '<span class="avatar__punto"></span>' : '') + '</span>' +
@@ -1588,7 +1643,7 @@ function htmlResena(resena, opciones) {
       : '<p>' + escapar(resena.texto) + '</p>') +
     '<div class="en-fila tarjeta__texto">' +
       '<button class="boton boton--secundario boton--sm" type="button" data-util="' + escapar(resena.id) + '"' + (esPropia(resena) ? ' data-propia' : '') + ' aria-pressed="' + votado + '">Útil · <span>' + formatearNumero(votos) + '</span></button>' +
-      '<span>♥ ' + formatearNumero(resena.me_gusta) + '</span>' +
+      '<span>♥ ' + formatearNumero(cuantasMarcas('me_gusta_resenas', resena)) + '</span>' +
       '<span>' + comentarios + (comentarios === 1 ? ' comentario' : ' comentarios') + '</span>' +
       '<a class="al-final" href="' + rutaPagina('detalle-resena.html') + '?id=' + encodeURIComponent(resena.id) + '">Leer y comentar →</a>' +
     '</div>' +
@@ -1599,7 +1654,7 @@ function htmlResena(resena, opciones) {
 // - "Mostrar de todas formas" destapa una reseña con spoilers.
 // - Votar "Útil": pide cuenta si no hay sesión; un voto por reseña.
 function activarResenas(contenedor) {
-  contenedor.addEventListener('click', function (e) {
+  contenedor.addEventListener('click', async function (e) {
     var spoiler = e.target.closest('[data-mostrar-spoiler]');
     if (spoiler) {
       var caja = spoiler.closest('.spoiler');
@@ -1611,6 +1666,23 @@ function activarResenas(contenedor) {
     if (!boton) return;
     if (!obtenerSesion()) { pedirCuenta('votar reseñas'); return; }
     if (boton.hasAttribute('data-propia')) { mostrarAviso('No puedes votar tu propia reseña'); return; }
+    if (MI_FILA) {
+      // Cuenta real: se pone o se quita en la base (votos_util)
+      if (boton.disabled) return;
+      boton.disabled = true;
+      try {
+        var puesto = await cambiarMarca('votos_util', boton.dataset.util);
+        var cifra = boton.querySelector('span');
+        cifra.textContent = formatearNumero(Math.max(0, Number(cifra.textContent.replace(/\D/g, '')) + (puesto ? 1 : -1)));
+        boton.setAttribute('aria-pressed', String(puesto));
+        mostrarAviso(puesto ? 'Gracias por tu voto' : 'Quitaste tu voto');
+      } catch (error) {
+        mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+      } finally {
+        boton.disabled = false;
+      }
+      return;
+    }
     // Tocar otra vez quita el voto (como el me gusta)
     var quitar = boton.getAttribute('aria-pressed') === 'true';
     var votos = leerMemoria('votosUtil', []).filter(function (x) { return String(x) !== String(boton.dataset.util); });
@@ -2999,11 +3071,11 @@ async function pantallaResena() {
   // Acciones: me gusta, útil y compartir; editar y eliminar si es propia
   var acciones = document.getElementById('acciones-resena');
   function dibujarAcciones() {
-    var meGusta = contieneId(leerMemoria('meGustaResenas', []), resena.id);
-    var votado = contieneId(leerMemoria('votosUtil', []), resena.id);
+    var meGusta = marqueMeGusta(resena.id);
+    var votado = marqueUtil(resena.id);
     acciones.innerHTML =
-      '<button class="boton boton--secundario boton--me-gusta" type="button" id="accion-me-gusta" aria-pressed="' + meGusta + '">' + ICONO_CORAZON + 'Me gusta · ' + formatearNumero(resena.me_gusta + (meGusta ? 1 : 0)) + '</button>' +
-      '<button class="boton boton--secundario" type="button" data-util="' + escapar(resena.id) + '"' + (propia ? ' data-propia' : '') + ' aria-pressed="' + votado + '">Útil · <span>' + formatearNumero((resena.votos_util || 0) + (votado ? 1 : 0)) + '</span></button>' +
+      '<button class="boton boton--secundario boton--me-gusta" type="button" id="accion-me-gusta" aria-pressed="' + meGusta + '">' + ICONO_CORAZON + 'Me gusta · ' + formatearNumero(cuantasMarcas('me_gusta_resenas', resena)) + '</button>' +
+      '<button class="boton boton--secundario" type="button" data-util="' + escapar(resena.id) + '"' + (propia ? ' data-propia' : '') + ' aria-pressed="' + votado + '">Útil · <span>' + formatearNumero(cuantasMarcas('votos_util', resena)) + '</span></button>' +
       '<button class="boton boton--secundario" type="button" id="accion-compartir">Compartir</button>' +
       (propia
         ? '<a class="boton boton--secundario al-final" href="escribir-resena.html?id=' + encodeURIComponent(juego.id) + '&amp;editar=' + encodeURIComponent(resena.id) + '">Editar</a>' +
@@ -3012,7 +3084,7 @@ async function pantallaResena() {
   }
   dibujarAcciones();
   activarResenas(acciones);
-  acciones.addEventListener('click', function (e) {
+  acciones.addEventListener('click', async function (e) {
     if (e.target.closest('#accion-compartir')) {
       // Simulado: copia el enlace de esta página
       var enlace = location.href;
@@ -3022,6 +3094,21 @@ async function pantallaResena() {
     if (e.target.closest('#accion-me-gusta')) {
       if (!obtenerSesion()) { pedirCuenta('dar me gusta'); return; }
       if (propia) { mostrarAviso('No puedes dar me gusta a tu propia reseña'); return; }
+      if (MI_FILA) {
+        // Cuenta real: se pone o se quita en la base (me_gusta_resenas)
+        var botonMeGusta = document.getElementById('accion-me-gusta');
+        if (botonMeGusta.disabled) return;
+        botonMeGusta.disabled = true;
+        try {
+          await cambiarMarca('me_gusta_resenas', resena.id);
+          dibujarAcciones();
+          document.getElementById('accion-me-gusta').focus();
+        } catch (error) {
+          botonMeGusta.disabled = false;
+          mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+        }
+        return;
+      }
       var meGustan = leerMemoria('meGustaResenas', []);
       meGustan = contieneId(meGustan, resena.id) ? meGustan.filter(function (x) { return String(x) !== String(resena.id); }) : meGustan.concat(resena.id);
       guardarMemoria('meGustaResenas', meGustan);
@@ -3034,8 +3121,13 @@ async function pantallaResena() {
         texto: 'Se quitará del juego, de la comunidad y de tu historial. No se puede deshacer.',
         acciones: [
           { texto: 'Cancelar' },
-          { texto: 'Eliminar', peligro: true, alTocar: function () {
-            guardarResenasPropias(leerResenasPropias().filter(function (r) { return r.id !== resena.id; }));
+          { texto: 'Eliminar', peligro: true, alTocar: async function () {
+            if (MI_FILA) {
+              // Cuenta real: se borra de la base
+              try { await borrarMiResena(resena); } catch (error) { mostrarAviso('No pudimos borrar. Intenta de nuevo.'); return; }
+            } else {
+              guardarResenasPropias(leerResenasPropias().filter(function (r) { return String(r.id) !== String(resena.id); }));
+            }
             location.href = 'historial-resenas.html';
           } }
         ]
@@ -3066,7 +3158,7 @@ async function pantallaResena() {
   }
   dibujarComentarios();
 
-  document.getElementById('formulario-comentario').addEventListener('submit', function (e) {
+  document.getElementById('formulario-comentario').addEventListener('submit', async function (e) {
     e.preventDefault();
     var texto = campo.value.trim();
     if (!texto) {
@@ -3077,6 +3169,26 @@ async function pantallaResena() {
       return;
     }
     if (!obtenerSesion()) { pedirCuenta('comentar'); return; }
+    if (MI_FILA) {
+      // Cuenta real: el comentario se guarda en la base
+      var botonComentar = e.target.querySelector('button[type="submit"]');
+      botonComentar.disabled = true;
+      botonComentar.textContent = 'Guardando…';
+      try {
+        var nuevo = (await guardarDatos('comentarios', { resena_id: Number(resena.id), usuario_id: MI_FILA.id, texto: texto }))[0];
+        FILAS.comentarios = (FILAS.comentarios || []).concat(nuevo);
+        DATOS_ARMADOS = {};
+        campo.value = '';
+        dibujarComentarios();
+        mostrarAviso('Comentario publicado');
+      } catch (error) {
+        mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+      } finally {
+        botonComentar.disabled = false;
+        botonComentar.textContent = 'Comentar';
+      }
+      return;
+    }
     var comentarios = leerComentarios(resena.id);
     comentarios.push({ id: 'k' + Date.now(), resena: resena.id, autor: usuarioActual(), texto: texto, fecha: hoy() });
     guardarComentarios(resena.id, comentarios);
@@ -3093,6 +3205,24 @@ async function pantallaResena() {
   lista.addEventListener('click', function (e) {
     var boton = e.target.closest('[data-borrar-comentario]');
     if (!boton) return;
+    if (MI_FILA) {
+      // Cuenta real: se borra de la base (pide confirmación: no se puede deshacer)
+      abrirModal({
+        titulo: '¿Eliminar tu comentario?', texto: 'Se quitará de esta reseña. No se puede deshacer.',
+        acciones: [{ texto: 'Cancelar' }, { texto: 'Eliminar', peligro: true, alTocar: async function () {
+          try {
+            await eliminarDatos('comentarios', Number(boton.dataset.borrarComentario));
+            FILAS.comentarios = FILAS.comentarios.filter(function (c) { return String(c.id) !== boton.dataset.borrarComentario; });
+            DATOS_ARMADOS = {};
+            dibujarComentarios();
+            mostrarAviso('Comentario eliminado');
+          } catch (error) {
+            mostrarAviso('No pudimos borrar. Intenta de nuevo.');
+          }
+        } }]
+      });
+      return;
+    }
     var comentarios = leerComentarios(resena.id);
     var posicion = comentarios.findIndex(function (c) { return c.id === boton.dataset.borrarComentario; });
     var borrado = comentarios.splice(posicion, 1)[0];
@@ -4625,8 +4755,29 @@ function pantallaHistorial() {
     }
     var boton = e.target.closest('[data-eliminar]');
     if (!boton) return;
+    if (MI_FILA) {
+      // Cuenta real: se borra de la base (pide confirmación: no se puede deshacer)
+      var aBorrar = leerResenasPropias().find(function (r) { return String(r.id) === boton.dataset.eliminar; });
+      if (!aBorrar) return;
+      abrirModal({
+        titulo: '¿Eliminar esta ' + (aBorrar.tipo === 'guia' ? 'guía' : 'reseña') + '?',
+        texto: 'Se quitará del juego, de la comunidad y de tu historial. No se puede deshacer.',
+        acciones: [{ texto: 'Cancelar' }, { texto: 'Eliminar', peligro: true, alTocar: async function () {
+          try {
+            await borrarMiResena(aBorrar);
+            FILAS.resenas = FILAS.resenas.filter(function (r) { return String(r.id) !== String(aBorrar.id); });
+            DATOS_ARMADOS = {};
+            mostrar();
+            mostrarAviso('Reseña eliminada');
+          } catch (error) {
+            mostrarAviso('No pudimos borrar. Intenta de nuevo.');
+          }
+        } }]
+      });
+      return;
+    }
     var propias = leerResenasPropias();
-    var posicion = propias.findIndex(function (r) { return r.id === boton.dataset.eliminar; });
+    var posicion = propias.findIndex(function (r) { return String(r.id) === boton.dataset.eliminar; });
     var borrada = propias.splice(posicion, 1)[0];
     guardarResenasPropias(propias);
     mostrar();
