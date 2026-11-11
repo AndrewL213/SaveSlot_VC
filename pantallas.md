@@ -47,7 +47,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ⬜ |
 | 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam; misiones con api/steam/misiones.js) | ⬜ |
 | 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ (misiones de Supabase) | ⬜ |
-| 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase: guarda perfil público, favoritos y géneros) | ⬜ |
 | 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ (Supabase: eliminar en la base) | ⬜ |
 | 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ (Steam; otras plataformas simuladas en data.js) | ⬜ |
@@ -66,6 +66,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (data.js + revisión en vivo de IGDB, Steam y Supabase) | ⬜ |
 
 ## Pendientes para la revisión vs spec
+- **Editar perfil (noviembre)**: con una cuenta real, «Guardar» guarda en Supabase el nombre, el @, sobre mí, qué estás jugando, los favoritos y los géneros; al abrir cualquier página el perfil se trae de la base. Siguen en el navegador la lista de deseos y las cuentas vinculadas (tabla **cuentas_vinculadas**). Los géneros que se pueden elegir salen de los juegos de ejemplo (9), no de los 15 de la base.
 - **Detalle de reseña e Historial (noviembre)**: con una cuenta real, el «útil» (en todas las pantallas), el me gusta, los comentarios y eliminar la reseña propia se guardan en Supabase. Borrar el comentario propio es nuevo (spec.md solo dejaba agregar). Eliminar, en el Historial y en los comentarios, pide confirmación en vez de «Deshacer», porque en la base no se puede deshacer.
 - **Invitado (noviembre)**: «Entrar con la cuenta de demostración» ahora es «Entrar como invitado»: perfil vacío, solo en el navegador, sin cuenta en Supabase (ya no muestra el perfil de ejemplo de samluq).
 - **Datos de ejemplo (noviembre)**: las personas de ejemplo (samluq, kenvel…) y lo suyo se borraron de Supabase (`supabase/limpiar-ejemplos.sql`) y `esquema.sql` ya no las carga: Inicio, Comunidad y los perfiles muestran solo cuentas reales (pueden verse casi vacíos al principio). La cuenta de demostración usa el perfil, las reseñas y el diario de samluq de `js/data.js`. El voto «útil» ahora se puede quitar tocándolo otra vez (spec.md lo prohibía; se cambió).

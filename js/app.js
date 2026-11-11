@@ -638,6 +638,53 @@ async function reconocerMiFila(crear) {
   return MI_FILA;
 }
 
+// Cuenta real: el perfil del navegador se pone igual que el de la base (nombre, @, sobre mí, juego actual,
+// favoritos, géneros, nivel y XP). Así, en cualquier navegador se ve el perfil de verdad.
+function traerMiPerfilDeLaBase() {
+  if (!MI_FILA) return;
+  var yo = datosDe('usuarios').find(function (u) { return u.id_base === MI_FILA.id; });
+  if (!yo) return;
+  var sesion = obtenerSesion();
+  if (sesion && sesion.user !== yo.usuario) renombrarUsuario(sesion.user, yo.usuario); // el @ cambió en otro navegador
+  var perfil = leerPerfil();
+  perfil.user = yo.usuario;
+  perfil.xp = yo.xp;
+  perfil.level = yo.nivel;
+  // Si en la base algo está vacío y en este navegador no (lo de antes de guardar en la base), se conserva
+  // lo del navegador: se sube a la base la próxima vez que se guarde en Editar perfil.
+  perfil.bio = yo.sobre_mi || perfil.bio || '';
+  perfil.since = yo.miembro_desde || perfil.since;
+  perfil.favorites = yo.favoritos.length ? yo.favoritos : (perfil.favorites || []);
+  perfil.genres = yo.generos_favoritos.length ? yo.generos_favoritos : (perfil.genres || []);
+  perfil.playing = yo.jugando_ahora || perfil.playing || null;
+  guardarMemoria('profile', perfil);
+  if (sesion) guardarMemoria('session', Object.assign({}, sesion, { user: yo.usuario, name: yo.nombre, initials: yo.iniciales }));
+}
+
+// Guarda el perfil público, los favoritos y los géneros en la base (cuenta real).
+// Favoritos: se borran los anteriores (cada uno por su id) y se guardan los nuevos en orden.
+// Géneros: se quitan los desmarcados y se agregan los nuevos.
+async function guardarMiPerfilEnLaBase(datos) {
+  await actualizarDatos('usuarios', MI_FILA.id, {
+    usuario: datos.usuario, nombre: datos.nombre, iniciales: inicialesDe(datos.nombre),
+    sobre_mi: datos.sobreMi || null, jugando_ahora: datos.jugando || null
+  });
+  var favoritosAntes = filasDe('usuarios_favoritos', 'usuario_id', MI_FILA.id);
+  for (var i = 0; i < favoritosAntes.length; i++) await eliminarDatos('usuarios_favoritos', favoritosAntes[i].id);
+  var favoritos = datos.favoritos.slice(0, MAXIMO_FAVORITOS);
+  if (favoritos.length) {
+    await guardarDatos('usuarios_favoritos', favoritos.map(function (juego, orden) { return { usuario_id: MI_FILA.id, juego: juego, orden: orden + 1 }; }));
+  }
+  var generosAntes = filasDe('usuarios_generos', 'usuario_id', MI_FILA.id);
+  for (var j = 0; j < generosAntes.length; j++) {
+    if (datos.generos.indexOf(generosAntes[j].genero) === -1) await eliminarDatos('usuarios_generos', generosAntes[j].id);
+  }
+  var generosNuevos = datos.generos.filter(function (g) { return !generosAntes.some(function (x) { return x.genero === g; }); });
+  if (generosNuevos.length) {
+    await guardarDatos('usuarios_generos', generosNuevos.map(function (g) { return { usuario_id: MI_FILA.id, genero: g }; }));
+  }
+}
+
 // Pone el XP y el nivel del navegador igual que los de la base (la base los cambia con las misiones)
 async function traerMiXp() {
   if (!MI_FILA) return leerPerfil();
@@ -4432,7 +4479,7 @@ function pantallaEditar() {
   document.getElementById('borrar-cuenta').addEventListener('click', preguntarBorrarCuenta);
 
   // Guardar: se ve en el Perfil
-  document.getElementById('formulario-perfil').addEventListener('submit', function (e) {
+  document.getElementById('formulario-perfil').addEventListener('submit', async function (e) {
     e.preventDefault();
     if (!marcarError(campoNombre, document.getElementById('error-nombre'), campoNombre.value.trim().length >= 2 ? '' : 'Escribe tu nombre visible.')) {
       campoNombre.focus();
@@ -4440,6 +4487,29 @@ function pantallaEditar() {
     }
     if (!revisarUsuario()) { campoUsuario.focus(); return; }
     var nuevoUsuario = esDemo ? sesion.user : campoUsuario.value.trim();
+    if (MI_FILA) {
+      // Cuenta real: se guarda en la base (perfil público, favoritos y géneros)
+      var botonGuardar = e.target.querySelector('button[type="submit"]');
+      botonGuardar.disabled = true;
+      botonGuardar.textContent = 'Guardando…';
+      try {
+        await guardarMiPerfilEnLaBase({
+          usuario: nuevoUsuario, nombre: campoNombre.value.trim(), sobreMi: document.getElementById('sobre-mi').value.trim().slice(0, 190),
+          jugando: document.getElementById('jugando-ahora').value || null, favoritos: perfil.favorites, generos: perfil.genres
+        });
+      } catch (error) {
+        botonGuardar.disabled = false;
+        botonGuardar.textContent = 'Guardar cambios';
+        if (error && error.code === '23505' && /usuario/.test(error.message || '')) {
+          // Alguien tomó ese @ mientras editabas
+          marcarError(campoUsuario, ayudaUsuario, 'Ese usuario ya existe. Prueba otro.');
+          campoUsuario.focus();
+        } else {
+          mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+        }
+        return;
+      }
+    }
     if (nuevoUsuario !== sesion.user) {
       renombrarUsuario(sesion.user, nuevoUsuario);
       perfil.user = nuevoUsuario;
@@ -5484,7 +5554,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     var siguiente = esError ? null : await sincronizarSesionSupabase();
     if (siguiente && direccionCompleta(siguiente) !== location.href) { location.replace(siguiente); return; }
     // ¿La sesión es de una cuenta real con fila en usuarios? Entonces lo propio se lee y se guarda en la base
-    if (!esError) await reconocerMiFila(false);
+    if (!esError) { await reconocerMiFila(false); traerMiPerfilDeLaBase(); }
     if (cargando) cargando.remove();
     prepararEncabezado();
     prepararFranja();
