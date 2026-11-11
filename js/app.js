@@ -73,9 +73,39 @@ function pedirSteam(accion, appid) {
         error.privado = !!datos.private;
         throw error;
       }
+      if (accion === 'profile') ordenarRecientesSteam(datos);
       return datos;
     });
   });
+}
+
+// Juegos recientes de Steam, del último jugado al más antiguo (lo que juegas ahora va primero).
+// Steam da la fecha de última vez solo de los juegos que tienes (last_played); de los prestados
+// (Préstamo familiar) o de prueba no la da. Por eso el navegador anota cuándo vio crecer el tiempo
+// de cada juego ("ss.steamRecientesVistos": appid → { minutos, cuando }) y usa la fecha más nueva.
+function ordenarRecientesSteam(datos) {
+  var lista = datos.recent_games || [];
+  var vistos = leerMemoria('steamRecientesVistos', {}) || {};
+  var ahora = Date.now();
+  lista.forEach(function (g) {
+    var minutos = g.minutes_2weeks != null ? g.minutes_2weeks : Math.round((g.hours_2weeks || 0) * 60);
+    var antes = vistos[g.appid];
+    var segunSteam = (g.last_played || 0) * 1000;
+    if (!antes) vistos[g.appid] = { minutos: minutos, cuando: segunSteam || ahora };  // nuevo: sin fecha de Steam, se toma como de ahora
+    else if (minutos > antes.minutos) vistos[g.appid] = { minutos: minutos, cuando: ahora }; // lo jugó desde la última vez
+    g.ultima_vez_vista = Math.max(segunSteam, vistos[g.appid].cuando);
+  });
+  // Lo que ya no sale en recientes se olvida
+  var siguen = {};
+  lista.forEach(function (g) { siguen[g.appid] = vistos[g.appid]; });
+  guardarMemoria('steamRecientesVistos', siguen);
+  var jugando = datos.playing_now && Number(datos.playing_now.appid);
+  lista.sort(function (a, b) {
+    if (a.appid === jugando) return -1;
+    if (b.appid === jugando) return 1;
+    return b.ultima_vez_vista - a.ultima_vez_vista;
+  });
+  return datos;
 }
 
 // Al volver de Steam: abre la sesión y vincula la cuenta. Devuelve el aviso a mostrar (o null).
@@ -3156,7 +3186,7 @@ async function pantallaEvento() {
    El navegador guarda los datos de una sola persona a la vez (perfil, reseñas,
    diario…). Al entrar con otra cuenta, se guardan los de la anterior aparte y se
    cargan los de la nueva. Si "duenoDatos" no existe, los datos son de samluq. */
-var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos', 'steamPerfil', 'steamResenas'];
+var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos', 'steamPerfil', 'steamResenas', 'steamRecientesVistos'];
 
 function cambiarDeCuenta(usuario, datosNuevos) {
   var dueno = leerMemoria('duenoDatos', 'samluq');
