@@ -483,13 +483,16 @@ grant select on table public.resenas to anon, authenticated;
 grant insert, delete on table public.resenas to authenticated;
 grant update (juego_igdb, tipo, estado, titulo, texto, calificacion, dificultad, horas, estado_partida, minutos_lectura, spoiler, editada, fecha) on table public.resenas to authenticated;
 
--- votos_util: todos los ven (para contarlos); cada persona vota una vez y nunca su propia reseña; no se quitan
+-- votos_util: todos los ven (para contarlos); cada persona vota una vez, nunca su propia reseña, y puede quitar su voto
 drop policy if exists "votos_util: ver" on public.votos_util;
 create policy "votos_util: ver" on public.votos_util for select to anon, authenticated using (true);
 grant select on table public.votos_util to anon, authenticated;
 drop policy if exists "votos_util: votar" on public.votos_util;
 create policy "votos_util: votar" on public.votos_util for insert to authenticated with check (usuario_id = (select public.mi_usuario_id()) and not exists (select 1 from public.resenas r where r.id = resena_id and r.usuario_id = (select public.mi_usuario_id())));
 grant insert on table public.votos_util to authenticated;
+drop policy if exists "votos_util: quitar el propio" on public.votos_util;
+create policy "votos_util: quitar el propio" on public.votos_util for delete to authenticated using (usuario_id = (select public.mi_usuario_id()));
+grant delete on table public.votos_util to authenticated;
 
 -- me_gusta_resenas: todos los ven; cada persona pone y quita el suyo (Detalle de reseña)
 drop policy if exists "me_gusta_resenas: ver" on public.me_gusta_resenas;
@@ -599,104 +602,11 @@ create policy "mensajes_contacto: enviar" on public.mensajes_contacto for insert
 grant insert on table public.mensajes_contacto to anon, authenticated;
 
 -- ============================================================================
--- 4. DATOS DE EJEMPLO (de js/data.js). Se cargan antes de las reglas automáticas,
---    para que no regalen XP ni creen avisos. Los ids de texto de data.js pasan a números.
+-- 4. DATOS DE EJEMPLO (de js/data.js). Se cargan antes de las reglas automáticas.
+--    Solo lo que no es de personas: misiones, eventos, tendencias y destacados. Las personas de
+--    ejemplo (samluq, kenvel…) y sus reseñas, comentarios, diario y amistades ya no se cargan:
+--    la comunidad es de cuentas reales. La cuenta de demostración usa los datos de js/data.js.
 -- ============================================================================
-
--- usuarios de ejemplo (sin cuenta: auth_id vacío)
-insert into public.usuarios (id, usuario, nombre, iniciales, sobre_mi, jugando_ahora, miembro_desde, nivel, xp, color, forma_de_entrar, invitado) values
-  (1, 'samluq', 'Samuel D Luq', 'SL', 'Gamer casual. Aventura, RPG y algo de terror los fines de semana.', 'the-legend-of-zelda-tears-of-the-kingdom', '2024-03-14', 12, 1240, '#1F4A8A', 'correo', false),
-  (2, 'kenvel', 'Kenneth Velásquez', 'KV', 'RPGs japoneses y bandas sonoras que se quedan en la cabeza.', 'nier-automata', '2024-02-02', 18, 0, '#7C7566', 'correo', false),
-  (3, 'juanvi', 'Juan Vigoya', 'JV', 'Competitivo. Diamante en Rocket League, Oro en Valorant.', 'rocket-league', '2023-11-20', 21, 0, '#2456C4', 'correo', false),
-  (4, 'd4ni', 'Daniela Arango', 'DA', 'Metroidvanias y soulslikes. Si tiene jefes difíciles, me interesa.', 'hollow-knight', '2024-05-09', 15, 0, '#2B3A55', 'correo', false),
-  (5, 'mlopez', 'María López', 'ML', 'Aventuras tranquilas después del trabajo.', null, '2025-01-15', 9, 0, '#2F6B4F', 'correo', false),
-  (6, 'lau_plays', 'Laura Peña', 'LP', 'Indies cortos y juegos de terror con buena historia.', null, '2024-09-01', 11, 0, '#3A3F45', 'correo', false),
-  (7, 'valer1a', 'Valeria Ríos', 'VR', 'Completista. Si tiene 100 %, lo saco.', null, '2024-04-22', 14, 0, '#7A2E2E', 'correo', false),
-  (8, 'nico.gg', 'Nicolás Gómez', 'NG', 'Shooters con amigos los viernes.', null, '2025-06-30', 7, 0, '#5B3F96', 'correo', false),
-  (9, 'tatan', 'Sebastián Cruz', 'SC', 'Nuevo en SaveSlot. Busco gente para Rocket League.', null, '2025-08-12', 6, 0, '#2456C4', 'correo', false),
-  (10, 'cami.rpg', 'Camila Torres', 'CT', 'RPGs largos y diarios de juego muy detallados.', null, '2024-12-03', 13, 0, '#B8343E', 'correo', false),
-  (11, 'feli_fps', 'Felipe Ruiz', 'FR', 'Torneos de la universidad.', null, '2025-03-18', 10, 0, '#5B3F96', 'correo', false),
-  (12, 'ana.indie', 'Ana Moreno', 'AM', 'Indies, pixel art y bandas sonoras.', null, '2025-02-10', 8, 0, '#5A2D6B', 'correo', false),
-  (13, 'andresh', 'andresh', 'AH', null, null, default, 1, 0, null, 'correo', false)
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.usuarios', 'id'), (select coalesce(max(id), 1) from public.usuarios));
-
--- favoritos, géneros, lista de deseos, insignias y cuentas vinculadas de los usuarios de ejemplo
-insert into public.usuarios_favoritos (id, usuario_id, juego, orden) values
-  (1, 1, 'nier-automata', 1),
-  (2, 1, 'the-legend-of-zelda-tears-of-the-kingdom', 2),
-  (3, 1, 'hollow-knight', 3),
-  (4, 1, 'five-nights-at-freddys-into-the-pit', 4),
-  (5, 2, 'nier-automata', 1),
-  (6, 2, 'hades--1', 2),
-  (7, 2, 'elden-ring', 3),
-  (8, 2, 'hollow-knight', 4),
-  (9, 3, 'rocket-league', 1),
-  (10, 3, 'valorant', 2),
-  (11, 3, 'elden-ring', 3),
-  (12, 3, 'the-legend-of-zelda-tears-of-the-kingdom', 4),
-  (13, 4, 'hollow-knight', 1),
-  (14, 4, 'elden-ring', 2),
-  (15, 4, 'hades--1', 3),
-  (16, 4, 'inside', 4),
-  (17, 5, 'the-legend-of-zelda-tears-of-the-kingdom', 1),
-  (18, 5, 'pokemon-legends-z-a', 2),
-  (19, 5, 'inside', 3),
-  (20, 5, 'ghost-of-tsushima', 4),
-  (21, 6, 'inside', 1),
-  (22, 6, 'five-nights-at-freddys-into-the-pit', 2),
-  (23, 6, 'hades-ii', 3),
-  (24, 6, 'hollow-knight', 4),
-  (25, 7, 'the-legend-of-zelda-tears-of-the-kingdom', 1),
-  (26, 7, 'ghost-of-tsushima', 2),
-  (27, 7, 'pokemon-legends-z-a', 3),
-  (28, 7, 'hades--1', 4),
-  (29, 8, 'valorant', 1),
-  (30, 8, 'rocket-league', 2),
-  (31, 8, 'elden-ring', 3),
-  (32, 8, 'hades--1', 4),
-  (33, 9, 'rocket-league', 1),
-  (34, 9, 'pokemon-legends-z-a', 2),
-  (35, 9, 'the-legend-of-zelda-tears-of-the-kingdom', 3),
-  (36, 9, 'hades--1', 4),
-  (37, 10, 'nier-automata', 1),
-  (38, 10, 'pokemon-legends-z-a', 2),
-  (39, 10, 'elden-ring', 3),
-  (40, 10, 'the-legend-of-zelda-tears-of-the-kingdom', 4),
-  (41, 11, 'valorant', 1),
-  (42, 11, 'rocket-league', 2),
-  (43, 11, 'ghost-of-tsushima', 3),
-  (44, 11, 'hades--1', 4),
-  (45, 12, 'hollow-knight', 1),
-  (46, 12, 'inside', 2),
-  (47, 12, 'hades--1', 3),
-  (48, 12, 'hades-ii', 4)
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.usuarios_favoritos', 'id'), (select coalesce(max(id), 1) from public.usuarios_favoritos));
-
-insert into public.usuarios_generos (id, usuario_id, genero) values
-  (1, 1, 'Aventura'),
-  (2, 1, 'RPG'),
-  (3, 1, 'Terror')
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.usuarios_generos', 'id'), (select coalesce(max(id), 1) from public.usuarios_generos));
-
-insert into public.lista_deseos (id, usuario_id, juego) values
-  (1, 1, 'hades-ii'),
-  (2, 1, 'ghost-of-tsushima'),
-  (3, 1, 'elden-ring')
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.lista_deseos', 'id'), (select coalesce(max(id), 1) from public.lista_deseos));
-
-insert into public.insignias (id, usuario_id, texto) values
-  (1, 1, 'Fundador beta')
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.insignias', 'id'), (select coalesce(max(id), 1) from public.insignias));
-
-insert into public.cuentas_vinculadas (id, usuario_id, plataforma, nombre, estado) values
-  (1, 1, 'steam', 'samluq_steam', 'verificada')
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.cuentas_vinculadas', 'id'), (select coalesce(max(id), 1) from public.cuentas_vinculadas));
 
 -- las 4 misiones (de spec.md: ventana "Cómo ganar XP")
 insert into public.misiones (id, clave, texto, xp, repetible) values
@@ -760,94 +670,6 @@ insert into public.eventos_reglas (id, evento_id, texto, orden) values
   (18, 6, 'El organizador puede cambiar la hora avisando con 24 h.', 3)
 on conflict (id) do nothing;
 select setval(pg_get_serial_sequence('public.eventos_reglas', 'id'), (select coalesce(max(id), 1) from public.eventos_reglas));
-
--- reseñas y guías de ejemplo (todas publicadas)
-insert into public.resenas (id, usuario_id, juego_igdb, tipo, estado, titulo, texto, calificacion, dificultad, horas, estado_partida, minutos_lectura, spoiler, editada, fecha) values
-  (1, 2, 11208, 'resena', 'publicada', null, 'La segunda vuelta no es relleno: cambia todo lo que creías saber. Juégalo completo antes de opinar.', 9, 6, 42, null, null, false, false, '2026-10-05'),
-  (2, 3, 11198, 'resena', 'publicada', null, 'Fácil de empezar, difícil de dominar. Si llegas a Diamante, revisa la guía de aéreos de la comunidad.', 8, 7, 300, null, null, false, false, '2026-10-03'),
-  (3, 13, 119388, 'resena', 'publicada', null, 'Ultramano cambia cómo resuelves todo. Haz las islas del cielo antes de bajar al subsuelo.', 10, 6, 48, null, null, false, false, '2026-09-28'),
-  (4, 5, 119388, 'resena', 'publicada', null, 'Enorme y generoso. El rendimiento baja en zonas con muchos efectos, pero nunca me sacó del juego.', 8, 5, 31, null, null, false, false, '2026-09-21'),
-  (5, 7, 119388, 'resena', 'publicada', null, 'El final conecta con todo lo que pasó en el cielo. Que la batalla contra Ganondorf sea en caída libre es lo mejor del juego.', 9, 7, 190, null, null, true, false, '2026-09-15'),
-  (6, 4, 14593, 'resena', 'publicada', null, 'Cada zona tiene identidad propia. Los jefes opcionales son los mejores del género.', 10, 8, 60, null, null, false, false, '2026-09-10'),
-  (7, 2, 113112, 'resena', 'publicada', null, 'Cada muerte te deja algo: una conversación, una mejora, una pista de la historia. Nunca se siente como perder el tiempo.', 10, 6, 70, null, null, false, false, '2026-08-30'),
-  (8, 3, 126459, 'resena', 'publicada', null, 'Muy bueno con amigos, frustrante en solitario. Aprende dos agentes bien antes de probar todos.', 7, 8, 410, null, null, false, false, '2026-08-22'),
-  (9, 4, 119133, 'resena', 'publicada', null, 'Si un jefe te bloquea, ve a explorar y vuelve más fuerte. El mundo abierto es la mejor ayuda de dificultad.', 10, 9, 120, null, null, false, false, '2026-08-14'),
-  (10, 6, 7342, 'resena', 'publicada', null, 'Tres horas que se quedan contigo. Juégalo de noche, con audífonos y sin leer nada antes.', 9, 4, 4, null, null, false, false, '2026-08-02'),
-  (11, 1, 119388, 'resena', 'publicada', null, 'Ultramano convierte cada problema en un juguete. Me pasé horas construyendo puentes absurdos y nunca sentí que perdía el tiempo.', 10, 6, 48, null, null, false, false, '2026-10-07'),
-  (12, 1, 283679, 'resena', 'publicada', null, 'Corto y con buena tensión. Los saltos de tiempo están bien pensados, aunque el final se siente apurado.', 7, 5, 6, null, null, false, false, '2026-10-04'),
-  (13, 1, 11208, 'resena', 'publicada', null, 'En la segunda partida con 9S entiendes por qué la primera era solo la mitad. El final E me hizo llorar con los créditos.', 9, 6, 21, null, null, true, false, '2026-10-02'),
-  (14, 1, 126459, 'resena', 'publicada', null, 'Técnicamente impecable, pero no es para mí. Demasiado castigo para alguien que juega un rato los fines de semana.', 5, 8, 9, null, null, false, false, '2026-09-19'),
-  (15, 1, 14593, 'resena', 'publicada', null, 'Volví para sacar los finales que me faltaban. El Panteón es duro, pero cada intento enseña algo.', 9, 7, 27, null, null, false, false, '2026-08-12'),
-  (16, 10, 119388, 'guia', 'publicada', 'Las 4 regiones en el orden recomendado', null, null, null, null, null, 12, false, false, default),
-  (17, 2, 119388, 'guia', 'publicada', 'Cómo conseguir la armadura Zonai', null, null, null, null, null, 6, false, false, default),
-  (18, 11, 126459, 'guia', 'publicada', 'Agentes para empezar si vienes de CS', null, null, null, null, null, 8, false, false, default),
-  (19, 2, 11208, 'guia', 'publicada', 'Todos los finales sin perderte ninguno', null, null, null, null, null, 15, false, false, default),
-  (20, 3, 11198, 'guia', 'publicada', 'Aéreos básicos en 10 minutos', null, null, null, null, null, 10, false, false, default)
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.resenas', 'id'), (select coalesce(max(id), 1) from public.resenas));
-
--- comentarios de ejemplo
-insert into public.comentarios (id, resena_id, usuario_id, texto, fecha) values
-  (1, 11, 2, 'Lo de los puentes absurdos es lo mejor del juego, jaja.', '2026-10-07'),
-  (2, 11, 4, '¿Ya probaste el subsuelo completo? Cambia mucho la experiencia.', '2026-10-08'),
-  (3, 13, 3, 'El final E es de lo mejor que he jugado.', '2026-10-04'),
-  (4, 1, 5, 'Totalmente, la ruta C es otro juego.', '2026-10-06'),
-  (5, 3, 2, 'Buen consejo lo de las islas del cielo primero.', '2026-10-02'),
-  (6, 6, 7, 'Los Hermanos Mantis son mi jefe favorito.', '2026-10-05')
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.comentarios', 'id'), (select coalesce(max(id), 1) from public.comentarios));
-
--- diario de ejemplo
-insert into public.diario (id, usuario_id, juego_igdb, fecha, estado, horas, calificacion, me_gusta, tiene_resena) values
-  (1, 1, 119388, '2026-10-07', 'Terminado', 48, 10, true, true),
-  (2, 1, 283679, '2026-10-04', 'Terminado', 6, 7, false, true),
-  (3, 1, 11208, '2026-10-02', 'Rejugado', 21, 9, true, true),
-  (4, 1, 113112, '2026-09-27', 'Terminado', 24, 8, false, false),
-  (5, 1, 126459, '2026-09-19', 'Abandonado', 9, 5, false, true),
-  (6, 1, 288327, '2026-09-08', 'Terminado', 31, 8, true, false),
-  (7, 1, 7342, '2026-08-30', 'Terminado', 3, 9, true, false),
-  (8, 1, 14593, '2026-08-12', 'Rejugado', 27, 9, true, true)
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.diario', 'id'), (select coalesce(max(id), 1) from public.diario));
-
--- amistades de ejemplo (una fila por pareja: usuario_id envió, amigo_id recibió)
-insert into public.amigos (id, usuario_id, amigo_id, estado) values
-  (1, 1, 2, 'aceptada'),
-  (2, 1, 3, 'aceptada'),
-  (3, 1, 4, 'aceptada'),
-  (4, 1, 5, 'aceptada'),
-  (5, 1, 6, 'aceptada'),
-  (6, 1, 7, 'aceptada'),
-  (7, 1, 8, 'aceptada'),
-  (8, 9, 1, 'pendiente'),
-  (9, 10, 1, 'pendiente')
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.amigos', 'id'), (select coalesce(max(id), 1) from public.amigos));
-
--- notificaciones de ejemplo
-insert into public.notificaciones (id, usuario_id, tipo, texto, enlace, fecha) values
-  (1, 1, 'voto_util', 'Tu reseña de NieR: Automata recibió 12 votos de “útil”.', 'historial-resenas.html', '2026-10-08'),
-  (2, 1, 'cierre_inscripciones', 'La Copa SaveSlot 2v2 cierra inscripciones el viernes.', 'detalle-evento.html?id=copa-2v2', '2026-10-07')
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.notificaciones', 'id'), (select coalesce(max(id), 1) from public.notificaciones));
-
--- chats de MatchPlay de ejemplo y sus mensajes
-insert into public.chats_matchplay (id, usuario_id, titulo, fecha) values
-  (1, 1, 'Juegos parecidos a NieR', now() - interval '2 hours'),
-  (2, 1, 'Orden de regiones en TOTK', now() - interval '72 hours'),
-  (3, 1, 'Terror corto para el finde', now() - interval '288 hours')
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.chats_matchplay', 'id'), (select coalesce(max(id), 1) from public.chats_matchplay));
-
-insert into public.mensajes_matchplay (id, chat_id, quien, texto, voto) values
-  (1, 1, 'usuario', 'Terminé NieR: Automata y quiero algo parecido. Tengo unas 30 horas este mes.', null),
-  (2, 1, 'ia', 'Si te gustó NieR: Automata, prueba Hades (≈22 h), Hollow Knight (≈27 h) o Ghost of Tsushima (≈25 h). Si eliges uno, empieza por Hades.', null),
-  (3, 2, 'usuario', '¿En qué orden hago las regiones de Zelda: TOTK?', null),
-  (4, 2, 'ia', 'La comunidad recomienda: Rito, Zora, Goron y Gerudo. Antes de Gerudo conviene tener al menos 8 corazones.', null),
-  (5, 3, 'usuario', 'Un juego de terror corto para el fin de semana.', null),
-  (6, 3, 'ia', 'Inside (≈3 h) o FNAF: Into the Pit (≈6 h).', null)
-on conflict (id) do nothing;
-select setval(pg_get_serial_sequence('public.mensajes_matchplay', 'id'), (select coalesce(max(id), 1) from public.mensajes_matchplay));
 
 -- tendencias de MatchPlay de ejemplo
 insert into public.tendencias_matchplay (id, etiqueta, pregunta, preguntas_hoy) values
@@ -987,11 +809,17 @@ language plpgsql security definer set search_path = public as $$
 declare
   autor bigint;
   quien text;
+  el_enlace text;
+  el_texto text;
 begin
   select usuario_id into autor from public.resenas where id = new.resena_id;
   select usuario into quien from public.usuarios where id = new.usuario_id;
-  insert into public.notificaciones (usuario_id, tipo, texto, enlace)
-  values (autor, 'voto_util', '@' || quien || ' marcó tu reseña como útil.', 'detalle-resena.html?id=' || new.resena_id);
+  el_enlace := 'detalle-resena.html?id=' || new.resena_id;
+  el_texto := '@' || quien || ' marcó tu reseña como útil.';
+  -- Solo la primera vez: si quita el voto y lo vuelve a poner, no llega otro aviso igual
+  if not exists (select 1 from public.notificaciones n where n.usuario_id = autor and n.tipo = 'voto_util' and n.enlace = el_enlace and n.texto = el_texto) then
+    insert into public.notificaciones (usuario_id, tipo, texto, enlace) values (autor, 'voto_util', el_texto, el_enlace);
+  end if;
   return new;
 end $$;
 drop trigger if exists al_votar_util on public.votos_util;

@@ -235,12 +235,12 @@ Se relaciona con: usuarios.id (autor) y el juego. Un borrador por persona y jueg
 Qué guarda: quién marcó una reseña como útil.
 Tipo de dato: aporte
 Se guarda en: Supabase
-Desde la app se puede: ver (para contarlos) · agregar (Inicio, Detalle de juego, Comunidad, Detalle de reseña). No se cambia ni se borra.
+Desde la app se puede: ver (para contarlos) · agregar y quitar el propio (Inicio, Detalle de juego, Comunidad, Detalle de reseña: tocar "Útil" otra vez quita el voto).
 Campos:
 - usuario: texto — obligatorio
 - resena: número — obligatorio
 - fecha: fecha y hora — obligatorio
-Se relaciona con: usuarios.id y resenas.id. Uno por persona y reseña; nadie vota su propia reseña. Cada voto crea una notificación para el autor (la base).
+Se relaciona con: usuarios.id y resenas.id. Uno por persona y reseña; nadie vota su propia reseña. El primer voto de cada persona crea una notificación para el autor (la base); quitarlo y volver a ponerlo no repite el aviso.
 
 ### me_gusta_resenas
 Qué guarda: a quién le gusta una reseña.
@@ -449,6 +449,7 @@ Se relaciona con: ninguna.
   - **variantes_error**: id, codigo, titulo, texto, consejos, reintentar, espera, accion, servicio_por_defecto
   - **estado_servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto, prueba (opcional: igdb, steam, base o cuentas; con ella la página de error revisa de verdad si el servicio responde)
   - Las opciones de orden y los rangos de los filtros ("Más recientes", "A–Z", "9–10", "< 10 h"…) son parte de la interfaz y siguen en el HTML.
+- **Cuenta de demostración (`js/data.js`):** el perfil, las reseñas y el diario de samluq. Las personas de ejemplo ya no están en Supabase (se borraron con `supabase/limpiar-ejemplos.sql` y `esquema.sql` ya no las carga): la comunidad es de cuentas reales.
 - **Simulados (`js/data.js`):** respuestas_matchplay (las respuestas de la IA), y logros, progreso_logros y resumen_logros de otras plataformas (los de Steam son reales).
 - **Archivos (Supabase Storage):** carpeta pública **avatares** (código en `supabase/avatares.sql`, ya creada): las fotos de perfil, en `avatares/<id de Auth>/avatar.jpg`. Cualquiera las ve; cada persona solo sube, cambia o borra la suya (al borrar la cuenta se borra también). Solo imágenes JPG, PNG o WebP de hasta 2 MB (la app las recorta a 256 px antes de subirlas).
 - **Después:** clips (necesitan Supabase Storage o Twitch), pagos de eventos y mensajes entre amigos.
@@ -739,7 +740,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   5. Google, Discord, Twitch y Steam (cuatro botones con su logo, debajo del botón principal: primero va la cuenta de SaveSlot)
 - **Qué funciona de verdad:**
   - Entrar con correo (cuenta de SaveSlot): Real (Supabase Auth, signInWithPassword). Si la contraseña no coincide o falta confirmar el correo, lo dice junto al campo.
-  - Cuenta de demostración: Real (sesión de invitado de Supabase, sin contraseña, con los datos de ejemplo cargados)
+  - Cuenta de demostración: Real (sesión de invitado de Supabase, sin contraseña, con los datos de ejemplo de `js/data.js`: perfil, reseñas y diario de samluq; lo que hace se guarda en el navegador)
   - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). Vuelve a la pantalla donde estaba, con Steam vinculada. Si Steam está vinculada a una cuenta de Google, Discord, Twitch o correo, abre esa cuenta.
   - Google, Discord y Twitch: Real (proveedores de Supabase Auth, signInWithOAuth). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
 - **Está lista cuando:**

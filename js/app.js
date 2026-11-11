@@ -1074,7 +1074,7 @@ function leerResenasPropias() {
   }
   var guardadas = leerMemoria('myReviews', null);
   if (guardadas) return guardadas.map(resenaDesdeMemoria);
-  return datosDe('resenas').filter(function (r) { return r.autor === 'samluq'; }).map(function (r) {
+  return datosDeLaDemostracion('resenas').filter(function (r) { return r.autor === 'samluq'; }).map(function (r) {
     var partida = diarioDeEjemplo().find(function (d) { return d.juego_igdb === r.juego_igdb; });
     return Object.assign({}, r, { autor: usuarioActual(), estado_partida: partida ? partida.estado : null, editada: false });
   });
@@ -1618,14 +1618,15 @@ function activarResenas(contenedor) {
     if (!boton) return;
     if (!obtenerSesion()) { pedirCuenta('votar reseñas'); return; }
     if (boton.hasAttribute('data-propia')) { mostrarAviso('No puedes votar tu propia reseña'); return; }
-    if (boton.getAttribute('aria-pressed') === 'true') return;
-    var votos = leerMemoria('votosUtil', []);
-    votos.push(boton.dataset.util);
+    // Tocar otra vez quita el voto (como el me gusta)
+    var quitar = boton.getAttribute('aria-pressed') === 'true';
+    var votos = leerMemoria('votosUtil', []).filter(function (x) { return String(x) !== String(boton.dataset.util); });
+    if (!quitar) votos.push(boton.dataset.util);
     guardarMemoria('votosUtil', votos);
     var numero = boton.querySelector('span');
-    numero.textContent = formatearNumero(Number(numero.textContent.replace(/\D/g, '')) + 1);
-    boton.setAttribute('aria-pressed', 'true');
-    mostrarAviso('Gracias por tu voto');
+    numero.textContent = formatearNumero(Math.max(0, Number(numero.textContent.replace(/\D/g, '')) + (quitar ? -1 : 1)));
+    boton.setAttribute('aria-pressed', String(!quitar));
+    mostrarAviso(quitar ? 'Quitaste tu voto' : 'Gracias por tu voto');
   });
 }
 
@@ -2258,12 +2259,18 @@ function pantallaMatchplay() {
   }
 }
 
-// Perfil propio guardado en el navegador (hasta conectar Supabase).
-// La primera vez se arma con los datos de samluq en data.js.
+// Datos de la cuenta de demostración: los de ejemplo de js/data.js (perfil, reseñas y diario de samluq).
+// Las personas de ejemplo ya no están en Supabase: la comunidad es de cuentas reales.
+function datosDeLaDemostracion(tipo) {
+  return (DATOS[tipo] || []).slice();
+}
+
+// Perfil propio guardado en el navegador.
+// La primera vez se arma con los datos de samluq en data.js (cuenta de demostración).
 function leerPerfil() {
   var guardado = leerMemoria('profile', null);
   if (guardado) return guardado;
-  var yo = buscarPorId('usuarios', 'samluq');
+  var yo = datosDeLaDemostracion('usuarios').find(function (u) { return u.id === 'samluq'; });
   return {
     user: 'samluq', xp: yo.xp, level: yo.nivel, bio: yo.sobre_mi, since: yo.miembro_desde, favorites: yo.favoritos.slice(),
     wishlist: yo.lista_deseos.slice(), genres: yo.generos_favoritos.slice(), playing: yo.jugando_ahora,
@@ -2271,9 +2278,9 @@ function leerPerfil() {
   };
 }
 
-// Diario de la cuenta de demostración (samluq), que viene de la base
+// Diario de la cuenta de demostración (samluq), de js/data.js
 function diarioDeEjemplo() {
-  return datosDe('diario').filter(function (d) { return d.usuario === 'samluq'; });
+  return datosDeLaDemostracion('diario').filter(function (d) { return d.usuario === 'samluq'; });
 }
 
 // Diario propio. Cuenta real: el de la base. Demostración: el del navegador o, si no hay, el de ejemplo.
