@@ -29,12 +29,12 @@ function irASteam(destino, estado) {
     (estado ? '&vincular=' + encodeURIComponent(estado) : '');
 }
 
-// Cuenta de Supabase "de verdad" (Google, Discord, Twitch o correo; no invitado ni solo-Steam), o null
+// Sesión de una cuenta de Supabase de verdad (correo, Google, Discord, Twitch o Steam; no la de invitado), o null
 function cuentaSupabase() {
   if (!clienteSupabase) return Promise.resolve(null);
   return clienteSupabase.auth.getSession().then(function (r) {
     var cuenta = r.data && r.data.session && r.data.session.user;
-    if (!cuenta || cuenta.is_anonymous || esCuentaSoloSteam(cuenta)) return null;
+    if (!cuenta || cuenta.is_anonymous) return null;
     return r.data.session;
   });
 }
@@ -47,7 +47,8 @@ function esCuentaSoloSteam(cuenta) {
 // Vincula Steam a la cuenta abierta (no crea otra): pide al servidor un permiso firmado y va a Steam
 function vincularSteam(destino) {
   return cuentaSupabase().then(function (sesion) {
-    if (!sesion) { irASteam(destino); return; } // sin cuenta de verdad: Steam abre su propia cuenta
+    // sin cuenta de verdad (o ya es la de Steam): Steam abre su propia cuenta
+    if (!sesion || esCuentaSoloSteam(sesion.user)) { irASteam(destino); return; }
     return fetch('/api/steam/auth?action=preparar', { method: 'POST', headers: { Authorization: 'Bearer ' + sesion.access_token } })
       .then(function (r) { return r.json().then(function (d) { if (!r.ok || !d.estado) throw new Error(d.error || 'Sin permiso'); return d.estado; }); })
       .then(function (estado) { irASteam(destino, estado); });
@@ -359,9 +360,11 @@ async function sincronizarSesionSupabase() {
   var respuesta = await clienteSupabase.auth.getSession();
   var cuenta = respuesta.data && respuesta.data.session && respuesta.data.session.user;
   if (!cuenta || cuenta.is_anonymous) return null;                      // sin sesión, o la de demostración
-  if (esCuentaSoloSteam(cuenta)) return null;                          // la cuenta creada al entrar con Steam tiene su propio camino
   var local = obtenerSesion();
   if (local && local.auth_id === cuenta.id) return null;                // ya la conoce
+  // La cuenta creada al entrar con Steam: si entró con Steam, ese camino ya abrió la sesión.
+  // Si entró con Google, Discord o Twitch (vinculados a ella en Editar perfil), sigue aquí.
+  if (esCuentaSoloSteam(cuenta) && local && local.steam) return null;
 
   var fila = await obtenerUno('usuarios', cuenta.id, 'auth_id');
   var nueva = !fila;
@@ -381,7 +384,16 @@ async function sincronizarSesionSupabase() {
   var persona = TRADUCIR.usuarios([fila])[0];
   iniciarSesion({ name: persona.nombre, user: persona.usuario, initials: persona.iniciales, email: cuenta.email || '', auth_id: cuenta.id },
     { profile: perfilDesdeFila(persona), myReviews: [], diary: [], joined: [], inscripciones: [], friends: {}, chatsMatchplay: [] });
-  return nueva ? rutaPagina('editar-perfil.html') + '?nuevo=1' : null;
+  // Si la cuenta tiene Steam (entró con Steam alguna vez o lo vinculó), el perfil lo muestra vinculado;
+  // y la foto que eligió antes vuelve en cualquier navegador
+  var datosCuenta = cuenta.user_metadata || {};
+  var propio = leerPerfil();
+  propio.accounts = propio.accounts || {};
+  if ((cuenta.app_metadata || {}).steam_id) propio.accounts.Steam = datosCuenta.steam_nombre || datosCuenta.full_name || 'Steam';
+  if (datosCuenta.foto) propio.foto = datosCuenta.foto;
+  guardarMemoria('profile', propio);
+  // La cuenta creada con Steam no es nueva: no se muestra "¡Cuenta creada!"
+  return nueva && !esCuentaSoloSteam(cuenta) ? rutaPagina('editar-perfil.html') + '?nuevo=1' : null;
 }
 
 // Botones de Google, Discord y Twitch: entran con ese servicio y vuelven a "destino".
@@ -3807,14 +3819,41 @@ function pantallaEditar() {
   }
   dibujarJugando();
 
-  // Favoritos: máximo 4
+  // Favoritos: máximo 4. Se escribe el nombre y la lista sugiere juegos de tu biblioteca de Steam,
+  // del catálogo de ejemplo y de todo IGDB (se busca mientras escribes, desde 2 letras).
   var cajaFavoritos = document.getElementById('favoritos-editar');
   var selector = document.getElementById('elegir-favorito');
+  var sugerencias = document.getElementById('sugerencias-favorito');
   var botonAgregar = document.getElementById('agregar-favorito');
+  var deIgdb = [];      // lo último que encontró IGDB
+  var candidatos = {};  // texto de la sugerencia → juego
+  function dibujarSugerencias() {
+    candidatos = {};
+    var lista = [];
+    function sumar(j, texto) {
+      if (!j || perfil.favorites.indexOf(j.id) !== -1) return;
+      if (candidatos[texto.toLowerCase()]) return;
+      candidatos[texto.toLowerCase()] = j;
+      lista.push(texto);
+    }
+    bibliotecaSteam.slice().sort(function (a, b) { return b.horas - a.horas; }).forEach(function (j) {
+      sumar(j, j.nombre + ' · Steam' + (j.horas ? ', ' + formatearNumero(j.horas) + ' h' : ''));
+    });
+    juegos.forEach(function (j) { sumar(j, j.nombre); });
+    deIgdb.forEach(function (j) { sumar(j, j.nombre + (j.anio ? ' (' + j.anio + ')' : '')); });
+    sugerencias.innerHTML = lista.map(function (t) { return '<option value="' + escapar(t) + '"></option>'; }).join('');
+  }
+  // El juego que corresponde a lo escrito: la sugerencia exacta o, si solo una lo contiene, esa
+  function juegoEscrito() {
+    var texto = selector.value.trim().toLowerCase();
+    if (!texto) return null;
+    if (candidatos[texto]) return candidatos[texto];
+    var parecidos = Object.keys(candidatos).filter(function (t) { return t.indexOf(texto) !== -1; });
+    return parecidos.length === 1 ? candidatos[parecidos[0]] : null;
+  }
   function dibujarFavoritos() {
-    var lleno = perfil.favorites.length >= MAXIMO_FAVORITOS;
     perfil.favorites = perfil.favorites.filter(function (id) { return buscarPorId('juegos', id); });
-    lleno = perfil.favorites.length >= MAXIMO_FAVORITOS;
+    var lleno = perfil.favorites.length >= MAXIMO_FAVORITOS;
     cajaFavoritos.innerHTML = perfil.favorites.map(function (id) {
       var j = buscarPorId('juegos', id);
       return '<div class="portada"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b>' +
@@ -3822,20 +3861,41 @@ function pantallaEditar() {
     }).join('') + new Array(MAXIMO_FAVORITOS - perfil.favorites.length + 1).join('<div class="vacio">Espacio libre</div>');
     document.getElementById('pista-favoritos').textContent = lleno
       ? 'Ya tienes 4 favoritos. Quita uno para elegir otro.'
-      : 'Puedes elegir ' + (MAXIMO_FAVORITOS - perfil.favorites.length) + ' más (máximo 4).';
+      : 'Escribe y elige de la lista. Puedes elegir ' + (MAXIMO_FAVORITOS - perfil.favorites.length) + ' más (máximo 4).';
     botonAgregar.disabled = lleno;
     selector.disabled = lleno;
-    function opciones(lista) {
-      return lista.filter(function (j) { return perfil.favorites.indexOf(j.id) === -1; }).map(function (j) {
-        return '<option value="' + escapar(j.id) + '">' + escapar(j.nombre_corto) + (j.steam && j.horas ? ' · ' + formatearNumero(j.horas) + ' h' : '') + '</option>';
-      }).join('');
-    }
-    var porHoras = bibliotecaSteam.slice().sort(function (a, b) { return b.horas - a.horas; });
-    selector.innerHTML = '<option value="">Elige un juego</option>' + (porHoras.length
-      ? '<optgroup label="Tu biblioteca de Steam">' + opciones(porHoras) + '</optgroup><optgroup label="Catálogo de SaveSlot">' + opciones(juegos) + '</optgroup>'
-      : opciones(juegos));
+    dibujarSugerencias();
     aplicarColores(cajaFavoritos);
   }
+  var esperaBusqueda = null;
+  var busquedaActual = 0;
+  selector.addEventListener('input', function () {
+    clearTimeout(esperaBusqueda);
+    var texto = selector.value.trim();
+    if (texto.length < 2 || candidatos[texto.toLowerCase()]) return; // muy corto, o ya eligió de la lista
+    esperaBusqueda = setTimeout(function () {
+      var numero = ++busquedaActual;
+      preguntarIgdb({ buscar: texto }).then(function (d) {
+        if (numero !== busquedaActual) return;
+        deIgdb = (d.juegos || []).slice(0, 15).map(conDatosLocales);
+        dibujarSugerencias();
+      }).catch(function () { /* IGDB no respondió: quedan la biblioteca y el catálogo */ });
+    }, 350);
+  });
+  function agregarFavorito() {
+    if (perfil.favorites.length >= MAXIMO_FAVORITOS) return;
+    var j = juegoEscrito();
+    if (!j) { mostrarAviso(selector.value.trim() ? 'Elige el juego de la lista de sugerencias' : 'Escribe el nombre de un juego'); selector.focus(); return; }
+    if (!j.steam && !buscarPorId('juegos', j.id)) guardarJuegoIgdb(j); // los de IGDB quedan guardados para verse en el perfil
+    perfil.favorites.push(j.id);
+    selector.value = '';
+    dibujarFavoritos();
+    if (!selector.disabled) selector.focus();
+  }
+  // Enter agrega el juego (y no envía el formulario)
+  selector.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); agregarFavorito(); }
+  });
   cajaFavoritos.addEventListener('click', function (e) {
     var boton = e.target.closest('[data-quitar-favorito]');
     if (!boton) return;
@@ -3843,12 +3903,7 @@ function pantallaEditar() {
     dibujarFavoritos();
     selector.focus();
   });
-  botonAgregar.addEventListener('click', function () {
-    if (!selector.value) { mostrarAviso('Elige un juego de la lista'); return; }
-    if (perfil.favorites.length >= MAXIMO_FAVORITOS) return;
-    perfil.favorites.push(selector.value);
-    dibujarFavoritos();
-  });
+  botonAgregar.addEventListener('click', agregarFavorito);
   dibujarFavoritos();
   // Trae la biblioteca de Steam al día para elegir favoritos de ahí
   if (perfil.accounts.Steam) {
