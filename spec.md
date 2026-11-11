@@ -133,7 +133,7 @@ Campos:
 - usuario: texto, único — el @ (de 3 a 20 letras, números, punto o guion bajo) — obligatorio
 - nombre: texto — nombre visible — obligatorio
 - iniciales: texto — para el avatar — obligatorio
-- foto: enlace — foto de perfil que subió la persona (en Supabase Storage, carpeta **avatares**). Vacía = la foto de Steam si la tiene, o las iniciales; «iniciales» = sin foto aunque tenga Steam. Hoy se guarda en `user_metadata.foto` de Supabase Auth — opcional
+- foto: enlace — foto de perfil que subió la persona (en Supabase Storage, carpeta **avatares**). Es la que ven los demás (reseñas, amigos, perfiles): la subida o la de Steam; vacía = las iniciales. La pone la app de la propia persona al guardar en Editar perfil y al abrir cualquier página; la elección («usar la de Steam», «iniciales») sigue en `user_metadata.foto` de Supabase Auth — opcional
 - sobre_mi: texto largo — "Sobre mí" — opcional
 - jugando_ahora: texto — el juego (slug de IGDB o `steam-<número>`; "steam" = automático con Steam) — opcional
 - miembro_desde: fecha — cuándo se creó la cuenta — obligatorio
