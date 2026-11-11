@@ -935,14 +935,17 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Se cierra y deja el formulario vacío.
 
 ### 29. Error y estado de servicios
-- **Archivo de diseño:** disenos/error.html (variantes: servicio caído, límite de consultas, tiempo agotado, credenciales, mantenimiento, sin conexión, plataforma sin API, pagos, función no disponible, prototipo, estado de servicios)
+- **Archivo de diseño:** disenos/error.html (variantes: servicio caído, límite de consultas, tiempo agotado, credenciales, mantenimiento, sin conexión, prototipo, estado de servicios; «plataforma sin API», «pagos» y «función no disponible» se quitaron porque ninguna pantalla lleva a ellas: Editar perfil y Detalle de evento ya lo explican ahí mismo)
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda entender qué falló y qué hacer. Sabemos que funciona si la persona toca "Reintentar" o "Ir al inicio" en vez de cerrar la página.
 - **Contenido:**
   1. Título y explicación del error
   2. Qué puedes hacer
   3. Botones: Reintentar, Ir al inicio, Reportar el problema
   4. Estado de los servicios
-- **Qué funciona de verdad:** Estado de los servicios: Simulado
+- **Qué funciona de verdad:**
+  - Estado de los servicios: Real para catálogo (IGDB), Steam, base de datos y cuentas (Supabase): se revisan al abrir la página y dicen «Con fallas» si no responden. Los demás son fijos (data.js).
+  - Errores de IGDB: según lo que responda, lleva a la variante que corresponde (límite de consultas, tiempo agotado a los 15 s, credenciales, mantenimiento, sin conexión o servicio caído) con «Reintentar» para volver a la página.
+  - «Acceso»: sale si falla entrar con Google, Discord o Twitch, con «Reintentar» y «Entrar de otra forma».
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, en todas sus variantes.
   - Funciona en celular (375 px de ancho).
