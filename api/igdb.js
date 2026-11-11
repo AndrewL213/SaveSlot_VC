@@ -16,7 +16,7 @@
 //                              duracion=corto|medio|largo · desde=2015 · hasta=2024 · pagina=2
 //   /api/igdb?random=1       → un juego al azar entre los más conocidos. genero=RPG · excepto=hades--1
 //   /api/igdb?steam=1        → los 10 juegos más jugados en Steam (PC), con su pico de jugadores
-//                              (jugadoresSteam); la lista viene de Steam y los datos, de IGDB
+//                              (jugadores_steam); la lista viene de Steam y los datos, de IGDB
 //
 // Solo se muestran juegos principales, remakes, remasters y expansiones que se venden solas:
 // nada de DLC, mods, packs ni ports no oficiales.
@@ -184,22 +184,22 @@ function traducir(j, horas) {
   const enSteam = (j.external_games || []).find(function (e) { return (e.external_game_source === 1 || e.category === 1) && /^\d+$/.test(e.uid); });
   return {
     id: j.slug,
-    idIgdb: j.id,
-    appidSteam: enSteam ? Number(enSteam.uid) : null, // para precio, nota y reseñas de Steam (api/steam/)
+    id_igdb: j.id,
+    appid_steam: enSteam ? Number(enSteam.uid) : null, // para precio, nota y reseñas de Steam (api/steam/)
     nombre: j.name,
-    nombreCorto: j.name,
+    nombre_corto: j.name,
     generos: generos,
     plataformas: sinRepetidos((j.platforms || []).map(function (p) { return plataformaDe(p.name); })),
     anio: j.first_release_date ? new Date(j.first_release_date * 1000).getUTCFullYear() : null,
     desarrolladora: desarrolla ? desarrolla.company.name : '',
     tipo: nombresIgdb.indexOf('Indie') !== -1 ? 'Indie' : 'AAA',
     // Solo online: tiene modos de juego y ninguno es "un jugador" (1). No tiene historia que medir.
-    soloOnline: !!(j.game_modes && j.game_modes.length && j.game_modes.indexOf(1) === -1),
-    horasHistoria: horas,
+    solo_online: !!(j.game_modes && j.game_modes.length && j.game_modes.indexOf(1) === -1),
+    horas_historia: horas,
     descripcion: j.summary || '', // IGDB solo la tiene en inglés; la ficha (?id=) la traduce
-    idiomaDescripcion: 'en',
+    idioma_descripcion: 'en',
     portada: j.cover ? 'https://images.igdb.com/igdb/image/upload/t_cover_big/' + j.cover.image_id + '.jpg' : null,
-    creditoPortada: j.cover ? 'IGDB' : null,
+    credito_portada: j.cover ? 'IGDB' : null,
     color: null // IGDB no tiene color: la página usa el color neutro del kit
   };
 }
@@ -213,7 +213,7 @@ async function traducirDescripcion(juego) {
   if (!juego.descripcion) return juego;
   try {
     const texto = process.env.DEEPL_API_KEY ? await conDeepl(juego.descripcion) : await conGoogle(juego.descripcion);
-    if (texto) { juego.descripcion = texto; juego.idiomaDescripcion = 'es'; }
+    if (texto) { juego.descripcion = texto; juego.idioma_descripcion = 'es'; }
   } catch (e) {
     console.error('No se pudo traducir la descripción: ' + e.message);
   }
@@ -308,7 +308,7 @@ function anio(valor) {
 
 // La duración no se puede filtrar en IGDB: se filtra con las horas de la historia, ya traídas.
 function cumpleDuracion(juego, duracion) {
-  const h = juego.horasHistoria;
+  const h = juego.horas_historia;
   if (duracion === 'corto') return h != null && h < 10;
   if (duracion === 'medio') return h != null && h >= 10 && h <= 40;
   if (duracion === 'largo') return h != null && h > 40;
@@ -329,7 +329,7 @@ async function explorar(filtros) {
   let traducidos = await conHoras(juegos);
   if (conDuracion) traducidos = traducidos.filter(function (j) { return cumpleDuracion(j, filtros.duracion); }).slice(0, POR_PAGINA);
   // Con duración no se sabe el total (se filtra después): total = null
-  return { juegos: traducidos, pagina: pagina, hayMas: juegos.length === pedir, total: cuenta ? cuenta.count : null };
+  return { juegos: traducidos, pagina: pagina, hay_mas: juegos.length === pedir, total: cuenta ? cuenta.count : null };
 }
 
 // Un juego al azar entre los 300 más conocidos (del género pedido, si hay).
@@ -407,8 +407,8 @@ async function masJugadosSteam() {
   juegos.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); });
   const lista = await conHoras(juegos.slice(0, 10));
   return lista.map(function (j) {
-    const puesto = primeros.find(function (x) { return x.appid === j.appidSteam; });
-    j.jugadoresSteam = puesto ? puesto.peak_in_game : null; // pico de jugadores a la vez (ayer)
+    const puesto = primeros.find(function (x) { return x.appid === j.appid_steam; });
+    j.jugadores_steam = puesto ? puesto.peak_in_game : null; // pico de jugadores a la vez (ayer)
     return j;
   });
 }

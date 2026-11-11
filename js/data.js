@@ -11,9 +11,9 @@ const DATOS = {
   juegos: [
     {
       id: "the-legend-of-zelda-tears-of-the-kingdom",
-      idIgdb: 119388,
+      id_igdb: 119388,
       nombre: "The Legend of Zelda: Tears of the Kingdom",
-      nombreCorto: "Zelda: TOTK",
+      nombre_corto: "Zelda: TOTK",
       generos: [
         "Aventura"
       ],
@@ -23,21 +23,21 @@ const DATOS = {
       anio: 2023,
       desarrolladora: "Nintendo EPD",
       tipo: "AAA",
-      horasHistoria: 60,
+      horas_historia: 60,
       horas100: 220,
       dificultad: 6,
       calificacion: 9.6,
       votos: 12430,
-      logrosTotales: 139,
+      logros_totales: 139,
       descripcion: "Mundo abierto enorme donde cada puzzle tiene varias soluciones gracias a Ultramano.",
       portada: "assets/portada-zelda-totk.jpg",
       color: "#2F6B4F"
     },
     {
       id: "nier-automata",
-      idIgdb: 11208,
+      id_igdb: 11208,
       nombre: "NieR: Automata",
-      nombreCorto: "NieR: Automata",
+      nombre_corto: "NieR: Automata",
       generos: [
         "RPG",
         "Acción"
@@ -51,22 +51,22 @@ const DATOS = {
       anio: 2017,
       desarrolladora: "PlatinumGames",
       tipo: "AAA",
-      horasHistoria: 20,
+      horas_historia: 20,
       horas100: 70,
       dificultad: 6,
       calificacion: 9.4,
       votos: 8120,
-      logrosTotales: 50,
+      logros_totales: 50,
       descripcion: "Combate ágil y una historia que cambia por completo con cada final.",
       portada: "assets/portada-nier-automata.jpg",
       color: "#7C7566"
     },
     {
       id: "rocket-league",
-      idIgdb: 11198,
-      soloOnline: true,
+      id_igdb: 11198,
+      solo_online: true,
       nombre: "Rocket League",
-      nombreCorto: "Rocket League",
+      nombre_corto: "Rocket League",
       generos: [
         "Deportes"
       ],
@@ -79,22 +79,22 @@ const DATOS = {
       anio: 2015,
       desarrolladora: "Psyonix",
       tipo: "AAA",
-      horasHistoria: null,
+      horas_historia: null,
       horas100: null,
       dificultad: 7,
       calificacion: 8.6,
       votos: 9840,
-      logrosTotales: 88,
+      logros_totales: 88,
       descripcion: "Fútbol con autos. Partidas de 5 minutos y torneos oficiales varias veces al día.",
       portada: "assets/portada-rocket-league.jpg",
       color: "#2456C4"
     },
     {
       id: "valorant",
-      idIgdb: 126459,
-      soloOnline: true,
+      id_igdb: 126459,
+      solo_online: true,
       nombre: "Valorant",
-      nombreCorto: "Valorant",
+      nombre_corto: "Valorant",
       generos: [
         "Shooter"
       ],
@@ -106,21 +106,21 @@ const DATOS = {
       anio: 2020,
       desarrolladora: "Riot Games",
       tipo: "AAA",
-      horasHistoria: null,
+      horas_historia: null,
       horas100: null,
       dificultad: 8,
       calificacion: 8.4,
       votos: 7650,
-      logrosTotales: 0,
+      logros_totales: 0,
       descripcion: "Shooter táctico 5v5 con agentes de habilidades únicas.",
       portada: "assets/portada-valorant.jpg",
       color: "#5B3F96"
     },
     {
       id: "pokemon-legends-z-a",
-      idIgdb: 288327,
+      id_igdb: 288327,
       nombre: "Pokémon Legends Z-A",
-      nombreCorto: "Pokémon Legends Z-A",
+      nombre_corto: "Pokémon Legends Z-A",
       generos: [
         "RPG"
       ],
@@ -130,21 +130,21 @@ const DATOS = {
       anio: 2025,
       desarrolladora: "Game Freak",
       tipo: "AAA",
-      horasHistoria: 30,
+      horas_historia: 30,
       horas100: 80,
       dificultad: 3,
       calificacion: 8.8,
       votos: 5310,
-      logrosTotales: 0,
+      logros_totales: 0,
       descripcion: "Captura y combate en tiempo real dentro de Ciudad Luminalia.",
       portada: "assets/portada-pokemon-legends-za.png",
       color: "#B8343E"
     },
     {
       id: "five-nights-at-freddys-into-the-pit",
-      idIgdb: 283679,
+      id_igdb: 283679,
       nombre: "Five Nights at Freddy's: Into the Pit",
-      nombreCorto: "FNAF: Into the Pit",
+      nombre_corto: "FNAF: Into the Pit",
       generos: [
         "Terror"
       ],
@@ -157,21 +157,21 @@ const DATOS = {
       anio: 2024,
       desarrolladora: "Mega Cat Studios",
       tipo: "Indie",
-      horasHistoria: 6,
+      horas_historia: 6,
       horas100: 10,
       dificultad: 5,
       calificacion: 8.2,
       votos: 2140,
-      logrosTotales: 24,
+      logros_totales: 24,
       descripcion: "Aventura de terror corta con tensión constante y pocos sustos baratos.",
       portada: "assets/portada-fnaf-into-the-pit.jpg",
       color: "#6B3A1E"
     },
     {
       id: "hollow-knight",
-      idIgdb: 14593,
+      id_igdb: 14593,
       nombre: "Hollow Knight",
-      nombreCorto: "Hollow Knight",
+      nombre_corto: "Hollow Knight",
       generos: [
         "Aventura",
         "Metroidvania"
@@ -185,21 +185,21 @@ const DATOS = {
       anio: 2017,
       desarrolladora: "Team Cherry",
       tipo: "Indie",
-      horasHistoria: 27,
+      horas_historia: 27,
       horas100: 60,
       dificultad: 7,
       calificacion: 9.4,
       votos: 9010,
-      logrosTotales: 63,
+      logros_totales: 63,
       descripcion: "Metroidvania exigente con un mundo para explorar sin prisa.",
       portada: "assets/portada-hollow-knight.jpg",
       color: "#2B3A55"
     },
     {
       id: "hades--1",
-      idIgdb: 113112,
+      id_igdb: 113112,
       nombre: "Hades",
-      nombreCorto: "Hades",
+      nombre_corto: "Hades",
       generos: [
         "Roguelike",
         "Acción"
@@ -213,21 +213,21 @@ const DATOS = {
       anio: 2020,
       desarrolladora: "Supergiant Games",
       tipo: "Indie",
-      horasHistoria: 22,
+      horas_historia: 22,
       horas100: 95,
       dificultad: 6,
       calificacion: 9.6,
       votos: 7720,
-      logrosTotales: 49,
+      logros_totales: 49,
       descripcion: "Escapa del inframundo partida a partida mientras la historia avanza.",
       portada: "assets/portada-hades.jpg",
       color: "#8A2B2B"
     },
     {
       id: "elden-ring",
-      idIgdb: 119133,
+      id_igdb: 119133,
       nombre: "Elden Ring",
-      nombreCorto: "Elden Ring",
+      nombre_corto: "Elden Ring",
       generos: [
         "RPG",
         "Acción"
@@ -240,21 +240,21 @@ const DATOS = {
       anio: 2022,
       desarrolladora: "FromSoftware",
       tipo: "AAA",
-      horasHistoria: 55,
+      horas_historia: 55,
       horas100: 130,
       dificultad: 8,
       calificacion: 9.6,
       votos: 11200,
-      logrosTotales: 42,
+      logros_totales: 42,
       descripcion: "Mundo abierto oscuro y desafiante con libertad total para explorar.",
       portada: "assets/portada-elden-ring.jpg",
       color: "#3E5A2A"
     },
     {
       id: "ghost-of-tsushima",
-      idIgdb: 75235,
+      id_igdb: 75235,
       nombre: "Ghost of Tsushima",
-      nombreCorto: "Ghost of Tsushima",
+      nombre_corto: "Ghost of Tsushima",
       generos: [
         "Aventura",
         "Acción"
@@ -266,21 +266,21 @@ const DATOS = {
       anio: 2020,
       desarrolladora: "Sucker Punch",
       tipo: "AAA",
-      horasHistoria: 25,
+      horas_historia: 25,
       horas100: 60,
       dificultad: 5,
       calificacion: 9.4,
       votos: 6400,
-      logrosTotales: 52,
+      logros_totales: 52,
       descripcion: "Samurái en mundo abierto con combate preciso y un viento que te guía.",
       portada: "assets/portada-ghost-of-tsushima.jpg",
       color: "#7A2E2E"
     },
     {
       id: "inside",
-      idIgdb: 7342,
+      id_igdb: 7342,
       nombre: "Inside",
-      nombreCorto: "Inside",
+      nombre_corto: "Inside",
       generos: [
         "Terror",
         "Plataformas"
@@ -294,21 +294,21 @@ const DATOS = {
       anio: 2016,
       desarrolladora: "Playdead",
       tipo: "Indie",
-      horasHistoria: 3,
+      horas_historia: 3,
       horas100: 5,
       dificultad: 4,
       calificacion: 9.2,
       votos: 4300,
-      logrosTotales: 14,
+      logros_totales: 14,
       descripcion: "Plataformas oscuro y sin diálogos. Se termina en una tarde.",
       portada: "assets/portada-inside.jpg",
       color: "#3A3F45"
     },
     {
       id: "hades-ii",
-      idIgdb: 228525,
+      id_igdb: 228525,
       nombre: "Hades II",
-      nombreCorto: "Hades II",
+      nombre_corto: "Hades II",
       generos: [
         "Roguelike",
         "Acción"
@@ -320,12 +320,12 @@ const DATOS = {
       anio: 2025,
       desarrolladora: "Supergiant Games",
       tipo: "Indie",
-      horasHistoria: 30,
+      horas_historia: 30,
       horas100: 100,
       dificultad: 6,
       calificacion: 9.4,
       votos: 3100,
-      logrosTotales: 50,
+      logros_totales: 50,
       descripcion: "Secuela de Hades con nueva protagonista, Melínoe, y nuevas armas.",
       portada: "assets/portada-hades-ii.jpg",
       color: "#5A2D6B"
@@ -334,7 +334,7 @@ const DATOS = {
   resenas: [
     {
       id: "r1",
-      juego: "nier-automata",
+      juego_igdb: 11208,
       autor: "kenvel",
       tipo: "resena",
       estado: "publicada",
@@ -343,15 +343,15 @@ const DATOS = {
       calificacion: 9,
       dificultad: 6,
       horas: 42,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 128,
-      meGusta: 64,
+      votos_util: 128,
+      me_gusta: 64,
       fecha: "2026-10-05"
     },
     {
       id: "r2",
-      juego: "rocket-league",
+      juego_igdb: 11198,
       autor: "juanvi",
       tipo: "resena",
       estado: "publicada",
@@ -360,15 +360,15 @@ const DATOS = {
       calificacion: 8,
       dificultad: 7,
       horas: 300,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 74,
-      meGusta: 31,
+      votos_util: 74,
+      me_gusta: 31,
       fecha: "2026-10-03"
     },
     {
       id: "r3",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
+      juego_igdb: 119388,
       autor: "andresh",
       tipo: "resena",
       estado: "publicada",
@@ -377,15 +377,15 @@ const DATOS = {
       calificacion: 10,
       dificultad: 6,
       horas: 48,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 203,
-      meGusta: 112,
+      votos_util: 203,
+      me_gusta: 112,
       fecha: "2026-09-28"
     },
     {
       id: "r4",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
+      juego_igdb: 119388,
       autor: "mlopez",
       tipo: "resena",
       estado: "publicada",
@@ -394,15 +394,15 @@ const DATOS = {
       calificacion: 8,
       dificultad: 5,
       horas: 31,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 88,
-      meGusta: 40,
+      votos_util: 88,
+      me_gusta: 40,
       fecha: "2026-09-21"
     },
     {
       id: "r5",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
+      juego_igdb: 119388,
       autor: "valer1a",
       tipo: "resena",
       estado: "publicada",
@@ -411,15 +411,15 @@ const DATOS = {
       calificacion: 9,
       dificultad: 7,
       horas: 190,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: true,
-      votosUtil: 61,
-      meGusta: 27,
+      votos_util: 61,
+      me_gusta: 27,
       fecha: "2026-09-15"
     },
     {
       id: "r6",
-      juego: "hollow-knight",
+      juego_igdb: 14593,
       autor: "d4ni",
       tipo: "resena",
       estado: "publicada",
@@ -428,15 +428,15 @@ const DATOS = {
       calificacion: 10,
       dificultad: 8,
       horas: 60,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 140,
-      meGusta: 77,
+      votos_util: 140,
+      me_gusta: 77,
       fecha: "2026-09-10"
     },
     {
       id: "r7",
-      juego: "hades--1",
+      juego_igdb: 113112,
       autor: "kenvel",
       tipo: "resena",
       estado: "publicada",
@@ -445,15 +445,15 @@ const DATOS = {
       calificacion: 10,
       dificultad: 6,
       horas: 70,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 96,
-      meGusta: 52,
+      votos_util: 96,
+      me_gusta: 52,
       fecha: "2026-08-30"
     },
     {
       id: "r8",
-      juego: "valorant",
+      juego_igdb: 126459,
       autor: "juanvi",
       tipo: "resena",
       estado: "publicada",
@@ -462,15 +462,15 @@ const DATOS = {
       calificacion: 7,
       dificultad: 8,
       horas: 410,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 58,
-      meGusta: 19,
+      votos_util: 58,
+      me_gusta: 19,
       fecha: "2026-08-22"
     },
     {
       id: "r9",
-      juego: "elden-ring",
+      juego_igdb: 119133,
       autor: "d4ni",
       tipo: "resena",
       estado: "publicada",
@@ -479,15 +479,15 @@ const DATOS = {
       calificacion: 10,
       dificultad: 9,
       horas: 120,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 117,
-      meGusta: 66,
+      votos_util: 117,
+      me_gusta: 66,
       fecha: "2026-08-14"
     },
     {
       id: "r10",
-      juego: "inside",
+      juego_igdb: 7342,
       autor: "lau_plays",
       tipo: "resena",
       estado: "publicada",
@@ -496,15 +496,15 @@ const DATOS = {
       calificacion: 9,
       dificultad: 4,
       horas: 4,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 45,
-      meGusta: 22,
+      votos_util: 45,
+      me_gusta: 22,
       fecha: "2026-08-02"
     },
     {
       id: "m1",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
+      juego_igdb: 119388,
       autor: "samluq",
       tipo: "resena",
       estado: "publicada",
@@ -513,15 +513,15 @@ const DATOS = {
       calificacion: 10,
       dificultad: 6,
       horas: 48,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 34,
-      meGusta: 21,
+      votos_util: 34,
+      me_gusta: 21,
       fecha: "2026-10-07"
     },
     {
       id: "m2",
-      juego: "five-nights-at-freddys-into-the-pit",
+      juego_igdb: 283679,
       autor: "samluq",
       tipo: "resena",
       estado: "publicada",
@@ -530,15 +530,15 @@ const DATOS = {
       calificacion: 7,
       dificultad: 5,
       horas: 6,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 12,
-      meGusta: 6,
+      votos_util: 12,
+      me_gusta: 6,
       fecha: "2026-10-04"
     },
     {
       id: "m3",
-      juego: "nier-automata",
+      juego_igdb: 11208,
       autor: "samluq",
       tipo: "resena",
       estado: "publicada",
@@ -547,15 +547,15 @@ const DATOS = {
       calificacion: 9,
       dificultad: 6,
       horas: 21,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: true,
-      votosUtil: 27,
-      meGusta: 15,
+      votos_util: 27,
+      me_gusta: 15,
       fecha: "2026-10-02"
     },
     {
       id: "m4",
-      juego: "valorant",
+      juego_igdb: 126459,
       autor: "samluq",
       tipo: "resena",
       estado: "publicada",
@@ -564,15 +564,15 @@ const DATOS = {
       calificacion: 5,
       dificultad: 8,
       horas: 9,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 4,
-      meGusta: 2,
+      votos_util: 4,
+      me_gusta: 2,
       fecha: "2026-09-19"
     },
     {
       id: "m5",
-      juego: "hollow-knight",
+      juego_igdb: 14593,
       autor: "samluq",
       tipo: "resena",
       estado: "publicada",
@@ -581,15 +581,15 @@ const DATOS = {
       calificacion: 9,
       dificultad: 7,
       horas: 27,
-      minutosLectura: null,
+      minutos_lectura: null,
       spoiler: false,
-      votosUtil: 41,
-      meGusta: 25,
+      votos_util: 41,
+      me_gusta: 25,
       fecha: "2026-08-12"
     },
     {
       id: "g1",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
+      juego_igdb: 119388,
       autor: "cami.rpg",
       tipo: "guia",
       estado: "publicada",
@@ -598,16 +598,16 @@ const DATOS = {
       calificacion: null,
       dificultad: null,
       horas: null,
-      minutosLectura: 12,
+      minutos_lectura: 12,
       spoiler: false,
-      votosUtil: null,
-      porcentajeUtil: 94,
-      meGusta: 0,
+      votos_util: null,
+      porcentaje_util: 94,
+      me_gusta: 0,
       fecha: null
     },
     {
       id: "g2",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
+      juego_igdb: 119388,
       autor: "kenvel",
       tipo: "guia",
       estado: "publicada",
@@ -616,16 +616,16 @@ const DATOS = {
       calificacion: null,
       dificultad: null,
       horas: null,
-      minutosLectura: 6,
+      minutos_lectura: 6,
       spoiler: false,
-      votosUtil: null,
-      porcentajeUtil: 88,
-      meGusta: 0,
+      votos_util: null,
+      porcentaje_util: 88,
+      me_gusta: 0,
       fecha: null
     },
     {
       id: "g3",
-      juego: "valorant",
+      juego_igdb: 126459,
       autor: "feli_fps",
       tipo: "guia",
       estado: "publicada",
@@ -634,16 +634,16 @@ const DATOS = {
       calificacion: null,
       dificultad: null,
       horas: null,
-      minutosLectura: 8,
+      minutos_lectura: 8,
       spoiler: false,
-      votosUtil: null,
-      porcentajeUtil: 89,
-      meGusta: 0,
+      votos_util: null,
+      porcentaje_util: 89,
+      me_gusta: 0,
       fecha: null
     },
     {
       id: "g4",
-      juego: "nier-automata",
+      juego_igdb: 11208,
       autor: "kenvel",
       tipo: "guia",
       estado: "publicada",
@@ -652,16 +652,16 @@ const DATOS = {
       calificacion: null,
       dificultad: null,
       horas: null,
-      minutosLectura: 15,
+      minutos_lectura: 15,
       spoiler: false,
-      votosUtil: null,
-      porcentajeUtil: 91,
-      meGusta: 0,
+      votos_util: null,
+      porcentaje_util: 91,
+      me_gusta: 0,
       fecha: null
     },
     {
       id: "g5",
-      juego: "rocket-league",
+      juego_igdb: 11198,
       autor: "juanvi",
       tipo: "guia",
       estado: "publicada",
@@ -670,11 +670,11 @@ const DATOS = {
       calificacion: null,
       dificultad: null,
       horas: null,
-      minutosLectura: 10,
+      minutos_lectura: 10,
       spoiler: false,
-      votosUtil: null,
-      porcentajeUtil: 86,
-      meGusta: 0,
+      votos_util: null,
+      porcentaje_util: 86,
+      me_gusta: 0,
       fecha: null
     }
   ],
@@ -728,9 +728,9 @@ const DATOS = {
       nombre: "Samuel D Luq",
       iniciales: "SL",
       nivel: 12,
-      miembroDesde: "2024-03-14",
-      sobreMi: "Gamer casual. Aventura, RPG y algo de terror los fines de semana.",
-      jugandoAhora: "the-legend-of-zelda-tears-of-the-kingdom",
+      miembro_desde: "2024-03-14",
+      sobre_mi: "Gamer casual. Aventura, RPG y algo de terror los fines de semana.",
+      jugando_ahora: "the-legend-of-zelda-tears-of-the-kingdom",
       estado: "en-linea",
       favoritos: [
         "nier-automata",
@@ -739,9 +739,9 @@ const DATOS = {
         "five-nights-at-freddys-into-the-pit"
       ],
       xp: 1240,
-      generosFavoritos: ["Aventura", "RPG", "Terror"],
-      listaDeseos: ["hades-ii", "ghost-of-tsushima", "elden-ring"],
-      cuentasVinculadas: [{ plataforma: "Steam", nombre: "samluq_steam", estado: "verificada" }],
+      generos_favoritos: ["Aventura", "RPG", "Terror"],
+      lista_deseos: ["hades-ii", "ghost-of-tsushima", "elden-ring"],
+      cuentas_vinculadas: [{ plataforma: "Steam", nombre: "samluq_steam", estado: "verificada" }],
       insignias: [
         "Fundador beta"
       ],
@@ -753,9 +753,9 @@ const DATOS = {
       nombre: "Kenneth Velásquez",
       iniciales: "KV",
       nivel: 18,
-      miembroDesde: "2024-02-02",
-      sobreMi: "RPGs japoneses y bandas sonoras que se quedan en la cabeza.",
-      jugandoAhora: "nier-automata",
+      miembro_desde: "2024-02-02",
+      sobre_mi: "RPGs japoneses y bandas sonoras que se quedan en la cabeza.",
+      jugando_ahora: "nier-automata",
       estado: "jugando",
       favoritos: [
         "nier-automata",
@@ -767,17 +767,17 @@ const DATOS = {
       color: "#7C7566",
       id: "kenvel",
       notas: {"nier-automata": 9, "hades--1": 10, "the-legend-of-zelda-tears-of-the-kingdom": 9, "hollow-knight": 8, "inside": 8},
-      ultimaConexion: null,
-      amigosEnComun: 0
+      ultima_conexion: null,
+      amigos_en_comun: 0
     },
     {
       usuario: "juanvi",
       nombre: "Juan Vigoya",
       iniciales: "JV",
       nivel: 21,
-      miembroDesde: "2023-11-20",
-      sobreMi: "Competitivo. Diamante en Rocket League, Oro en Valorant.",
-      jugandoAhora: "rocket-league",
+      miembro_desde: "2023-11-20",
+      sobre_mi: "Competitivo. Diamante en Rocket League, Oro en Valorant.",
+      jugando_ahora: "rocket-league",
       estado: "jugando",
       favoritos: [
         "rocket-league",
@@ -789,17 +789,17 @@ const DATOS = {
       color: "#2456C4",
       id: "juanvi",
       notas: {"rocket-league": 8, "valorant": 7, "the-legend-of-zelda-tears-of-the-kingdom": 9, "nier-automata": 10},
-      ultimaConexion: null,
-      amigosEnComun: 0
+      ultima_conexion: null,
+      amigos_en_comun: 0
     },
     {
       usuario: "d4ni",
       nombre: "Daniela Arango",
       iniciales: "DA",
       nivel: 15,
-      miembroDesde: "2024-05-09",
-      sobreMi: "Metroidvanias y soulslikes. Si tiene jefes difíciles, me interesa.",
-      jugandoAhora: "hollow-knight",
+      miembro_desde: "2024-05-09",
+      sobre_mi: "Metroidvanias y soulslikes. Si tiene jefes difíciles, me interesa.",
+      jugando_ahora: "hollow-knight",
       estado: "jugando",
       favoritos: [
         "hollow-knight",
@@ -811,17 +811,17 @@ const DATOS = {
       color: "#2B3A55",
       id: "d4ni",
       notas: {"hollow-knight": 10, "elden-ring": 10, "hades--1": 9, "the-legend-of-zelda-tears-of-the-kingdom": 8},
-      ultimaConexion: null,
-      amigosEnComun: 0
+      ultima_conexion: null,
+      amigos_en_comun: 0
     },
     {
       usuario: "mlopez",
       nombre: "María López",
       iniciales: "ML",
       nivel: 9,
-      miembroDesde: "2025-01-15",
-      sobreMi: "Aventuras tranquilas después del trabajo.",
-      jugandoAhora: null,
+      miembro_desde: "2025-01-15",
+      sobre_mi: "Aventuras tranquilas después del trabajo.",
+      jugando_ahora: null,
       estado: "en-linea",
       favoritos: [
         "the-legend-of-zelda-tears-of-the-kingdom",
@@ -833,17 +833,17 @@ const DATOS = {
       color: "#2F6B4F",
       id: "mlopez",
       notas: {"the-legend-of-zelda-tears-of-the-kingdom": 8, "pokemon-legends-z-a": 9, "inside": 9},
-      ultimaConexion: null,
-      amigosEnComun: 0
+      ultima_conexion: null,
+      amigos_en_comun: 0
     },
     {
       usuario: "lau_plays",
       nombre: "Laura Peña",
       iniciales: "LP",
       nivel: 11,
-      miembroDesde: "2024-09-01",
-      sobreMi: "Indies cortos y juegos de terror con buena historia.",
-      jugandoAhora: null,
+      miembro_desde: "2024-09-01",
+      sobre_mi: "Indies cortos y juegos de terror con buena historia.",
+      jugando_ahora: null,
       estado: "en-linea",
       favoritos: [
         "inside",
@@ -855,17 +855,17 @@ const DATOS = {
       color: "#3A3F45",
       id: "lau_plays",
       notas: {"inside": 9, "five-nights-at-freddys-into-the-pit": 8, "hollow-knight": 9},
-      ultimaConexion: null,
-      amigosEnComun: 0
+      ultima_conexion: null,
+      amigos_en_comun: 0
     },
     {
       usuario: "valer1a",
       nombre: "Valeria Ríos",
       iniciales: "VR",
       nivel: 14,
-      miembroDesde: "2024-04-22",
-      sobreMi: "Completista. Si tiene 100 %, lo saco.",
-      jugandoAhora: null,
+      miembro_desde: "2024-04-22",
+      sobre_mi: "Completista. Si tiene 100 %, lo saco.",
+      jugando_ahora: null,
       estado: "desconectado",
       favoritos: [
         "the-legend-of-zelda-tears-of-the-kingdom",
@@ -877,17 +877,17 @@ const DATOS = {
       color: "#7A2E2E",
       id: "valer1a",
       notas: {"the-legend-of-zelda-tears-of-the-kingdom": 9, "ghost-of-tsushima": 10, "hades--1": 8},
-      ultimaConexion: "hace 2 h",
-      amigosEnComun: 0
+      ultima_conexion: "hace 2 h",
+      amigos_en_comun: 0
     },
     {
       usuario: "nico.gg",
       nombre: "Nicolás Gómez",
       iniciales: "NG",
       nivel: 7,
-      miembroDesde: "2025-06-30",
-      sobreMi: "Shooters con amigos los viernes.",
-      jugandoAhora: null,
+      miembro_desde: "2025-06-30",
+      sobre_mi: "Shooters con amigos los viernes.",
+      jugando_ahora: null,
       estado: "desconectado",
       favoritos: [
         "valorant",
@@ -899,17 +899,17 @@ const DATOS = {
       color: "#5B3F96",
       id: "nico.gg",
       notas: {"valorant": 8, "rocket-league": 7},
-      ultimaConexion: "hace 1 día",
-      amigosEnComun: 0
+      ultima_conexion: "hace 1 día",
+      amigos_en_comun: 0
     },
     {
       usuario: "tatan",
       nombre: "Sebastián Cruz",
       iniciales: "SC",
       nivel: 6,
-      miembroDesde: "2025-08-12",
-      sobreMi: "Nuevo en SaveSlot. Busco gente para Rocket League.",
-      jugandoAhora: null,
+      miembro_desde: "2025-08-12",
+      sobre_mi: "Nuevo en SaveSlot. Busco gente para Rocket League.",
+      jugando_ahora: null,
       estado: "en-linea",
       favoritos: [
         "rocket-league",
@@ -921,17 +921,17 @@ const DATOS = {
       color: "#2456C4",
       id: "tatan",
       notas: {"rocket-league": 8, "the-legend-of-zelda-tears-of-the-kingdom": 10},
-      ultimaConexion: null,
-      amigosEnComun: 2
+      ultima_conexion: null,
+      amigos_en_comun: 2
     },
     {
       usuario: "cami.rpg",
       nombre: "Camila Torres",
       iniciales: "CT",
       nivel: 13,
-      miembroDesde: "2024-12-03",
-      sobreMi: "RPGs largos y diarios de juego muy detallados.",
-      jugandoAhora: null,
+      miembro_desde: "2024-12-03",
+      sobre_mi: "RPGs largos y diarios de juego muy detallados.",
+      jugando_ahora: null,
       estado: "desconectado",
       favoritos: [
         "nier-automata",
@@ -943,17 +943,17 @@ const DATOS = {
       color: "#B8343E",
       id: "cami.rpg",
       notas: {"nier-automata": 10, "elden-ring": 9},
-      ultimaConexion: "hace 3 h",
-      amigosEnComun: 3
+      ultima_conexion: "hace 3 h",
+      amigos_en_comun: 3
     },
     {
       usuario: "feli_fps",
       nombre: "Felipe Ruiz",
       iniciales: "FR",
       nivel: 10,
-      miembroDesde: "2025-03-18",
-      sobreMi: "Torneos de la universidad.",
-      jugandoAhora: null,
+      miembro_desde: "2025-03-18",
+      sobre_mi: "Torneos de la universidad.",
+      jugando_ahora: null,
       estado: "en-linea",
       favoritos: [
         "valorant",
@@ -965,17 +965,17 @@ const DATOS = {
       color: "#5B3F96",
       id: "feli_fps",
       notas: {"valorant": 9, "rocket-league": 8},
-      ultimaConexion: null,
-      amigosEnComun: 4
+      ultima_conexion: null,
+      amigos_en_comun: 4
     },
     {
       usuario: "ana.indie",
       nombre: "Ana Moreno",
       iniciales: "AM",
       nivel: 8,
-      miembroDesde: "2025-02-10",
-      sobreMi: "Indies, pixel art y bandas sonoras.",
-      jugandoAhora: null,
+      miembro_desde: "2025-02-10",
+      sobre_mi: "Indies, pixel art y bandas sonoras.",
+      jugando_ahora: null,
       estado: "desconectado",
       favoritos: [
         "hollow-knight",
@@ -987,17 +987,17 @@ const DATOS = {
       color: "#5A2D6B",
       id: "ana.indie",
       notas: {"hollow-knight": 9, "inside": 10, "hades--1": 9},
-      ultimaConexion: "hace 5 h",
-      amigosEnComun: 2
+      ultima_conexion: "hace 5 h",
+      amigos_en_comun: 2
     },
     {
       usuario: "andresh",
       nombre: "andresh",
       iniciales: "AH",
       nivel: null,
-      miembroDesde: null,
-      sobreMi: null,
-      jugandoAhora: null,
+      miembro_desde: null,
+      sobre_mi: null,
+      jugando_ahora: null,
       estado: null,
       favoritos: [],
       insignias: [],
@@ -1074,13 +1074,13 @@ const DATOS = {
     {
       id: "copa-2v2",
       tipo: "torneo",
-      juego: "rocket-league",
+      juego_igdb: 11198,
       titulo: "Copa SaveSlot de Rocket League 2v2",
-      fechaHora: "Sáb 17 oct · 3:00 p. m.",
+      fecha_hora: "Sáb 17 oct · 3:00 p. m.",
       organizador: "[MARCA] + [ORGANIZADOR]",
-      tipoOrganizador: "Marcas y organizadores",
-      cuposOcupados: 41,
-      cuposMaximos: 64,
+      tipo_organizador: "Marcas y organizadores",
+      cupos_ocupados: 41,
+      cupos_maximos: 64,
       costo: "[VALOR]",
       gratis: false,
       premio: "[PREMIO]",
@@ -1114,13 +1114,13 @@ const DATOS = {
     {
       id: "rl-oficial",
       tipo: "torneo",
-      juego: "rocket-league",
+      juego_igdb: 11198,
       titulo: "Torneo oficial 3v3 cada [X] horas",
-      fechaHora: "Hoy · próximo a las [HORA]",
+      fecha_hora: "Hoy · próximo a las [HORA]",
       organizador: "Oficial · Psyonix (desarrolladora)",
-      tipoOrganizador: "Desarrolladoras oficiales",
-      cuposOcupados: null,
-      cuposMaximos: null,
+      tipo_organizador: "Desarrolladoras oficiales",
+      cupos_ocupados: null,
+      cupos_maximos: null,
       costo: "Gratis",
       gratis: true,
       premio: "[PREMIO]",
@@ -1154,13 +1154,13 @@ const DATOS = {
     {
       id: "liga-valorant",
       tipo: "torneo",
-      juego: "valorant",
+      juego_igdb: 126459,
       titulo: "Liga universitaria Bogotá",
-      fechaHora: "Sáb 24 oct · 10:00 a. m.",
+      fecha_hora: "Sáb 24 oct · 10:00 a. m.",
       organizador: "[MARCA] + [ORGANIZADOR]",
-      tipoOrganizador: "Marcas y organizadores",
-      cuposOcupados: 12,
-      cuposMaximos: 32,
+      tipo_organizador: "Marcas y organizadores",
+      cupos_ocupados: 12,
+      cupos_maximos: 32,
       costo: "[VALOR]",
       gratis: false,
       premio: "[PREMIO]",
@@ -1194,13 +1194,13 @@ const DATOS = {
     {
       id: "giftcard-50",
       tipo: "sorteo",
-      juego: null,
+      juego_igdb: null,
       titulo: "Gift card de 50 USD para tu tienda favorita",
-      fechaHora: "Cierra el domingo · 8:00 p. m.",
+      fecha_hora: "Cierra el domingo · 8:00 p. m.",
       organizador: "SaveSlot",
-      tipoOrganizador: "SaveSlot",
-      cuposOcupados: 1284,
-      cuposMaximos: null,
+      tipo_organizador: "SaveSlot",
+      cupos_ocupados: 1284,
+      cupos_maximos: null,
       costo: "300 XP o [VALOR]",
       gratis: true,
       premio: "El indicado",
@@ -1217,13 +1217,13 @@ const DATOS = {
     {
       id: "speedrun-fnaf",
       tipo: "torneo",
-      juego: "five-nights-at-freddys-into-the-pit",
+      juego_igdb: 283679,
       titulo: "Speedrun de Halloween",
-      fechaHora: "Vie 30 oct · 6:00 p. m.",
+      fecha_hora: "Vie 30 oct · 6:00 p. m.",
       organizador: "[ORGANIZADOR] (independiente)",
-      tipoOrganizador: "Marcas y organizadores",
-      cuposOcupados: 58,
-      cuposMaximos: 100,
+      tipo_organizador: "Marcas y organizadores",
+      cupos_ocupados: 58,
+      cupos_maximos: 100,
       costo: "Gratis",
       gratis: true,
       premio: "[PREMIO]",
@@ -1257,13 +1257,13 @@ const DATOS = {
     {
       id: "codigo-pokemon",
       tipo: "sorteo",
-      juego: "pokemon-legends-z-a",
+      juego_igdb: 288327,
       titulo: "Código de descarga de Pokémon Legends Z-A",
-      fechaHora: "Cierra el 31 oct",
+      fecha_hora: "Cierra el 31 oct",
       organizador: "[MARCA]",
-      tipoOrganizador: "Marcas y organizadores",
-      cuposOcupados: 3020,
-      cuposMaximos: null,
+      tipo_organizador: "Marcas y organizadores",
+      cupos_ocupados: 3020,
+      cupos_maximos: null,
       costo: "300 XP",
       gratis: true,
       premio: "El indicado",
@@ -1299,15 +1299,15 @@ const DATOS = {
   destacados_inicio: [
     {
       id: "d1",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom"
+      juego_igdb: 119388
     },
     {
       id: "d2",
-      juego: "hades--1"
+      juego_igdb: 113112
     },
     {
       id: "d3",
-      juego: "hollow-knight"
+      juego_igdb: 14593
     }
   ],
   logros: [
@@ -1362,25 +1362,25 @@ const DATOS = {
       id: "t1",
       etiqueta: "En tendencia · Rocket League",
       pregunta: "¿Cada cuánto hay torneos en Rocket League?",
-      preguntasHoy: 2100
+      preguntas_hoy: 2100
     },
     {
       id: "t2",
       etiqueta: "Lanzamientos",
       pregunta: "¿Qué juegos nuevos salen esta semana?",
-      preguntasHoy: 1600
+      preguntas_hoy: 1600
     },
     {
       id: "t3",
       etiqueta: "En tendencia · Pokémon Legends Z-A",
       pregunta: "¿Qué hago primero en Pokémon Legends Z-A?",
-      preguntasHoy: 1200
+      preguntas_hoy: 1200
     },
     {
       id: "t4",
       etiqueta: "Guía",
       pregunta: "¿Cuánto dura Hollow Knight al 100%?",
-      preguntasHoy: 860
+      preguntas_hoy: 860
     }
   ],
   chats_matchplay: [
@@ -1388,7 +1388,7 @@ const DATOS = {
       id: "c1",
       usuario: "samluq",
       titulo: "Juegos parecidos a NieR",
-      horasAtras: 2,
+      horas_atras: 2,
       mensajes: [
         {
           quien: "usuario",
@@ -1404,7 +1404,7 @@ const DATOS = {
       id: "c2",
       usuario: "samluq",
       titulo: "Orden de regiones en TOTK",
-      horasAtras: 72,
+      horas_atras: 72,
       mensajes: [
         {
           quien: "usuario",
@@ -1420,7 +1420,7 @@ const DATOS = {
       id: "c3",
       usuario: "samluq",
       titulo: "Terror corto para el finde",
-      horasAtras: 288,
+      horas_atras: 288,
       mensajes: [
         {
           quien: "usuario",
@@ -1493,90 +1493,90 @@ const DATOS = {
     {
       id: "dia1",
       usuario: "samluq",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
+      juego_igdb: 119388,
       fecha: "2026-10-07",
       estado: "Terminado",
       horas: 48,
       calificacion: 10,
-      meGusta: true,
-      tieneResena: true
+      me_gusta: true,
+      tiene_resena: true
     },
     {
       id: "dia2",
       usuario: "samluq",
-      juego: "five-nights-at-freddys-into-the-pit",
+      juego_igdb: 283679,
       fecha: "2026-10-04",
       estado: "Terminado",
       horas: 6,
       calificacion: 7,
-      meGusta: false,
-      tieneResena: true
+      me_gusta: false,
+      tiene_resena: true
     },
     {
       id: "dia3",
       usuario: "samluq",
-      juego: "nier-automata",
+      juego_igdb: 11208,
       fecha: "2026-10-02",
       estado: "Rejugado",
       horas: 21,
       calificacion: 9,
-      meGusta: true,
-      tieneResena: true
+      me_gusta: true,
+      tiene_resena: true
     },
     {
       id: "dia4",
       usuario: "samluq",
-      juego: "hades--1",
+      juego_igdb: 113112,
       fecha: "2026-09-27",
       estado: "Terminado",
       horas: 24,
       calificacion: 8,
-      meGusta: false,
-      tieneResena: false
+      me_gusta: false,
+      tiene_resena: false
     },
     {
       id: "dia5",
       usuario: "samluq",
-      juego: "valorant",
+      juego_igdb: 126459,
       fecha: "2026-09-19",
       estado: "Abandonado",
       horas: 9,
       calificacion: 5,
-      meGusta: false,
-      tieneResena: true
+      me_gusta: false,
+      tiene_resena: true
     },
     {
       id: "dia6",
       usuario: "samluq",
-      juego: "pokemon-legends-z-a",
+      juego_igdb: 288327,
       fecha: "2026-09-08",
       estado: "Terminado",
       horas: 31,
       calificacion: 8,
-      meGusta: true,
-      tieneResena: false
+      me_gusta: true,
+      tiene_resena: false
     },
     {
       id: "dia7",
       usuario: "samluq",
-      juego: "inside",
+      juego_igdb: 7342,
       fecha: "2026-08-30",
       estado: "Terminado",
       horas: 3,
       calificacion: 9,
-      meGusta: true,
-      tieneResena: false
+      me_gusta: true,
+      tiene_resena: false
     },
     {
       id: "dia8",
       usuario: "samluq",
-      juego: "hollow-knight",
+      juego_igdb: 14593,
       fecha: "2026-08-12",
       estado: "Rejugado",
       horas: 27,
       calificacion: 9,
-      meGusta: true,
-      tieneResena: true
+      me_gusta: true,
+      tiene_resena: true
     }
   ],
   progreso_logros: [
@@ -1627,30 +1627,30 @@ const DATOS = {
       usuario: "samluq",
       desbloqueados: 1912,
       promedio: 38,
-      juegosCompletos: 7,
+      juegos_completos: 7,
       raros: 24
     }
   ],
 
   /* ---------- Fijos de la app: listas que antes estaban escritas en el HTML ---------- */
-  // Géneros que entiende IGDB (api/igdb.js). enBuscar: aparecen en los filtros de Buscar, en este orden;
+  // Géneros que entiende IGDB (api/igdb.js). en_buscar: aparecen en los filtros de Buscar, en este orden;
   // Juego random usa todos, en orden alfabético.
   generos: [
-    { id: "aventura", nombre: "Aventura", enBuscar: true },
-    { id: "rpg", nombre: "RPG", enBuscar: true },
-    { id: "accion", nombre: "Acción", enBuscar: true },
-    { id: "terror", nombre: "Terror", enBuscar: true },
-    { id: "shooter", nombre: "Shooter", enBuscar: true },
-    { id: "deportes", nombre: "Deportes", enBuscar: true },
-    { id: "roguelike", nombre: "Roguelike", enBuscar: true },
-    { id: "carreras", nombre: "Carreras", enBuscar: false },
-    { id: "estrategia", nombre: "Estrategia", enBuscar: false },
-    { id: "metroidvania", nombre: "Metroidvania", enBuscar: false },
-    { id: "pelea", nombre: "Pelea", enBuscar: false },
-    { id: "plataformas", nombre: "Plataformas", enBuscar: false },
-    { id: "puzzle", nombre: "Puzzle", enBuscar: false },
-    { id: "simulacion", nombre: "Simulación", enBuscar: false },
-    { id: "supervivencia", nombre: "Supervivencia", enBuscar: false }
+    { id: "aventura", nombre: "Aventura", en_buscar: true },
+    { id: "rpg", nombre: "RPG", en_buscar: true },
+    { id: "accion", nombre: "Acción", en_buscar: true },
+    { id: "terror", nombre: "Terror", en_buscar: true },
+    { id: "shooter", nombre: "Shooter", en_buscar: true },
+    { id: "deportes", nombre: "Deportes", en_buscar: true },
+    { id: "roguelike", nombre: "Roguelike", en_buscar: true },
+    { id: "carreras", nombre: "Carreras", en_buscar: false },
+    { id: "estrategia", nombre: "Estrategia", en_buscar: false },
+    { id: "metroidvania", nombre: "Metroidvania", en_buscar: false },
+    { id: "pelea", nombre: "Pelea", en_buscar: false },
+    { id: "plataformas", nombre: "Plataformas", en_buscar: false },
+    { id: "puzzle", nombre: "Puzzle", en_buscar: false },
+    { id: "simulacion", nombre: "Simulación", en_buscar: false },
+    { id: "supervivencia", nombre: "Supervivencia", en_buscar: false }
   ],
   // Plataformas de los juegos (filtro de Buscar; api/igdb.js usa los mismos nombres)
   plataformas: [
@@ -1703,14 +1703,14 @@ const DATOS = {
     { id: "corto", texto: "Algo corto", idea: "Tengo poco tiempo, ¿qué juego corto de terror me recomiendas?" },
     { id: "logro", texto: "Ayuda con un logro", idea: "¿Cómo consigo el logro " }
   ],
-  // Reglas de Eventos ("enlace" y "textoEnlace" son opcionales; el enlace va desde la raíz del sitio)
+  // Reglas de Eventos ("enlace" y "texto_enlace" son opcionales; el enlace va desde la raíz del sitio)
   reglas_eventos: [
     { id: "organiza", texto: "Cada evento muestra quién lo organiza y quién lo patrocina." },
     { id: "costo", texto: "El costo total se muestra antes de pagar. No hay suscripciones ni cargos recurrentes." },
     { id: "sorteos", texto: "Los sorteos tienen siempre una forma gratuita de participar con XP." },
-    { id: "proponer", texto: "¿Organizas torneos? ", enlace: "pages/contacto.html?tema=torneo", textoEnlace: "Propón un evento" }
+    { id: "proponer", texto: "¿Organizas torneos? ", enlace: "pages/contacto.html?tema=torneo", texto_enlace: "Propón un evento" }
   ],
-  // Quién organiza un evento (filtro de Eventos; cada evento lo tiene en tipoOrganizador)
+  // Quién organiza un evento (filtro de Eventos; cada evento lo tiene en tipo_organizador)
   organizadores: [
     { id: "marcas", nombre: "Marcas y organizadores" },
     { id: "desarrolladoras", nombre: "Desarrolladoras oficiales" },
@@ -1859,7 +1859,7 @@ const DATOS = {
     },
     {
       id: "plataforma",
-      servicioPorDefecto: "Esta plataforma",
+      servicio_por_defecto: "Esta plataforma",
       codigo: "LIM-PLAT",
       titulo: "{servicio} todavía no se puede vincular",
       texto: "{servicio} no ofrece una API pública para que webs como SaveSlot lean tus juegos, logros o actividad. No vamos a usar métodos no oficiales que pidan tus credenciales.",
@@ -1911,7 +1911,7 @@ const DATOS = {
         "Cuando conectes {servicio}, tu progreso se queda en la misma cuenta."
       ],
       reintentar: false,
-      servicioPorDefecto: "este servicio",
+      servicio_por_defecto: "este servicio",
       accion: {
         texto: "Entrar con tu correo",
         pagina: "iniciar-sesion.html"

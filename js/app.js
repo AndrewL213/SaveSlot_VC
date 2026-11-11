@@ -108,10 +108,10 @@ function terminarVueltaDeSteam() {
 function juegoDeSteam(g) {
   var cdn = 'https://cdn.cloudflare.steamstatic.com/steam/apps/' + g.appid + '/';
   return {
-    id: 'steam-' + g.appid, appid: g.appid, nombre: g.name, nombreCorto: g.name,
+    id: 'steam-' + g.appid, appid: g.appid, nombre: g.name, nombre_corto: g.name,
     // La portada real la manda api/steam (g.cover); la dirección vieja queda solo como respaldo
-    portada: g.cover || cdn + 'library_600x900.jpg', portadaRespaldo: g.header || cdn + 'header.jpg', color: null,
-    generos: g.generos || [], plataformas: ['PC (Steam)'], horas: g.hours || 0, ultimaVez: g.last_played || 0, steam: true
+    portada: g.cover || cdn + 'library_600x900.jpg', portada_respaldo: g.header || cdn + 'header.jpg', color: null,
+    generos: g.generos || [], plataformas: ['PC (Steam)'], horas: g.hours || 0, ultima_vez: g.last_played || 0, steam: true
   };
 }
 
@@ -221,20 +221,57 @@ function obtenerDatos(tipo) {
 }
 
 function buscarPorId(tipo, id) {
+  if (tipo === 'juegos' && esNumeroDeJuego(id)) return juegoPorNumero(Number(id));
   if (tipo === 'juegos' && /^steam-/.test(id)) {
     return leerBibliotecaSteam().find(function (j) { return j.id === id; }) || null;
   }
   var encontrado = obtenerDatos(tipo).find(function (x) { return x.id === id; }) || null;
   // Los juegos de IGDB que ya se abrieron quedan guardados (para reseñas, deseos, diario…)
-  if (tipo === 'juegos') return unirConIgdb(encontrado, leerMemoria('juegosIgdb', {})[id] || null);
+  if (tipo === 'juegos') return unirConIgdb(encontrado, leerMemoria('juegos_igdb', {})[id] || null);
   return encontrado;
+}
+
+/* ---------- Referencias a juegos ----------
+   Las tablas apuntan a un juego por su número de IGDB (juego_igdb, por ejemplo 113112) y las
+   direcciones usan su slug (hades--1). Lo guardado antes en el navegador puede tener el slug:
+   por eso las búsquedas aceptan los dos. */
+
+function esNumeroDeJuego(ref) {
+  return typeof ref === 'number' || /^\d+$/.test(String(ref == null ? '' : ref));
+}
+
+// Un juego por su número de IGDB: el de data.js y/o el que ya se abrió (copia del navegador)
+function juegoPorNumero(numero) {
+  var local = obtenerDatos('juegos').find(function (j) { return j.id_igdb === numero; }) || null;
+  var guardados = leerMemoria('juegos_igdb', {});
+  var igdb = null;
+  Object.keys(guardados).forEach(function (k) { if (guardados[k].id_igdb === numero) igdb = guardados[k]; });
+  return unirConIgdb(local, igdb);
+}
+
+// Número de IGDB de un juego (para juego_igdb). Si no se conoce, deja la referencia como está.
+function numeroDeJuego(ref) {
+  if (esNumeroDeJuego(ref)) return Number(ref);
+  var juego = buscarPorId('juegos', ref);
+  return juego && juego.id_igdb ? juego.id_igdb : ref;
+}
+
+// ¿La referencia (número o slug) es este juego?
+function esJuego(ref, juego) {
+  return !!juego && ref != null && (ref === juego.id || (esNumeroDeJuego(ref) && Number(ref) === juego.id_igdb));
+}
+
+// Slug de un juego, para las direcciones (si no se conoce, la referencia tal cual)
+function slugDeJuego(ref) {
+  var juego = buscarPorId('juegos', ref);
+  return juego ? juego.id : String(ref);
 }
 
 /* ---------- Juegos de IGDB (api/igdb.js) ---------- */
 
 // Datos del catálogo que manda IGDB. Los de la comunidad (calificación, dificultad, votos…),
 // la portada de assets/ y el color se quedan como están en data.js.
-var CAMPOS_DE_IGDB = ['idIgdb', 'appidSteam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idiomaDescripcion', 'similares'];
+var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'similares'];
 
 // Junta un juego de data.js con el mismo juego de IGDB (cualquiera de los dos puede faltar).
 function unirConIgdb(local, igdb) {
@@ -246,28 +283,49 @@ function unirConIgdb(local, igdb) {
     if (valor != null && valor !== '' && !(Array.isArray(valor) && !valor.length)) juego[campo] = valor;
   });
   // Las horas siguen la regla de IGDB aunque no haya dato ("Sin datos" u "Online")
-  juego.horasHistoria = igdb.horasHistoria;
-  juego.soloOnline = igdb.soloOnline;
-  if (!juego.portada) { juego.portada = igdb.portada; juego.creditoPortada = igdb.creditoPortada; }
+  juego.horas_historia = igdb.horas_historia;
+  juego.solo_online = igdb.solo_online;
+  if (!juego.portada) { juego.portada = igdb.portada; juego.credito_portada = igdb.credito_portada; }
   return juego;
 }
 
 // Guarda en el navegador los últimos juegos de IGDB abiertos (sin la lista de similares).
 var MAXIMO_JUEGOS_GUARDADOS = 100;
 function guardarJuegoIgdb(juego) {
-  var guardados = leerMemoria('juegosIgdb', {});
+  var guardados = leerMemoria('juegos_igdb', {});
   var copia = Object.assign({}, juego);
   delete copia.similares;
   delete guardados[juego.id];
   guardados[juego.id] = copia;
   var ids = Object.keys(guardados);
   ids.slice(0, Math.max(0, ids.length - MAXIMO_JUEGOS_GUARDADOS)).forEach(function (viejo) { delete guardados[viejo]; });
-  guardarMemoria('juegosIgdb', guardados);
+  guardarMemoria('juegos_igdb', guardados);
 }
+
+// Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
+// Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
+var VERSION_API = 2;
+
+// La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
+// se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
+(function migrarJuegosGuardados() {
+  var viejos = leerMemoria('juegosIgdb', null);
+  if (!viejos) return;
+  var aGuion = function (nombre) { return nombre.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase(); };
+  var nuevos = leerMemoria('juegos_igdb', {});
+  Object.keys(viejos).forEach(function (id) {
+    if (nuevos[id]) return;
+    var juego = {};
+    Object.keys(viejos[id]).forEach(function (campo) { juego[aGuion(campo)] = viejos[id][campo]; });
+    nuevos[id] = juego;
+  });
+  guardarMemoria('juegos_igdb', nuevos);
+  try { localStorage.removeItem('ss.juegosIgdb'); } catch (e) { /* modo privado */ }
+})();
 
 // Le pregunta a api/igdb.js. Devuelve una promesa con la respuesta, o falla con el código de error.
 function preguntarIgdb(parametros) {
-  return fetch('/api/igdb?' + new URLSearchParams(parametros)).then(function (r) {
+  return fetch('/api/igdb?' + new URLSearchParams(Object.assign({}, parametros, { v: VERSION_API }))).then(function (r) {
     if (!r.ok) { var error = new Error('IGDB ' + r.status); error.estado = r.status; throw error; }
     return r.json();
   });
@@ -281,7 +339,7 @@ function pedirJuego(id) {
   if (/^steam-/.test(id)) return local ? Promise.resolve(local) : Promise.reject({ estado: 404 });
   return preguntarIgdb({ id: id }).then(function (datos) {
     guardarJuegoIgdb(datos.juego);
-    return unirConIgdb(obtenerDatos('juegos').find(function (x) { return x.id === id; }) || null, datos.juego);
+    return unirConIgdb(obtenerDatos('juegos').find(function (x) { return x.id === datos.juego.id; }) || null, datos.juego);
   }).catch(function (error) {
     if (local) return local;
     throw error;
@@ -298,8 +356,8 @@ function buscarJuegos(filtros) {
 function filtrarJuegos(juegos, filtros) {
   var texto = (filtros.texto || '').toLowerCase();
   return juegos.filter(function (j) {
-    var horas = j.horasHistoria;
-    if (texto && (j.nombre + ' ' + j.nombreCorto + ' ' + j.generos.join(' ')).toLowerCase().indexOf(texto) === -1) return false;
+    var horas = j.horas_historia;
+    if (texto && (j.nombre + ' ' + j.nombre_corto + ' ' + j.generos.join(' ')).toLowerCase().indexOf(texto) === -1) return false;
     if (filtros.generos.length && !filtros.generos.some(function (g) { return j.generos.indexOf(g) !== -1; })) return false;
     if (filtros.plataformas.length && !filtros.plataformas.some(function (p) { return j.plataformas.indexOf(p) !== -1; })) return false;
     if (filtros.tipo && j.tipo !== filtros.tipo) return false;
@@ -315,8 +373,8 @@ function filtrarJuegos(juegos, filtros) {
 // Horas de la historia para mostrar. Sin dato: "Online" si el juego es solo online
 // (no tiene historia), "Sin datos" si sí tiene pero no hay suficientes tiempos reportados.
 function textoHoras(juego) {
-  if (juego.horasHistoria) return juego.horasHistoria + ' h';
-  return juego.soloOnline ? 'Online' : 'Sin datos';
+  if (juego.horas_historia) return juego.horas_historia + ' h';
+  return juego.solo_online ? 'Online' : 'Sin datos';
 }
 
 // Recorta un texto largo sin cortar palabras.
@@ -440,18 +498,18 @@ function usuarioActual() {
 // Reseña guardada (formato del prototipo) → formato de data.js
 function resenaDesdeMemoria(r) {
   return {
-    id: r.id, juego: r.game, autor: usuarioActual(), tipo: r.kind === 'guia' ? 'guia' : 'resena', estado: 'publicada',
+    id: r.id, juego_igdb: numeroDeJuego(r.game), autor: usuarioActual(), tipo: r.kind === 'guia' ? 'guia' : 'resena', estado: 'publicada',
     titulo: r.title || null, texto: r.text, calificacion: r.score, dificultad: r.diff || null, horas: r.hours || 0,
-    minutosLectura: r.kind === 'guia' ? Math.max(1, Math.round(String(r.text).split(/\s+/).length / 200)) : null,
-    spoiler: !!r.spoiler, votosUtil: r.useful || 0, porcentajeUtil: null, meGusta: r.likes || 0, fecha: r.date || null,
-    estadoPartida: r.state || null, editada: !!r.edited
+    minutos_lectura: r.kind === 'guia' ? Math.max(1, Math.round(String(r.text).split(/\s+/).length / 200)) : null,
+    spoiler: !!r.spoiler, votos_util: r.useful || 0, porcentaje_util: null, me_gusta: r.likes || 0, fecha: r.date || null,
+    estado_partida: r.state || null, editada: !!r.edited
   };
 }
 
 function resenaParaMemoria(r) {
   return {
-    id: r.id, game: r.juego, kind: r.tipo, title: r.titulo, text: r.texto, score: r.calificacion, diff: r.dificultad,
-    hours: r.horas, spoiler: r.spoiler, useful: r.votosUtil, likes: r.meGusta, date: r.fecha, state: r.estadoPartida, edited: r.editada
+    id: r.id, game: r.juego_igdb, kind: r.tipo, title: r.titulo, text: r.texto, score: r.calificacion, diff: r.dificultad,
+    hours: r.horas, spoiler: r.spoiler, useful: r.votos_util, likes: r.me_gusta, date: r.fecha, state: r.estado_partida, edited: r.editada
   };
 }
 
@@ -460,8 +518,8 @@ function leerResenasPropias() {
   var guardadas = leerMemoria('myReviews', null);
   if (guardadas) return guardadas.map(resenaDesdeMemoria);
   return obtenerDatos('resenas').filter(function (r) { return r.autor === 'samluq'; }).map(function (r) {
-    var partida = obtenerDatos('diario').find(function (d) { return d.juego === r.juego; });
-    return Object.assign({}, r, { autor: usuarioActual(), estadoPartida: partida ? partida.estado : null, editada: false });
+    var partida = obtenerDatos('diario').find(function (d) { return d.juego_igdb === r.juego_igdb; });
+    return Object.assign({}, r, { autor: usuarioActual(), estado_partida: partida ? partida.estado : null, editada: false });
   });
 }
 
@@ -496,9 +554,9 @@ function guardarComentarios(idResena, lista) {
 // Suma una entrada al diario (formato del prototipo), la más reciente primero
 function agregarAlDiario(entrada) {
   var diario = leerMemoria('diary', null) || obtenerDatos('diario').map(function (d) {
-    return { game: d.juego, date: d.fecha, state: d.estado, hours: d.horas, score: d.calificacion, like: d.meGusta, review: d.tieneResena };
+    return { game: d.juego_igdb, date: d.fecha, state: d.estado, hours: d.horas, score: d.calificacion, like: d.me_gusta, review: d.tiene_resena };
   });
-  diario.unshift({ game: entrada.juego, date: entrada.fecha, state: entrada.estado, hours: entrada.horas, score: entrada.calificacion, like: entrada.meGusta, review: entrada.tieneResena });
+  diario.unshift({ game: entrada.juego_igdb, date: entrada.fecha, state: entrada.estado, hours: entrada.horas, score: entrada.calificacion, like: entrada.me_gusta, review: entrada.tiene_resena });
   diario.sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
   guardarMemoria('diary', diario);
 }
@@ -576,7 +634,7 @@ function imagenPortada(juego) {
   if (!juego.portada) return '';
   var src = /^https?:/.test(juego.portada) ? juego.portada : rutaRecurso(juego.portada);
   return '<img class="portada__imagen" src="' + escapar(src) + '"' +
-    (juego.portadaRespaldo ? ' data-respaldo="' + escapar(juego.portadaRespaldo) + '" loading="lazy"' : '') +
+    (juego.portada_respaldo ? ' data-respaldo="' + escapar(juego.portada_respaldo) + '" loading="lazy"' : '') +
     ' alt="Portada de ' + escapar(juego.nombre) + '">';
 }
 
@@ -815,7 +873,7 @@ function htmlJuegoMini(juego, ranking, detalle) {
   return '<li>' +
     '<a class="portada portada--enlace" href="' + rutaPagina('detalle-juego.html') + '?id=' + encodeURIComponent(juego.id) + '"' + atributoColor(juego.color) + '>' + imagenPortada(juego) +
       (ranking ? '<span class="portada__ranking">#' + ranking + '</span>' : '') +
-      '<b class="portada__titulo">' + escapar(juego.nombreCorto) + '</b>' +
+      '<b class="portada__titulo">' + escapar(juego.nombre_corto) + '</b>' +
       '<span class="solo-lectores">, abrir la ficha del juego</span>' +
     '</a>' +
     '<div class="juego__meta">' +
@@ -838,7 +896,7 @@ function llenarMasJugadosSteam(rejilla) {
     if (!datos.juegos || !datos.juegos.length) return false;
     // 6, como las demás rejillas de portadas: así caben en una fila en computador
     rejilla.innerHTML = datos.juegos.slice(0, 6).map(function (j, i) {
-      return htmlJuegoMini(conDatosLocales(j), i + 1, j.jugadoresSteam ? formatearNumero(j.jugadoresSteam) + ' jugadores' : '');
+      return htmlJuegoMini(conDatosLocales(j), i + 1, j.jugadores_steam ? formatearNumero(j.jugadores_steam) + ' jugadores' : '');
     }).join('');
     aplicarColores(rejilla);
     return true;
@@ -884,25 +942,25 @@ function htmlResenaSteam(r, opciones) {
     '</div>' +
     '<p class="texto-corto">' + escapar(r.texto) + '</p>' +
     '<div class="en-fila tarjeta__texto">' +
-      (r.votosUtil != null ? '<span>Útil en Steam · ' + formatearNumero(r.votosUtil) + '</span>' : '') +
+      (r.votos_util != null ? '<span>Útil en Steam · ' + formatearNumero(r.votos_util) + '</span>' : '') +
       '<a class="al-final" href="' + escapar(r.enlace) + '" target="_blank" rel="noopener">Leer en Steam →</a>' +
     '</div>' +
   '</article>';
 }
 
 function htmlResena(resena, opciones) {
-  var juego = buscarPorId('juegos', resena.juego);
+  var juego = buscarPorId('juegos', resena.juego_igdb);
   var autor = buscarPorId('usuarios', resena.autor) || { usuario: resena.autor, iniciales: '?' };
   var comentarios = leerComentarios(resena.id).length;
   var votado = leerMemoria('votosUtil', []).indexOf(resena.id) !== -1;
-  var votos = resena.votosUtil + (votado ? 1 : 0);
+  var votos = resena.votos_util + (votado ? 1 : 0);
   return '<article class="tarjeta tarjeta--resena"' + atributoColor(juego && juego.color) + '>' +
     '<div class="en-fila">' +
       '<span class="avatar' + (autor.estado ? ' avatar--' + autor.estado : '') + '" aria-hidden="true">' + escapar(autor.iniciales) + (autor.estado ? '<span class="avatar__punto"></span>' : '') + '</span>' +
       '<div>' +
         '<a href="' + rutaPagina('perfil-usuario.html') + '?id=' + encodeURIComponent(autor.usuario) + '"><b>' + escapar(autor.usuario) + '</b></a> ' + etiquetaOrigen('SaveSlot') + ' ' +
         (sonAmigos(autor.usuario) ? '<span class="etiqueta etiqueta--amigo">Amigo</span>' : '') +
-        '<p class="tarjeta__texto">' + (opciones && opciones.conJuego && juego ? 'sobre ' + escapar(juego.nombreCorto) + ' · ' : '') + escapar(resena.horas) + ' h jugadas</p>' +
+        '<p class="tarjeta__texto">' + (opciones && opciones.conJuego && juego ? 'sobre ' + escapar(juego.nombre_corto) + ' · ' : '') + escapar(resena.horas) + ' h jugadas</p>' +
       '</div>' +
       '<span class="nota al-final" aria-label="Nota ' + resena.calificacion + ' de 10">' + escapar(resena.calificacion) + '<small>/10</small></span>' +
     '</div>' +
@@ -911,7 +969,7 @@ function htmlResena(resena, opciones) {
       : '<p>' + escapar(resena.texto) + '</p>') +
     '<div class="en-fila tarjeta__texto">' +
       '<button class="boton boton--secundario boton--sm" type="button" data-util="' + escapar(resena.id) + '"' + (esPropia(resena) ? ' data-propia' : '') + ' aria-pressed="' + votado + '">Útil · <span>' + formatearNumero(votos) + '</span></button>' +
-      '<span>♥ ' + formatearNumero(resena.meGusta) + '</span>' +
+      '<span>♥ ' + formatearNumero(resena.me_gusta) + '</span>' +
       '<span>' + comentarios + (comentarios === 1 ? ' comentario' : ' comentarios') + '</span>' +
       '<a class="al-final" href="' + rutaPagina('detalle-resena.html') + '?id=' + encodeURIComponent(resena.id) + '">Leer y comentar →</a>' +
     '</div>' +
@@ -951,8 +1009,8 @@ function enlaceEvento(evento) {
 
 // "41 / 64", "1.284 participantes" o "Sin límite"
 function textoCupos(evento) {
-  if (evento.cuposMaximos) return evento.cuposOcupados + ' / ' + evento.cuposMaximos;
-  return evento.cuposOcupados ? formatearNumero(evento.cuposOcupados) + ' participantes' : 'Sin límite';
+  if (evento.cupos_maximos) return evento.cupos_ocupados + ' / ' + evento.cupos_maximos;
+  return evento.cupos_ocupados ? formatearNumero(evento.cupos_ocupados) + ' participantes' : 'Sin límite';
 }
 
 // Tarjeta grande del evento del mes
@@ -960,20 +1018,20 @@ function htmlEventoDestacado(evento) {
   return '<a class="tarjeta tarjeta--enlace tarjeta--destacada" href="' + enlaceEvento(evento) + '"' + atributoColor(evento.color) + '>' +
     '<span class="en-fila">' + etiquetaTipoEvento(evento) + '<span class="etiqueta etiqueta--contorno">EVENTO DEL MES</span></span>' +
     '<h3 class="titulo-pagina">' + escapar(evento.titulo) + '</h3>' +
-    '<p class="tarjeta__texto">' + escapar(evento.fechaHora) + ' · Organiza: ' + escapar(evento.organizador) + '</p>' +
-    '<span class="en-fila"><span class="boton">Ver evento</span><span class="tarjeta__texto">' + escapar(evento.cuposOcupados) + ' de ' + escapar(evento.cuposMaximos) + ' cupos ocupados</span></span>' +
+    '<p class="tarjeta__texto">' + escapar(evento.fecha_hora) + ' · Organiza: ' + escapar(evento.organizador) + '</p>' +
+    '<span class="en-fila"><span class="boton">Ver evento</span><span class="tarjeta__texto">' + escapar(evento.cupos_ocupados) + ' de ' + escapar(evento.cupos_maximos) + ' cupos ocupados</span></span>' +
   '</a>';
 }
 
 // Tarjeta de evento con banda de color
 function htmlEvento(evento) {
-  var juego = evento.juego ? buscarPorId('juegos', evento.juego) : null;
+  var juego = evento.juego_igdb ? buscarPorId('juegos', evento.juego_igdb) : null;
   return '<a class="tarjeta tarjeta--enlace" href="' + enlaceEvento(evento) + '">' +
     '<div class="tarjeta__banda"' + atributoColor(evento.color) + '>' + etiquetaTipoEvento(evento) + '</div>' +
     '<div class="tarjeta__cuerpo">' +
-      '<span class="tarjeta__texto">' + escapar(juego ? juego.nombreCorto : 'Cualquier tienda') + '</span>' +
+      '<span class="tarjeta__texto">' + escapar(juego ? juego.nombre_corto : 'Cualquier tienda') + '</span>' +
       '<h3 class="tarjeta__titulo">' + escapar(evento.titulo) + '</h3>' +
-      '<p class="tarjeta__texto">' + escapar(evento.fechaHora) + '<br>' + escapar(evento.organizador) + '</p>' +
+      '<p class="tarjeta__texto">' + escapar(evento.fecha_hora) + '<br>' + escapar(evento.organizador) + '</p>' +
       '<p class="tarjeta__pie"><span>' + escapar(textoCupos(evento)) + '</span><b>' + escapar(evento.costo) + '</b></p>' +
     '</div>' +
   '</a>';
@@ -1000,10 +1058,10 @@ function pantallaIndex() {
 
   // Portadas de la bienvenida (decorativas: el texto ya dice de qué trata la página)
   document.getElementById('portadas-heroe').innerHTML = obtenerDatos('destacados_inicio').map(function (d) {
-    var juego = buscarPorId('juegos', d.juego);
+    var juego = buscarPorId('juegos', d.juego_igdb);
     if (!juego) return '';
     return '<div class="portada heroe__portada"' + atributoColor(juego.color) + '>' + imagenPortada(juego) +
-      '<b class="portada__titulo">' + escapar(juego.nombreCorto) + '</b></div>';
+      '<b class="portada__titulo">' + escapar(juego.nombre_corto) + '</b></div>';
   }).join('');
 
   // Mejores juegos de la semana: los 6 que más gente está jugando según IGDB.
@@ -1053,7 +1111,7 @@ function pantallaIndex() {
     setTimeout(function () {
       abrirModal({
         titulo: delMes.titulo,
-        texto: 'Evento del mes. Arma tu equipo y compite. ' + delMes.fechaHora + ' · ' + delMes.cuposOcupados + ' de ' + delMes.cuposMaximos + ' cupos ocupados.',
+        texto: 'Evento del mes. Arma tu equipo y compite. ' + delMes.fecha_hora + ' · ' + delMes.cupos_ocupados + ' de ' + delMes.cupos_maximos + ' cupos ocupados.',
         acciones: [{ texto: 'Ver evento', href: rutaPagina('detalle-evento.html') + '?id=' + encodeURIComponent(delMes.id), principal: true }]
       });
     }, 900);
@@ -1071,7 +1129,7 @@ function htmlCasillas(nombre, lista) {
 function pantallaBuscar() {
   // Filtros de género y plataforma (antes de leer lo que llega en la dirección)
   document.getElementById('filtro-generos').insertAdjacentHTML('beforeend',
-    htmlCasillas('genero', obtenerDatos('generos').filter(function (g) { return g.enBuscar; })));
+    htmlCasillas('genero', obtenerDatos('generos').filter(function (g) { return g.en_buscar; })));
   document.getElementById('filtro-plataformas').insertAdjacentHTML('beforeend', htmlCasillas('plataforma', obtenerDatos('plataformas')));
 
   var parametros = new URLSearchParams(location.search);
@@ -1191,16 +1249,16 @@ function pantallaBuscar() {
     }
     var pedido = texto
       ? preguntarIgdb({ buscar: texto }).then(function (d) {
-          return { juegos: filtrarJuegos(d.juegos.map(conDatosLocales), f), total: null, hayMas: false };
+          return { juegos: filtrarJuegos(d.juegos.map(conDatosLocales), f), total: null, hay_mas: false };
         })
       : preguntarIgdb(pedidoExplorar(f, pagina)).then(function (d) {
-          return { juegos: d.juegos.map(conDatosLocales), total: d.total, hayMas: d.hayMas };
+          return { juegos: d.juegos.map(conDatosLocales), total: d.total, hay_mas: d.hay_mas };
         });
     pedido.then(function (r) {
       if (numero !== pedidoActual) return;
       var ids = vistos.map(function (j) { return j.id; });
       vistos = siguiente ? vistos.concat(r.juegos.filter(function (j) { return ids.indexOf(j.id) === -1; })) : r.juegos;
-      dibujar(vistos, r.total, r.hayMas, texto);
+      dibujar(vistos, r.total, r.hay_mas, texto);
     }).catch(function () {
       if (numero !== pedidoActual) return;
       vistos = buscarJuegos(Object.assign({ texto: texto }, f));
@@ -1372,7 +1430,7 @@ function pantallaMatchplay() {
   var ahora = Date.now();
   // Chats guardados en el navegador (hasta conectar Supabase); la primera vez, los de ejemplo
   var chats = leerMemoria('chatsMatchplay', null) || obtenerDatos('chats_matchplay').map(function (c) {
-    return { id: c.id, titulo: c.titulo, fecha: ahora - c.horasAtras * HORA, mensajes: c.mensajes };
+    return { id: c.id, titulo: c.titulo, fecha: ahora - c.horas_atras * HORA, mensajes: c.mensajes };
   });
   var activo = null;
   var esperando = false;
@@ -1466,7 +1524,7 @@ function pantallaMatchplay() {
     return '<button class="tarjeta tarjeta--enlace tendencia" type="button" data-tendencia="' + escapar(t.id) + '">' +
       '<span class="antetitulo">' + escapar(t.etiqueta) + '</span>' +
       '<b class="tarjeta__titulo">' + escapar(t.pregunta) + '</b>' +
-      '<span class="tarjeta__texto">' + formatearCorto(t.preguntasHoy) + ' preguntas hoy</span>' +
+      '<span class="tarjeta__texto">' + formatearCorto(t.preguntas_hoy) + ' preguntas hoy</span>' +
     '</button>';
   }).join('');
   document.getElementById('tendencias').addEventListener('click', function (e) {
@@ -1581,8 +1639,8 @@ function leerPerfil() {
   if (guardado) return guardado;
   var yo = buscarPorId('usuarios', 'samluq');
   return {
-    user: 'samluq', xp: yo.xp, level: yo.nivel, bio: yo.sobreMi, since: yo.miembroDesde, favorites: yo.favoritos.slice(),
-    wishlist: yo.listaDeseos.slice(), genres: yo.generosFavoritos.slice(), playing: yo.jugandoAhora,
+    user: 'samluq', xp: yo.xp, level: yo.nivel, bio: yo.sobre_mi, since: yo.miembro_desde, favorites: yo.favoritos.slice(),
+    wishlist: yo.lista_deseos.slice(), genres: yo.generos_favoritos.slice(), playing: yo.jugando_ahora,
     accounts: { Steam: 'samluq_steam', PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: ['calificar', 'guia']
   };
 }
@@ -1592,7 +1650,7 @@ function leerDiario() {
   var guardado = leerMemoria('diary', null);
   if (!guardado) return obtenerDatos('diario');
   return guardado.map(function (d) {
-    return { juego: d.game, fecha: d.date, estado: d.state, horas: d.hours, calificacion: d.score, meGusta: !!d.like, tieneResena: !!d.review };
+    return { juego_igdb: numeroDeJuego(d.game), fecha: d.date, estado: d.state, horas: d.hours, calificacion: d.score, me_gusta: !!d.like, tiene_resena: !!d.review };
   });
 }
 
@@ -1621,7 +1679,7 @@ function mostrarJuego(juego) {
   var sesion = obtenerSesion();
   var genero = juego.generos[0] || '';
 
-  document.title = juego.nombreCorto + ' · SaveSlot';
+  document.title = juego.nombre_corto + ' · SaveSlot';
   marcarVisto(juego.id);
 
   // Cabecera
@@ -1630,7 +1688,7 @@ function mostrarJuego(juego) {
   var miga = document.getElementById('miga-genero');
   miga.textContent = genero || 'Juegos';
   miga.href = 'buscar-juegos.html?genero=' + encodeURIComponent(genero);
-  document.getElementById('miga-juego').textContent = juego.nombreCorto;
+  document.getElementById('miga-juego').textContent = juego.nombre_corto;
   var portada = document.getElementById('portada-juego');
   portada.dataset.color = juego.color;
   portada.innerHTML = imagenPortada(juego);
@@ -1642,7 +1700,7 @@ function mostrarJuego(juego) {
     ? '<span><b class="nota nota--texto">' + formatearNota(juego.calificacion) + '/10</b> <span class="tarjeta__texto">· nota de la comunidad · ' + formatearNumero(juego.votos) + ' calificaciones</span></span>'
     : '');
   document.getElementById('escribir-resena').href = 'escribir-resena.html?id=' + encodeURIComponent(juego.id);
-  document.getElementById('preguntar-matchplay').href = 'matchplay.html?q=' + encodeURIComponent('Dame consejos para ' + juego.nombreCorto);
+  document.getElementById('preguntar-matchplay').href = 'matchplay.html?q=' + encodeURIComponent('Dame consejos para ' + juego.nombre_corto);
 
   // Lista de deseos: pide cuenta sin sesión; se guarda en el perfil y se puede deshacer
   var botonDeseos = document.getElementById('lista-deseos');
@@ -1668,7 +1726,7 @@ function mostrarJuego(juego) {
   });
 
   // Datos clave
-  var progreso = sesion ? leerDiario().filter(function (d) { return d.juego === juego.id; })[0] : null;
+  var progreso = sesion ? leerDiario().filter(function (d) { return esJuego(d.juego_igdb, juego); })[0] : null;
   document.getElementById('datos-clave').innerHTML =
     '<div class="dato"><span class="dato__etiqueta">Dificultad</span>' +
       '<span class="dato__valor">' + (juego.dificultad ? juego.dificultad + '<small>/10</small>' : '—') + '</span>' +
@@ -1696,7 +1754,7 @@ function mostrarJuego(juego) {
   });
 
   // Pestañas: Reseñas, Guías, Clips y Logros
-  var publicadas = obtenerResenas().filter(function (r) { return r.juego === juego.id && r.estado === 'publicada'; });
+  var publicadas = obtenerResenas().filter(function (r) { return esJuego(r.juego_igdb, juego) && r.estado === 'publicada'; });
   var resenas = publicadas.filter(function (r) { return r.tipo === 'resena'; });
   var guias = publicadas.filter(function (r) { return r.tipo === 'guia'; });
   var logros = obtenerDatos('logros').filter(function (l) { return l.juego === juego.id; });
@@ -1725,8 +1783,8 @@ function mostrarJuego(juego) {
     { id: 'guias', nombre: 'Guías', numero: guias.length, html: function () {
       return guias.length ? guias.map(function (g) {
         return '<article class="tarjeta">' +
-          '<div class="en-fila en-fila--entre"><h3 class="tarjeta__titulo">' + escapar(g.titulo) + '</h3><span class="tarjeta__texto">' + escapar(g.minutosLectura) + ' min</span></div>' +
-          (g.porcentajeUtil != null ? '<span class="nota nota--texto">' + escapar(g.porcentajeUtil) + '% la marcó como útil</span>' : '<span class="tarjeta__texto">Guía nueva: todavía sin votos</span>') +
+          '<div class="en-fila en-fila--entre"><h3 class="tarjeta__titulo">' + escapar(g.titulo) + '</h3><span class="tarjeta__texto">' + escapar(g.minutos_lectura) + ' min</span></div>' +
+          (g.porcentaje_util != null ? '<span class="nota nota--texto">' + escapar(g.porcentaje_util) + '% la marcó como útil</span>' : '<span class="tarjeta__texto">Guía nueva: todavía sin votos</span>') +
         '</article>';
       }).join('')
         : '<div class="vacio"><b>Aún no hay guías.</b><a href="' + escribir + '&amp;tipo=guia">Escribir la primera</a></div>';
@@ -1734,7 +1792,7 @@ function mostrarJuego(juego) {
     { id: 'clips', nombre: 'Clips', numero: 0, html: function () {
       return '<div class="vacio"><b>Los clips llegarán con la API de Twitch.</b><span>Mientras tanto puedes subir el tuyo desde “Escribir reseña › Clip”.</span></div>';
     } },
-    { id: 'logros', nombre: 'Logros', numero: juego.logrosTotales, html: function () {
+    { id: 'logros', nombre: 'Logros', numero: juego.logros_totales, html: function () {
       return logros.length ? logros.map(function (l) {
         return '<article class="tarjeta"><div class="en-fila">' +
           '<span class="etiqueta ' + (l.obtenido ? 'etiqueta--exito">Obtenido' : 'etiqueta--contorno">Pendiente') + '</span>' +
@@ -1778,11 +1836,11 @@ function mostrarJuego(juego) {
   // Steam: datos del catálogo (precio, nota, jugadores, logros) y reseñas.
   // El número de Steam sale de IGDB (api/steam/juego); si no, de tu biblioteca; si no, se busca por nombre.
   var normalizar = function (t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, ''); };
-  var enBiblioteca = leerBibliotecaSteam().find(function (j) { return normalizar(j.nombre) === normalizar(juego.nombre) || normalizar(j.nombre) === normalizar(juego.nombreCorto); });
-  var appidLocal = juego.appidSteam || (enBiblioteca && enBiblioteca.appid) || null;
+  var enBiblioteca = leerBibliotecaSteam().find(function (j) { return normalizar(j.nombre) === normalizar(juego.nombre) || normalizar(j.nombre) === normalizar(juego.nombre_corto); });
+  var appidLocal = juego.appid_steam || (enBiblioteca && enBiblioteca.appid) || null;
 
   function pedirResenasSteam(appid) {
-    fetch('/api/steam/resenas?' + (appid ? 'appid=' + encodeURIComponent(appid) : 'nombre=' + encodeURIComponent(juego.nombre)))
+    fetch('/api/steam/resenas?v=' + VERSION_API + '&' + (appid ? 'appid=' + encodeURIComponent(appid) : 'nombre=' + encodeURIComponent(juego.nombre)))
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (datos) {
         if (!datos || !datos.appid) return;
@@ -1820,8 +1878,8 @@ function mostrarJuego(juego) {
     }
   }
 
-  if (juego.idIgdb) {
-    fetch('/api/steam/juego?igdb=' + encodeURIComponent(juego.idIgdb) + '&slug=' + encodeURIComponent(juego.id) + '&nombre=' + encodeURIComponent(juego.nombre))
+  if (juego.id_igdb) {
+    fetch('/api/steam/juego?igdb=' + encodeURIComponent(juego.id_igdb) + '&slug=' + encodeURIComponent(juego.id) + '&nombre=' + encodeURIComponent(juego.nombre))
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (datos) {
         var j = datos && datos.juego;
@@ -1850,17 +1908,17 @@ function mostrarJuego(juego) {
       leerMas.textContent = abierta ? 'Leer más' : 'Leer menos';
     });
     // Las que vienen de IGDB dicen de dónde salen
-    if (juego.idiomaDescripcion) {
+    if (juego.idioma_descripcion) {
       var fuente = document.getElementById('fuente-descripcion');
       fuente.hidden = false;
-      fuente.textContent = juego.idiomaDescripcion === 'es' ? 'Descripción de IGDB, traducida automáticamente.' : 'Descripción de IGDB, en inglés.';
+      fuente.textContent = juego.idioma_descripcion === 'es' ? 'Descripción de IGDB, traducida automáticamente.' : 'Descripción de IGDB, en inglés.';
     }
   }
 
   document.getElementById('ficha').innerHTML = [
     ['Desarrolla', juego.desarrolladora || '—'], ['Lanzamiento', juego.anio || '—'], ['Género', juego.generos.join(', ')],
     ['Tipo', juego.tipo || '—'], ['Plataformas', juego.plataformas.join(', ')]
-  ].concat(juego.idiomaDescripcion ? [['Datos', 'IGDB.com']] : []).map(function (f) { return '<dt>' + f[0] + '</dt><dd>' + escapar(f[1]) + '</dd>'; }).join('');
+  ].concat(juego.idioma_descripcion ? [['Datos', 'IGDB.com']] : []).map(function (f) { return '<dt>' + f[0] + '</dt><dd>' + escapar(f[1]) + '</dd>'; }).join('');
   // Los parecidos que da IGDB; sin IGDB, otros juegos de data.js del mismo género
   var similares = (juego.similares && juego.similares.length ? juego.similares.map(function (j) {
     return buscarPorId('juegos', j.id) ? unirConIgdb(buscarPorId('juegos', j.id), j) : j;
@@ -1870,7 +1928,7 @@ function mostrarJuego(juego) {
   document.getElementById('similares').innerHTML = similares.length ? similares.map(function (j) {
     return '<a class="similar" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '">' +
       '<span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
-      '<span><b>' + escapar(j.nombreCorto) + '</b><br><span class="tarjeta__texto">' + escapar(j.generos.join(', ')) + '</span></span>' +
+      '<span><b>' + escapar(j.nombre_corto) + '</b><br><span class="tarjeta__texto">' + escapar(j.generos.join(', ')) + '</span></span>' +
     '</a>';
   }).join('') : '<p class="tarjeta__texto">Sin sugerencias por ahora.</p>';
 
@@ -1898,7 +1956,7 @@ function mostrarEscribir(juego) {
   var dificultad = juego.dificultad || 5;
   var meGusta = false;
   var claveBorrador = 'draft.' + juego.id;
-  var editando = leerResenasPropias().find(function (r) { return r.id === parametros.get('editar') && r.juego === juego.id; }) || null;
+  var editando = leerResenasPropias().find(function (r) { return r.id === parametros.get('editar') && esJuego(r.juego_igdb, juego); }) || null;
 
   var formulario = document.getElementById('formulario-resena');
   var campoTexto = document.getElementById('texto');
@@ -1914,7 +1972,7 @@ function mostrarEscribir(juego) {
   portada.innerHTML = imagenPortada(juego);
   document.getElementById('juego-resena').textContent = juego.nombre;
   document.getElementById('cancelar').href = 'detalle-juego.html?id=' + encodeURIComponent(juego.id);
-  document.title = 'Escribir reseña de ' + juego.nombreCorto + ' · SaveSlot';
+  document.title = 'Escribir reseña de ' + juego.nombre_corto + ' · SaveSlot';
   campoFecha.value = hoy();
   campoFecha.max = hoy();
 
@@ -1927,7 +1985,7 @@ function mostrarEscribir(juego) {
     campoTitulo.value = editando.titulo || '';
     document.getElementById('horas').value = editando.horas || '';
     document.getElementById('spoiler').checked = editando.spoiler;
-    if (editando.estadoPartida) document.getElementById('estado').value = editando.estadoPartida;
+    if (editando.estado_partida) document.getElementById('estado').value = editando.estado_partida;
     document.getElementById('tipo').hidden = true;
     document.getElementById('guardar-borrador').hidden = true;
     document.getElementById('cancelar').href = 'detalle-resena.html?id=' + encodeURIComponent(editando.id);
@@ -2039,7 +2097,7 @@ function mostrarEscribir(juego) {
     var datos = {
       tipo: tipo, titulo: campoTitulo.value.trim() || null, texto: campoTexto.value.trim(), calificacion: calificacion,
       dificultad: dificultad, horas: Number(document.getElementById('horas').value) || 0,
-      spoiler: document.getElementById('spoiler').checked, estadoPartida: document.getElementById('estado').value
+      spoiler: document.getElementById('spoiler').checked, estado_partida: document.getElementById('estado').value
     };
     var propias = leerResenasPropias();
     botonPublicar.disabled = true;
@@ -2061,12 +2119,12 @@ function mostrarEscribir(juego) {
       }
 
       var nueva = Object.assign({
-        id: 'u' + Date.now(), juego: juego.id, autor: usuarioActual(), estado: 'publicada', minutosLectura: null,
-        votosUtil: 0, porcentajeUtil: null, meGusta: 0, fecha: hoy(), editada: false
+        id: 'u' + Date.now(), juego_igdb: juego.id_igdb || juego.id, autor: usuarioActual(), estado: 'publicada', minutos_lectura: null,
+        votos_util: 0, porcentaje_util: null, me_gusta: 0, fecha: hoy(), editada: false
       }, datos);
       propias.unshift(nueva);
       guardarResenasPropias(propias);
-      agregarAlDiario({ juego: juego.id, fecha: campoFecha.value || hoy(), estado: datos.estadoPartida, horas: datos.horas, calificacion: calificacion, meGusta: meGusta, tieneResena: tipo === 'resena' });
+      agregarAlDiario({ juego_igdb: juego.id_igdb || juego.id, fecha: campoFecha.value || hoy(), estado: datos.estado_partida, horas: datos.horas, calificacion: calificacion, me_gusta: meGusta, tiene_resena: tipo === 'resena' });
       guardarMemoria(claveBorrador, null);
       avisoBorrador.hidden = true;
       var perfil = sumarXp(50);
@@ -2095,7 +2153,7 @@ function pantallaComunidad() {
 
   function ordenar(resenas) {
     return resenas.sort(orden === 'utiles'
-      ? function (a, b) { return (b.votosUtil || 0) - (a.votosUtil || 0); }
+      ? function (a, b) { return (b.votos_util || 0) - (a.votos_util || 0); }
       : function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
   }
 
@@ -2109,11 +2167,11 @@ function pantallaComunidad() {
 
     if (pestana === 'guias') {
       lista.innerHTML = publicadas.filter(function (r) { return r.tipo === 'guia'; }).map(function (g) {
-        var juego = buscarPorId('juegos', g.juego);
-        return '<a class="tarjeta tarjeta--enlace tarjeta--resena" href="detalle-juego.html?id=' + encodeURIComponent(g.juego) + '"' + atributoColor(juego.color) + '>' +
-          '<span class="tarjeta__texto">' + escapar(juego.nombreCorto.toUpperCase()) + ' · ' + escapar(g.minutosLectura) + ' MIN</span>' +
-          '<b class="tarjeta__titulo">' + escapar(g.titulo || 'Guía de ' + juego.nombreCorto) + '</b>' +
-          (g.porcentajeUtil != null ? '<span class="nota nota--texto">' + escapar(g.porcentajeUtil) + '% la marcó como útil</span>' : '<span class="tarjeta__texto">Guía nueva: todavía sin votos</span>') +
+        var juego = buscarPorId('juegos', g.juego_igdb);
+        return '<a class="tarjeta tarjeta--enlace tarjeta--resena" href="detalle-juego.html?id=' + encodeURIComponent(slugDeJuego(g.juego_igdb)) + '"' + atributoColor(juego.color) + '>' +
+          '<span class="tarjeta__texto">' + escapar(juego.nombre_corto.toUpperCase()) + ' · ' + escapar(g.minutos_lectura) + ' MIN</span>' +
+          '<b class="tarjeta__titulo">' + escapar(g.titulo || 'Guía de ' + juego.nombre_corto) + '</b>' +
+          (g.porcentaje_util != null ? '<span class="nota nota--texto">' + escapar(g.porcentaje_util) + '% la marcó como útil</span>' : '<span class="tarjeta__texto">Guía nueva: todavía sin votos</span>') +
         '</a>';
       }).join('');
     } else {
@@ -2171,18 +2229,18 @@ function pantallaResena() {
   var id = new URLSearchParams(location.search).get('id');
   var resena = obtenerResenas().find(function (r) { return r.id === id; });
   if (!resena) { location.replace(rutaPagina('404.html') + '?tipo=resena'); return; }
-  var juego = buscarPorId('juegos', resena.juego);
+  var juego = buscarPorId('juegos', resena.juego_igdb);
   var propia = esPropia(resena);
   var autor = datosPersona(resena.autor);
   var sesion = obtenerSesion();
   var esGuia = resena.tipo === 'guia';
 
-  document.title = (esGuia ? 'Guía' : 'Reseña') + ' de ' + juego.nombreCorto + ' · SaveSlot';
+  document.title = (esGuia ? 'Guía' : 'Reseña') + ' de ' + juego.nombre_corto + ' · SaveSlot';
 
   // Cabecera: juego, autor y nota
   document.getElementById('cabecera').dataset.color = juego.color;
   var miga = document.getElementById('miga-juego');
-  miga.textContent = juego.nombreCorto;
+  miga.textContent = juego.nombre_corto;
   miga.href = 'detalle-juego.html?id=' + encodeURIComponent(juego.id);
   var portada = document.getElementById('portada-resena');
   portada.href = miga.href;
@@ -2219,8 +2277,8 @@ function pantallaResena() {
     var meGusta = leerMemoria('meGustaResenas', []).indexOf(resena.id) !== -1;
     var votado = leerMemoria('votosUtil', []).indexOf(resena.id) !== -1;
     acciones.innerHTML =
-      '<button class="boton boton--secundario boton--me-gusta" type="button" id="accion-me-gusta" aria-pressed="' + meGusta + '">' + ICONO_CORAZON + 'Me gusta · ' + formatearNumero(resena.meGusta + (meGusta ? 1 : 0)) + '</button>' +
-      '<button class="boton boton--secundario" type="button" data-util="' + escapar(resena.id) + '"' + (propia ? ' data-propia' : '') + ' aria-pressed="' + votado + '">Útil · <span>' + formatearNumero((resena.votosUtil || 0) + (votado ? 1 : 0)) + '</span></button>' +
+      '<button class="boton boton--secundario boton--me-gusta" type="button" id="accion-me-gusta" aria-pressed="' + meGusta + '">' + ICONO_CORAZON + 'Me gusta · ' + formatearNumero(resena.me_gusta + (meGusta ? 1 : 0)) + '</button>' +
+      '<button class="boton boton--secundario" type="button" data-util="' + escapar(resena.id) + '"' + (propia ? ' data-propia' : '') + ' aria-pressed="' + votado + '">Útil · <span>' + formatearNumero((resena.votos_util || 0) + (votado ? 1 : 0)) + '</span></button>' +
       '<button class="boton boton--secundario" type="button" id="accion-compartir">Compartir</button>' +
       (propia
         ? '<a class="boton boton--secundario al-final" href="escribir-resena.html?id=' + encodeURIComponent(juego.id) + '&amp;editar=' + encodeURIComponent(resena.id) + '">Editar</a>' +
@@ -2328,7 +2386,7 @@ function pantallaResena() {
   document.getElementById('sobre-autor').innerHTML = '<h2 class="panel__titulo" id="titulo-autor">Sobre quien escribe</h2>' +
     '<a class="fila fila--actividad" href="' + enlacePerfil(autor.usuario) + '">' + htmlAvatar(autor, 'md') +
       '<span><b>' + escapar(autor.nombre) + '</b><br><span class="tarjeta__texto">' + (autor.nivel ? 'Nivel ' + escapar(autor.nivel) : '@' + escapar(autor.usuario)) + '</span></span></a>' +
-    (autor.sobreMi && !propia ? '<p class="tarjeta__texto">' + escapar(autor.sobreMi) + '</p>' : '') +
+    (autor.sobre_mi && !propia ? '<p class="tarjeta__texto">' + escapar(autor.sobre_mi) + '</p>' : '') +
     (relacion === 'amigos' ? '<span><span class="etiqueta etiqueta--amigo">✓ Amigos</span></span>' : '') +
     (relacion === 'enviada' ? '<span><span class="etiqueta etiqueta--contorno">Solicitud enviada</span></span>' : '') +
     (relacion === 'ninguna' && autor.nivel ? '<span><button class="boton boton--secundario boton--sm" type="button" id="agregar-amigo">+ Agregar amigo</button></span>' : '');
@@ -2341,9 +2399,9 @@ function pantallaResena() {
   });
 
   // Datos de la partida
-  var partida = resena.estadoPartida;
+  var partida = resena.estado_partida;
   if (!partida && resena.autor === 'samluq') {
-    var enDiario = obtenerDatos('diario').find(function (d) { return d.juego === resena.juego; });
+    var enDiario = obtenerDatos('diario').find(function (d) { return d.juego_igdb === resena.juego_igdb; });
     partida = enDiario && enDiario.estado;
   }
   document.getElementById('datos-partida').innerHTML = [
@@ -2352,7 +2410,7 @@ function pantallaResena() {
   ].map(function (f) { return '<dt>' + f[0] + '</dt><dd>' + escapar(f[1]) + '</dd>'; }).join('');
 
   // Más reseñas de este juego
-  var mas = obtenerResenas().filter(function (r) { return r.juego === juego.id && r.id !== resena.id && r.tipo === 'resena'; }).slice(0, 3);
+  var mas = obtenerResenas().filter(function (r) { return esJuego(r.juego_igdb, juego) && r.id !== resena.id && r.tipo === 'resena'; }).slice(0, 3);
   document.getElementById('mas-resenas').innerHTML = mas.length ? mas.map(function (r) {
     return '<a class="fila fila--actividad" href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '">' + htmlAvatar(datosPersona(r.autor), 'sm') +
       '<span><b>@' + escapar(r.autor) + '</b> <span class="nota nota--texto">' + escapar(r.calificacion) + '/10</span><br>' +
@@ -2376,7 +2434,7 @@ function pantallaEventos() {
     return '<option>' + escapar(o.nombre) + '</option>';
   }).join(''));
   document.getElementById('reglas-eventos').innerHTML = obtenerDatos('reglas_eventos').map(function (r) {
-    return '<li>' + escapar(r.texto) + (r.enlace ? '<a href="' + escapar(rutaRecurso(r.enlace)) + '"><b>' + escapar(r.textoEnlace) + '</b></a>.' : '') + '</li>';
+    return '<li>' + escapar(r.texto) + (r.enlace ? '<a href="' + escapar(rutaRecurso(r.enlace)) + '"><b>' + escapar(r.texto_enlace) + '</b></a>.' : '') + '</li>';
   }).join('');
 
   var delMes = eventos.find(function (e) { return e.destacado; });
@@ -2388,7 +2446,7 @@ function pantallaEventos() {
     });
     var elegidos = eventos.filter(function (e) {
       var porTipo = filtro === 'todos' || e.tipo === filtro || (filtro === 'gratis' && e.gratis);
-      return porTipo && (!organiza || e.tipoOrganizador === organiza);
+      return porTipo && (!organiza || e.tipo_organizador === organiza);
     });
     lista.innerHTML = elegidos.length
       ? elegidos.map(htmlEvento).join('')
@@ -2440,7 +2498,7 @@ function pantallaEvento() {
   var evento = buscarPorId('eventos', new URLSearchParams(location.search).get('id'));
   if (!evento) { location.replace(rutaPagina('404.html') + '?tipo=evento'); return; }
   var esTorneo = evento.tipo === 'torneo';
-  var juego = evento.juego ? buscarPorId('juegos', evento.juego) : null;
+  var juego = evento.juego_igdb ? buscarPorId('juegos', evento.juego_igdb) : null;
   var xp = leerPerfil().xp;
 
   document.title = evento.titulo + ' · SaveSlot';
@@ -2451,12 +2509,12 @@ function pantallaEvento() {
   miga.textContent = esTorneo ? 'Torneos' : 'Sorteos';
   document.getElementById('miga-evento').textContent = evento.titulo;
   document.getElementById('etiquetas-evento').innerHTML = etiquetaTipoEvento(evento) +
-    (juego ? '<span class="etiqueta etiqueta--contorno">' + escapar(juego.nombreCorto.toUpperCase()) + '</span>' : '') +
+    (juego ? '<span class="etiqueta etiqueta--contorno">' + escapar(juego.nombre_corto.toUpperCase()) + '</span>' : '') +
     '<span class="etiqueta etiqueta--contorno">ORGANIZA ' + escapar(evento.organizador.toUpperCase()) + '</span>';
   document.getElementById('titulo-evento').textContent = evento.titulo;
   document.getElementById('datos-evento').innerHTML = [
-    ['Fecha', evento.fechaHora],
-    [esTorneo ? 'Cupos' : 'Participantes', evento.cuposMaximos ? evento.cuposOcupados + ' / ' + evento.cuposMaximos : (evento.cuposOcupados ? formatearNumero(evento.cuposOcupados) : 'Sin límite')],
+    ['Fecha', evento.fecha_hora],
+    [esTorneo ? 'Cupos' : 'Participantes', evento.cupos_maximos ? evento.cupos_ocupados + ' / ' + evento.cupos_maximos : (evento.cupos_ocupados ? formatearNumero(evento.cupos_ocupados) : 'Sin límite')],
     ['Costo', evento.costo],
     ['Premio', evento.premio || '—']
   ].map(function (d) {
@@ -2799,7 +2857,7 @@ function pantallaPerfil() {
   // Actividad: qué está jugando
   document.getElementById('jugando-perfil').innerHTML = jugando
     ? '<a class="fila fila--jugando" href="' + escapar(enlaceJuego(jugando)) + '"' + (jugando.steam ? ' target="_blank" rel="noopener"' : '') + '><span class="portada portada--sm"' + atributoColor(jugando.color) + '>' + imagenPortada(jugando) + '</span>' +
-      '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(jugando.nombreCorto) + '</b><br><span class="tarjeta__texto">Lo elegiste en tu perfil</span></span></a>'
+      '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(jugando.nombre_corto) + '</b><br><span class="tarjeta__texto">Lo elegiste en tu perfil</span></span></a>'
     : '<p class="tarjeta__texto">No está jugando nada en este momento.</p>';
 
   // Si Steam está vinculada de verdad, se muestra lo que juega ahora en Steam
@@ -2883,7 +2941,7 @@ function pantallaPerfil() {
       var evento = buscarPorId('eventos', id);
       if (!evento) return '';
       return '<div class="tarjeta"><a href="detalle-evento.html?id=' + encodeURIComponent(id) + '"><b>' + escapar(evento.titulo) + '</b></a>' +
-        '<span class="tarjeta__texto">' + escapar(evento.fechaHora) + '</span>' +
+        '<span class="tarjeta__texto">' + escapar(evento.fecha_hora) + '</span>' +
         '<button class="dato__ayuda" type="button" data-cancelar="' + escapar(id) + '">Cancelar inscripción</button></div>';
     }).join('') || '<p class="tarjeta__texto">No estás inscrito en eventos. <a href="eventos.html"><b>Ver eventos</b></a></p>';
   }
@@ -2923,18 +2981,18 @@ function pantallaPerfil() {
   var favoritos = perfil.favorites.slice(0, 4).map(function (id) { return buscarPorId('juegos', id); }).filter(Boolean);
   document.getElementById('cantidad-favoritos').textContent = favoritos.length + ' de 4';
   document.getElementById('favoritos-perfil').innerHTML = favoritos.map(function (j) {
-    return '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombreCorto) + '</b></a>';
+    return '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b></a>';
   }).join('') + new Array(4 - favoritos.length + 1).join('<a class="vacio" href="editar-perfil.html#favoritos">+ Elegir favorito</a>');
 
   // Actividad reciente: lo jugado en Steam las últimas 2 semanas y los últimos del diario (máx. 8)
   function dibujarRecientes() {
     var deSteam = perfilSteam && perfilSteam.recent_games ? perfilSteam.recent_games.map(htmlRecienteSteam) : [];
     var delDiario = diario.slice(0, 6).map(function (d) {
-      var j = buscarPorId('juegos', d.juego);
+      var j = buscarPorId('juegos', d.juego_igdb);
       if (!j) return '';
       var abandonado = d.estado === 'Abandonado';
       return '<a href="' + escapar(enlaceJuego(j)) + '"><span class="portada portada--enlace"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
-        '<span class="' + (abandonado ? 'etiqueta etiqueta--error' : 'nota nota--texto') + '">' + (abandonado ? 'Abandonado' : d.calificacion + '/10') + (d.meGusta ? ' ♥' : '') + '</span></a>';
+        '<span class="' + (abandonado ? 'etiqueta etiqueta--error' : 'nota nota--texto') + '">' + (abandonado ? 'Abandonado' : d.calificacion + '/10') + (d.me_gusta ? ' ♥' : '') + '</span></a>';
     }).filter(Boolean);
     var caja = document.getElementById('recientes-perfil');
     caja.innerHTML = deSteam.concat(delDiario).slice(0, 8).join('') || '<div class="vacio">Aún no registras juegos. <a href="buscar-juegos.html">Busca uno</a></div>';
@@ -2952,7 +3010,7 @@ function pantallaPerfil() {
       generos.forEach(function (g) { horas[g] = (horas[g] || 0) + h / generos.length; });
     }
     diario.forEach(function (d) {
-      var j = buscarPorId('juegos', d.juego);
+      var j = buscarPorId('juegos', d.juego_igdb);
       if (j) sumar(j.generos, d.horas || 0);
     });
     (biblioteca || []).forEach(function (j) { sumar(j.generos, j.horas); });
@@ -3024,8 +3082,8 @@ function pantallaPerfil() {
       var j = buscarPorId('juegos', id);
       if (!j) return '';
       return '<div class="tarjeta deseo"><span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
-        '<a href="' + escapar(enlaceJuego(j)) + '"><b>' + escapar(j.nombreCorto) + '</b><br><span class="tarjeta__texto">' + escapar(j.plataformas.join(', ')) + '</span></a>' +
-        '<button class="boton boton--fantasma boton--sm al-final" type="button" data-quitar="' + escapar(j.id) + '" aria-label="Quitar ' + escapar(j.nombreCorto) + ' de la lista">Quitar</button></div>';
+        '<a href="' + escapar(enlaceJuego(j)) + '"><b>' + escapar(j.nombre_corto) + '</b><br><span class="tarjeta__texto">' + escapar(j.plataformas.join(', ')) + '</span></a>' +
+        '<button class="boton boton--fantasma boton--sm al-final" type="button" data-quitar="' + escapar(j.id) + '" aria-label="Quitar ' + escapar(j.nombre_corto) + ' de la lista">Quitar</button></div>';
     }).join('');
 
     // Lista de deseos de Steam (solo se ve: se cambia desde Steam)
@@ -3122,10 +3180,10 @@ function pantallaEditar() {
   var ayudaJugando = document.getElementById('ayuda-jugando');
   function dibujarJugando() {
     var opcion = function (j) {
-      return '<option value="' + escapar(j.id) + '"' + (perfil.playing === j.id ? ' selected' : '') + '>' + escapar(j.nombreCorto) + '</option>';
+      return '<option value="' + escapar(j.id) + '"' + (perfil.playing === j.id ? ' selected' : '') + '>' + escapar(j.nombre_corto) + '</option>';
     };
     var conSteam = !!perfil.accounts.Steam;
-    var deSteam = bibliotecaSteam.slice().sort(function (a, b) { return b.ultimaVez - a.ultimaVez; });
+    var deSteam = bibliotecaSteam.slice().sort(function (a, b) { return b.ultima_vez - a.ultima_vez; });
     selectorJugando.innerHTML = '<option value="">' + (conSteam ? 'Automático: lo que juegues en Steam' : 'Nada por ahora') + '</option>' +
       (deSteam.length
         ? '<optgroup label="Tu biblioteca de Steam (recientes primero)">' + deSteam.map(opcion).join('') + '</optgroup><optgroup label="Catálogo de SaveSlot">' + juegos.map(opcion).join('') + '</optgroup>'
@@ -3150,8 +3208,8 @@ function pantallaEditar() {
     lleno = perfil.favorites.length >= MAXIMO_FAVORITOS;
     cajaFavoritos.innerHTML = perfil.favorites.map(function (id) {
       var j = buscarPorId('juegos', id);
-      return '<div class="portada"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombreCorto) + '</b>' +
-        '<button class="portada__accion" type="button" data-quitar-favorito="' + escapar(id) + '" aria-label="Quitar ' + escapar(j.nombreCorto) + ' de favoritos">' + ICONO_CERRAR + '</button></div>';
+      return '<div class="portada"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b>' +
+        '<button class="portada__accion" type="button" data-quitar-favorito="' + escapar(id) + '" aria-label="Quitar ' + escapar(j.nombre_corto) + ' de favoritos">' + ICONO_CERRAR + '</button></div>';
     }).join('') + new Array(MAXIMO_FAVORITOS - perfil.favorites.length + 1).join('<div class="vacio">Espacio libre</div>');
     document.getElementById('pista-favoritos').textContent = lleno
       ? 'Ya tienes 4 favoritos. Quita uno para elegir otro.'
@@ -3160,7 +3218,7 @@ function pantallaEditar() {
     selector.disabled = lleno;
     function opciones(lista) {
       return lista.filter(function (j) { return perfil.favorites.indexOf(j.id) === -1; }).map(function (j) {
-        return '<option value="' + escapar(j.id) + '">' + escapar(j.nombreCorto) + (j.steam && j.horas ? ' · ' + formatearNumero(j.horas) + ' h' : '') + '</option>';
+        return '<option value="' + escapar(j.id) + '">' + escapar(j.nombre_corto) + (j.steam && j.horas ? ' · ' + formatearNumero(j.horas) + ' h' : '') + '</option>';
       }).join('');
     }
     var porHoras = bibliotecaSteam.slice().sort(function (a, b) { return b.horas - a.horas; });
@@ -3304,7 +3362,7 @@ function pantallaDiario() {
   function mostrar() {
     var anio = selectorAnio.value;
     var delAnio = diario.filter(function (d) { return String(d.fecha).slice(0, 4) === anio; });
-    var lista = delAnio.filter(function (d) { return estado === 'Todos' || (estado === 'Con reseña' ? d.tieneResena : d.estado === estado); });
+    var lista = delAnio.filter(function (d) { return estado === 'Todos' || (estado === 'Con reseña' ? d.tiene_resena : d.estado === estado); });
     var calificados = delAnio.filter(function (d) { return d.calificacion; });
 
     document.getElementById('resumen-diario').innerHTML = [
@@ -3316,7 +3374,7 @@ function pantallaDiario() {
 
     var mesAnterior = '';
     filas.innerHTML = lista.map(function (d) {
-      var j = buscarPorId('juegos', d.juego);
+      var j = buscarPorId('juegos', d.juego_igdb);
       if (!j) return '';
       var mes = MESES[Number(String(d.fecha).slice(5, 7)) - 1];
       var mostrarMes = mes !== mesAnterior;
@@ -3325,12 +3383,12 @@ function pantallaDiario() {
         '<td class="tabla__solo-escritorio">' + (mostrarMes ? '<span class="tabla__mes"><b>' + mes + '</b><span>' + anio + '</span></span>' : '') + '</td>' +
         '<td class="tabla__dia">' + String(d.fecha).slice(8, 10) + '</td>' +
         '<td class="tabla__ancha"><a class="juego-en-fila" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"><span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
-          '<span><b>' + escapar(j.nombreCorto) + '</b><br><span class="tarjeta__texto">' + escapar(j.plataformas[0]) + '</span></span></a></td>' +
+          '<span><b>' + escapar(j.nombre_corto) + '</b><br><span class="tarjeta__texto">' + escapar(j.plataformas[0]) + '</span></span></a></td>' +
         '<td><span class="etiqueta ' + claseEstado(d.estado) + '">' + escapar(d.estado) + '</span></td>' +
         '<td class="tabla__solo-escritorio tarjeta__texto">' + (d.horas || 0) + ' h</td>' +
         '<td><span class="nota nota--texto">' + (d.calificacion ? d.calificacion + '/10' : '—') + '</span></td>' +
-        '<td class="tabla__centro tabla__solo-escritorio"><span class="tabla__me-gusta' + (d.meGusta ? ' tabla__me-gusta--activo' : '') + '" role="img" aria-label="' + (d.meGusta ? 'Te gustó' : 'Sin me gusta') + '">♥</span></td>' +
-        '<td class="tabla__centro tabla__solo-escritorio">' + (d.tieneResena ? '<a class="boton boton--secundario boton--sm" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '" aria-label="Leer tu reseña de ' + escapar(j.nombreCorto) + '">Leer</a>' : '') + '</td>' +
+        '<td class="tabla__centro tabla__solo-escritorio"><span class="tabla__me-gusta' + (d.me_gusta ? ' tabla__me-gusta--activo' : '') + '" role="img" aria-label="' + (d.me_gusta ? 'Te gustó' : 'Sin me gusta') + '">♥</span></td>' +
+        '<td class="tabla__centro tabla__solo-escritorio">' + (d.tiene_resena ? '<a class="boton boton--secundario boton--sm" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '" aria-label="Leer tu reseña de ' + escapar(j.nombre_corto) + '">Leer</a>' : '') + '</td>' +
       '</tr>';
     }).join('') || '<tr><td colspan="8"><div class="vacio">No hay registros con este filtro.</div></td></tr>';
     aplicarColores(filas);
@@ -3377,21 +3435,21 @@ function pantallaHistorial() {
   }
 
   function htmlFila(r) {
-    if (r.deSteam) return htmlFilaSteam(r);
-    var j = buscarPorId('juegos', r.juego);
+    if (r.de_steam) return htmlFilaSteam(r);
+    var j = buscarPorId('juegos', r.juego_igdb);
     if (!j) return '';
     var comentarios = leerComentarios(r.id).length;
     return '<article class="tarjeta tarjeta--resena fila-historial"' + atributoColor(j.color) + '>' +
       '<a class="portada portada--enlace" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '" tabindex="-1" aria-hidden="true"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</a>' +
       '<div class="fila-historial__cuerpo">' +
-        '<div class="en-fila en-fila--entre"><div><a href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '"><b class="tarjeta__titulo">' + escapar(j.nombreCorto) + '</b></a> ' + etiquetaOrigen('SaveSlot') + '<br>' +
-          '<span class="tarjeta__texto">' + formatearFecha(r.fecha) + ' · ' + escapar(r.estadoPartida || 'Terminado') + ' · ' + (r.horas || 0) + ' h' + (r.editada ? ' · Editada' : '') + '</span></div>' +
+        '<div class="en-fila en-fila--entre"><div><a href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '"><b class="tarjeta__titulo">' + escapar(j.nombre_corto) + '</b></a> ' + etiquetaOrigen('SaveSlot') + '<br>' +
+          '<span class="tarjeta__texto">' + formatearFecha(r.fecha) + ' · ' + escapar(r.estado_partida || 'Terminado') + ' · ' + (r.horas || 0) + ' h' + (r.editada ? ' · Editada' : '') + '</span></div>' +
           '<span class="nota">' + escapar(r.calificacion) + '<small>/10</small></span></div>' +
         '<p class="tarjeta__texto texto-corto">' + (r.spoiler ? '<span class="etiqueta etiqueta--contorno">SPOILER</span> ' : '') + escapar(r.texto) + '</p>' +
-        '<div class="en-fila en-fila--entre"><span class="tarjeta__texto">♥ ' + formatearNumero(r.meGusta) + ' · Útil ' + formatearNumero(r.votosUtil) + ' · ' + comentarios + (comentarios === 1 ? ' comentario' : ' comentarios') + '</span>' +
+        '<div class="en-fila en-fila--entre"><span class="tarjeta__texto">♥ ' + formatearNumero(r.me_gusta) + ' · Útil ' + formatearNumero(r.votos_util) + ' · ' + comentarios + (comentarios === 1 ? ' comentario' : ' comentarios') + '</span>' +
           '<span class="en-fila"><a class="boton boton--secundario boton--sm" href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '">Ver</a>' +
           '<a class="boton boton--secundario boton--sm" href="escribir-resena.html?id=' + encodeURIComponent(j.id) + '&amp;editar=' + encodeURIComponent(r.id) + '">Editar</a>' +
-          '<button class="boton boton--fantasma boton--sm" type="button" data-eliminar="' + escapar(r.id) + '" aria-label="Eliminar reseña de ' + escapar(j.nombreCorto) + '">Eliminar</button></span></div>' +
+          '<button class="boton boton--fantasma boton--sm" type="button" data-eliminar="' + escapar(r.id) + '" aria-label="Eliminar reseña de ' + escapar(j.nombre_corto) + '">Eliminar</button></span></div>' +
       '</div></article>';
   }
 
@@ -3400,14 +3458,14 @@ function pantallaHistorial() {
     var promedio = todas.length ? todas.reduce(function (s, r) { return s + r.calificacion; }, 0) / todas.length : 0;
     document.getElementById('resumen-historial').innerHTML = [
       [todas.length + deSteam.length, 'Reseñas' + (deSteam.length ? ' (' + deSteam.length + ' en Steam)' : '')],
-      [formatearNumero(todas.reduce(function (s, r) { return s + (r.meGusta || 0); }, 0)), 'Me gusta recibidos'],
-      [formatearNumero(todas.reduce(function (s, r) { return s + (r.votosUtil || 0); }, 0)), 'Votos de “útil”'],
+      [formatearNumero(todas.reduce(function (s, r) { return s + (r.me_gusta || 0); }, 0)), 'Me gusta recibidos'],
+      [formatearNumero(todas.reduce(function (s, r) { return s + (r.votos_util || 0); }, 0)), 'Votos de “útil”'],
       [formatearPromedio(promedio), 'Nota promedio']
     ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
 
     var elegidas = todas.filter(function (r) {
-      var j = buscarPorId('juegos', r.juego) || { nombre: '' };
-      var porTexto = !texto || (j.nombre + ' ' + j.nombreCorto + ' ' + r.texto).toLowerCase().indexOf(texto) !== -1;
+      var j = buscarPorId('juegos', r.juego_igdb) || { nombre: '' };
+      var porTexto = !texto || (j.nombre + ' ' + j.nombre_corto + ' ' + r.texto).toLowerCase().indexOf(texto) !== -1;
       var porNota = banda === 'todas' || (banda === '9' ? r.calificacion >= 9 : banda === '7' ? r.calificacion >= 7 && r.calificacion <= 8 : r.calificacion <= 6);
       return porTexto && porNota;
     });
@@ -3415,13 +3473,13 @@ function pantallaHistorial() {
       recientes: function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); },
       antiguas: function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); },
       nota: function (a, b) { return b.calificacion - a.calificacion; },
-      utiles: function (a, b) { return (b.votosUtil || 0) - (a.votosUtil || 0); }
+      utiles: function (a, b) { return (b.votos_util || 0) - (a.votos_util || 0); }
     }[orden];
     // Las de Steam no tienen nota: se muestran con "Todas las notas"
     if (banda === 'todas') {
       elegidas = elegidas.concat(deSteam.filter(function (r) {
         return !texto || (r.name + ' ' + r.texto).toLowerCase().indexOf(texto) !== -1;
-      }).map(function (r) { return Object.assign({ deSteam: true, calificacion: 0, votosUtil: 0 }, r); }));
+      }).map(function (r) { return Object.assign({ de_steam: true, calificacion: 0, votos_util: 0 }, r); }));
     }
     elegidas.sort(comparar);
     document.getElementById('cantidad-historial').textContent = 'Mostrando ' + elegidas.length + ' de ' + (todas.length + deSteam.length) + ' reseñas';
@@ -3481,29 +3539,29 @@ function pantallaLogros() {
   var usuario = obtenerSesion().user;
   var plataforma = 'Todas';
   var progreso = obtenerDatos('progreso_logros').filter(function (p) { return p.usuario === usuario; });
-  var resumen = obtenerDatos('resumen_logros').find(function (r) { return r.usuario === usuario; }) || { desbloqueados: 0, promedio: 0, juegosCompletos: 0, raros: 0 };
+  var resumen = obtenerDatos('resumen_logros').find(function (r) { return r.usuario === usuario; }) || { desbloqueados: 0, promedio: 0, juegos_completos: 0, raros: 0 };
   var raros = obtenerDatos('logros').map(function (l) {
     var j = buscarPorId('juegos', l.juego);
-    return { nombre: l.nombre, juego: j ? j.nombreCorto : '', porcentaje: l.porcentaje, obtenido: l.obtenido };
+    return { nombre: l.nombre, juego: j ? j.nombre_corto : '', porcentaje: l.porcentaje, obtenido: l.obtenido };
   });
   var caja = document.getElementById('logros-por-juego');
 
   function mostrarResumen() {
     document.getElementById('resumen-logros').innerHTML = [
       [formatearNumero(resumen.desbloqueados), 'Logros desbloqueados'], [resumen.promedio + '%', 'Completado en promedio'],
-      [resumen.juegosCompletos, 'Juegos al 100%'], [resumen.raros, 'Logros raros (menos del 10%)']
+      [resumen.juegos_completos, 'Juegos al 100%'], [resumen.raros, 'Logros raros (menos del 10%)']
     ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
   }
 
   function mostrar() {
     var lista = progreso.filter(function (p) { return plataforma === 'Todas' || p.plataforma === plataforma; });
     caja.innerHTML = lista.map(function (p) {
-      var j = p.juegoSteam || buscarPorId('juegos', p.juego);
+      var j = p.juego_steam || buscarPorId('juegos', p.juego);
       if (!j) return '';
       var porcentaje = Math.round(p.obtenidos / p.totales * 100);
       return '<a class="tarjeta tarjeta--enlace progreso-juego" href="' + escapar(enlaceJuego(j)) + '">' +
         '<span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
-        '<span class="progreso-juego__nombre"><b class="tarjeta__titulo">' + escapar(j.nombreCorto) + '</b>' +
+        '<span class="progreso-juego__nombre"><b class="tarjeta__titulo">' + escapar(j.nombre_corto) + '</b>' +
           '<span class="medidor' + (porcentaje === 100 ? ' medidor--exito' : '') + '" role="img" aria-label="' + porcentaje + '% de los logros"><span class="medidor__barra" data-ancho="' + porcentaje + '"></span></span></span>' +
         '<span>' + (porcentaje === 100 ? '<b class="nota nota--texto">100%</b> · ' : '') + '<b>' + p.obtenidos + '</b> <span class="tarjeta__texto">/ ' + p.totales + '</span></span>' +
         '<span class="etiqueta etiqueta--contorno">' + escapar(p.plataforma.toUpperCase()) + '</span></a>';
@@ -3523,10 +3581,10 @@ function pantallaLogros() {
   // Logros reales de Steam: reemplazan los de ejemplo de Steam
   function usarSteam(datos) {
     progreso = progreso.filter(function (p) { return p.plataforma !== 'Steam'; }).concat(datos.games.map(function (g) {
-      return { juego: 'steam-' + g.appid, juegoSteam: juegoDeSteam(g), obtenidos: g.unlocked, totales: g.total, plataforma: 'Steam' };
+      return { juego: 'steam-' + g.appid, juego_steam: juegoDeSteam(g), obtenidos: g.unlocked, totales: g.total, plataforma: 'Steam' };
     }));
     progreso.sort(function (a, b) { return b.obtenidos / b.totales - a.obtenidos / a.totales; });
-    resumen = { desbloqueados: datos.summary.unlocked, promedio: datos.summary.average, juegosCompletos: datos.summary.complete, raros: datos.summary.rare };
+    resumen = { desbloqueados: datos.summary.unlocked, promedio: datos.summary.average, juegos_completos: datos.summary.complete, raros: datos.summary.rare };
     raros = datos.rarest.map(function (l) { return { nombre: l.name, juego: l.game, porcentaje: l.percent, obtenido: l.achieved }; });
     var nota = document.getElementById('nota-logros');
     if (nota) nota.textContent = 'Logros de Steam de tus 30 juegos más jugados (Steam Web API). Xbox llegará con OpenXBL.';
@@ -3582,7 +3640,7 @@ function pantallaBiblioteca() {
   var juegos = leerBibliotecaSteam();
   var ORDENES = {
     horas: function (a, b) { return b.horas - a.horas; },
-    recientes: function (a, b) { return b.ultimaVez - a.ultimaVez; },
+    recientes: function (a, b) { return b.ultima_vez - a.ultima_vez; },
     nombre: function (a, b) { return a.nombre.localeCompare(b.nombre, 'es'); }
   };
 
@@ -3601,7 +3659,7 @@ function pantallaBiblioteca() {
         // De qué cuenta viene el juego: logo en la esquina inferior izquierda de la portada (hoy solo Steam)
         '<span class="portada portada--enlace">' + imagenPortada(j) +
           '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-steam.svg')) + '" alt="Steam" title="De tu cuenta de Steam"></span>' +
-        '<b>' + escapar(j.nombreCorto) + '</b>' +
+        '<b>' + escapar(j.nombre_corto) + '</b>' +
         '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
     }).join('') || (juegos.length
       ? '<div class="vacio">Ningún juego de tu biblioteca coincide con «' + escapar(buscador.value.trim()) + '».</div>'
@@ -3653,16 +3711,16 @@ function pantallaBiblioteca() {
 // Texto del estado de una persona: "Jugando Hades", "En línea" o "Desconectado · hace 5 h"
 function htmlEstado(persona) {
   if (persona.estado === 'jugando') {
-    var juego = buscarPorId('juegos', persona.jugandoAhora);
-    return '<span class="estado estado--jugando">Jugando' + (juego ? ' ' + escapar(juego.nombreCorto) : '') + '</span>';
+    var juego = buscarPorId('juegos', persona.jugando_ahora);
+    return '<span class="estado estado--jugando">Jugando' + (juego ? ' ' + escapar(juego.nombre_corto) : '') + '</span>';
   }
   if (persona.estado === 'en-linea') return '<span class="estado estado--en-linea">En línea</span>';
-  return '<span class="estado estado--desconectado">Desconectado' + (persona.ultimaConexion ? ' · ' + escapar(persona.ultimaConexion) : '') + '</span>';
+  return '<span class="estado estado--desconectado">Desconectado' + (persona.ultima_conexion ? ' · ' + escapar(persona.ultima_conexion) : '') + '</span>';
 }
 
 // Juegos que la otra persona calificó y que también están en mi diario
 function juegosEnComun(persona) {
-  var mios = leerDiario().map(function (d) { return d.juego; });
+  var mios = leerDiario().map(function (d) { return slugDeJuego(d.juego_igdb); });
   return Object.keys(persona.notas || {}).filter(function (id) { return mios.indexOf(id) !== -1; });
 }
 
@@ -3680,7 +3738,7 @@ function pantallaAmigos() {
 
   function htmlTarjeta(p) {
     var relacion = relacionCon(p.usuario);
-    var juego = p.estado === 'jugando' ? buscarPorId('juegos', p.jugandoAhora) : null;
+    var juego = p.estado === 'jugando' ? buscarPorId('juegos', p.jugando_ahora) : null;
     var comunes = juegosEnComun(p);
     var perfil = 'perfil-usuario.html?id=' + encodeURIComponent(p.usuario);
     var acciones = {
@@ -3696,7 +3754,7 @@ function pantallaAmigos() {
         '<a class="boton boton--fantasma boton--sm" href="' + perfil + '">Ver perfil</a>'
     }[relacion];
     var lineaComun = relacion === 'ninguna' || relacion === 'solicitud recibida'
-      ? '<span class="tarjeta__texto">' + (p.amigosEnComun || 0) + ' amigos en común · ' + comunes.length + ' juegos en común</span>'
+      ? '<span class="tarjeta__texto">' + (p.amigos_en_comun || 0) + ' amigos en común · ' + comunes.length + ' juegos en común</span>'
       : (comunes.length
         ? '<div class="en-fila"><span class="juegos-en-comun">' + comunes.slice(0, 4).map(function (id) {
             var j = buscarPorId('juegos', id);
@@ -3708,7 +3766,7 @@ function pantallaAmigos() {
         '<div><a href="' + perfil + '"><h3 class="tarjeta-amigo__nombre">' + escapar(p.nombre) + '</h3></a>' +
         '<span class="tarjeta__texto">@' + escapar(p.usuario) + ' · Nivel ' + escapar(p.nivel) + '</span><br>' + htmlEstado(p) + '</div></div>' +
       (juego ? '<a class="fila fila--jugando" href="detalle-juego.html?id=' + encodeURIComponent(juego.id) + '"><span class="portada portada--sm"' + atributoColor(juego.color) + '>' + imagenPortada(juego) + '</span>' +
-        '<span><span class="estado estado--jugando">EN JUEGO</span><br><b>' + escapar(juego.nombreCorto) + '</b></span></a>' : '') +
+        '<span><span class="estado estado--jugando">EN JUEGO</span><br><b>' + escapar(juego.nombre_corto) + '</b></span></a>' : '') +
       lineaComun +
       '<div class="tarjeta-amigo__acciones">' + acciones + '</div></article>';
   }
@@ -3794,15 +3852,15 @@ function pantallaAmigos() {
   // Actividad de amigos: quién juega ahora y sus últimas reseñas
   var amigosAhora = grupo('amigos');
   var jugandoAhora = amigosAhora.filter(function (p) { return p.estado === 'jugando'; }).map(function (p) {
-    var j = buscarPorId('juegos', p.jugandoAhora);
+    var j = buscarPorId('juegos', p.jugando_ahora);
     return '<a class="fila fila--actividad" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '">' + htmlAvatar(p, 'sm') +
-      '<span><b>' + escapar(p.nombre.split(' ')[0]) + '</b> está jugando <b>' + escapar(j.nombreCorto) + '</b><br><span class="estado estado--jugando">Ahora</span></span></a>';
+      '<span><b>' + escapar(p.nombre.split(' ')[0]) + '</b> está jugando <b>' + escapar(j.nombre_corto) + '</b><br><span class="estado estado--jugando">Ahora</span></span></a>';
   });
   var resenasAmigos = obtenerResenas().filter(function (r) { return r.tipo === 'resena' && sonAmigos(r.autor); }).slice(0, 5).map(function (r) {
     var p = buscarPorId('usuarios', r.autor);
-    var j = buscarPorId('juegos', r.juego);
+    var j = buscarPorId('juegos', r.juego_igdb);
     return '<a class="fila fila--actividad" href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '">' + htmlAvatar(p, 'sm') +
-      '<span><b>' + escapar(p.nombre.split(' ')[0]) + '</b> reseñó <b>' + escapar(j.nombreCorto) + '</b> <span class="nota nota--texto">' + r.calificacion + '/10</span><br><span class="tarjeta__texto">' + formatearFecha(r.fecha) + '</span></span></a>';
+      '<span><b>' + escapar(p.nombre.split(' ')[0]) + '</b> reseñó <b>' + escapar(j.nombre_corto) + '</b> <span class="nota nota--texto">' + r.calificacion + '/10</span><br><span class="tarjeta__texto">' + formatearFecha(r.fecha) + '</span></span></a>';
   });
   document.getElementById('actividad-amigos').innerHTML = jugandoAhora.concat(resenasAmigos).join('') || '<p class="tarjeta__texto">Sin actividad reciente.</p>';
 
@@ -3862,14 +3920,14 @@ function pantallaUsuario() {
   });
 
   // Actividad, sobre y amigos en común
-  var jugando = persona.estado === 'jugando' ? buscarPorId('juegos', persona.jugandoAhora) : null;
+  var jugando = persona.estado === 'jugando' ? buscarPorId('juegos', persona.jugando_ahora) : null;
   document.getElementById('actividad-usuario').innerHTML = jugando
     ? '<a class="fila fila--jugando" href="detalle-juego.html?id=' + encodeURIComponent(jugando.id) + '"><span class="portada portada--sm"' + atributoColor(jugando.color) + '>' + imagenPortada(jugando) + '</span>' +
-      '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(jugando.nombreCorto) + '</b></span></a>'
+      '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(jugando.nombre_corto) + '</b></span></a>'
     : '<p class="tarjeta__texto">' + htmlEstado(persona) + '</p>';
-  document.getElementById('sobre-usuario').textContent = persona.sobreMi || '';
-  document.getElementById('desde-usuario').textContent = 'Miembro desde ' + formatearFechaLarga(persona.miembroDesde);
-  var comunes = obtenerDatos('usuarios').filter(function (u) { return u.usuario !== persona.usuario && sonAmigos(u.usuario); }).slice(0, persona.amigosEnComun || 3);
+  document.getElementById('sobre-usuario').textContent = persona.sobre_mi || '';
+  document.getElementById('desde-usuario').textContent = 'Miembro desde ' + formatearFechaLarga(persona.miembro_desde);
+  var comunes = obtenerDatos('usuarios').filter(function (u) { return u.usuario !== persona.usuario && sonAmigos(u.usuario); }).slice(0, persona.amigos_en_comun || 3);
   document.getElementById('cantidad-comunes').textContent = comunes.length;
   document.getElementById('amigos-comunes').innerHTML = comunes.map(function (u) {
     return '<a href="perfil-usuario.html?id=' + encodeURIComponent(u.usuario) + '" title="' + escapar(u.nombre) + '"><span class="solo-lectores">' + escapar(u.nombre) + '</span>' + htmlAvatar(u) + '</a>';
@@ -3885,30 +3943,30 @@ function pantallaUsuario() {
   // Favoritos
   document.getElementById('favoritos-usuario').innerHTML = persona.favoritos.map(function (id) {
     var j = buscarPorId('juegos', id);
-    return j ? '<a class="portada portada--enlace" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombreCorto) + '</b></a>' : '';
+    return j ? '<a class="portada portada--enlace" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b></a>' : '';
   }).join('');
 
   // Juegos en común: su nota frente a la tuya
   var misNotas = {};
-  leerDiario().forEach(function (d) { if (d.calificacion && !(d.juego in misNotas)) misNotas[d.juego] = d.calificacion; });
+  leerDiario().forEach(function (d) { var slug = slugDeJuego(d.juego_igdb); if (d.calificacion && !(slug in misNotas)) misNotas[slug] = d.calificacion; });
   document.getElementById('en-comun-usuario').innerHTML = enComun.length ? enComun.map(function (id) {
     var j = buscarPorId('juegos', id);
     var suya = persona.notas[id];
     var tuya = misNotas[id];
     return '<a class="fila fila--comparacion" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"><span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
-      '<b class="comparar__nombre">' + escapar(j.nombreCorto) + '</b>' +
+      '<b class="comparar__nombre">' + escapar(j.nombre_corto) + '</b>' +
       '<span class="comparar"><span class="tarjeta__texto">' + escapar(persona.nombre.split(' ')[0]) + '</span><span class="medidor"><span class="medidor__barra" data-ancho="' + suya * 10 + '"></span></span><b>' + suya + '</b></span>' +
       '<span class="comparar"><span class="tarjeta__texto">Tú</span><span class="medidor medidor--exito"><span class="medidor__barra" data-ancho="' + tuya * 10 + '"></span></span><b>' + tuya + '</b></span></a>';
   }).join('') : '<div class="vacio">Todavía no tienen juegos en común en el diario.</div>';
 
   // Reseñas recientes
   document.getElementById('resenas-usuario').innerHTML = resenas.map(function (r) {
-    var j = buscarPorId('juegos', r.juego);
+    var j = buscarPorId('juegos', r.juego_igdb);
     return '<a class="tarjeta tarjeta--enlace tarjeta--resena" href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '"' + atributoColor(j.color) + '>' +
-      '<span class="en-fila"><span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span><span><b>' + escapar(j.nombreCorto) + '</b><br><span class="tarjeta__texto">' + formatearFecha(r.fecha) + '</span></span>' +
+      '<span class="en-fila"><span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span><span><b>' + escapar(j.nombre_corto) + '</b><br><span class="tarjeta__texto">' + formatearFecha(r.fecha) + '</span></span>' +
         '<span class="nota al-final">' + r.calificacion + '<small>/10</small></span></span>' +
       '<p class="tarjeta__texto texto-corto">' + escapar(r.spoiler ? 'Contiene spoilers. Ábrela para leerla.' : r.texto) + '</p>' +
-      '<span class="tarjeta__texto">♥ ' + formatearNumero(r.meGusta) + ' · Útil ' + formatearNumero(r.votosUtil) + '</span></a>';
+      '<span class="tarjeta__texto">♥ ' + formatearNumero(r.me_gusta) + ' · Útil ' + formatearNumero(r.votos_util) + '</span></a>';
   }).join('') || '<div class="vacio">Aún no publica reseñas.</div>';
 
   aplicarColores(document);
@@ -3974,7 +4032,7 @@ function pantallaError() {
   var variante = variantes.find(function (v) { return v.id === tipo; }) || variantes.find(function (v) { return v.id === 'no-encontrado'; });
   var servicio = (parametros.get('servicio') || '').slice(0, 60);
   function conServicio(texto) {
-    return texto.replace(/\{servicio\}/g, servicio || variante.servicioPorDefecto || (texto.indexOf('{servicio}') === 0 ? 'Un servicio externo' : 'el servicio'));
+    return texto.replace(/\{servicio\}/g, servicio || variante.servicio_por_defecto || (texto.indexOf('{servicio}') === 0 ? 'Un servicio externo' : 'el servicio'));
   }
 
   var titulo = conServicio(variante.titulo);

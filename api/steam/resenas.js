@@ -102,7 +102,7 @@ module.exports = async function handler(req, res) {
       texto: texto.length > 1200 ? texto.slice(0, 1200) + "…" : texto,
       horas: numero((c.match(/class="hours">\s*([\d.,]+)/) || [])[1]),
       fecha: fecha[1] ? `${fecha[3] || new Date().getFullYear()}-${String(MESES[fecha[2].toLowerCase()] || 1).padStart(2, "0")}-${fecha[1].padStart(2, "0")}` : null,
-      votosUtil: Number(((c.match(/found_helpful">[^0-9<]*([\d.,]+)/) || [])[1] || "0").replace(/[.,]/g, "")),
+      votos_util: Number(((c.match(/found_helpful">[^0-9<]*([\d.,]+)/) || [])[1] || "0").replace(/[.,]/g, "")),
       enlace: (c.match(/data-modal-content-url="([^"]+)"/) || [])[1] || `https://steamcommunity.com/app/${appid}/reviews/`,
     };
   }).filter((r) => r.texto);
