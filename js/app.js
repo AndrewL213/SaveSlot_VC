@@ -243,6 +243,20 @@ function htmlAvatarPropio(iniciales, perfil) {
   return foto ? '<img src="' + escapar(foto) + '" alt="">' : escapar(iniciales);
 }
 
+// Lo de adentro del .avatar de cualquier persona: su foto (usuarios.foto) o sus iniciales.
+// La cuenta abierta usa la foto de este navegador (la más nueva).
+function contenidoAvatar(persona) {
+  var sesion = obtenerSesion();
+  if (sesion && persona && persona.usuario === sesion.user) return htmlAvatarPropio(sesion.initials || persona.iniciales);
+  return persona && persona.foto ? '<img src="' + escapar(persona.foto) + '" alt="">' : escapar((persona && persona.iniciales) || '?');
+}
+
+// La foto que ven los demás: la propia subida o la de Steam (las guardadas solo en el navegador, data:, no sirven)
+function fotoParaLaBase(perfil) {
+  var foto = fotoDePerfil(perfil);
+  return foto && !/^data:/.test(foto) ? foto : null;
+}
+
 // Recorta la imagen al centro en un cuadrado de 256 px (JPEG): pesa poco y se ve nítida en el avatar grande
 function recortarFoto(archivo) {
   return new Promise(function (listo, falla) {
@@ -659,6 +673,14 @@ function traerMiPerfilDeLaBase() {
   perfil.playing = yo.jugando_ahora || perfil.playing || null;
   guardarMemoria('profile', perfil);
   if (sesion) guardarMemoria('session', Object.assign({}, sesion, { user: yo.usuario, name: yo.nombre, initials: yo.iniciales }));
+  // La foto que ven los demás (en reseñas, amigos y perfiles): si cambió (por ejemplo, la de Steam), se sube a la base
+  var foto = fotoParaLaBase(perfil);
+  if ((yo.foto || null) !== foto) {
+    actualizarDatos('usuarios', MI_FILA.id, { foto: foto }).then(function () {
+      var fila = (FILAS.usuarios || []).find(function (u) { return u.id === MI_FILA.id; });
+      if (fila) { fila.foto = foto; DATOS_ARMADOS = {}; }
+    }).catch(function () { /* sin la columna foto todavía (falta ejecutar esquema.sql): se sigue con las iniciales */ });
+  }
 }
 
 // Guarda el perfil público, los favoritos y los géneros en la base (cuenta real).
@@ -667,7 +689,7 @@ function traerMiPerfilDeLaBase() {
 async function guardarMiPerfilEnLaBase(datos) {
   await actualizarDatos('usuarios', MI_FILA.id, {
     usuario: datos.usuario, nombre: datos.nombre, iniciales: inicialesDe(datos.nombre),
-    sobre_mi: datos.sobreMi || null, jugando_ahora: datos.jugando || null
+    sobre_mi: datos.sobreMi || null, jugando_ahora: datos.jugando || null, foto: fotoParaLaBase(datos.perfil)
   });
   var favoritosAntes = filasDe('usuarios_favoritos', 'usuario_id', MI_FILA.id);
   for (var i = 0; i < favoritosAntes.length; i++) await eliminarDatos('usuarios_favoritos', favoritosAntes[i].id);
@@ -774,7 +796,7 @@ var TRADUCIR = {
         if (d.calificacion && !(slug in notas)) notas[slug] = d.calificacion;
       });
       return {
-        id: u.usuario, id_base: u.id, usuario: u.usuario, nombre: u.nombre, iniciales: u.iniciales,
+        id: u.usuario, id_base: u.id, usuario: u.usuario, nombre: u.nombre, iniciales: u.iniciales, foto: u.foto || null,
         sobre_mi: u.sobre_mi, jugando_ahora: u.jugando_ahora, miembro_desde: u.miembro_desde,
         nivel: u.nivel, xp: u.xp, color: u.color, invitado: u.invitado,
         favoritos: filasDe('usuarios_favoritos', 'usuario_id', u.id).sort(porOrden).map(function (x) { return x.juego; }),
@@ -1677,7 +1699,7 @@ function htmlResena(resena, opciones) {
   var votos = cuantasMarcas('votos_util', resena);
   return '<article class="tarjeta tarjeta--resena"' + atributoColor(juego && juego.color) + '>' +
     '<div class="en-fila">' +
-      '<span class="avatar' + (autor.estado ? ' avatar--' + autor.estado : '') + '" aria-hidden="true">' + escapar(autor.iniciales) + (autor.estado ? '<span class="avatar__punto"></span>' : '') + '</span>' +
+      '<span class="avatar' + (autor.estado ? ' avatar--' + autor.estado : '') + '" aria-hidden="true">' + contenidoAvatar(autor) + (autor.estado ? '<span class="avatar__punto"></span>' : '') + '</span>' +
       '<div>' +
         '<a href="' + rutaPagina('perfil-usuario.html') + '?id=' + encodeURIComponent(autor.usuario) + '"><b>' + escapar(autor.usuario) + '</b></a> ' + etiquetaOrigen('SaveSlot') + ' ' +
         (sonAmigos(autor.usuario) ? '<span class="etiqueta etiqueta--amigo">Amigo</span>' : '') +
@@ -3042,7 +3064,7 @@ var ICONO_CORAZON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="t
 // Avatar de una persona con el anillo de su estado (si se conoce)
 function htmlAvatar(persona, tamano) {
   var estado = persona.estado ? ' avatar--' + persona.estado : '';
-  return '<span class="avatar' + (tamano ? ' avatar--' + tamano : '') + estado + '" aria-hidden="true">' + escapar(persona.iniciales || '?') +
+  return '<span class="avatar' + (tamano ? ' avatar--' + tamano : '') + estado + '" aria-hidden="true">' + contenidoAvatar(persona) +
     (persona.estado ? '<span class="avatar__punto"></span>' : '') + '</span>';
 }
 
@@ -4495,7 +4517,8 @@ function pantallaEditar() {
       try {
         await guardarMiPerfilEnLaBase({
           usuario: nuevoUsuario, nombre: campoNombre.value.trim(), sobreMi: document.getElementById('sobre-mi').value.trim().slice(0, 190),
-          jugando: document.getElementById('jugando-ahora').value || null, favoritos: perfil.favorites, generos: perfil.genres
+          jugando: document.getElementById('jugando-ahora').value || null, favoritos: perfil.favorites, generos: perfil.genres,
+          perfil: perfil
         });
       } catch (error) {
         botonGuardar.disabled = false;
@@ -5226,7 +5249,7 @@ async function pantallaUsuario() {
   // Cabecera
   colorearBanda(document.getElementById('banda-usuario'), persona.favoritos);
   var avatar = document.getElementById('avatar-usuario');
-  avatar.textContent = persona.iniciales;
+  avatar.innerHTML = contenidoAvatar(persona);
   if (persona.estado) {
     avatar.classList.add('avatar--' + persona.estado);
     avatar.insertAdjacentHTML('beforeend', '<span class="avatar__punto"></span>');
