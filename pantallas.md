@@ -6,7 +6,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 - **Separada**: tiene su propia página (o vive dentro de la página indicada, si es una ventana).
 - **Con kit**: usa solo css/tokens.css y css/components.css, sin el andamio del prototipo (css/prototipo.css y js/prototipo.js, ya borrados).
-- **Datos**: de dónde salen los datos de la pantalla: Supabase (usuarios, reseñas, votos, me gusta, comentarios, diario, amistades, eventos, tendencias, destacados, misiones y mensajes de contacto; «en línea» con Supabase Realtime), IGDB (catálogo de juegos), Steam (la cuenta de Steam de la persona) o js/data.js (listas fijas, como géneros o preguntas frecuentes, y lo simulado, como logros de otras plataformas o respuestas de MatchPlay). Chats, notificaciones, inscripciones, cuentas vinculadas y vistos recientemente siguen en el navegador: falta pasarlos a Supabase (ver «Lo que falta»). En el HTML solo quedan las opciones de orden y filtros de la interfaz.
+- **Datos**: de dónde salen los datos de la pantalla: Supabase (usuarios, reseñas, votos, me gusta, comentarios, diario, amistades, eventos, tendencias, destacados, misiones y mensajes de contacto; «en línea» con Supabase Realtime), IGDB (catálogo de juegos), Steam (la cuenta de Steam de la persona) o js/data.js (listas fijas, como géneros o preguntas frecuentes, y lo simulado, como logros de otras plataformas o respuestas de MatchPlay). Chats, notificaciones, cuentas vinculadas y vistos recientemente siguen en el navegador: falta pasarlos a Supabase (ver «Lo que falta»). En el HTML solo quedan las opciones de orden y filtros de la interfaz.
 - **Revisada vs spec**: cumple todos sus criterios de «Está lista cuando» en spec.md.
 
 ## Descubrir
@@ -35,9 +35,9 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
 | 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 13. Eventos | `pages/eventos.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ✅ | ✅ (navegador; falta pasar a la tabla **inscripciones**) | ⬜ |
+| 13. Eventos | `pages/eventos.html` | ✅ | ✅ | ✅ (Supabase; los cerrados con «CERRADO») | ⬜ |
+| 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase: inscribirse en la base; cerrados bloqueados) | ⬜ |
+| 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase; XP de la base) | ⬜ |
 
 ## Cuenta, perfil y amigos
 
@@ -45,7 +45,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 |---|---|---|---|---|---|
 | 16. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ⬜ |
 | 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ⬜ |
-| 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam; misiones con api/steam/misiones.js; quitar de la lista de deseos en la base) | ⬜ |
+| 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam; misiones con api/steam/misiones.js; quitar de la lista de deseos y cancelar inscripciones en la base) | ⬜ |
 | 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ (misiones de Supabase) | ⬜ |
 | 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase: guarda perfil público, favoritos y géneros) | ⬜ |
 | 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
@@ -69,7 +69,6 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 Pasar a Supabase (las tablas ya existen en `esquema.sql`; hoy se guarda en el navegador):
 - **Cuentas vinculadas** (Editar perfil, tabla **cuentas_vinculadas**): al pasarla, la base dará los +100 XP de la misión «vincular».
-- **Inscripciones a eventos y sorteos** (Detalle de evento y Perfil): la base ya cuenta los cupos, revisa el XP mínimo y suma el XP.
 - **Chats de MatchPlay** (tablas **chats_matchplay** y **mensajes_matchplay**).
 - **Notificaciones** (la campana): la base ya crea los avisos de «útil», pero la campana muestra los de ejemplo.
 - **Vistos recientemente** (Inicio, tabla **vistos_recientes**).
@@ -79,11 +78,14 @@ Arreglos:
 - Las descripciones de IGDB se traducen cada vez con el enlace gratis de Google; falta guardarlas en la tabla **traducciones** y pasar a DeepL.
 - Opcional: desactivar los inicios de sesión anónimos en Supabase (el invitado ya no los usa).
 
+Al final: una **web administrativa** para registrar torneos y sorteos fácilmente y ponerles precio real y XP (hoy los eventos se cargan con SQL). No está en spec.md: antes hay que agregarla allí, con quién puede entrar (un rol de administrador en Supabase) y qué puede cambiar.
+
 Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Inscripciones a eventos (noviembre)**: con una cuenta real, inscribirse (Detalle de evento) y cancelar (Perfil, Mis eventos) guardan en Supabase (tabla **inscripciones**). Cancelar ahora pide confirmación en vez de «Deshacer», porque en un sorteo volver a inscribirse cobraría el XP otra vez. Los eventos que ya cerraron inscripciones dicen «CERRADO» y no dejan inscribirse (lo revisa también la base: sección 5 de `esquema.sql`); la ventana «Evento del mes» no se abre si el evento cerró. El XP de cada sorteo sale del evento (no fijo en 300). Si te vuelves a inscribir a un torneo, la ventana ya no dice «ganaste 100 XP» (la base solo los da una vez). Hoy casi todos los eventos de ejemplo están cerrados (sus fechas eran de octubre).
 - **Lista de deseos (noviembre)**: con una cuenta real, «+ Lista de deseos» (Detalle de juego) y «Quitar» (Perfil) guardan en Supabase (tabla **lista_deseos**), con «Deshacer». Lo que una cuenta tenía solo en el navegador se sube a la base una vez. El invitado sigue en el navegador.
 - **Amigos (noviembre)**: con una cuenta real, enviar, aceptar, rechazar, cancelar y eliminar amistades se guardan en Supabase (en Amigos, Perfil de otro usuario y «+ Agregar amigo» de Detalle de reseña); la otra persona ve tu solicitud. Eliminar ahora pide confirmación en vez de «Deshacer».
 - **En línea (noviembre)**: funciona con la presencia de Supabase Realtime (canal `en-linea`): al abrir cualquier página, una cuenta real avisa que está conectada y qué juega (lo de «¿Qué estás jugando?» o, en automático, su juego de Steam). Amigos (resumen, pestaña «En línea», orden y tarjetas) y Perfil de otro usuario (anillo del avatar y actividad) cambian en vivo, sin recargar. Desconectado muestra «hace X» con la columna nueva `usuarios.ultima_conexion` (sección 7 de esquema.sql). Las demás pantallas muestran el estado del momento en que se abrieron. Límite: el canal es público, así que alguien con conocimientos podría aparecer «en línea» con un @ que no es suyo (solo afecta ese punto verde, no los datos).

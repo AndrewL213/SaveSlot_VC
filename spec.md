@@ -309,14 +309,14 @@ Campos:
 - titulo: texto — obligatorio
 - descripcion: texto largo — obligatorio
 - fecha_hora: fecha y hora — cuándo es (la app arma el texto "Sáb 17 oct · 3:00 p. m.") — obligatorio
-- cierre_inscripciones: fecha y hora — hasta cuándo se puede inscribir (también avisa en Notificaciones) — opcional
+- cierre_inscripciones: fecha y hora — hasta cuándo se puede inscribir (también avisa en Notificaciones). Después, la base no deja inscribirse; si está vacío, cuenta la fecha del evento — opcional
 - organizador: texto — quién lo organiza — obligatorio
 - tipo_organizador: opción de **organizadores** — obligatorio
 - cupos_ocupados: número — suma uno con cada inscripción (la base) — opcional
 - cupos_maximos: número — opcional
 - costo: texto — obligatorio
 - gratis: sí/no — obligatorio
-- xp_para_entrar: número — solo sorteos: XP para entrar gratis (300); al inscribirse, la base lo descuenta — opcional
+- xp_para_entrar: número — solo sorteos: XP para entrar gratis (hoy 300); la app muestra el de cada sorteo y, al inscribirse, la base lo descuenta (al cancelar no se devuelve) — opcional
 - premio: texto — obligatorio
 - ganador: texto — solo sorteos: la cuenta ganadora, elegida al azar al cierre — opcional
 - dias_para_reclamar: número — solo sorteos: días que tiene el ganador para reclamar el premio (7) — opcional
@@ -469,7 +469,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 | `comments.<reseña>` | **comentarios** | Sí |
 | `diary` | **diario** | Sí |
 | `friends` | **amigos** | Sí |
-| `joined`, `inscripciones` | **inscripciones** | No |
+| `joined`, `inscripciones` | **inscripciones** | Sí (las que una cuenta real tenía solo en el navegador no se suben: cobrarían cupos y XP otra vez) |
 | `chatsMatchplay` | **chats_matchplay** y **mensajes_matchplay** | No |
 | `recentGames` | **vistos_recientes** (sin sesión sigue en el navegador) | No |
 | `outbox` | **mensajes_contacto** | Sí |
@@ -696,7 +696,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   2. Filtros: Todos, Torneos, Sorteos, Gratis y quién organiza
   3. Tarjetas de eventos
   4. Reglas generales y "Propón un evento"
-- **Qué funciona de verdad:** Lista de eventos: Real (Supabase)
+- **Qué funciona de verdad:** Lista de eventos: Real (Supabase). Los que ya cerraron inscripciones llevan la etiqueta "CERRADO" y van al final; el destacado es el del mes si sigue abierto
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
@@ -713,13 +713,14 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   4. Reglas
 - **Qué funciona de verdad:**
   - Datos del evento: Real (Supabase)
-  - Inscribirse gratis o con XP: Real (Supabase; la base cuenta los cupos, revisa el XP y lo suma). Hoy: en el navegador
+  - Inscribirse gratis o con XP: Real (Supabase: tabla **inscripciones**. La base revisa el cierre, los cupos y el XP; suma un cupo; en un torneo da +100 XP una sola vez por evento y en un sorteo descuenta su XP). Si la base no deja, la app dice por qué (cerrado, sin cupos, sin XP o ya inscrito). Si ya estás inscrito, el botón queda desactivado. Como invitado, en el navegador
+  - Evento cerrado (pasó el cierre de inscripciones): en vez del formulario, el aviso "Las inscripciones de este evento ya cerraron" y "Ver eventos"
   - Pagar inscripción: Después (el diseño dice que los pagos aún no están disponibles)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, en versión torneo y en versión sorteo.
   - Funciona en celular (375 px de ancho).
   - No deja inscribirse sin aceptar el reglamento (y sin nombre de equipo en torneos).
-  - Si no tiene 300 XP, la opción de XP del sorteo aparece desactivada.
+  - Si no tiene el XP que pide el sorteo, la opción de XP aparece desactivada.
   - Al inscribirse, el evento aparece en "Mis eventos" del Perfil.
 
 ### 15. Ventana: Inscripción confirmada
@@ -728,7 +729,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
-  - El texto cambia según sea torneo o sorteo.
+  - El texto cambia según sea torneo o sorteo (y, en un torneo, si ya habías ganado sus XP antes).
 
 ### 16. Iniciar sesión
 - **Archivo de diseño:** disenos/login.html
@@ -793,7 +794,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Datos del perfil, favoritos, actividad, lista de deseos, amigos y Mis eventos: Real (Supabase)
   - Jugando ahora, recientes, nivel e insignias, biblioteca y lista de deseos de Steam: Real (Steam)
   - Quitar de lista de deseos: Real (Supabase, con "Deshacer"; la lista de Steam solo se ve)
-  - Cancelar inscripción: Real (Supabase). Hoy: en el navegador
+  - Cancelar inscripción: Real (Supabase; pide confirmación porque en un sorteo el XP usado no se devuelve, y libera el cupo). Como invitado, en el navegador con "Deshacer"
   - Conexiones: Steam Real; Xbox Simulado
   - Copiar enlace del perfil: Simulado
 - **Está lista cuando:**

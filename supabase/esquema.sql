@@ -760,7 +760,7 @@ drop trigger if exists al_aceptar_amistad on public.amigos;
 create trigger al_aceptar_amistad after update of estado on public.amigos
   for each row execute function public.al_aceptar_amistad();
 
--- Antes de inscribirse: revisa que queden cupos y, en un sorteo con XP, que alcance el XP (y lo descuenta)
+-- Antes de inscribirse: revisa que no haya cerrado, que queden cupos y, en un sorteo con XP, que alcance el XP (y lo descuenta)
 create or replace function public.antes_de_inscribirse() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare
@@ -768,6 +768,10 @@ declare
   mi_xp integer;
 begin
   select * into e from public.eventos where id = new.evento_id for update;
+  -- Inscripciones cerradas: pasó el cierre (o, si no tiene cierre, la fecha del evento)
+  if coalesce(e.cierre_inscripciones, e.fecha_hora) < now() then
+    raise exception 'Las inscripciones de este evento ya cerraron';
+  end if;
   if e.cupos_maximos is not null and e.cupos_ocupados >= e.cupos_maximos then
     raise exception 'No quedan cupos en este evento';
   end if;

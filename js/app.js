@@ -963,6 +963,8 @@ var TRADUCIR = {
         fecha_hora: textoFechaEvento(e.fecha_hora), cierre_inscripciones: e.cierre_inscripciones,
         organizador: e.organizador, tipo_organizador: e.tipo_organizador, cupos_ocupados: e.cupos_ocupados, cupos_maximos: e.cupos_maximos,
         costo: e.costo, gratis: e.gratis, xp_para_entrar: e.xp_para_entrar, premio: e.premio,
+        // Cerrado: pasó el cierre de inscripciones (o, si no tiene, la fecha del evento). La base tampoco deja inscribirse.
+        cerrado: new Date(e.cierre_inscripciones || e.fecha_hora).getTime() < Date.now(),
         dias_para_reclamar: e.dias_para_reclamar, color: e.color, destacado: e.destacado,
         cronograma: filasDe('eventos_cronograma', 'evento_id', e.id).sort(porOrden).map(function (x) { return { paso: x.paso, cuando: x.cuando }; }),
         reglas: filasDe('eventos_reglas', 'evento_id', e.id).sort(porOrden).map(function (x) { return x.texto; })
@@ -1931,7 +1933,7 @@ function textoCupos(evento) {
 // Tarjeta grande del evento del mes
 function htmlEventoDestacado(evento) {
   return '<a class="tarjeta tarjeta--enlace tarjeta--destacada" href="' + enlaceEvento(evento) + '"' + atributoColor(evento.color) + '>' +
-    '<span class="en-fila">' + etiquetaTipoEvento(evento) + '<span class="etiqueta etiqueta--contorno">EVENTO DEL MES</span></span>' +
+    '<span class="en-fila">' + etiquetaTipoEvento(evento) + '<span class="etiqueta etiqueta--contorno">EVENTO DEL MES</span>' + etiquetaCerrado(evento) + '</span>' +
     '<h3 class="titulo-pagina">' + escapar(evento.titulo) + '</h3>' +
     '<p class="tarjeta__texto">' + escapar(evento.fecha_hora) + ' · Organiza: ' + escapar(evento.organizador) + '</p>' +
     '<span class="en-fila"><span class="boton">Ver evento</span><span class="tarjeta__texto">' + escapar(evento.cupos_ocupados) + ' de ' + escapar(evento.cupos_maximos) + ' cupos ocupados</span></span>' +
@@ -1942,7 +1944,7 @@ function htmlEventoDestacado(evento) {
 function htmlEvento(evento) {
   var juego = evento.juego_igdb ? buscarPorId('juegos', evento.juego_igdb) : null;
   return '<a class="tarjeta tarjeta--enlace" href="' + enlaceEvento(evento) + '">' +
-    '<div class="tarjeta__banda"' + atributoColor(evento.color) + '>' + etiquetaTipoEvento(evento) + '</div>' +
+    '<div class="tarjeta__banda"' + atributoColor(evento.color) + '>' + etiquetaTipoEvento(evento) + etiquetaCerrado(evento) + '</div>' +
     '<div class="tarjeta__cuerpo">' +
       '<span class="tarjeta__texto">' + escapar(juego ? juego.nombre_corto : 'Cualquier tienda') + '</span>' +
       '<h3 class="tarjeta__titulo">' + escapar(evento.titulo) + '</h3>' +
@@ -1950,6 +1952,11 @@ function htmlEvento(evento) {
       '<p class="tarjeta__pie"><span>' + escapar(textoCupos(evento)) + '</span><b>' + escapar(evento.costo) + '</b></p>' +
     '</div>' +
   '</a>';
+}
+
+// "CERRADO" en los eventos que ya no reciben inscripciones
+function etiquetaCerrado(evento) {
+  return evento.cerrado ? ' <span class="etiqueta etiqueta--contorno">CERRADO</span>' : '';
 }
 
 function etiquetaTipoEvento(evento) {
@@ -2014,14 +2021,14 @@ function pantallaIndex() {
 
   // Eventos: el evento del mes y un sorteo
   var eventos = datosDe('eventos');
-  var delMes = eventos.find(function (e) { return e.destacado; });
-  var sorteo = eventos.find(function (e) { return e.tipo === 'sorteo'; });
+  var delMes = eventos.find(function (e) { return e.destacado && !e.cerrado; }) || eventos.find(function (e) { return e.destacado; });
+  var sorteo = eventos.find(function (e) { return e.tipo === 'sorteo' && !e.cerrado; }) || eventos.find(function (e) { return e.tipo === 'sorteo'; });
   var htmlEventos = (delMes ? htmlEventoDestacado(delMes) : '') + (sorteo ? htmlEvento(sorteo) : '');
   document.getElementById('eventos-inicio').innerHTML = htmlEventos;
   aplicarColores(document);
 
   // Ventana "Evento del mes": una sola vez por visita
-  if (delMes && !leerVisita('eventoDelMesVisto')) {
+  if (delMes && !delMes.cerrado && !leerVisita('eventoDelMesVisto')) {
     guardarVisita('eventoDelMesVisto', '1');
     setTimeout(function () {
       abrirModal({
@@ -3528,7 +3535,7 @@ function pantallaEventos() {
     return '<li>' + escapar(r.texto) + (r.enlace ? '<a href="' + escapar(rutaRecurso(r.enlace)) + '"><b>' + escapar(r.texto_enlace) + '</b></a>.' : '') + '</li>';
   }).join('');
 
-  var delMes = eventos.find(function (e) { return e.destacado; });
+  var delMes = eventos.find(function (e) { return e.destacado && !e.cerrado; }) || eventos.find(function (e) { return e.destacado; });
   document.getElementById('evento-destacado').innerHTML = delMes ? htmlEventoDestacado(delMes) : '';
 
   function mostrar() {
@@ -3538,7 +3545,7 @@ function pantallaEventos() {
     var elegidos = eventos.filter(function (e) {
       var porTipo = filtro === 'todos' || e.tipo === filtro || (filtro === 'gratis' && e.gratis);
       return porTipo && (!organiza || e.tipo_organizador === organiza);
-    });
+    }).sort(function (a, b) { return Number(a.cerrado) - Number(b.cerrado); }); // los abiertos primero
     lista.innerHTML = elegidos.length
       ? elegidos.map(htmlEvento).join('')
       : '<div class="vacio"><b>No hay eventos con estos filtros.</b><button class="boton boton--secundario boton--sm" type="button" id="ver-todos">Ver todos</button></div>';
@@ -3571,8 +3578,56 @@ function pantallaEventos() {
 var XP_SORTEO = 300;
 var XP_POR_TORNEO = 100;
 
-function estaInscrito(idEvento) {
-  return leerMemoria('joined', []).indexOf(idEvento) !== -1;
+// Cuenta real: mis inscripciones de la base (cada persona solo ve las suyas). Sin cuenta real, nada.
+async function cargarMisInscripciones() {
+  if (!MI_FILA) return [];
+  try {
+    FILAS.inscripciones = await obtenerDatos('inscripciones');
+  } catch (error) {
+    FILAS.inscripciones = [];
+  }
+  return FILAS.inscripciones;
+}
+
+// La fila de mi inscripción a un evento (cuenta real) o null
+function miInscripcion(evento) {
+  return (FILAS.inscripciones || []).find(function (i) { return i.evento_id === evento.id_base; }) || null;
+}
+
+function estaInscrito(evento) {
+  if (MI_FILA) return !!miInscripcion(evento);
+  return leerMemoria('joined', []).indexOf(evento.id) !== -1;
+}
+
+// Los slugs de mis eventos (Perfil: Mis eventos)
+function misEventos() {
+  if (!MI_FILA) return leerMemoria('joined', []);
+  return (FILAS.inscripciones || []).map(function (i) {
+    var evento = datosDe('eventos').find(function (e) { return e.id_base === i.evento_id; });
+    return evento ? evento.id : null;
+  }).filter(Boolean);
+}
+
+// XP que pide un sorteo para entrar gratis (lo dice el evento; si no, 300)
+function xpDeSorteo(evento) {
+  return typeof evento.xp_para_entrar === 'number' ? evento.xp_para_entrar : XP_SORTEO;
+}
+
+// ¿La base ya me dio los XP de este torneo? (si me inscribí antes y cancelé, no los vuelve a dar)
+async function yaGaneXpDelTorneo(evento) {
+  if (!MI_FILA || !clienteSupabase) return false;
+  var respuesta = await clienteSupabase.from('misiones_cumplidas').select('id').eq('referencia', 'evento:' + evento.id_base).limit(1);
+  return !respuesta.error && respuesta.data.length > 0;
+}
+
+// Lo que dice la base cuando no deja inscribirse, en palabras de la app
+function textoErrorInscripcion(error) {
+  var texto = (error && error.message) || '';
+  if (error && error.code === '23505') return 'Ya estás inscrito en este evento.';
+  if (/cerraron/.test(texto)) return 'Las inscripciones de este evento ya cerraron.';
+  if (/cupos/.test(texto)) return 'Ya no quedan cupos en este evento.';
+  if (/XP suficiente/.test(texto)) return 'No tienes XP suficiente para este sorteo.';
+  return 'No pudimos guardar. Intenta de nuevo.';
 }
 
 function guardarInscripcion(inscripcion) {
@@ -3593,7 +3648,10 @@ async function pantallaEvento() {
   if (!evento) { location.replace(rutaPagina('404.html') + '?tipo=evento'); return; }
   var esTorneo = evento.tipo === 'torneo';
   var juego = evento.juego_igdb ? buscarPorId('juegos', evento.juego_igdb) : null;
+  await cargarMisInscripciones();
   var xp = leerPerfil().xp;
+  var xpSorteo = xpDeSorteo(evento);
+  var inscrito = estaInscrito(evento);
 
   document.title = evento.titulo + ' · SaveSlot';
 
@@ -3629,13 +3687,13 @@ async function pantallaEvento() {
   // Formulario de inscripción
   var formulario = document.getElementById('formulario-inscripcion');
   var soloPago = !evento.gratis;
-  var faltaXp = !esTorneo && xp < XP_SORTEO;
+  var faltaXp = !esTorneo && xp < xpSorteo;
   var opcionGratis = evento.gratis
     ? '<label class="opcion' + (faltaXp ? ' opcion--desactivada' : '') + '"><input type="radio" name="forma" value="xp"' + (faltaXp ? ' disabled' : ' checked') + '>' +
-        '<span class="opcion__texto"><b>Gratis' + (esTorneo ? '' : ' con ' + XP_SORTEO + ' XP') + '</b><br><span class="tarjeta__texto">' +
-        (esTorneo ? 'Sin costo de inscripción.' : (faltaXp
-          ? 'Tienes ' + formatearNumero(xp) + ' XP: te faltan ' + formatearNumero(XP_SORTEO - xp) + '. Gánalos reseñando juegos.'
-          : 'Tienes ' + formatearNumero(xp) + ' XP. Te quedarán ' + formatearNumero(xp - XP_SORTEO) + '.')) +
+        '<span class="opcion__texto"><b>Gratis' + (esTorneo || !xpSorteo ? '' : ' con ' + formatearNumero(xpSorteo) + ' XP') + '</b><br><span class="tarjeta__texto">' +
+        (esTorneo || !xpSorteo ? 'Sin costo de inscripción.' : (faltaXp
+          ? 'Tienes ' + formatearNumero(xp) + ' XP: te faltan ' + formatearNumero(xpSorteo - xp) + '. Gánalos reseñando juegos.'
+          : 'Tienes ' + formatearNumero(xp) + ' XP. Te quedarán ' + formatearNumero(xp - xpSorteo) + '.')) +
         '</span></span></label>'
     : '';
   // Pagos: llegan después. Se muestran desactivados, como en el diseño.
@@ -3644,9 +3702,19 @@ async function pantallaEvento() {
       '<span class="opcion__texto"><b>' + (esTorneo ? 'Pagar inscripción' : 'Participación de pago') + '</b><br>' +
       '<span class="tarjeta__texto">No disponible todavía: los pagos aún no están conectados. No se te cobrará nada.</span></span><b>' + escapar(evento.costo) + '</b></label>';
 
+  // Evento cerrado: en vez del formulario, el aviso (la base tampoco deja inscribirse)
+  if (evento.cerrado) {
+    formulario.innerHTML =
+      '<h2 class="encabezado-seccion__titulo" id="titulo-inscripcion">' + (esTorneo ? 'Inscribe a tu equipo' : 'Participa') + '</h2>' +
+      (inscrito ? '<div class="tarjeta tarjeta--exito"><b>Estás inscrito en este evento.</b><a href="perfil.html#mis-eventos">Ver en mi perfil</a></div>' : '') +
+      '<div class="tarjeta tarjeta--aviso"><b>Las inscripciones de este evento ya cerraron.</b><span class="tarjeta__texto">Mira los eventos que siguen abiertos.</span><a href="eventos.html"><b>Ver eventos</b></a></div>';
+    aplicarColores(document);
+    return;
+  }
+
   formulario.innerHTML =
     '<h2 class="encabezado-seccion__titulo" id="titulo-inscripcion">' + (esTorneo ? 'Inscribe a tu equipo' : 'Participa') + '</h2>' +
-    (estaInscrito(evento.id) ? '<div class="tarjeta tarjeta--exito"><b>Ya estás inscrito en este evento.</b><a href="perfil.html#mis-eventos">Ver en mi perfil</a></div>' : '') +
+    (inscrito ? '<div class="tarjeta tarjeta--exito"><b>Ya estás inscrito en este evento.</b><a href="perfil.html#mis-eventos">Ver en mi perfil</a></div>' : '') +
     (esTorneo
       ? '<div class="grupo-campo"><label class="grupo-campo__etiqueta" for="equipo">Nombre del equipo</label>' +
           '<input class="campo" id="equipo" maxlength="40" placeholder="Ej. Los Salvados" aria-describedby="error-equipo">' +
@@ -3660,9 +3728,9 @@ async function pantallaEvento() {
     '</fieldset>' +
     '<label class="casilla"><input type="checkbox" id="reglamento" aria-describedby="error-reglamento"><span>Acepto el reglamento y la política de reembolsos.</span></label>' +
     '<span class="grupo-campo__error" id="error-reglamento" hidden>Debes aceptar el reglamento para continuar.</span>' +
-    '<button class="boton boton--bloque" type="submit" id="inscribirme"' + (soloPago ? ' disabled' : '') + '>' + (esTorneo ? 'Inscribirme' : 'Participar') + '</button>';
+    '<button class="boton boton--bloque" type="submit" id="inscribirme"' + (soloPago || inscrito ? ' disabled' : '') + '>' + (inscrito ? 'Ya estás inscrito' : (esTorneo ? 'Inscribirme' : 'Participar')) + '</button>';
 
-  formulario.addEventListener('submit', function (e) {
+  formulario.addEventListener('submit', async function (e) {
     e.preventDefault();
     if (!obtenerSesion()) { pedirCuenta('inscribirte en eventos'); return; }
     var valido = true;
@@ -3684,31 +3752,48 @@ async function pantallaEvento() {
     var boton = document.getElementById('inscribirme');
     boton.disabled = true;
     boton.textContent = 'Inscribiendo…';
-    setTimeout(function () {
+    var datos = {
+      equipo: equipo ? equipo.value.trim() : null,
+      companero: esTorneo ? document.getElementById('companero').value.trim() || null : null
+    };
+    var ganaXp = esTorneo;
+    if (MI_FILA) {
+      // Cuenta real: en la base. Ella revisa el cierre, los cupos y el XP, y suma o descuenta el XP.
+      try {
+        if (esTorneo) ganaXp = !(await yaGaneXpDelTorneo(evento));
+        var nueva = (await guardarDatos('inscripciones', { usuario_id: MI_FILA.id, evento_id: evento.id_base, equipo: datos.equipo, companero: datos.companero, forma: 'xp' }))[0];
+        FILAS.inscripciones = (FILAS.inscripciones || []).concat(nueva);
+      } catch (error) {
+        boton.disabled = false;
+        boton.textContent = esTorneo ? 'Inscribirme' : 'Participar';
+        mostrarAviso(textoErrorInscripcion(error));
+        return;
+      }
+      await traerMiXp().catch(function () { /* el XP se verá al recargar */ });
+    } else {
+      // Invitado: en el navegador
       if (esTorneo) {
         sumarXp(XP_POR_TORNEO);
       } else {
         var perfil = leerPerfil();
-        perfil.xp -= XP_SORTEO;
+        perfil.xp -= xpSorteo;
         guardarMemoria('profile', perfil);
       }
-      guardarInscripcion({
-        usuario: usuarioActual(), evento: evento.id, equipo: equipo ? equipo.value.trim() : null,
-        companero: esTorneo ? document.getElementById('companero').value.trim() || null : null, forma: 'xp', fecha: hoy()
-      });
+      guardarInscripcion({ usuario: usuarioActual(), evento: evento.id, equipo: datos.equipo, companero: datos.companero, forma: 'xp', fecha: hoy() });
+    }
 
-      // 15. Ventana: Inscripción confirmada
-      abrirModal({
-        titulo: esTorneo ? '¡Estás inscrito!' : '¡Ya participas!',
-        texto: esTorneo
-          ? 'Tu equipo tiene cupo y ganaste ' + XP_POR_TORNEO + ' XP. Recibirás el recordatorio del check-in y lo verás en Mis eventos de tu perfil.'
-          : 'Usaste ' + XP_SORTEO + ' XP. Te avisaremos por correo si ganas. Lo verás en Mis eventos de tu perfil.',
-        acciones: [
-          { texto: 'Ver mis eventos', href: 'perfil.html#mis-eventos', principal: true },
-          { texto: 'Listo', alTocar: function () { location.reload(); } }
-        ]
-      });
-    }, 600);
+    // 15. Ventana: Inscripción confirmada
+    abrirModal({
+      titulo: esTorneo ? '¡Estás inscrito!' : '¡Ya participas!',
+      texto: esTorneo
+        ? (ganaXp ? 'Tu equipo tiene cupo y ganaste ' + XP_POR_TORNEO + ' XP.' : 'Tu equipo tiene cupo. Los ' + XP_POR_TORNEO + ' XP de este torneo ya los habías ganado.') +
+          ' Recibirás el recordatorio del check-in y lo verás en Mis eventos de tu perfil.'
+        : (xpSorteo ? 'Usaste ' + formatearNumero(xpSorteo) + ' XP. ' : '') + 'Te avisaremos por correo si ganas. Lo verás en Mis eventos de tu perfil.',
+      acciones: [
+        { texto: 'Ver mis eventos', href: 'perfil.html#mis-eventos', principal: true },
+        { texto: 'Listo', alTocar: function () { location.reload(); } }
+      ]
+    });
   });
 
   aplicarColores(document);
@@ -4151,7 +4236,7 @@ function pantallaPerfil() {
       html: '<ul class="lista-puntos">' +
         datosDe('misiones').filter(function (m) { return m.frecuencia === 'siempre'; }).map(function (m) { return '<li>' + escapar(m.texto) + ': +' + formatearNumero(m.xp) + ' XP</li>'; }).join('') +
         '<li>Misiones diarias y semanales de tus juegos (horas y logros de Steam): están en tu perfil y se reinician a las 00:00.</li>' +
-        '<li>Cada ' + formatearNumero(XP_POR_NIVEL) + ' XP subes de nivel. Puedes usar ' + XP_SORTEO + ' XP para entrar gratis a un sorteo.</li></ul>',
+        '<li>Cada ' + formatearNumero(XP_POR_NIVEL) + ' XP subes de nivel. Puedes usar tu XP para entrar gratis a los sorteos (cada uno dice cuánto pide).</li></ul>',
       acciones: [{ texto: 'Entendido', principal: true }]
     });
   });
@@ -4176,10 +4261,10 @@ function pantallaPerfil() {
       (nombre ? '<span class="etiqueta etiqueta--exito al-final">Verificada</span>' : '<a class="al-final" href="editar-perfil.html#cuentas"><b>Vincular</b></a>') + '</div>';
   }).join('');
 
-  // Mis eventos: cancelar inscripción con deshacer
+  // Mis eventos: cancelar inscripción (cuenta real: en la base, con confirmación; invitado: con deshacer)
   var cajaEventos = document.getElementById('eventos-perfil');
   function dibujarEventos() {
-    var ids = leerMemoria('joined', []);
+    var ids = misEventos();
     cajaEventos.innerHTML = ids.map(function (id) {
       var evento = buscarPorId('eventos', id);
       if (!evento) return '';
@@ -4189,10 +4274,33 @@ function pantallaPerfil() {
     }).join('') || '<p class="tarjeta__texto">No estás inscrito en eventos. <a href="eventos.html"><b>Ver eventos</b></a></p>';
   }
   dibujarEventos();
+  if (MI_FILA) cargarMisInscripciones().then(dibujarEventos);
   cajaEventos.addEventListener('click', function (e) {
     var boton = e.target.closest('[data-cancelar]');
     if (!boton) return;
     var id = boton.dataset.cancelar;
+    if (MI_FILA) {
+      var evento = buscarPorId('eventos', id);
+      var fila = evento ? miInscripcion(evento) : null;
+      if (!fila) return;
+      var esSorteo = evento.tipo === 'sorteo';
+      abrirModal({
+        titulo: '¿Cancelar tu inscripción a ' + evento.titulo + '?',
+        texto: 'Liberarás tu cupo.' + (esSorteo && xpDeSorteo(evento) ? ' Los ' + formatearNumero(xpDeSorteo(evento)) + ' XP que usaste no se devuelven.' : '') +
+          (evento.cerrado ? ' Las inscripciones ya cerraron: no podrás volver a inscribirte.' : ''),
+        acciones: [{ texto: 'Volver' }, { texto: 'Cancelar inscripción', peligro: true, alTocar: async function () {
+          try {
+            await eliminarDatos('inscripciones', fila.id);
+            FILAS.inscripciones = FILAS.inscripciones.filter(function (x) { return x.id !== fila.id; });
+            dibujarEventos();
+            mostrarAviso('Inscripción cancelada');
+          } catch (error) {
+            mostrarAviso('No pudimos cancelar. Intenta de nuevo.');
+          }
+        } }]
+      });
+      return;
+    }
     guardarMemoria('joined', leerMemoria('joined', []).filter(function (x) { return x !== id; }));
     dibujarEventos();
     mostrarAviso('Inscripción cancelada', { texto: 'Deshacer', alTocar: function () {
