@@ -462,7 +462,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 | Clave en el navegador | Tabla de Supabase | ¿Ya está? |
 |---|---|---|
 | `session`, `accounts` | Supabase Auth y **usuarios** | Sí |
-| `profile` | **usuarios** (con su lista de deseos), **cuentas_vinculadas** y **misiones_cumplidas** (`missionsDone`) |
+| `profile` | **usuarios** (con favoritos, géneros y lista de deseos), **cuentas_vinculadas** y **misiones_cumplidas** (`missionsDone`) | Sí, menos **cuentas_vinculadas** (la lista de deseos que solo estaba en el navegador se sube una vez) |
 | `myReviews`, `draft.<juego>` | **resenas** (publicadas y borradores) | Sí (el guardado automático mientras se escribe sigue en el navegador) |
 | `votosUtil` | **votos_util** | Sí |
 | `meGustaResenas` | **me_gusta_resenas** | Sí |
@@ -592,7 +592,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Reseñas de Steam en la pestaña Reseñas: Real (comunidad de Steam). Cada reseña lleva al lado del @ la etiqueta de su origen (SAVESLOT o STEAM) y se pueden filtrar por Todas, SaveSlot o Steam. Las de Steam muestran 👍/👎 (Steam no usa nota) y enlazan a la original. La etiqueta de origen lleva el logo de su plataforma (SaveSlot en azul, Steam con borde). Si el autor de una reseña de Steam también tiene cuenta en SaveSlot (su Steam está vinculado, según la tabla **usuarios_steam**), lleva además **También en SaveSlot · @usuario** (azul, con el logo de SaveSlot); si no, no lleva nada extra.
   - Línea de Steam (precio, nota, jugadores): Real (tabla **juegos**, se actualiza cada día)
   - Editar o eliminar mi reseña: Real (Supabase)
-  - Lista de deseos: Real (Supabase). Hoy: agregar y quitar se guardan en el navegador
+  - Lista de deseos: Real (Supabase: tabla **lista_deseos**; agregar crea la fila y quitar la borra por su id; se puede deshacer). Mientras guarda, el botón se desactiva; si falla, avisa «No pudimos guardar» y queda como estaba. Como invitado, en el navegador
   - Número de logros: Real si el juego está en Steam; la lista de la pestaña Logros sigue Simulada
   - Pestaña Clips: Después (el diseño dice que llega con la API de Twitch)
 - **Está lista cuando:**
@@ -792,7 +792,8 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Misiones diarias y semanales: Real (`api/steam/misiones.js` con Steam; la base suma el XP). Sin Steam vinculada se ven con "Vincula Steam para hacerlas"
   - Datos del perfil, favoritos, actividad, lista de deseos, amigos y Mis eventos: Real (Supabase)
   - Jugando ahora, recientes, nivel e insignias, biblioteca y lista de deseos de Steam: Real (Steam)
-  - Quitar de lista de deseos y cancelar inscripción: Real (Supabase; la lista de Steam solo se ve). Hoy: en el navegador
+  - Quitar de lista de deseos: Real (Supabase, con "Deshacer"; la lista de Steam solo se ve)
+  - Cancelar inscripción: Real (Supabase). Hoy: en el navegador
   - Conexiones: Steam Real; Xbox Simulado
   - Copiar enlace del perfil: Simulado
 - **Está lista cuando:**

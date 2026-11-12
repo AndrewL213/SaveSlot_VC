@@ -671,6 +671,17 @@ function traerMiPerfilDeLaBase() {
   perfil.favorites = yo.favoritos.length ? yo.favoritos : (perfil.favorites || []);
   perfil.genres = yo.generos_favoritos.length ? yo.generos_favoritos : (perfil.genres || []);
   perfil.playing = yo.jugando_ahora || perfil.playing || null;
+  // Lista de deseos: la de la base. Si la base está vacía y este navegador tiene juegos (de antes), se suben una vez.
+  var deseosLocales = (perfil.wishlist || []).slice();
+  if (yo.lista_deseos.length || leerMemoria('deseosSubidos', false)) {
+    perfil.wishlist = yo.lista_deseos.slice();
+  } else if (deseosLocales.length) {
+    guardarMemoria('deseosSubidos', true);
+    guardarDatos('lista_deseos', deseosLocales.map(function (juego) { return { usuario_id: MI_FILA.id, juego: juego }; })).then(function (nuevas) {
+      FILAS.lista_deseos = (FILAS.lista_deseos || []).concat(nuevas || []);
+      DATOS_ARMADOS = {};
+    }).catch(function () { guardarMemoria('deseosSubidos', false); /* se intenta en la próxima página */ });
+  }
   guardarMemoria('profile', perfil);
   if (sesion) guardarMemoria('session', Object.assign({}, sesion, { user: yo.usuario, name: yo.nombre, initials: yo.iniciales }));
   // La foto que ven los demás (en reseñas, amigos y perfiles): si cambió (por ejemplo, la de Steam), se sube a la base
@@ -681,6 +692,31 @@ function traerMiPerfilDeLaBase() {
       if (fila) { fila.foto = foto; DATOS_ARMADOS = {}; }
     }).catch(function () { /* sin la columna foto todavía (falta ejecutar esquema.sql): se sigue con las iniciales */ });
   }
+}
+
+// Agrega o quita un juego (su slug) de la lista de deseos de SaveSlot.
+// Cuenta real: en la base (agregar crea su fila en lista_deseos; quitar la borra por su id). Invitado: en el navegador.
+// posicion (opcional): dónde volver a ponerlo en la lista del perfil (para "Deshacer").
+async function cambiarDeseo(idJuego, agregar, posicion) {
+  if (MI_FILA) {
+    var fila = filasDe('lista_deseos', 'usuario_id', MI_FILA.id).find(function (x) { return x.juego === idJuego; });
+    if (agregar && !fila) {
+      var nueva = (await guardarDatos('lista_deseos', { usuario_id: MI_FILA.id, juego: idJuego }))[0];
+      FILAS.lista_deseos = (FILAS.lista_deseos || []).concat(nueva);
+    } else if (!agregar && fila) {
+      await eliminarDatos('lista_deseos', fila.id);
+      FILAS.lista_deseos = FILAS.lista_deseos.filter(function (x) { return x.id !== fila.id; });
+    }
+    DATOS_ARMADOS = {};
+  }
+  var perfil = leerPerfil();
+  var lista = (perfil.wishlist || []).filter(function (x) { return x !== idJuego; });
+  if (agregar) {
+    if (typeof posicion === 'number' && posicion >= 0 && posicion <= lista.length) lista.splice(posicion, 0, idJuego);
+    else lista.push(idJuego);
+  }
+  perfil.wishlist = lista;
+  guardarMemoria('profile', perfil);
 }
 
 // Guarda el perfil público, los favoritos y los géneros en la base (cuenta real).
@@ -2587,7 +2623,7 @@ function mostrarJuego(juego) {
   document.getElementById('escribir-resena').href = 'escribir-resena.html?id=' + encodeURIComponent(juego.id);
   document.getElementById('preguntar-matchplay').href = 'matchplay.html?q=' + encodeURIComponent('Dame consejos para ' + juego.nombre_corto);
 
-  // Lista de deseos: pide cuenta sin sesión; se guarda en el perfil y se puede deshacer
+  // Lista de deseos: pide cuenta sin sesión; se guarda (en la base con una cuenta real) y se puede deshacer
   var botonDeseos = document.getElementById('lista-deseos');
   function enDeseos() { return leerPerfil().wishlist.indexOf(juego.id) !== -1; }
   function marcarDeseos() {
@@ -2595,18 +2631,24 @@ function mostrarJuego(juego) {
     botonDeseos.textContent = esta ? '✓ En tu lista de deseos' : '+ Lista de deseos';
     botonDeseos.setAttribute('aria-pressed', String(esta));
   }
-  function cambiarDeseos() {
-    var perfil = leerPerfil();
-    perfil.wishlist = enDeseos()
-      ? perfil.wishlist.filter(function (x) { return x !== juego.id; })
-      : perfil.wishlist.concat(juego.id);
-    guardarMemoria('profile', perfil);
-    marcarDeseos();
+  // Cambia el juego de estado; mientras guarda, el botón se desactiva. Devuelve true si se pudo.
+  async function cambiarDeseos() {
+    botonDeseos.disabled = true;
+    try {
+      await cambiarDeseo(juego.id, !enDeseos());
+      return true;
+    } catch (error) {
+      mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+      return false;
+    } finally {
+      botonDeseos.disabled = false;
+      marcarDeseos();
+    }
   }
   marcarDeseos();
-  botonDeseos.addEventListener('click', function () {
+  botonDeseos.addEventListener('click', async function () {
     if (!obtenerSesion()) { pedirCuenta('guardar juegos en tu lista de deseos'); return; }
-    cambiarDeseos();
+    if (!(await cambiarDeseos())) return;
     mostrarAviso(enDeseos() ? 'Añadido a tu lista de deseos' : 'Quitado de tu lista de deseos', { texto: 'Deshacer', alTocar: cambiarDeseos });
   });
 
@@ -3676,7 +3718,7 @@ async function pantallaEvento() {
    El navegador guarda los datos de una sola persona a la vez (perfil, reseñas,
    diario…). Al entrar con otra cuenta, se guardan los de la anterior aparte y se
    cargan los de la nueva. Si "duenoDatos" no existe, los datos son de samluq. */
-var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos', 'steamPerfil', 'steamResenas', 'steamRecientesVistos'];
+var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos', 'steamPerfil', 'steamResenas', 'steamRecientesVistos', 'deseosSubidos'];
 
 function cambiarDeCuenta(usuario, datosNuevos) {
   var dueno = leerMemoria('duenoDatos', 'samluq');
@@ -4294,7 +4336,7 @@ function pantallaPerfil() {
     });
   }
 
-  // Lista de deseos: quitar con deshacer
+  // Lista de deseos: quitar con deshacer (en la base con una cuenta real)
   var cajaDeseos = document.getElementById('deseos-perfil');
   var DESEOS_STEAM_VISIBLES = 6;
   var verTodosSteam = false;
@@ -4337,19 +4379,22 @@ function pantallaPerfil() {
   if ((perfil.accounts || {}).Steam) {
     revisarBajasDePrecio(true).then(dibujarDeseos);
   }
-  cajaDeseos.addEventListener('click', function (e) {
+  cajaDeseos.addEventListener('click', async function (e) {
     var boton = e.target.closest('[data-quitar]');
     if (!boton) return;
     var id = boton.dataset.quitar;
-    var datos = leerPerfil();
-    var posicion = datos.wishlist.indexOf(id);
-    datos.wishlist.splice(posicion, 1);
-    guardarMemoria('profile', datos);
+    var posicion = leerPerfil().wishlist.indexOf(id);
+    boton.disabled = true;
+    try {
+      await cambiarDeseo(id, false);
+    } catch (error) {
+      boton.disabled = false;
+      mostrarAviso('No pudimos guardar. Intenta de nuevo.');
+      return;
+    }
     dibujarDeseos();
-    mostrarAviso('Quitado de tu lista de deseos', { texto: 'Deshacer', alTocar: function () {
-      var otra = leerPerfil();
-      otra.wishlist.splice(posicion, 0, id);
-      guardarMemoria('profile', otra);
+    mostrarAviso('Quitado de tu lista de deseos', { texto: 'Deshacer', alTocar: async function () {
+      try { await cambiarDeseo(id, true, posicion); } catch (error) { mostrarAviso('No pudimos guardar. Intenta de nuevo.'); }
       dibujarDeseos();
     } });
   });

@@ -6,7 +6,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 - **Separada**: tiene su propia página (o vive dentro de la página indicada, si es una ventana).
 - **Con kit**: usa solo css/tokens.css y css/components.css, sin el andamio del prototipo (css/prototipo.css y js/prototipo.js, ya borrados).
-- **Datos**: de dónde salen los datos de la pantalla: Supabase (usuarios, reseñas, votos, me gusta, comentarios, diario, amistades, eventos, tendencias, destacados, misiones y mensajes de contacto; «en línea» con Supabase Realtime), IGDB (catálogo de juegos), Steam (la cuenta de Steam de la persona) o js/data.js (listas fijas, como géneros o preguntas frecuentes, y lo simulado, como logros de otras plataformas o respuestas de MatchPlay). Chats, notificaciones, inscripciones, lista de deseos de SaveSlot, cuentas vinculadas y vistos recientemente siguen en el navegador: falta pasarlos a Supabase (ver «Lo que falta»). En el HTML solo quedan las opciones de orden y filtros de la interfaz.
+- **Datos**: de dónde salen los datos de la pantalla: Supabase (usuarios, reseñas, votos, me gusta, comentarios, diario, amistades, eventos, tendencias, destacados, misiones y mensajes de contacto; «en línea» con Supabase Realtime), IGDB (catálogo de juegos), Steam (la cuenta de Steam de la persona) o js/data.js (listas fijas, como géneros o preguntas frecuentes, y lo simulado, como logros de otras plataformas o respuestas de MatchPlay). Chats, notificaciones, inscripciones, cuentas vinculadas y vistos recientemente siguen en el navegador: falta pasarlos a Supabase (ver «Lo que falta»). En el HTML solo quedan las opciones de orden y filtros de la interfaz.
 - **Revisada vs spec**: cumple todos sus criterios de «Está lista cuando» en spec.md.
 
 ## Descubrir
@@ -17,7 +17,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ (tendencias de Supabase; chats en el navegador) | ⬜ |
-| 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ (IGDB y Supabase) | ⬜ |
+| 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ (IGDB y Supabase; guarda la lista de deseos) | ⬜ |
 | 7. Ventana: Dificultad de 1 a 10 | dentro de `pages/detalle-juego.html` | ✅ | ✅ | ✅ (texto fijo) | ⬜ |
 
 ## Opinar
@@ -45,7 +45,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 |---|---|---|---|---|---|
 | 16. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ⬜ |
 | 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ⬜ |
-| 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam; misiones con api/steam/misiones.js) | ⬜ |
+| 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam; misiones con api/steam/misiones.js; quitar de la lista de deseos en la base) | ⬜ |
 | 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ (misiones de Supabase) | ⬜ |
 | 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase: guarda perfil público, favoritos y géneros) | ⬜ |
 | 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
@@ -68,7 +68,6 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 ## Lo que falta
 
 Pasar a Supabase (las tablas ya existen en `esquema.sql`; hoy se guarda en el navegador):
-- **Lista de deseos de SaveSlot** (Detalle de juego y Perfil): se lee de la base, pero agregar y quitar quedan en el navegador.
 - **Cuentas vinculadas** (Editar perfil, tabla **cuentas_vinculadas**): al pasarla, la base dará los +100 XP de la misión «vincular».
 - **Inscripciones a eventos y sorteos** (Detalle de evento y Perfil): la base ya cuenta los cupos, revisa el XP mínimo y suma el XP.
 - **Chats de MatchPlay** (tablas **chats_matchplay** y **mensajes_matchplay**).
@@ -85,6 +84,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Lista de deseos (noviembre)**: con una cuenta real, «+ Lista de deseos» (Detalle de juego) y «Quitar» (Perfil) guardan en Supabase (tabla **lista_deseos**), con «Deshacer». Lo que una cuenta tenía solo en el navegador se sube a la base una vez. El invitado sigue en el navegador.
 - **Amigos (noviembre)**: con una cuenta real, enviar, aceptar, rechazar, cancelar y eliminar amistades se guardan en Supabase (en Amigos, Perfil de otro usuario y «+ Agregar amigo» de Detalle de reseña); la otra persona ve tu solicitud. Eliminar ahora pide confirmación en vez de «Deshacer».
 - **En línea (noviembre)**: funciona con la presencia de Supabase Realtime (canal `en-linea`): al abrir cualquier página, una cuenta real avisa que está conectada y qué juega (lo de «¿Qué estás jugando?» o, en automático, su juego de Steam). Amigos (resumen, pestaña «En línea», orden y tarjetas) y Perfil de otro usuario (anillo del avatar y actividad) cambian en vivo, sin recargar. Desconectado muestra «hace X» con la columna nueva `usuarios.ultima_conexion` (sección 7 de esquema.sql). Las demás pantallas muestran el estado del momento en que se abrieron. Límite: el canal es público, así que alguien con conocimientos podría aparecer «en línea» con un @ que no es suyo (solo afecta ese punto verde, no los datos).
 - **Editar perfil (noviembre)**: con una cuenta real, «Guardar» guarda en Supabase el nombre, el @, sobre mí, qué estás jugando, los favoritos y los géneros; al abrir cualquier página el perfil se trae de la base. Siguen en el navegador la lista de deseos y las cuentas vinculadas (tabla **cuentas_vinculadas**). Los géneros que se pueden elegir salen de los juegos de ejemplo (9), no de los 15 de la base.
