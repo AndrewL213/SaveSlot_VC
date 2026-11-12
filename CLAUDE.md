@@ -166,7 +166,7 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<span class="avatar avatar--md avatar--jugando">SL<span class="avatar__punto"></span></span>`
 - `.medidor` (+ `--exito`, `--aviso`) con `.medidor__barra`:
   `<div class="medidor"><span class="medidor__barra" style="width:62%"></span></div>`
-- `.modal-fondo` > `.modal` (+ `--centrada`) con `__icono` (+ `--exito`; círculo con un ícono arriba, en el centrado), `__titulo`, `__texto`, `__cerrar` y `__acciones`. En app.js, `abrirModal({ icono: 'trofeo' | 'listo', … })` arma el centrado:
+- `.modal-fondo` > `.modal` (+ `--centrada`) con `__icono` (+ `--exito`; círculo con un ícono arriba, en el centrado), `__titulo`, `__texto`, `__cerrar` y `__acciones`. En app.js, `abrirModal` la centra si lleva `icono: 'trofeo' | 'listo'` o es solo texto (con `html`, a la izquierda):
   `<div class="modal-fondo"><div class="modal" role="dialog" aria-modal="true"><h2 class="modal__titulo">…</h2></div></div>`
 - `.aviso-flotante` con `.aviso-flotante__accion`:
   `<div class="aviso-flotante" role="status">Guardado <button class="aviso-flotante__accion">Deshacer</button></div>`

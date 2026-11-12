@@ -1582,7 +1582,7 @@ var ICONOS_MODAL = {
 };
 
 // Abre una ventana. opciones: titulo, texto o html, acciones [{ texto, href | alTocar, principal, peligro }]
-// e icono ('trofeo' o 'listo'): con ícono, la ventana va centrada (.modal--centrada).
+// e icono ('trofeo' o 'listo'). Va centrada (.modal--centrada) si tiene ícono o es solo texto; con html, a la izquierda.
 function abrirModal(opciones) {
   var anterior = document.activeElement;
   var icono = ICONOS_MODAL[opciones.icono] || null;
@@ -1594,7 +1594,8 @@ function abrirModal(opciones) {
   }).join('');
   var fondo = crearElemento(
     '<div class="modal-fondo">' +
-      '<div class="modal' + (icono ? ' modal--centrada' : '') + '" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">' +
+      // Como en el diseño: centrada si tiene ícono o es solo texto; las que llevan listas (html) van a la izquierda
+      '<div class="modal' + (icono || !opciones.html ? ' modal--centrada' : '') + '" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">' +
         '<button class="boton boton--fantasma boton--icono modal__cerrar" type="button" aria-label="Cerrar" data-cerrar>' + ICONO_CERRAR + '</button>' +
         (icono ? '<span class="modal__icono' + icono.clase + '" aria-hidden="true">' + icono.svg + '</span>' : '') +
         '<h2 class="modal__titulo" id="modal-titulo">' + escapar(opciones.titulo) + '</h2>' +
