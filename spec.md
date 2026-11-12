@@ -439,7 +439,7 @@ Se relaciona con: ninguna.
   - Cuenta de Steam de la persona: perfil (nombre, enlace, jugando ahora, recientes, nivel e insignias), biblioteca (horas y última vez), logros (por juego, resumen y más raros), lista de deseos (precio y descuento; se cambia desde Steam) y sus reseñas. El navegador guarda una copia para mostrar algo mientras llegan los nuevos.
   - Reseñas de Steam de cada juego (autor, recomienda o no, horas, fecha, votos de "útil").
   - Presencia ("en línea" y "jugando"): en tiempo real con Supabase Realtime (canal `en-linea`), no se guarda. Solo las cuentas reales avisan que están conectadas; el invitado y quien no tiene sesión solo miran. La última conexión sí se guarda (`usuarios.ultima_conexion`).
-- **Calculados:** dificultad promedio, calificación, número de votos y horas al 100 % de un juego (de las reseñas); estadísticas del perfil; amigos y juegos en común; géneros más jugados.
+- **Calculados:** dificultad promedio, calificación y número de votos de un juego (de las reseñas publicadas; las horas al 100 % no se pueden calcular); estadísticas del perfil; amigos y juegos en común; géneros más jugados.
 - **Fijos en el código (`js/data.js`):** son listas cortas que solo cambian con una nueva versión de la app.
   - **generos**: id, nombre, en_buscar (sí/no: sale en los filtros de Buscar; Juego random usa todos)
   - **plataformas**: id, nombre (PC, PlayStation, Xbox, Nintendo)
@@ -587,13 +587,13 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   7. "Si te gusta, prueba"
 - **Qué funciona de verdad:**
   - Ficha, datos y "Si te gusta, prueba": Real (IGDB)
-  - Dificultad, calificación y horas al 100 %: Real (calculados con reseñas de Supabase)
+  - Dificultad, calificación y número de calificaciones: Real (calculados con las reseñas publicadas de Supabase; sin reseñas, "—"). Horas al 100 %: no se pueden calcular (las reseñas no dicen si se completó al 100 %): "—" con "Ver en HowLongToBeat"
   - Pestañas Reseñas y Guías, votar "útil": Real (Supabase)
   - Reseñas de Steam en la pestaña Reseñas: Real (comunidad de Steam). Cada reseña lleva al lado del @ la etiqueta de su origen (SAVESLOT o STEAM) y se pueden filtrar por Todas, SaveSlot o Steam. Las de Steam muestran 👍/👎 (Steam no usa nota) y enlazan a la original. La etiqueta de origen lleva el logo de su plataforma (SaveSlot en azul, Steam con borde). Si el autor de una reseña de Steam también tiene cuenta en SaveSlot (su Steam está vinculado, según la tabla **usuarios_steam**), lleva además **También en SaveSlot · @usuario** (azul, con el logo de SaveSlot); si no, no lleva nada extra.
   - Línea de Steam (precio, nota, jugadores): Real (tabla **juegos**, se actualiza cada día)
   - Editar o eliminar mi reseña: Real (Supabase)
   - Lista de deseos: Real (Supabase: tabla **lista_deseos**; agregar crea la fila y quitar la borra por su id; se puede deshacer). Mientras guarda, el botón se desactiva; si falla, avisa «No pudimos guardar» y queda como estaba. Como invitado, en el navegador
-  - Número de logros: Real si el juego está en Steam; la lista de la pestaña Logros sigue Simulada
+  - Número de logros: Real si el juego está en Steam. La pestaña Logros todavía no trae la lista del juego: dice cuántos tiene en Steam y lleva a la pantalla Logros
   - Pestaña Clips: Después (el diseño dice que llega con la API de Twitch)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).

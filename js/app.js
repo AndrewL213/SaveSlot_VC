@@ -819,6 +819,8 @@ async function cargarDatos(tipos) {
 // Devuelve una copia de la lista pedida ("juegos", "resenas", "eventos"…): de Supabase si es una de
 // sus tablas (ya cargada con cargarDatos) o de js/data.js si no.
 function datosDe(tipo) {
+  // Los juegos de ejemplo de data.js: con nota, votos y dificultad de las reseñas reales (no los números fijos)
+  if (tipo === 'juegos') return (DATOS.juegos || []).map(conDatosDeComunidad);
   if (TABLAS_SUPABASE.indexOf(tipo) === -1) return (DATOS[tipo] || []).slice();
   if (!DATOS_ARMADOS[tipo]) {
     if (!FILAS[tipo]) throw new Error('La tabla ' + tipo + ' no se cargó antes de usarla (agrégala en TABLAS_DE_PANTALLA)');
@@ -1092,9 +1094,30 @@ function slugDeJuego(ref) {
 var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'similares'];
 
 // Junta un juego de data.js con el mismo juego de IGDB (cualquiera de los dos puede faltar).
+/* ---------- Datos de la comunidad de SaveSlot ----------
+   Nota, número de calificaciones y dificultad de un juego: se calculan con las reseñas publicadas de
+   Supabase (tipo reseña). Sin reseñas, quedan vacíos ("—"). Las horas al 100 % no se pueden calcular
+   (las reseñas no dicen si se completó al 100 %): quedan vacías. Se leen las filas tal como vienen de la
+   base (FILAS.resenas), para no armar las reseñas (que a su vez buscan juegos). */
+function conDatosDeComunidad(juego) {
+  if (!juego) return juego;
+  var resenas = (FILAS.resenas || []).filter(function (r) {
+    return r.estado === 'publicada' && r.tipo === 'resena' && esJuego(r.juego_igdb, juego);
+  });
+  var conNota = resenas.filter(function (r) { return r.calificacion != null; });
+  var conDificultad = resenas.filter(function (r) { return r.dificultad != null; });
+  var promedio = function (lista, campo) { return lista.reduce(function (suma, r) { return suma + Number(r[campo]); }, 0) / lista.length; };
+  return Object.assign({}, juego, {
+    calificacion: conNota.length ? Math.round(promedio(conNota, 'calificacion') * 10) / 10 : null,
+    votos: conNota.length,
+    dificultad: conDificultad.length ? Math.round(promedio(conDificultad, 'dificultad')) : null,
+    horas100: null
+  });
+}
+
 function unirConIgdb(local, igdb) {
-  if (!igdb) return local;
-  if (!local) return igdb;
+  if (!igdb) return conDatosDeComunidad(local);
+  if (!local) return conDatosDeComunidad(igdb);
   var juego = Object.assign({}, local);
   CAMPOS_DE_IGDB.forEach(function (campo) {
     var valor = igdb[campo];
@@ -1104,7 +1127,7 @@ function unirConIgdb(local, igdb) {
   juego.horas_historia = igdb.horas_historia;
   juego.solo_online = igdb.solo_online;
   if (!juego.portada) { juego.portada = igdb.portada; juego.credito_portada = igdb.credito_portada; }
-  return juego;
+  return conDatosDeComunidad(juego);
 }
 
 // Guarda en el navegador los últimos juegos de IGDB abiertos (sin la lista de similares).
@@ -2864,13 +2887,15 @@ function mostrarJuego(juego) {
     '<div class="dato"><span class="dato__etiqueta">Dificultad</span>' +
       '<span class="dato__valor">' + (juego.dificultad ? juego.dificultad + '<small>/10</small>' : '—') + '</span>' +
       (juego.dificultad ? htmlCalaveras(juego.dificultad) : '') +
-      '<span class="tarjeta__texto">Votada por la comunidad</span>' +
+      '<span class="tarjeta__texto">' + (juego.dificultad ? 'Votada por la comunidad' : 'Sin votos todavía') + '</span>' +
       '<button class="dato__ayuda" type="button" id="ayuda-dificultad">¿Cómo se calcula?</button>' +
     '</div>' +
     '<div class="dato"><span class="dato__etiqueta">Historia principal</span><span class="dato__valor">' + textoHoras(juego) + '</span><span class="tarjeta__texto">Promedio de jugadores</span>' +
       // Enlace a HowLongToBeat (solo enlazamos: su web no permite leer sus datos con programas)
       '<a class="dato__ayuda" href="https://howlongtobeat.com/?q=' + encodeURIComponent(juego.nombre) + '" target="_blank" rel="noopener">Ver en HowLongToBeat</a></div>' +
-    '<div class="dato"><span class="dato__etiqueta">Completar 100%</span><span class="dato__valor">' + (juego.horas100 ? juego.horas100 + ' h' : '—') + '</span><span class="tarjeta__texto">Promedio de jugadores</span></div>' +
+    '<div class="dato"><span class="dato__etiqueta">Completar 100%</span><span class="dato__valor">' + (juego.horas100 ? juego.horas100 + ' h' : '—') + '</span>' +
+      '<span class="tarjeta__texto">' + (juego.horas100 ? 'Promedio de jugadores' : 'Sin datos en SaveSlot') + '</span>' +
+      '<a class="dato__ayuda" href="https://howlongtobeat.com/?q=' + encodeURIComponent(juego.nombre) + '" target="_blank" rel="noopener">Ver en HowLongToBeat</a></div>' +
     '<div class="dato dato--destacado"><span class="dato__etiqueta">Tu progreso</span>' +
       (progreso
         ? '<span class="dato__valor">' + escapar(progreso.horas) + ' h</span><span class="tarjeta__texto">' + escapar(progreso.estado) + ' · ' + escapar(progreso.calificacion) + '/10</span>'
@@ -2881,7 +2906,7 @@ function mostrarJuego(juego) {
   document.getElementById('ayuda-dificultad').addEventListener('click', function () {
     abrirModal({
       titulo: 'Dificultad de 1 a 10',
-      texto: 'Es el promedio de lo que votan los jugadores al reseñar: 1 es relajado y 10 es brutal. Las horas son el promedio de quienes registraron el juego en su diario.',
+      texto: 'Es el promedio de lo que votan los jugadores al reseñar en SaveSlot: 1 es relajado y 10 es brutal. Las horas de la historia vienen de IGDB.',
       acciones: [{ texto: 'Entendido', principal: true }]
     });
   });
@@ -2933,7 +2958,11 @@ function mostrarJuego(juego) {
           '<span class="tarjeta__texto al-final">' + String(l.porcentaje).replace('.', ',') + '% lo tiene</span>' +
         '</div></article>';
       }).join('')
-        : '<div class="vacio">No hay logros registrados para este juego.</div>';
+        : juego.logros_totales
+          // El número es real (Steam); la lista de logros del juego todavía no se trae
+          ? '<div class="vacio"><b>Este juego tiene ' + formatearNumero(juego.logros_totales) + ' logros en Steam.</b>' +
+            '<span>Tus logros de Steam están en Logros.</span><a class="boton boton--secundario boton--sm" href="logros.html">Ver mis logros</a></div>'
+          : '<div class="vacio">No hay logros registrados para este juego.</div>';
     } }
   ];
   var cajaPestanas = document.getElementById('pestanas');
@@ -6088,6 +6117,8 @@ var TABLAS_DE_PANTALLA = {
   resena: ['resenas', 'comentarios', 'diario'],
   eventos: ['eventos'],
   evento: ['eventos'],
+  buscar: ['resenas'],
+  random: ['resenas'],
   perfil: ['resenas', 'diario', 'eventos', 'misiones'],
   editar: ['resenas', 'diario'],
   diario: ['resenas', 'diario'],

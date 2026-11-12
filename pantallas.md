@@ -17,7 +17,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ✅ |
 | 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ✅ |
 | 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ (tendencias de Supabase; chats en el navegador) | ⬜ pendiente: IA real |
-| 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ (IGDB y Supabase; guarda la lista de deseos) | ⬜ |
+| 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ (IGDB y Supabase; guarda la lista de deseos) | ✅ |
 | 7. Ventana: Dificultad de 1 a 10 | dentro de `pages/detalle-juego.html` | ✅ | ✅ | ✅ (texto fijo) | ⬜ |
 
 ## Opinar
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de Detalle de juego (noviembre)**: cumple sus 7 criterios (pestañas, lista de deseos, spoiler, Steam y las rutas de error). Arreglos: (1) la nota, el número de calificaciones y la dificultad ahora se calculan con las reseñas publicadas de Supabase (antes los 12 juegos de ejemplo mostraban números inventados de `js/data.js`, como «9,6 · 7.720 calificaciones»); sin reseñas, «—». Vale en todas las pantallas (Inicio, Buscar, Juego random…). Las horas al 100 % no se pueden calcular: «—» con «Ver en HowLongToBeat». (2) La pestaña Logros decía «No hay logros registrados» junto al número 49 de Steam: ahora dice cuántos tiene en Steam y lleva a Logros. Las descripciones salen en inglés mientras Google Translate esté bloqueado.
 - **Revisión de MatchPlay (noviembre): queda pendiente hasta conectar una IA real.** Ya cumple sus criterios con respuestas simuladas: se ve como el diseño, «Mis chats» en celular, enviar agrega el chat a la biblioteca, «Nuevo chat» y tendencias. Se arregló que tocar una tendencia no hacía nada (el id de la base es un número y el del botón, texto). Falta, con el paso de la IA: respuestas reales, guardar los chats en Supabase y que la biblioteca no muestre los 3 chats de ejemplo (de samluq) a todas las personas.
 - **Revisión de Juego random (noviembre)**: cumple sus 4 criterios (el juego es del género elegido y «Dame otro» nunca repite el anterior). Tiene 15 géneros (el diseño, 9) y el género elegido usa el `.chip` activo del kit (blanco; el diseño lo tenía azul). **Problema general encontrado:** el enlace gratis de Google Translate responde 429 (bloqueado), así que hoy todas las descripciones de juegos salen en inglés (ver «Lo que falta»).
 - **Revisión de Buscar juegos (noviembre)**: cumple sus 6 criterios. Nota y dificultad salen con «—» hasta que los juegos tengan reseñas en SaveSlot. Arreglo: con el filtro de duración, si en el grupo de juegos que trae IGDB no cumple ninguno, el título dice «0 juegos» (antes «0+») y aparece «Ver más juegos» para buscar en los siguientes (antes parecía que no había nada).
