@@ -410,12 +410,12 @@ Se relaciona con: el juego.
 Qué guarda: los últimos 6 juegos que abrió cada persona.
 Tipo de dato: personal
 Se guarda en: Supabase con sesión; sin sesión, en el navegador (localStorage)
-Desde la app se puede: ver (Inicio) · agregar (Detalle de juego).
+Desde la app se puede: ver (Inicio) · agregar y actualizar la fecha (Detalle de juego).
 Campos:
 - usuario: texto — obligatorio
 - juego_igdb: número — obligatorio
-- fecha: fecha y hora — obligatorio
-Se relaciona con: usuarios.id y el juego.
+- fecha: fecha y hora — la última vez que lo abrió — obligatorio
+Se relaciona con: usuarios.id y el juego. Una fila por persona y juego: abrirlo otra vez solo cambia la fecha. Los juegos que solo están en Steam (sin número de IGDB) se quedan en el navegador.
 
 ### mensajes_contacto
 Qué guarda: lo que la gente escribe en Contáctanos.
@@ -471,7 +471,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 | `friends` | **amigos** | Sí |
 | `joined`, `inscripciones` | **inscripciones** | Sí (las que una cuenta real tenía solo en el navegador no se suben: cobrarían cupos y XP otra vez) |
 | `chatsMatchplay` | **chats_matchplay** y **mensajes_matchplay** | No |
-| `recentGames` | **vistos_recientes** (sin sesión sigue en el navegador) | No |
+| `recentGames` | **vistos_recientes** (sin sesión sigue en el navegador) | Sí (lo que estaba en el navegador se sube una vez) |
 | `outbox` | **mensajes_contacto** | Sí |
 | `usuariosSteam` | Supabase Auth (`user_metadata.usuario`, ya se guarda ahí) | Sí |
 | `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos`, `steamResenas` | Ninguna: son copias de lo que da Steam, para mostrar algo mientras llega lo nuevo | — |
@@ -499,7 +499,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Buscador y Mejores juegos de la semana: Real (IGDB). Si IGDB no responde, se ven los juegos de ejemplo mejor calificados
   - Lo más jugado en Steam: Real (lista de Steam, datos de IGDB)
   - Reseñas destacadas y votar "útil": Real (Supabase)
-  - Vistos recientemente: Real (Supabase; sin sesión, en el navegador). Hoy: en el navegador
+  - Vistos recientemente: Real (Supabase: los 6 más recientes de **vistos_recientes**; si un juego no está en el navegador, se pide a IGDB. Invitado y sin sesión: en el navegador)
   - Eventos: Real (Supabase)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).

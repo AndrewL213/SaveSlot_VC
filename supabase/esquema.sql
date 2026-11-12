@@ -300,6 +300,16 @@ create table if not exists public.vistos_recientes (
   juego_igdb integer not null,
   fecha timestamptz not null default now()
 );
+-- Una fila por persona y juego: abrirlo otra vez solo cambia la fecha (así la tabla no crece sin parar).
+-- Si la tabla ya existía sin esta regla, primero se borran las repetidas (queda la más nueva).
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'vistos_recientes_usuario_juego_unico') then
+    delete from public.vistos_recientes a using public.vistos_recientes b
+      where a.usuario_id = b.usuario_id and a.juego_igdb = b.juego_igdb and a.id < b.id;
+    alter table public.vistos_recientes add constraint vistos_recientes_usuario_juego_unico unique (usuario_id, juego_igdb);
+  end if;
+end $$;
 
 -- traducciones: descripciones de juegos ya traducidas al español (solo escribe el servidor)
 create table if not exists public.traducciones (
@@ -598,12 +608,15 @@ drop policy if exists "destacados_inicio: ver" on public.destacados_inicio;
 create policy "destacados_inicio: ver" on public.destacados_inicio for select to anon, authenticated using (true);
 grant select on table public.destacados_inicio to anon, authenticated;
 
--- vistos_recientes: cada persona ve y agrega los suyos (sin sesión se quedan en el navegador)
+-- vistos_recientes: cada persona ve, agrega y actualiza (la fecha) los suyos (sin sesión se quedan en el navegador)
 drop policy if exists "vistos_recientes: ver los propios" on public.vistos_recientes;
 create policy "vistos_recientes: ver los propios" on public.vistos_recientes for select to authenticated using (usuario_id = (select public.mi_usuario_id()));
 drop policy if exists "vistos_recientes: agregar los propios" on public.vistos_recientes;
 create policy "vistos_recientes: agregar los propios" on public.vistos_recientes for insert to authenticated with check (usuario_id = (select public.mi_usuario_id()));
+drop policy if exists "vistos_recientes: actualizar los propios" on public.vistos_recientes;
+create policy "vistos_recientes: actualizar los propios" on public.vistos_recientes for update to authenticated using (usuario_id = (select public.mi_usuario_id())) with check (usuario_id = (select public.mi_usuario_id()));
 grant select, insert on table public.vistos_recientes to authenticated;
+grant update (fecha) on table public.vistos_recientes to authenticated;
 
 -- traducciones: todos las ven; solo escribe el servidor (api/igdb.js con la llave secreta)
 drop policy if exists "traducciones: ver" on public.traducciones;

@@ -6,14 +6,14 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 - **Separada**: tiene su propia página (o vive dentro de la página indicada, si es una ventana).
 - **Con kit**: usa solo css/tokens.css y css/components.css, sin el andamio del prototipo (css/prototipo.css y js/prototipo.js, ya borrados).
-- **Datos**: de dónde salen los datos de la pantalla: Supabase (usuarios, reseñas, votos, me gusta, comentarios, diario, amistades, eventos, tendencias, destacados, misiones y mensajes de contacto; «en línea» con Supabase Realtime), IGDB (catálogo de juegos), Steam (la cuenta de Steam de la persona) o js/data.js (listas fijas, como géneros o preguntas frecuentes, y lo simulado, como logros de otras plataformas o respuestas de MatchPlay). Chats, vistos recientemente, avisos de precio de Steam y Xbox (demo) siguen en el navegador: falta pasarlos a Supabase (ver «Lo que falta»). En el HTML solo quedan las opciones de orden y filtros de la interfaz.
+- **Datos**: de dónde salen los datos de la pantalla: Supabase (usuarios, reseñas, votos, me gusta, comentarios, diario, amistades, eventos, tendencias, destacados, misiones y mensajes de contacto; «en línea» con Supabase Realtime), IGDB (catálogo de juegos), Steam (la cuenta de Steam de la persona) o js/data.js (listas fijas, como géneros o preguntas frecuentes, y lo simulado, como logros de otras plataformas o respuestas de MatchPlay). Chats de MatchPlay, avisos de precio de Steam y Xbox (demo) siguen en el navegador: falta pasarlos a Supabase (ver «Lo que falta»). En el HTML solo quedan las opciones de orden y filtros de la interfaz.
 - **Revisada vs spec**: cumple todos sus criterios de «Está lista cuando» en spec.md.
 
 ## Descubrir
 
 | Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
-| 1. Inicio | `index.html` | ✅ | ✅ | ✅ (IGDB y Supabase) | ⬜ |
+| 1. Inicio | `index.html` | ✅ | ✅ | ✅ (IGDB y Supabase; vistos recientemente de la base) | ⬜ |
 | 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ (tendencias de Supabase; chats en el navegador) | ⬜ |
@@ -68,8 +68,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 ## Lo que falta
 
 Pasar a Supabase (las tablas ya existen en `esquema.sql`; hoy se guarda en el navegador):
-- **Chats de MatchPlay** (tablas **chats_matchplay** y **mensajes_matchplay**).
-- **Vistos recientemente** (Inicio, tabla **vistos_recientes**).
+- **Chats de MatchPlay** (tablas **chats_matchplay** y **mensajes_matchplay**), en el mismo paso que conectar una IA real a MatchPlay (hoy sus respuestas son simuladas).
 
 Arreglos:
 - Programar una tarea diaria (cron) que ejecute `crear_avisos_de_cierre()` en Supabase, para que lleguen los avisos «X cierra inscripciones pronto» (la función ya existe en `esquema.sql`).
@@ -84,6 +83,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Vistos recientemente (noviembre)**: con una cuenta real, abrir un juego lo guarda en Supabase (tabla **vistos_recientes**, una fila por juego: volver a abrirlo solo cambia la fecha) e Inicio muestra los 6 más recientes de la base, en cualquier computador. Lo que estaba en el navegador se sube una vez. Los juegos que solo están en Steam se quedan en el navegador.
 - **Notificaciones (noviembre)**: con una cuenta real, la campana muestra las notificaciones de la base (tabla **notificaciones**), las marca como leídas al abrirla y cada aviso se puede eliminar con su ✕ (nuevo: el diseño no lo traía). Cada aviso usa `.fila` en vez de una tarjeta-enlace, para que la ✕ quede a la derecha. Los avisos de precio de Steam siguen en el navegador. Los de cierre de inscripciones todavía no llegan (falta el cron, en «Lo que falta»).
 - **Cuentas vinculadas (noviembre)**: con una cuenta real, Steam vinculada se guarda en Supabase (tabla **cuentas_vinculadas**) y la base da los +100 XP de «vincular» una sola vez (antes la app los sumaba solo en el navegador y se perdían al abrir otra página). La base solo acepta la fila de Steam si la cuenta de Supabase tiene Steam de verdad. Desvincular y guardar la borra; entrar con Steam la vuelve a vincular. Xbox sigue como demo del navegador (al final).
 - **Inscripciones a eventos (noviembre)**: con una cuenta real, inscribirse (Detalle de evento) y cancelar (Perfil, Mis eventos) guardan en Supabase (tabla **inscripciones**). Cancelar ahora pide confirmación en vez de «Deshacer», porque en un sorteo volver a inscribirse cobraría el XP otra vez. Los eventos que ya cerraron inscripciones dicen «CERRADO» y no dejan inscribirse (lo revisa también la base: sección 5 de `esquema.sql`); la ventana «Evento del mes» no se abre si el evento cerró. El XP de cada sorteo sale del evento (no fijo en 300). Si te vuelves a inscribir a un torneo, la ventana ya no dice «ganaste 100 XP» (la base solo los da una vez). Hoy casi todos los eventos de ejemplo están cerrados (sus fechas eran de octubre).

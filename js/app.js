@@ -2132,12 +2132,14 @@ function pantallaIndex() {
     document.getElementById('steam-seccion').hidden = !hay;
   });
 
-  // Vistos recientemente: solo si ya se abrió algún juego
-  var vistos = leerMemoria('recentGames', []).map(function (id) { return buscarPorId('juegos', id); }).filter(Boolean);
-  if (vistos.length) {
-    document.getElementById('vistos').innerHTML = vistos.map(function (j) { return htmlJuegoMini(j); }).join('');
+  // Vistos recientemente: solo si ya se abrió algún juego (con cuenta real, de la base)
+  juegosVistos().then(function (vistos) {
+    if (!vistos.length) return;
+    var cajaVistos = document.getElementById('vistos');
+    cajaVistos.innerHTML = vistos.map(function (j) { return htmlJuegoMini(j); }).join('');
+    aplicarColores(cajaVistos);
     document.getElementById('seccion-vistos').hidden = false;
-  }
+  });
 
   // Reseñas destacadas: las 3 primeras publicadas sin spoiler (como en el diseño)
   var destacadas = obtenerResenas()
@@ -2711,10 +2713,59 @@ function leerDiario() {
 }
 
 // Guarda el juego al principio de "Vistos recientemente" (máximo 6)
+var MAXIMO_VISTOS = 6;
 function marcarVisto(idJuego) {
   var vistos = leerMemoria('recentGames', []).filter(function (id) { return id !== idJuego; });
   vistos.unshift(idJuego);
-  guardarMemoria('recentGames', vistos.slice(0, 6));
+  guardarMemoria('recentGames', vistos.slice(0, MAXIMO_VISTOS));
+}
+
+// Cuenta real: también en la base (tabla vistos_recientes, una fila por juego). Primero intenta agregarla;
+// si ya estaba (error 23505), solo cambia su fecha. Los juegos sin número de IGDB (solo de Steam) no van.
+// Si falla, no se avisa: no es algo que la persona haya pedido guardar.
+async function guardarVistoEnLaBase(juego) {
+  if (!MI_FILA || !clienteSupabase || !juego || !juego.id_igdb) return;
+  try {
+    var nueva = await clienteSupabase.from('vistos_recientes').insert({ usuario_id: MI_FILA.id, juego_igdb: juego.id_igdb });
+    if (nueva.error && nueva.error.code === '23505') {
+      await clienteSupabase.from('vistos_recientes').update({ fecha: new Date().toISOString() })
+        .eq('usuario_id', MI_FILA.id).eq('juego_igdb', juego.id_igdb);
+    }
+  } catch (error) { /* sin conexión: queda en el navegador */ }
+}
+
+// Los juegos de "Vistos recientemente" (los más nuevos primero).
+// Cuenta real: los 6 más recientes de la base (lo que solo estaba en este navegador se sube una vez);
+// si alguno no está en la copia del navegador, se pide a IGDB. Invitado o sin sesión: los del navegador.
+async function juegosVistos() {
+  var locales = leerMemoria('recentGames', []);
+  var referencias = locales;
+  if (MI_FILA && clienteSupabase) {
+    var respuesta = await clienteSupabase.from('vistos_recientes').select('juego_igdb, fecha').order('fecha', { ascending: false }).limit(MAXIMO_VISTOS);
+    if (!respuesta.error) {
+      if (respuesta.data.length || leerMemoria('vistosSubidos', false)) {
+        referencias = respuesta.data.map(function (v) { return v.juego_igdb; });
+      } else if (locales.length) {
+        // Subir una vez lo que estaba en el navegador (el más viejo con la fecha más vieja)
+        guardarMemoria('vistosSubidos', true);
+        var ahora = Date.now();
+        var filas = locales.map(function (id, i) { return { usuario_id: MI_FILA.id, juego_igdb: numeroDeJuego(id), fecha: new Date(ahora - i * 1000).toISOString() }; })
+          .filter(function (v) { return esNumeroDeJuego(v.juego_igdb); });
+        if (filas.length) {
+          clienteSupabase.from('vistos_recientes').insert(filas).then(function (r) {
+            if (r.error) guardarMemoria('vistosSubidos', false); // se intenta la próxima vez
+          });
+        }
+      }
+    }
+  }
+  var juegos = await Promise.all(referencias.slice(0, MAXIMO_VISTOS).map(function (ref) {
+    var juego = buscarPorId('juegos', ref);
+    if (juego) return juego;
+    if (!esNumeroDeJuego(ref)) return null;
+    return pedirJuego(Number(ref)).catch(function () { return null; });
+  }));
+  return juegos.filter(Boolean);
 }
 
 function htmlCalaveras(dificultad) {
@@ -2737,6 +2788,7 @@ function mostrarJuego(juego) {
 
   document.title = juego.nombre_corto + ' · SaveSlot';
   marcarVisto(juego.id);
+  guardarVistoEnLaBase(juego);
 
   // Cabecera
   var cabecera = document.getElementById('cabecera');
@@ -3931,7 +3983,7 @@ async function pantallaEvento() {
    El navegador guarda los datos de una sola persona a la vez (perfil, reseñas,
    diario…). Al entrar con otra cuenta, se guardan los de la anterior aparte y se
    cargan los de la nueva. Si "duenoDatos" no existe, los datos son de samluq. */
-var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos', 'steamPerfil', 'steamResenas', 'steamRecientesVistos', 'deseosSubidos'];
+var CLAVES_DE_CUENTA = ['profile', 'myReviews', 'diary', 'joined', 'inscripciones', 'friends', 'meGustaResenas', 'votosUtil', 'chatsMatchplay', 'steamBiblioteca', 'steamLogros', 'steamDeseos', 'steamPerfil', 'steamResenas', 'steamRecientesVistos', 'deseosSubidos', 'vistosSubidos'];
 
 function cambiarDeCuenta(usuario, datosNuevos) {
   var dueno = leerMemoria('duenoDatos', 'samluq');
