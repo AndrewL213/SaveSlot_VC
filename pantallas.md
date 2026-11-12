@@ -13,7 +13,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
-| 1. Inicio | `index.html` | ✅ | ✅ | ✅ (IGDB y Supabase; vistos recientemente de la base) | ⬜ |
+| 1. Inicio | `index.html` | ✅ | ✅ | ✅ (IGDB y Supabase; vistos recientemente de la base) | ✅ |
 | 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
 | 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ (tendencias de Supabase; chats en el navegador) | ⬜ |
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de Inicio (noviembre)**: cumple sus 5 criterios (diseño, celular, buscar «Hades», vistos recientemente y ventana «Evento del mes»). Diferencias con el diseño que vienen de los datos reales: «Mejores juegos de la semana» no muestra nota (los juegos de IGDB todavía no tienen reseñas en SaveSlot), hay menos reseñas destacadas y el evento del mes está cerrado (la ventana solo sale si está abierto). Se actualizaron en todas las páginas la franja de arriba, el pie y la página «Más información» (ya no dicen que eventos y amigos son de ejemplo).
 - **Avisos de cierre (noviembre)**: la tarea «avisos-de-cierre» de pg_cron (sección 8 de `esquema.sql`) crea cada hora los avisos «X cierra inscripciones pronto» para quien se inscribió, cuando faltan menos de 24 horas. Necesita la extensión pg_cron activada en Supabase (Database → Extensions).
 - **Vistos recientemente (noviembre)**: con una cuenta real, abrir un juego lo guarda en Supabase (tabla **vistos_recientes**, una fila por juego: volver a abrirlo solo cambia la fecha) e Inicio muestra los 6 más recientes de la base, en cualquier computador. Lo que estaba en el navegador se sube una vez. Los juegos que solo están en Steam se quedan en el navegador.
 - **Notificaciones (noviembre)**: con una cuenta real, la campana muestra las notificaciones de la base (tabla **notificaciones**), las marca como leídas al abrirla y cada aviso se puede eliminar con su ✕ (nuevo: el diseño no lo traía). Cada aviso usa `.fila` en vez de una tarjeta-enlace, para que la ✕ quede a la derecha. Los avisos de precio de Steam siguen en el navegador. Los de cierre de inscripciones todavía no llegan (falta el cron, en «Lo que falta»).

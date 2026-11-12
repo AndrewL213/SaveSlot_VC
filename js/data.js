@@ -1878,7 +1878,7 @@ const DATOS = {
       id: "demo",
       codigo: "DEMO",
       titulo: "Estás viendo el prototipo de SaveSlot",
-      texto: "Ya son reales: el catálogo de juegos (IGDB), las cuentas (correo, Google, Discord, Twitch y Steam) y todo lo de Steam: biblioteca, logros, lista de deseos con aviso de ofertas, juegos recientes, reseñas y precios. Perfiles, reseñas, eventos y misiones se leen de la base de datos, pero muchos son de ejemplo. MatchPlay (IA) responde con ejemplos, y lo que haces (reseñar, tu diario, inscripciones y chats) todavía se guarda solo en este navegador.",
+      texto: "Ya son reales: el catálogo de juegos (IGDB), las cuentas (correo, Google, Discord, Twitch y Steam) y todo lo de Steam: biblioteca, logros, lista de deseos con aviso de ofertas, juegos recientes, reseñas y precios. Con tu cuenta, lo que haces se guarda en la base de datos: perfil, reseñas, votos y comentarios, diario, lista de deseos, amigos (y quién está en línea), inscripciones a eventos, misiones, avisos y vistos recientemente. Todavía son de ejemplo las respuestas de MatchPlay (IA), cuyos chats se guardan solo en este navegador, y los logros de otras plataformas. Como invitado, todo queda en este navegador.",
       consejos: [
         "Entra con tu correo, Google, Discord, Twitch o Steam; en Editar perfil puedes unirlos en una sola cuenta.",
         "Vincula Steam para ver tu biblioteca, tus logros y tu lista de deseos reales.",
@@ -1906,7 +1906,8 @@ const DATOS = {
     { id: "s2", servicio: "Base de datos (perfiles, reseñas, eventos, misiones)", proveedor: "Supabase", estado: "conectado", texto: "Conectado", prueba: "base" },
     { id: "s8", servicio: "Cuentas: correo, Google, Discord, Twitch y Steam", proveedor: "Supabase Auth + Steam OpenID", estado: "conectado", texto: "Conectado", prueba: "cuentas" },
     { id: "s4", servicio: "Tu Steam: perfil, biblioteca, logros, deseos y reseñas", proveedor: "Steam Web API (Vercel)", estado: "conectado", texto: "Conectado" },
-    { id: "s13", servicio: "Tu actividad: reseñar, diario, inscripciones, chats y avisos", proveedor: "Este navegador", estado: "demo", texto: "Modo demo" },
+    { id: "s13", servicio: "Tu actividad: reseñas, diario, amigos, inscripciones, avisos y vistos", proveedor: "Supabase (como invitado, este navegador)", estado: "conectado", texto: "Conectado" },
+    { id: "s14", servicio: "Chats de MatchPlay", proveedor: "Este navegador", estado: "demo", texto: "Modo demo" },
     { id: "s3", servicio: "MatchPlay (IA)", proveedor: "Por definir", estado: "demo", texto: "Modo demo" },
     { id: "s5", servicio: "Cuentas: Xbox", proveedor: "OpenXBL (tercero)", estado: "pendiente", texto: "Sin clave" },
     { id: "s6", servicio: "Cuentas: PlayStation", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
