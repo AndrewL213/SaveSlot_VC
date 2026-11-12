@@ -160,7 +160,7 @@ Campos:
 - plataforma: opción de **cuentas** (steam o xbox; playstation y nintendo son Después) — obligatorio
 - nombre: texto — nombre en la plataforma — obligatorio
 - estado: opción (verificada, pendiente) — obligatorio
-Se relaciona con: usuarios.id. Una por persona y plataforma. Steam es real (su número queda en `app_metadata.steam_id`); Xbox es simulada.
+Se relaciona con: usuarios.id. Una por persona y plataforma. Steam es real (su número queda en `app_metadata.steam_id`): la base solo deja guardar la fila de Steam si la cuenta de Supabase tiene ese número, y da los +100 XP de "vincular" una sola vez. Xbox es simulada y por ahora se queda en el navegador (la base todavía no la acepta).
 
 ### misiones
 Qué guarda: las formas de ganar XP: las de siempre (ventana "Cómo ganar XP") y el grupo de misiones diarias y semanales de juegos (panel "Misiones" del Perfil).
@@ -462,7 +462,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 | Clave en el navegador | Tabla de Supabase | ¿Ya está? |
 |---|---|---|
 | `session`, `accounts` | Supabase Auth y **usuarios** | Sí |
-| `profile` | **usuarios** (con favoritos, géneros y lista de deseos), **cuentas_vinculadas** y **misiones_cumplidas** (`missionsDone`) | Sí, menos **cuentas_vinculadas** (la lista de deseos que solo estaba en el navegador se sube una vez) |
+| `profile` | **usuarios** (con favoritos, géneros y lista de deseos), **cuentas_vinculadas** y **misiones_cumplidas** (`missionsDone`) | Sí (Steam en **cuentas_vinculadas**; Xbox, demo, sigue en el navegador). La lista de deseos y Steam que solo estaban en el navegador se suben una vez |
 | `myReviews`, `draft.<juego>` | **resenas** (publicadas y borradores) | Sí (el guardado automático mientras se escribe sigue en el navegador) |
 | `votosUtil` | **votos_util** | Sí |
 | `meGustaResenas` | **me_gusta_resenas** | Sí |
@@ -826,7 +826,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Cambiar el @: Real. De 3 a 20 letras, números, punto o guion bajo; avisa si está ocupado. Los datos pasan al nuevo @, y con Steam se guarda en Supabase Auth. La cuenta de demostración no lo puede cambiar. (Se compara con todas las cuentas de la tabla **usuarios**; si alguien lo toma mientras editas, la base lo rechaza y el error sale junto al @.)
   - "¿Qué estás jugando ahora?": con Steam vinculada, la primera opción es "Automático: lo que juegues en Steam" y se puede elegir un juego de la biblioteca de Steam o del catálogo; lo de Steam manda cuando estás jugando en Steam.
   - Favoritos: búsqueda sencilla: se escribe el nombre y se autocompleta con cualquier juego de IGDB, lo tengas o no (busca mientras escribes, desde 2 letras; sin texto no sugiere nada). Enter o «Agregar» lo suma.
-  - Vincular Steam: Real (Steam). Si la cuenta es de Google, Discord, Twitch o correo, Steam se guarda en ESA cuenta (no crea otra) y después también se puede entrar con Steam a ella. Si esa cuenta de Steam ya está en otra cuenta de SaveSlot, avisa que hay que entrar con Steam, borrar esa cuenta y volver a vincularla. Vincular Xbox: Simulado
+  - Vincular Steam: Real (Steam). Si la cuenta es de Google, Discord, Twitch o correo, Steam se guarda en ESA cuenta (no crea otra) y después también se puede entrar con Steam a ella. Si esa cuenta de Steam ya está en otra cuenta de SaveSlot, avisa que hay que entrar con Steam, borrar esa cuenta y volver a vincularla. Con una cuenta real, Steam se guarda en **cuentas_vinculadas** al volver de Steam (también al entrar con Steam) y la base da los +100 XP la primera vez; si ya la tenías vinculada solo en el navegador, se sube una vez. Desvincular Steam y guardar borra su fila (entrar con Steam la vuelve a vincular, sin XP otra vez). Vincular Xbox: Simulado (en el navegador)
   - Formas de entrar (Google, Discord y Twitch): Real (Supabase Auth, vinculación manual). Vincula o desvincula cada servicio en la misma cuenta, para entrar con cualquiera de ellos (siempre queda al menos una forma de entrar). Si ese servicio ya es de otra cuenta de SaveSlot, avisa igual que con Steam. La cuenta de demostración no puede. La cuenta creada al entrar con Steam también puede: después se entra a ella con Steam o con el servicio vinculado.
   - Borrar cuenta: Real (Supabase, función `borrar_mi_cuenta` en supabase/borrar-cuenta.sql). Pide confirmar; borra la cuenta y en cascada su perfil, reseñas, diario, amigos y cuentas vinculadas, su foto subida y lo guardado en ese navegador, cierra la sesión y vuelve a Inicio. No toca las cuentas de Steam, Google, Discord ni Twitch.
   - Vincular PlayStation o Nintendo: Después (no tienen conexión pública, según el diseño)

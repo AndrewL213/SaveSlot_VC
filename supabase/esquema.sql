@@ -437,12 +437,19 @@ drop policy if exists "insignias: ver" on public.insignias;
 create policy "insignias: ver" on public.insignias for select to anon, authenticated using (true);
 grant select on table public.insignias to anon, authenticated;
 
--- cuentas_vinculadas: todos las ven; cada persona agrega, cambia y quita las suyas (Editar perfil)
+-- cuentas_vinculadas: todos las ven; cada persona agrega, cambia y quita las suyas (Editar perfil).
+-- Steam solo se puede agregar si la cuenta de Supabase tiene Steam de verdad: el steam_id de app_metadata,
+-- que solo pone el servidor (api/steam/auth.js) al volver de Steam. Así nadie gana el XP de "vincular" sin vincular.
+-- Xbox todavía no se acepta (en la app es una demo del navegador): se abrirá cuando tenga conexión real.
 drop policy if exists "cuentas_vinculadas: ver" on public.cuentas_vinculadas;
 create policy "cuentas_vinculadas: ver" on public.cuentas_vinculadas for select to anon, authenticated using (true);
 grant select on table public.cuentas_vinculadas to anon, authenticated;
 drop policy if exists "cuentas_vinculadas: agregar las propias" on public.cuentas_vinculadas;
-create policy "cuentas_vinculadas: agregar las propias" on public.cuentas_vinculadas for insert to authenticated with check (usuario_id = (select public.mi_usuario_id()));
+create policy "cuentas_vinculadas: agregar las propias" on public.cuentas_vinculadas for insert to authenticated with check (
+  usuario_id = (select public.mi_usuario_id())
+  and plataforma = 'steam'
+  and coalesce((select auth.jwt()) -> 'app_metadata' ->> 'steam_id', '') <> ''
+);
 drop policy if exists "cuentas_vinculadas: cambiar las propias" on public.cuentas_vinculadas;
 create policy "cuentas_vinculadas: cambiar las propias" on public.cuentas_vinculadas for update to authenticated using (usuario_id = (select public.mi_usuario_id())) with check (usuario_id = (select public.mi_usuario_id()));
 drop policy if exists "cuentas_vinculadas: borrar las propias" on public.cuentas_vinculadas;

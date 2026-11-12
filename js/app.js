@@ -121,15 +121,16 @@ function terminarVueltaDeSteam() {
     return Promise.resolve('Esa cuenta de Steam ya está en otra cuenta de SaveSlot. Entra con Steam, borra esa cuenta en Editar perfil y vuelve a vincularla aquí.');
   }
   if (vinculada && clienteSupabase) {
-    // Steam quedó guardada en esta misma cuenta: se refresca la sesión para que la traiga
+    // Steam quedó guardada en esta misma cuenta: se refresca la sesión para que la traiga.
+    // La fila en cuentas_vinculadas (y los +100 XP) los pone guardarSteamEnLaBase, al abrir la página.
     return clienteSupabase.auth.refreshSession().then(function () { return pedirSteam('profile'); }).then(function (steam) {
       var nombre = steam.personaname || 'Steam';
-      var yaEstaba = !!(leerPerfil().accounts || {}).Steam;
-      var perfil = yaEstaba ? leerPerfil() : sumarXp(XP_POR_CUENTA);
+      var perfil = leerPerfil();
       perfil.accounts = perfil.accounts || {};
       perfil.accounts.Steam = nombre;
       guardarMemoria('profile', perfil);
-      return 'Steam vinculada · ' + nombre + (yaEstaba ? '' : ' · +' + XP_POR_CUENTA + ' XP');
+      STEAM_RECIEN_VINCULADA = true;
+      return 'Steam vinculada · ' + nombre;
     }).catch(function () { return 'No pudimos conectar con Steam. Inténtalo de nuevo.'; });
   }
   if (fallo || !token || !clienteSupabase) return Promise.resolve('No pudimos conectar con Steam. Inténtalo de nuevo.');
@@ -149,6 +150,7 @@ function terminarVueltaDeSteam() {
     return pedirSteam('profile');
   }).then(function (steam) {
     var nombre = steam.personaname || 'Steam';
+    STEAM_RECIEN_VINCULADA = true; // entró con Steam: Steam queda vinculada (otra vez, si la había quitado)
     if (cuentaVinculada) {
       var suyo = leerPerfil();
       suyo.accounts = suyo.accounts || {};
@@ -719,6 +721,48 @@ async function cambiarDeseo(idJuego, agregar, posicion) {
   guardarMemoria('profile', perfil);
 }
 
+/* ---------- Steam vinculada en la base (tabla cuentas_vinculadas) ----------
+   Con una cuenta real, Steam vinculada = su fila "steam" en la base (la ven todos). La base solo deja
+   guardarla si la cuenta de Supabase tiene Steam de verdad (steam_id en app_metadata) y da los +100 XP
+   de la misión "vincular" una sola vez. Xbox y PlayStation siguen en el navegador (demo). */
+var STEAM_RECIEN_VINCULADA = false; // true si en esta página se volvió de Steam (vincular o entrar)
+
+// Devuelve un texto para el aviso ("+100 XP") si la base acaba de dar el XP, o null.
+async function guardarSteamEnLaBase() {
+  if (!MI_FILA || !clienteSupabase) return null;
+  var perfil = leerPerfil();
+  perfil.accounts = perfil.accounts || {};
+  var fila = filasDe('cuentas_vinculadas', 'usuario_id', MI_FILA.id).find(function (x) { return x.plataforma === 'steam'; });
+  if (fila) {
+    // Lo de la base manda (también en un navegador nuevo)
+    if (perfil.accounts.Steam !== fila.nombre) { perfil.accounts.Steam = fila.nombre; guardarMemoria('profile', perfil); }
+    return null;
+  }
+  if (!perfil.accounts.Steam) return null;
+  var sesion = (await clienteSupabase.auth.getSession()).data.session;
+  var steamId = sesion && sesion.user && (sesion.user.app_metadata || {}).steam_id;
+  if (!steamId) {
+    // Sin Steam en la cuenta de Supabase: no está vinculada de verdad
+    perfil.accounts.Steam = null;
+    guardarMemoria('profile', perfil);
+    return null;
+  }
+  // ¿Ya había ganado la misión "vincular" con Steam? Entonces la quitó a propósito: solo vuelve si acaba de volver de Steam
+  var mision = await clienteSupabase.from('misiones_cumplidas').select('id').eq('referencia', 'steam').limit(1);
+  var yaGanada = !mision.error && mision.data.length > 0;
+  if (yaGanada && !STEAM_RECIEN_VINCULADA) {
+    perfil.accounts.Steam = null;
+    guardarMemoria('profile', perfil);
+    return null;
+  }
+  var nueva = (await guardarDatos('cuentas_vinculadas', { usuario_id: MI_FILA.id, plataforma: 'steam', nombre: perfil.accounts.Steam, estado: 'verificada' }))[0];
+  FILAS.cuentas_vinculadas = (FILAS.cuentas_vinculadas || []).concat(nueva);
+  DATOS_ARMADOS = {};
+  if (yaGanada) return null;
+  await traerMiXp().catch(function () { /* el XP se verá al recargar */ });
+  return '+' + XP_POR_CUENTA + ' XP por vincular Steam';
+}
+
 // Guarda el perfil público, los favoritos y los géneros en la base (cuenta real).
 // Favoritos: se borran los anteriores (cada uno por su id) y se guardan los nuevos en orden.
 // Géneros: se quitan los desmarcados y se agregan los nuevos.
@@ -732,6 +776,13 @@ async function guardarMiPerfilEnLaBase(datos) {
   var favoritos = datos.favoritos.slice(0, MAXIMO_FAVORITOS);
   if (favoritos.length) {
     await guardarDatos('usuarios_favoritos', favoritos.map(function (juego, orden) { return { usuario_id: MI_FILA.id, juego: juego, orden: orden + 1 }; }));
+  }
+  // Steam desvinculada: se borra su fila de cuentas_vinculadas (entrar con Steam la vuelve a vincular)
+  var filaSteam = filasDe('cuentas_vinculadas', 'usuario_id', MI_FILA.id).find(function (x) { return x.plataforma === 'steam'; });
+  if (filaSteam && !(datos.perfil.accounts || {}).Steam) {
+    await eliminarDatos('cuentas_vinculadas', filaSteam.id);
+    FILAS.cuentas_vinculadas = FILAS.cuentas_vinculadas.filter(function (x) { return x.id !== filaSteam.id; });
+    DATOS_ARMADOS = {};
   }
   var generosAntes = filasDe('usuarios_generos', 'usuario_id', MI_FILA.id);
   for (var j = 0; j < generosAntes.length; j++) {
@@ -4724,7 +4775,7 @@ function pantallaEditar() {
     chip.setAttribute('aria-pressed', String(perfil.genres.indexOf(g) !== -1));
   });
 
-  // Cuentas vinculadas (simulado)
+  // Cuentas vinculadas: Steam real (en la base con una cuenta real); Xbox demo, en el navegador
   var cajaCuentas = document.getElementById('cuentas-editar');
   function dibujarCuentas() {
     // Cuentas que se pueden vincular (cuentas en data.js)
@@ -5940,6 +5991,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (siguiente && direccionCompleta(siguiente) !== location.href) { location.replace(siguiente); return; }
     // ¿La sesión es de una cuenta real con fila en usuarios? Entonces lo propio se lee y se guarda en la base
     if (!esError) { await reconocerMiFila(false); traerMiPerfilDeLaBase(); }
+    // Steam vinculada: en la base (y los +100 XP la primera vez)
+    var avisoXp = esError ? null : await guardarSteamEnLaBase().catch(function (error) { console.error('No se pudo guardar Steam en la base:', error); return null; });
+    if (avisoXp) aviso = aviso ? aviso + ' · ' + avisoXp : avisoXp;
     // En línea: las pantallas que muestran el estado de las personas esperan la primera lista de conectados
     if (!esError) {
       var presencia = iniciarPresencia();
