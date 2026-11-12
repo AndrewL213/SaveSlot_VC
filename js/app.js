@@ -2598,7 +2598,9 @@ function pantallaMatchplay() {
   }).join('');
   document.getElementById('tendencias').addEventListener('click', function (e) {
     var tarjeta = e.target.closest('[data-tendencia]');
-    if (tarjeta) preguntar(tendencias.find(function (t) { return t.id === tarjeta.dataset.tendencia; }).pregunta);
+    // El id de la base es un número y el del botón, texto: se comparan como texto
+    var tendencia = tarjeta ? tendencias.find(function (t) { return String(t.id) === tarjeta.dataset.tendencia; }) : null;
+    if (tendencia) preguntar(tendencia.pregunta);
   });
 
   // Biblioteca: abrir y borrar (con deshacer)
