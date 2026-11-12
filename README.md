@@ -25,18 +25,19 @@ Gamers casuales de 15 a 24 años en España y Latinoamérica que hoy tienen que 
 ## Con qué funciona
 
 - **Páginas**: HTML, CSS y JavaScript, sin paso de compilación, publicadas en Vercel.
-- **Cuentas y base de datos**: Supabase.
+- **Cuentas y base de datos**: Supabase. Se entra con correo, Google, Discord, Twitch o Steam (o como invitado, sin cuenta). En la base se guardan los perfiles, reseñas, votos «útil», me gusta, comentarios, diario, amigos, eventos, misiones y los mensajes de Contáctanos; «en línea» se ve en vivo.
 - **Catálogo de juegos**: IGDB (de Twitch), con las descripciones traducidas al español.
 - **Steam**: entrar con Steam, y ver perfil, biblioteca, logros, lista de deseos, reseñas y el precio, la nota y los jugadores de cada juego.
-- Lo demás (eventos, amigos, MatchPlay…) usa por ahora datos de ejemplo.
+- **Todavía en el navegador** (falta pasarlos a Supabase): lista de deseos de SaveSlot, cuentas vinculadas, inscripciones a eventos, chats de MatchPlay, notificaciones y vistos recientemente.
+- **Simulado**: las respuestas de la IA de MatchPlay, los logros de otras plataformas (los de Steam son reales) y Xbox.
 
 ## Cómo está organizado este repo
 
 - `index.html` · La pantalla de inicio. Las demás pantallas están en `pages/`, y la página de error es `404.html`.
 - `disenos/` · Los diseños originales de las pantallas (inicio, buscador, ficha de juego, perfil, eventos, chat con IA y más). Son solo de referencia.
-- `js/` · El código de la app: `app.js` (cómo se comporta), `data.js` (datos de ejemplo) y `supabase.js` (conexión con Supabase).
+- `js/` · El código de la app: `app.js` (cómo se comporta), `data.js` (listas fijas y datos simulados) y `supabase.js` (conexión con Supabase).
 - `api/` · Funciones de Vercel que usan claves secretas: `igdb.js` (catálogo de juegos) y `steam/` (inicio de sesión y datos de Steam).
-- `supabase/` · El código SQL de las tablas de Supabase.
+- `supabase/` · El código SQL de Supabase, para ejecutar en su SQL Editor: `esquema.sql` (todas las tablas, reglas de acceso y funciones de la app; se puede ejecutar varias veces), `juegos.sql` y `usuarios_steam.sql` (datos de Steam), `avatares.sql` (fotos de perfil), `borrar-cuenta.sql` (borrar la cuenta propia) y `limpiar-ejemplos.sql` (borra los datos de prueba).
 - `vercel.json` · Tareas automáticas de Vercel, como actualizar cada día los datos de Steam.
 - `pantallas.md` · El avance de cada pantalla.
 - `assets/` · Las imágenes de la app: iconos, portadas de juegos y una foto de prueba, con sus créditos en `CREDITOS.md`.

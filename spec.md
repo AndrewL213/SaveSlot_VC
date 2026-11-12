@@ -455,29 +455,29 @@ Se relaciona con: ninguna.
 - **Archivos (Supabase Storage):** carpeta pública **avatares** (código en `supabase/avatares.sql`, ya creada): las fotos de perfil, en `avatares/<id de Auth>/avatar.jpg`. Cualquiera las ve; cada persona solo sube, cambia o borra la suya (al borrar la cuenta se borra también). Solo imágenes JPG, PNG o WebP de hasta 2 MB (la app las recorta a 256 px antes de subirlas).
 - **Después:** clips (necesitan Supabase Storage o Twitch), pagos de eventos y mensajes entre amigos.
 
-### Hoy en el navegador → tabla de Supabase
+### Navegador → tabla de Supabase
 
-Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`localStorage`, claves `ss.*`). Al conectar, cada clave pasa a su tabla:
+Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`localStorage`, claves `ss.*`). Cada clave pasa a su tabla; la última columna dice si ya se pasó (con una cuenta real). El invitado lo sigue guardando todo en el navegador.
 
-| Clave en el navegador | Tabla de Supabase |
-|---|---|
-| `session`, `accounts` | Supabase Auth y **usuarios** |
+| Clave en el navegador | Tabla de Supabase | ¿Ya está? |
+|---|---|---|
+| `session`, `accounts` | Supabase Auth y **usuarios** | Sí |
 | `profile` | **usuarios** (con su lista de deseos), **cuentas_vinculadas** y **misiones_cumplidas** (`missionsDone`) |
-| `myReviews`, `draft.<juego>` | **resenas** (publicadas y borradores) |
-| `votosUtil` | **votos_util** |
-| `meGustaResenas` | **me_gusta_resenas** |
-| `comments.<reseña>` | **comentarios** |
-| `diary` | **diario** |
-| `friends` | **amigos** |
-| `joined`, `inscripciones` | **inscripciones** |
-| `chatsMatchplay` | **chats_matchplay** y **mensajes_matchplay** |
-| `recentGames` | **vistos_recientes** (sin sesión sigue en el navegador) |
-| `outbox` | **mensajes_contacto** |
-| `usuariosSteam` | Supabase Auth (`user_metadata.usuario`, ya se guarda ahí) |
-| `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos`, `steamResenas` | Ninguna: son copias de lo que da Steam, para mostrar algo mientras llega lo nuevo |
-| `juegos_igdb` | Ninguna: copia de los últimos 100 juegos de IGDB abiertos, para que reseñas, deseos y diario sepan su nombre y portada |
-| `avisosPrecio` | **notificaciones** (los avisos de baja de precio) |
-| `notisVistas` | **notificaciones** (campo `leida`) |
+| `myReviews`, `draft.<juego>` | **resenas** (publicadas y borradores) | Sí (el guardado automático mientras se escribe sigue en el navegador) |
+| `votosUtil` | **votos_util** | Sí |
+| `meGustaResenas` | **me_gusta_resenas** | Sí |
+| `comments.<reseña>` | **comentarios** | Sí |
+| `diary` | **diario** | Sí |
+| `friends` | **amigos** | Sí |
+| `joined`, `inscripciones` | **inscripciones** | No |
+| `chatsMatchplay` | **chats_matchplay** y **mensajes_matchplay** | No |
+| `recentGames` | **vistos_recientes** (sin sesión sigue en el navegador) | No |
+| `outbox` | **mensajes_contacto** | Sí |
+| `usuariosSteam` | Supabase Auth (`user_metadata.usuario`, ya se guarda ahí) | Sí |
+| `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos`, `steamResenas` | Ninguna: son copias de lo que da Steam, para mostrar algo mientras llega lo nuevo | — |
+| `juegos_igdb` | Ninguna: copia de los últimos 100 juegos de IGDB abiertos, para que reseñas, deseos y diario sepan su nombre y portada | — |
+| `avisosPrecio` | **notificaciones** (los avisos de baja de precio) | No |
+| `notisVistas` | **notificaciones** (campo `leida`) | No |
 | `steamRecientesVistos` | Ninguna: cuándo vio la app crecer el tiempo de cada juego reciente de Steam, para ordenarlos del último jugado al más antiguo (Steam no da la fecha de los juegos prestados o de prueba) |
 | `steamPreciosAvisados`, `steamPreciosRevisados` | Ninguna: recuerdan qué descuento ya se avisó y cuándo se revisó la lista de deseos de Steam |
 | `hideDemo`, `datosDe.*`, `duenoDatos` | Ninguna: son ayudas del modo demo y se quitan |
@@ -499,7 +499,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Buscador y Mejores juegos de la semana: Real (IGDB). Si IGDB no responde, se ven los juegos de ejemplo mejor calificados
   - Lo más jugado en Steam: Real (lista de Steam, datos de IGDB)
   - Reseñas destacadas y votar "útil": Real (Supabase)
-  - Vistos recientemente: Real (Supabase; sin sesión, en el navegador)
+  - Vistos recientemente: Real (Supabase; sin sesión, en el navegador). Hoy: en el navegador
   - Eventos: Real (Supabase)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
@@ -565,7 +565,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   6. Aviso "MatchPlay puede equivocarse"
 - **Qué funciona de verdad:**
   - Respuestas de la IA: Simulado
-  - Guardar chats, borrarlos y votar respuestas: Real (Supabase)
+  - Guardar chats, borrarlos y votar respuestas: Real (Supabase). Hoy: en el navegador
   - Tendencias: Real (Supabase)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
@@ -592,7 +592,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Reseñas de Steam en la pestaña Reseñas: Real (comunidad de Steam). Cada reseña lleva al lado del @ la etiqueta de su origen (SAVESLOT o STEAM) y se pueden filtrar por Todas, SaveSlot o Steam. Las de Steam muestran 👍/👎 (Steam no usa nota) y enlazan a la original. La etiqueta de origen lleva el logo de su plataforma (SaveSlot en azul, Steam con borde). Si el autor de una reseña de Steam también tiene cuenta en SaveSlot (su Steam está vinculado, según la tabla **usuarios_steam**), lleva además **También en SaveSlot · @usuario** (azul, con el logo de SaveSlot); si no, no lleva nada extra.
   - Línea de Steam (precio, nota, jugadores): Real (tabla **juegos**, se actualiza cada día)
   - Editar o eliminar mi reseña: Real (Supabase)
-  - Lista de deseos: Real (Supabase)
+  - Lista de deseos: Real (Supabase). Hoy: agregar y quitar se guardan en el navegador
   - Número de logros: Real si el juego está en Steam; la lista de la pestaña Logros sigue Simulada
   - Pestaña Clips: Después (el diseño dice que llega con la API de Twitch)
 - **Está lista cuando:**
@@ -713,7 +713,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   4. Reglas
 - **Qué funciona de verdad:**
   - Datos del evento: Real (Supabase)
-  - Inscribirse gratis o con XP: Real (Supabase)
+  - Inscribirse gratis o con XP: Real (Supabase; la base cuenta los cupos, revisa el XP y lo suma). Hoy: en el navegador
   - Pagar inscripción: Después (el diseño dice que los pagos aún no están disponibles)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, en versión torneo y en versión sorteo.
@@ -792,7 +792,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   - Misiones diarias y semanales: Real (`api/steam/misiones.js` con Steam; la base suma el XP). Sin Steam vinculada se ven con "Vincula Steam para hacerlas"
   - Datos del perfil, favoritos, actividad, lista de deseos, amigos y Mis eventos: Real (Supabase)
   - Jugando ahora, recientes, nivel e insignias, biblioteca y lista de deseos de Steam: Real (Steam)
-  - Quitar de lista de deseos y cancelar inscripción: Real (Supabase; la lista de Steam solo se ve)
+  - Quitar de lista de deseos y cancelar inscripción: Real (Supabase; la lista de Steam solo se ve). Hoy: en el navegador
   - Conexiones: Steam Real; Xbox Simulado
   - Copiar enlace del perfil: Simulado
 - **Está lista cuando:**
@@ -902,8 +902,8 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
   6. Actividad de amigos
 - **Qué funciona de verdad:**
   - Amigos, solicitudes (enviar, aceptar, rechazar, cancelar), eliminar y sugerencias: Real (Supabase: tabla **amigos**, una fila por pareja. Enviar agrega la fila "pendiente"; aceptar la cambia a "aceptada" por su id y la base suma +10 XP; rechazar, cancelar y eliminar la borran por su id. Agregar por @ a quien ya te envió una solicitud la acepta. Eliminar pide confirmación porque en la base no se puede deshacer; deshacer "enviar" cancela la solicitud). Como invitado, en el navegador
-  - Estado "en línea": Real (presencia de Supabase)
-  - Estado "jugando": Real (sale de "jugando ahora" en Supabase)
+  - Estado "en línea": Real (presencia de Supabase Realtime, en vivo: las tarjetas, el resumen y la pestaña cambian sin recargar). Desconectado dice "hace X" (`usuarios.ultima_conexion`)
+  - Estado "jugando": Real (en línea y con "jugando ahora" de Supabase o el juego de Steam que avisa la presencia)
   - Actividad de amigos: Real (Supabase)
   - Mensaje: Después (el diseño dice que llegará en una próxima versión)
 - **Está lista cuando:**
@@ -940,7 +940,7 @@ Hasta conectar Supabase, lo que hace cada persona se guarda en el navegador (`lo
 - **Archivo de diseño:** sale desde disenos/js/app.js (campana del encabezado, solo con sesión iniciada)
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda ver sus avisos. Sabemos que funciona si la persona abre la ventana desde la campana.
 - **Número de la campana:** cuenta solo los avisos y solicitudes que todavía no has visto; al abrir la ventana se quita (lo visto se guarda en el navegador, `ss.notisVistas`).
-- **Qué funciona de verdad:** Avisos: Real (Supabase): votos "útil" a tus reseñas y cierre de inscripciones de tus eventos. Real (Steam): baja de precio de un juego de tu lista de deseos de Steam (se revisa cada 6 horas al abrir cualquier página; el aviso queda 7 días y se guarda en el navegador)
+- **Qué funciona de verdad:** Avisos: Real (Supabase): votos "útil" a tus reseñas y cierre de inscripciones de tus eventos (hoy la base ya crea los de "útil", pero la campana todavía muestra los de ejemplo de `js/data.js`). Real (Steam): baja de precio de un juego de tu lista de deseos de Steam (se revisa cada 6 horas al abrir cualquier página; el aviso queda 7 días y se guarda en el navegador)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).

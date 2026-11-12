@@ -16,13 +16,16 @@ Digitales 3. Más contexto en README.md.
   supabase-js) se cargan como scripts normales, sin type="module".
 - La app se publicará en Vercel, conectada a este repositorio.
 - La base de datos es Supabase. La conexión está en js/supabase.js y las tablas y
-  reglas en supabase/esquema.sql. Las cuentas también son de Supabase (Supabase Auth).
+  reglas en supabase/esquema.sql. Las cuentas también son de Supabase (Supabase Auth),
+  y "en línea" usa la presencia en vivo de Supabase Realtime (canal `en-linea`).
   Catálogo de juegos: IGDB (de Twitch), con las
   descripciones traducidas al español (por ahora con el enlace gratis de
   Google Translate, temporal; DeepL si se pone su clave). Steam (Steam Web
   API, desde api/steam/): inicio de sesión, perfil, biblioteca, logros, lista
   de deseos, reseñas y precio, nota y jugadores de cada juego. Todo lo
-  demás usa datos simulados (ver spec.md).
+  demás está en Supabase o, mientras falta conectarlo, en el navegador
+  (localStorage). Solo son simulados (en js/data.js) las respuestas de la IA de
+  MatchPlay, los logros de otras plataformas y Xbox (ver spec.md).
 
 ## Estructura del proyecto
 - disenos/: diseños originales. Solo de referencia: nunca los modifiques.
@@ -34,7 +37,7 @@ Digitales 3. Más contexto en README.md.
   siempre con crédito a Steam.
 - css/: estilos. tokens.css (decisiones base), components.css
   (componentes) y styles.css (estilos generales de las pantallas).
-- js/: código. app.js (comportamiento), data.js (datos simulados,
+- js/: código. app.js (comportamiento), data.js (listas fijas y datos simulados,
   separados del diseño) y supabase.js (conexión con Supabase: dirección, llave
   publicable y clienteSupabase).
   Cada página carga, al final del <body> y en este orden: supabase-js (versión
@@ -42,8 +45,10 @@ Digitales 3. Más contexto en README.md.
 - api/: funciones de Vercel que usan claves secretas (por ejemplo,
   api/igdb.js, la consulta a IGDB, y api/steam/, el inicio de sesión y los
   datos de Steam: perfil, biblioteca y logros). JavaScript sin paso de compilación.
-- supabase/: el código SQL de las tablas de Supabase (por ejemplo, juegos.sql).
-  Si creas o cambias una tabla, guarda aquí su SQL.
+- supabase/: el código SQL de Supabase. esquema.sql tiene todas las tablas, reglas
+  y funciones de la app (se puede ejecutar varias veces); aparte están juegos.sql y
+  usuarios_steam.sql (Steam), avatares.sql (fotos de perfil), borrar-cuenta.sql y
+  limpiar-ejemplos.sql. Si creas o cambias una tabla, guarda aquí su SQL.
 - vercel.json: las tareas automáticas de Vercel (crons), como la
   actualización diaria de los datos de Steam.
 - index.html: la pantalla de inicio, la puerta de entrada de la app.
