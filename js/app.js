@@ -2285,10 +2285,15 @@ function pantallaBuscar() {
 
   function dibujar(lista, total, hayMas, texto) {
     var cantidad = total != null ? total : lista.length;
-    titulo.textContent = formatearNumero(cantidad) + (hayMas && total == null ? '+' : '') + (cantidad === 1 ? ' juego' : ' juegos') + (texto ? ' para “' + texto + '”' : '');
+    // Con duración el número es aproximado ("6+"), salvo que no haya ninguno todavía ("0 juegos")
+    titulo.textContent = formatearNumero(cantidad) + (hayMas && total == null && cantidad ? '+' : '') + (cantidad === 1 ? ' juego' : ' juegos') + (texto ? ' para “' + texto + '”' : '');
+    var verMas = '<button class="boton boton--secundario boton--bloque" type="button" id="ver-mas">Ver más juegos</button>';
     resultados.innerHTML = lista.length
-      ? lista.map(htmlResultado).join('') +
-        (hayMas ? '<button class="boton boton--secundario boton--bloque" type="button" id="ver-mas">Ver más juegos</button>' : '')
+      ? lista.map(htmlResultado).join('') + (hayMas ? verMas : '')
+      : hayMas
+      // Duración: entre los primeros no cumplió ninguno, pero IGDB tiene más para revisar
+      ? '<div class="vacio"><b>No encontramos juegos de esa duración entre los primeros resultados.</b>' +
+        '<span>Puede haber más: busca en los siguientes.</span></div>' + verMas
       : '<div class="vacio"><b>No encontramos juegos con esos filtros.</b>' +
         '<span>Revisa la ortografía o quita algún filtro. También puedes preguntarle a MatchPlay.</span>' +
         '<a class="boton boton--secundario boton--sm" href="matchplay.html?q=' + encodeURIComponent(texto || 'Recomiéndame un juego') + '">Preguntar a MatchPlay</a></div>';
