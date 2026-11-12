@@ -2949,7 +2949,7 @@ function mostrarJuego(juego) {
         : '<div class="vacio"><b>Aún no hay guías.</b><a href="' + escribir + '&amp;tipo=guia">Escribir la primera</a></div>';
     } },
     { id: 'clips', nombre: 'Clips', numero: 0, html: function () {
-      return '<div class="vacio"><b>Los clips llegarán con la API de Twitch.</b><span>Mientras tanto puedes subir el tuyo desde “Escribir reseña › Clip”.</span></div>';
+      return '<div class="vacio"><b>Los clips llegarán con la API de Twitch.</b><span>Mientras tanto, cuenta tu experiencia en una reseña o una guía.</span></div>';
     } },
     { id: 'logros', nombre: 'Logros', numero: juego.logros_totales, html: function () {
       return logros.length ? logros.map(function (l) {
