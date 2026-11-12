@@ -137,6 +137,7 @@ Campos:
 - sobre_mi: texto largo — "Sobre mí" — opcional
 - jugando_ahora: texto — el juego (slug de IGDB o `steam-<número>`; "steam" = automático con Steam) — opcional
 - miembro_desde: fecha — cuándo se creó la cuenta — obligatorio
+- ultima_conexion: fecha y hora — la última vez que abrió SaveSlot, para "Desconectado · hace 2 h" (la pone la app de la propia persona, como mucho cada 5 minutos) — opcional
 - nivel: número — sube cada 1.500 XP (lo cambia la base) — obligatorio
 - xp: número — XP dentro del nivel (lo cambia la base) — obligatorio
 - favoritos: lista de hasta 4 juegos (slug de IGDB o `steam-<número>`) — opcional
@@ -147,7 +148,7 @@ Campos:
 - forma_de_entrar: opción (correo, google, discord, twitch, steam) — obligatorio
 - invitado: sí/no — para un futuro invitado con cuenta (hoy el invitado no tiene fila en usuarios) — obligatorio
 Se relaciona con: Supabase Auth (id).
-- Calculados: estado "en línea" y última conexión (presencia de Supabase), "jugando" (de `jugando_ahora` o de Steam), amigos en común, notas de cada juego (del diario).
+- Calculados: estado "en línea" (presencia de Supabase: canal `en-linea`), "jugando" (en línea y con `jugando_ahora` o el juego de Steam que avisa la presencia), amigos en común, notas de cada juego (del diario).
 
 ### cuentas_vinculadas
 Qué guarda: las cuentas de juego que cada persona vinculó.
@@ -437,7 +438,7 @@ Se relaciona con: ninguna.
   - Mejores juegos de la semana (IGDB) y Lo más jugado en Steam.
   - Cuenta de Steam de la persona: perfil (nombre, enlace, jugando ahora, recientes, nivel e insignias), biblioteca (horas y última vez), logros (por juego, resumen y más raros), lista de deseos (precio y descuento; se cambia desde Steam) y sus reseñas. El navegador guarda una copia para mostrar algo mientras llegan los nuevos.
   - Reseñas de Steam de cada juego (autor, recomienda o no, horas, fecha, votos de "útil").
-  - Presencia ("en línea" y última conexión): en tiempo real, no se guarda.
+  - Presencia ("en línea" y "jugando"): en tiempo real con Supabase Realtime (canal `en-linea`), no se guarda. Solo las cuentas reales avisan que están conectadas; el invitado y quien no tiene sesión solo miran. La última conexión sí se guarda (`usuarios.ultima_conexion`).
 - **Calculados:** dificultad promedio, calificación, número de votos y horas al 100 % de un juego (de las reseñas); estadísticas del perfil; amigos y juegos en común; géneros más jugados.
 - **Fijos en el código (`js/data.js`):** son listas cortas que solo cambian con una nueva versión de la app.
   - **generos**: id, nombre, en_buscar (sí/no: sale en los filtros de Buscar; Juego random usa todos)

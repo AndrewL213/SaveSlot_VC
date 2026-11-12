@@ -938,3 +938,12 @@ revoke all on function public.al_crear_usuario() from public, anon, authenticate
 
 -- El servidor (api/steam/misiones.js, con la llave secreta) anota las misiones de juegos cumplidas
 grant execute on function public.cumplir_mision(bigint, text, text) to service_role;
+
+-- ============================================================================
+-- 7. ÚLTIMA CONEXIÓN ("Desconectado · hace 2 h")
+--    Quién está conectado AHORA lo dice la presencia de Supabase Realtime (canal "en-linea", sin tabla).
+--    Para "hace 2 h", cada persona guarda la hora en que usó la app por última vez. Se puede ejecutar sola.
+-- ============================================================================
+alter table public.usuarios add column if not exists ultima_conexion timestamptz;
+-- Cada persona solo cambia la suya (la regla "usuarios: cambiar el propio" ya limita a su fila)
+grant update (ultima_conexion) on table public.usuarios to authenticated;

@@ -783,6 +783,74 @@ function amigosDeId(idUsuario) {
     .map(function (a) { return a.usuario_id === idUsuario ? a.amigo_id : a.usuario_id; });
 }
 
+/* ---------- En línea (presencia de Supabase Realtime) ----------
+   Al abrir cualquier página, la app entra al canal "en-linea". Con una cuenta real avisa "estoy conectado"
+   (su @ y el juego que está jugando); el invitado y quien no tiene sesión solo escuchan. Al cerrar la
+   pestaña, Supabase la quita sola. La última conexión se guarda en usuarios.ultima_conexion (cada 5 min
+   como mucho) para mostrar "Desconectado · hace 2 h". */
+
+var EN_LINEA = {};               // @ → { jugando, jugando_nombre } de quienes están conectados ahora
+var alCambiarPresencia = null;   // la pantalla puede poner aquí qué volver a dibujar cuando alguien entra o sale
+var CADA_CUANTO_ULTIMA_CONEXION = 5 * 60 * 1000;
+
+// "hace 5 min", "hace 2 h", "hace 3 días" (o null si no hay fecha)
+function textoHace(fecha) {
+  if (!fecha) return null;
+  var minutos = Math.max(0, Math.round((Date.now() - new Date(fecha).getTime()) / 60000));
+  if (isNaN(minutos)) return null;
+  if (minutos < 1) return 'hace un momento';
+  if (minutos < 60) return 'hace ' + minutos + ' min';
+  var horas = Math.round(minutos / 60);
+  if (horas < 24) return 'hace ' + horas + ' h';
+  var dias = Math.round(horas / 24);
+  return 'hace ' + dias + (dias === 1 ? ' día' : ' días');
+}
+
+// Lo que la cuenta propia avisa en el canal: su @ y el juego que juega (el elegido o, en automático, el de Steam)
+function miPresencia() {
+  var perfil = leerPerfil();
+  var elegido = perfil.playing ? buscarPorId('juegos', perfil.playing) : null;
+  var steam = !perfil.playing && tieneSteam() ? (leerMemoria('steamPerfil', null) || {}).playing_now : null;
+  return {
+    usuario: MI_FILA.usuario,
+    jugando: perfil.playing || (steam && steam.appid ? 'steam-' + steam.appid : null),
+    jugando_nombre: elegido ? elegido.nombre_corto : (steam ? steam.name : null)
+  };
+}
+
+// Entra al canal "en-linea". La promesa termina con la primera lista de conectados (o a los 1,5 s).
+function iniciarPresencia() {
+  return new Promise(function (listo) {
+    if (!clienteSupabase || !clienteSupabase.channel) { listo(); return; }
+    var terminado = false;
+    var terminar = function () { if (!terminado) { terminado = true; listo(); } };
+    var clave = MI_FILA ? MI_FILA.usuario : 'oyente-' + Math.random().toString(36).slice(2);
+    var canal = clienteSupabase.channel('en-linea', { config: { presence: { key: clave } } });
+    canal.on('presence', { event: 'sync' }, function () {
+      var conectados = {};
+      var lista = canal.presenceState();
+      Object.keys(lista).forEach(function (k) {
+        var dato = lista[k] && lista[k][0];
+        if (dato && dato.usuario) conectados[dato.usuario] = { jugando: dato.jugando || null, jugando_nombre: dato.jugando_nombre || null };
+      });
+      EN_LINEA = conectados;
+      DATOS_ARMADOS = {};
+      if (terminado && typeof alCambiarPresencia === 'function') alCambiarPresencia();
+      terminar();
+    });
+    canal.subscribe(function (estado) {
+      if (estado === 'SUBSCRIBED' && MI_FILA) canal.track(miPresencia()).catch(function () { /* sin presencia propia */ });
+      if (estado === 'CHANNEL_ERROR' || estado === 'TIMED_OUT') terminar();
+    });
+    setTimeout(terminar, 1500);
+    // La última conexión (para "hace 2 h"), como mucho cada 5 minutos
+    if (MI_FILA && Date.now() - (leerMemoria('ultimaConexionGuardada', 0) || 0) > CADA_CUANTO_ULTIMA_CONEXION) {
+      guardarMemoria('ultimaConexionGuardada', Date.now());
+      actualizarDatos('usuarios', MI_FILA.id, { ultima_conexion: new Date().toISOString() }).catch(function () { /* se intenta en la próxima página */ });
+    }
+  });
+}
+
 var TRADUCIR = {
   usuarios: function (filas) {
     var sesion = obtenerSesion();
@@ -797,7 +865,8 @@ var TRADUCIR = {
       });
       return {
         id: u.usuario, id_base: u.id, usuario: u.usuario, nombre: u.nombre, iniciales: u.iniciales, foto: u.foto || null,
-        sobre_mi: u.sobre_mi, jugando_ahora: u.jugando_ahora, miembro_desde: u.miembro_desde,
+        sobre_mi: u.sobre_mi, miembro_desde: u.miembro_desde,
+        jugando_ahora: u.jugando_ahora || (EN_LINEA[u.usuario] && EN_LINEA[u.usuario].jugando) || null,
         nivel: u.nivel, xp: u.xp, color: u.color, invitado: u.invitado,
         favoritos: filasDe('usuarios_favoritos', 'usuario_id', u.id).sort(porOrden).map(function (x) { return x.juego; }),
         generos_favoritos: filasDe('usuarios_generos', 'usuario_id', u.id).map(function (x) { return x.genero; }),
@@ -807,8 +876,11 @@ var TRADUCIR = {
           return { plataforma: NOMBRE_PLATAFORMA[x.plataforma] || x.plataforma, nombre: x.nombre, estado: x.estado };
         }),
         notas: notas,
-        // "En línea" y "jugando" llegarán con la presencia de Supabase (paso de cuentas)
-        estado: null, ultima_conexion: null,
+        // "En línea" y "jugando": de la presencia de Supabase (quién está conectado ahora).
+        // "Jugando" si está conectada y tiene un juego (el de "¿Qué estás jugando?" o, con Steam en automático, el de Steam).
+        estado: EN_LINEA[u.usuario] ? ((u.jugando_ahora || EN_LINEA[u.usuario].jugando) ? 'jugando' : 'en-linea') : null,
+        jugando_nombre: EN_LINEA[u.usuario] && !u.jugando_ahora ? EN_LINEA[u.usuario].jugando_nombre : null,
+        ultima_conexion: EN_LINEA[u.usuario] ? null : textoHace(u.ultima_conexion),
         amigos_en_comun: yo && yo.id !== u.id ? amigosDeId(u.id).filter(function (id) { return misAmigos.indexOf(id) !== -1; }).length : 0
       };
     });
@@ -3833,8 +3905,10 @@ function formatearFechaLarga(fecha) {
 
 // Ordena personas: jugando, en línea y desconectadas
 function ordenarPorEstado(personas) {
-  var orden = ['jugando', 'en-linea', 'desconectado'];
-  return personas.sort(function (a, b) { return orden.indexOf(a.estado) - orden.indexOf(b.estado); });
+  // Sin estado (nadie la ve conectada) cuenta como desconectada: va al final
+  var orden = ['jugando', 'en-linea'];
+  var lugar = function (p) { var i = orden.indexOf(p.estado); return i === -1 ? orden.length : i; };
+  return personas.sort(function (a, b) { return lugar(a) - lugar(b); });
 }
 
 function copiarEnlace(enlace, mensaje) {
@@ -5131,7 +5205,8 @@ function pantallaBiblioteca() {
 function htmlEstado(persona) {
   if (persona.estado === 'jugando') {
     var juego = buscarPorId('juegos', persona.jugando_ahora);
-    return '<span class="estado estado--jugando">Jugando' + (juego ? ' ' + escapar(juego.nombre_corto) : '') + '</span>';
+    var nombreJuego = juego ? juego.nombre_corto : persona.jugando_nombre;
+    return '<span class="estado estado--jugando">Jugando' + (nombreJuego ? ' ' + escapar(nombreJuego) : '') + '</span>';
   }
   if (persona.estado === 'en-linea') return '<span class="estado estado--en-linea">En línea</span>';
   return '<span class="estado estado--desconectado">Desconectado' + (persona.ultima_conexion ? ' · ' + escapar(persona.ultima_conexion) : '') + '</span>';
@@ -5150,6 +5225,11 @@ function pantallaAmigos() {
   var pestana = ({ '#solicitudes': 'recibidas', '#sugerencias': 'sugerencias', '#en-linea': 'en-linea' })[location.hash] || 'todos';
   var texto = '';
   var personas = datosDe('usuarios').filter(function (u) { return u.usuario !== sesion.user && u.nivel; });
+  // En vivo: cuando alguien entra o sale, se vuelven a armar las tarjetas con su estado nuevo
+  alCambiarPresencia = function () {
+    personas = datosDe('usuarios').filter(function (u) { return u.usuario !== sesion.user && u.nivel; });
+    mostrar();
+  };
   var lista = document.getElementById('lista-amigos');
   var campoBuscar = document.getElementById('buscar-amigos');
 
@@ -5192,7 +5272,7 @@ function pantallaAmigos() {
 
   function mostrar() {
     var amigos = grupo('amigos');
-    var enLinea = amigos.filter(function (p) { return p.estado !== 'desconectado'; });
+    var enLinea = amigos.filter(function (p) { return p.estado === 'en-linea' || p.estado === 'jugando'; });
     var recibidas = grupo('solicitud recibida');
     var sugerencias = grupo('ninguna').concat(grupo('solicitud enviada'));
     document.getElementById('resumen-amigos').innerHTML = [[amigos.length, 'Amigos'], [enLinea.length, 'En línea'], [amigos.filter(function (p) { return p.estado === 'jugando'; }).length, 'Jugando ahora']]
@@ -5341,11 +5421,16 @@ async function pantallaUsuario() {
   // Cabecera
   colorearBanda(document.getElementById('banda-usuario'), persona.favoritos);
   var avatar = document.getElementById('avatar-usuario');
-  avatar.innerHTML = contenidoAvatar(persona);
-  if (persona.estado) {
-    avatar.classList.add('avatar--' + persona.estado);
-    avatar.insertAdjacentHTML('beforeend', '<span class="avatar__punto"></span>');
+  // Anillo y punto del avatar según su estado (en línea, jugando o nada)
+  function dibujarAnillo(p) {
+    avatar.innerHTML = contenidoAvatar(p);
+    avatar.classList.remove('avatar--jugando', 'avatar--en-linea', 'avatar--desconectado');
+    if (p.estado) {
+      avatar.classList.add('avatar--' + p.estado);
+      avatar.insertAdjacentHTML('beforeend', '<span class="avatar__punto"></span>');
+    }
   }
+  dibujarAnillo(persona);
   document.getElementById('nombre-usuario').textContent = persona.nombre;
   document.getElementById('arroba-usuario').textContent = '@' + persona.usuario;
   document.getElementById('insignias-usuario').innerHTML = '<span class="etiqueta etiqueta--primario">NIVEL ' + escapar(persona.nivel) + '</span>' + htmlEstado(persona);
@@ -5402,12 +5487,20 @@ async function pantallaUsuario() {
       : null);
   });
 
-  // Actividad, sobre y amigos en común
-  var jugando = persona.estado === 'jugando' ? buscarPorId('juegos', persona.jugando_ahora) : null;
+  // Actividad (jugando ahora o su estado), sobre y amigos en común. En vivo: cuando entra o sale, se vuelve a dibujar.
+  function dibujarActividad(p) {
+  var jugando = p.estado === 'jugando' ? buscarPorId('juegos', p.jugando_ahora) : null;
   document.getElementById('actividad-usuario').innerHTML = jugando
     ? '<a class="fila fila--jugando" href="detalle-juego.html?id=' + encodeURIComponent(jugando.id) + '"><span class="portada portada--sm"' + atributoColor(jugando.color) + '>' + imagenPortada(jugando) + '</span>' +
       '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(jugando.nombre_corto) + '</b></span></a>'
-    : '<p class="tarjeta__texto">' + htmlEstado(persona) + '</p>';
+    : '<p class="tarjeta__texto">' + htmlEstado(p) + '</p>';
+  }
+  dibujarActividad(persona);
+  if (fila) alCambiarPresencia = function () {
+    var ahora = TRADUCIR.usuarios([fila])[0];
+    dibujarAnillo(ahora);
+    dibujarActividad(ahora);
+  };
   document.getElementById('sobre-usuario').textContent = persona.sobre_mi || '';
   document.getElementById('desde-usuario').textContent = 'Miembro desde ' + formatearFechaLarga(persona.miembro_desde);
   var comunes = datosDe('usuarios').filter(function (u) { return u.usuario !== persona.usuario && sonAmigos(u.usuario); }).slice(0, persona.amigos_en_comun || 3);
@@ -5694,6 +5787,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (siguiente && direccionCompleta(siguiente) !== location.href) { location.replace(siguiente); return; }
     // ¿La sesión es de una cuenta real con fila en usuarios? Entonces lo propio se lee y se guarda en la base
     if (!esError) { await reconocerMiFila(false); traerMiPerfilDeLaBase(); }
+    // En línea: las pantallas que muestran el estado de las personas esperan la primera lista de conectados
+    if (!esError) {
+      var presencia = iniciarPresencia();
+      if (['amigos', 'usuario', 'perfil', 'comunidad', 'resena', 'index', 'juego'].indexOf(nombre) !== -1) await presencia;
+    }
     if (cargando) cargando.remove();
     prepararEncabezado();
     prepararFranja();

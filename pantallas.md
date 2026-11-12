@@ -51,8 +51,8 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ (Supabase: eliminar en la base) | ⬜ |
 | 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ (Steam; otras plataformas simuladas en data.js) | ⬜ |
-| 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ (Supabase: lee y guarda amistades y solicitudes) | ⬜ |
-| 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ (Supabase: agregar y eliminar amigo en la base) | ⬜ |
+| 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ (Supabase: lee y guarda amistades y solicitudes; en línea en vivo) | ⬜ |
+| 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ (Supabase: agregar y eliminar amigo en la base; en línea en vivo) | ⬜ |
 | 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ✅ | ✅ (data.js, hasta el inicio de sesión) | ⬜ |
 | 30. Biblioteca | `pages/biblioteca.html` | ✅ | ✅ | ✅ (datos reales de Steam) | ⬜ |
 | 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ (sesión) | ⬜ |
@@ -66,7 +66,8 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (data.js + revisión en vivo de IGDB, Steam y Supabase) | ⬜ |
 
 ## Pendientes para la revisión vs spec
-- **Amigos (noviembre)**: con una cuenta real, enviar, aceptar, rechazar, cancelar y eliminar amistades se guardan en Supabase (en Amigos, Perfil de otro usuario y «+ Agregar amigo» de Detalle de reseña); la otra persona ve tu solicitud. Eliminar ahora pide confirmación en vez de «Deshacer». «En línea» todavía no funciona (falta la presencia de Supabase).
+- **Amigos (noviembre)**: con una cuenta real, enviar, aceptar, rechazar, cancelar y eliminar amistades se guardan en Supabase (en Amigos, Perfil de otro usuario y «+ Agregar amigo» de Detalle de reseña); la otra persona ve tu solicitud. Eliminar ahora pide confirmación en vez de «Deshacer».
+- **En línea (noviembre)**: funciona con la presencia de Supabase Realtime (canal `en-linea`): al abrir cualquier página, una cuenta real avisa que está conectada y qué juega (lo de «¿Qué estás jugando?» o, en automático, su juego de Steam). Amigos (resumen, pestaña «En línea», orden y tarjetas) y Perfil de otro usuario (anillo del avatar y actividad) cambian en vivo, sin recargar. Desconectado muestra «hace X» con la columna nueva `usuarios.ultima_conexion` (sección 7 de esquema.sql). Las demás pantallas muestran el estado del momento en que se abrieron. Límite: el canal es público, así que alguien con conocimientos podría aparecer «en línea» con un @ que no es suyo (solo afecta ese punto verde, no los datos).
 - **Editar perfil (noviembre)**: con una cuenta real, «Guardar» guarda en Supabase el nombre, el @, sobre mí, qué estás jugando, los favoritos y los géneros; al abrir cualquier página el perfil se trae de la base. Siguen en el navegador la lista de deseos y las cuentas vinculadas (tabla **cuentas_vinculadas**). Los géneros que se pueden elegir salen de los juegos de ejemplo (9), no de los 15 de la base.
 - **Detalle de reseña e Historial (noviembre)**: con una cuenta real, el «útil» (en todas las pantallas), el me gusta, los comentarios y eliminar la reseña propia se guardan en Supabase. Borrar el comentario propio es nuevo (spec.md solo dejaba agregar). Eliminar, en el Historial y en los comentarios, pide confirmación en vez de «Deshacer», porque en la base no se puede deshacer.
 - **Invitado (noviembre)**: «Entrar con la cuenta de demostración» ahora es «Entrar como invitado»: perfil vacío, solo en el navegador, sin cuenta en Supabase (ya no muestra el perfil de ejemplo de samluq).
