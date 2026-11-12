@@ -4889,11 +4889,10 @@ function pantallaEditar() {
     }).catch(function () { /* sin sesión de Steam: solo el catálogo */ });
   }
 
-  // Géneros favoritos
-  var generos = [];
-  juegos.forEach(function (j) { j.generos.forEach(function (g) { if (generos.indexOf(g) === -1) generos.push(g); }); });
+  // Géneros favoritos: los 15 que entiende IGDB (los mismos que acepta la base), en orden alfabético
+  var generos = datosDe('generos').map(function (g) { return g.nombre; }).sort(function (a, b) { return a.localeCompare(b, 'es'); });
   var cajaGeneros = document.getElementById('generos-editar');
-  cajaGeneros.innerHTML = generos.sort().map(function (g) {
+  cajaGeneros.innerHTML = generos.map(function (g) {
     return '<button class="chip" type="button" data-genero="' + escapar(g) + '" aria-pressed="' + (perfil.genres.indexOf(g) !== -1) + '">' + escapar(g) + '</button>';
   }).join('');
   cajaGeneros.addEventListener('click', function (e) {

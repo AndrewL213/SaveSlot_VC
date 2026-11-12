@@ -973,3 +973,20 @@ grant execute on function public.cumplir_mision(bigint, text, text) to service_r
 alter table public.usuarios add column if not exists ultima_conexion timestamptz;
 -- Cada persona solo cambia la suya (la regla "usuarios: cambiar el propio" ya limita a su fila)
 grant update (ultima_conexion) on table public.usuarios to authenticated;
+
+-- ============================================================================
+-- 8. TAREA AUTOMÁTICA: AVISOS DE CIERRE DE INSCRIPCIONES (pg_cron, el reloj de Supabase)
+--    Cada hora ejecuta crear_avisos_de_cierre(): a quien se inscribió le llega "X cierra inscripciones
+--    pronto" cuando faltan menos de 24 horas (una vez por evento).
+--    Antes, hay que activar la extensión pg_cron (Supabase → Database → Extensions → pg_cron).
+--    Si no está activada, esto no hace nada (el resto del archivo funciona igual). Se puede ejecutar sola.
+-- ============================================================================
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    -- Con el mismo nombre, schedule reemplaza la tarea anterior (no se repite al volver a ejecutar)
+    perform cron.schedule('avisos-de-cierre', '0 * * * *', $tarea$select public.crear_avisos_de_cierre()$tarea$);
+  else
+    raise notice 'pg_cron no está activado: la tarea de avisos de cierre no se programó.';
+  end if;
+end $$;
