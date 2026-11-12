@@ -1631,6 +1631,47 @@ function mostrarAviso(texto, accion) {
 var ICONO_AMIGOS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.8 3.1 2.6 3.5 5.2"/></svg>';
 var ICONO_CAMPANA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
 
+/* ---------- Notificaciones (la campana) ----------
+   Cuenta real: las de la base (tabla notificaciones: votos "útil" y cierre de inscripciones), que cada
+   persona ve, marca como leídas y borra. Además, con o sin cuenta real: los avisos de baja de precio de
+   Steam (en el navegador) y las solicitudes de amistad. Sin cuenta real, los avisos de ejemplo de data.js. */
+var MIS_NOTIFICACIONES = [];
+
+// Trae las notificaciones propias de la base (cada persona solo ve las suyas)
+async function cargarMisNotificaciones() {
+  if (!MI_FILA) { MIS_NOTIFICACIONES = []; return; }
+  try {
+    MIS_NOTIFICACIONES = (await obtenerDatos('notificaciones')).sort(function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
+  } catch (error) {
+    MIS_NOTIFICACIONES = [];
+  }
+}
+
+// Todos los avisos de la campana, con la misma forma: { clave, texto, enlace, fecha, origen, id }
+function avisosDeLaCampana() {
+  var sesion = obtenerSesion();
+  var borradas = leerMemoria('notisBorradas', []) || [];
+  var dePrecio = avisosDePrecio().map(function (n) { return { clave: 'aviso:' + n.id, id: n.id, texto: n.texto, enlace: n.enlace, fecha: n.fecha, origen: 'precio' }; });
+  var otros = MI_FILA
+    ? MIS_NOTIFICACIONES.map(function (n) { return { clave: 'base:' + n.id, id: n.id, texto: n.texto, enlace: n.enlace, fecha: fechaLocal(n.fecha), origen: 'base', leida: n.leida }; })
+    : datosDe('notificaciones').filter(function (n) { return sesion && n.usuario === sesion.user; })
+      .map(function (n) { return { clave: 'aviso:' + n.id, id: n.id, texto: n.texto, enlace: n.enlace, fecha: n.fecha, origen: 'ejemplo' }; });
+  return dePrecio.concat(otros).filter(function (n) { return borradas.indexOf(n.clave) === -1; });
+}
+
+// Borra un aviso: el de la base, en la base; el de precio o de ejemplo, en este navegador (no vuelve)
+async function borrarAviso(aviso) {
+  if (aviso.origen === 'base') {
+    await eliminarDatos('notificaciones', aviso.id);
+    MIS_NOTIFICACIONES = MIS_NOTIFICACIONES.filter(function (n) { return n.id !== aviso.id; });
+    return;
+  }
+  if (aviso.origen === 'precio') {
+    guardarMemoria('avisosPrecio', (leerMemoria('avisosPrecio', []) || []).filter(function (n) { return n.id !== aviso.id; }));
+  }
+  guardarMemoria('notisBorradas', (leerMemoria('notisBorradas', []) || []).concat(aviso.clave).slice(-200));
+}
+
 // Encabezado: con sesión muestra Amigos, campana y la pastilla del usuario.
 function prepararEncabezado() {
   var sesion = obtenerSesion();
@@ -1640,14 +1681,16 @@ function prepararEncabezado() {
 
   var usuario = buscarPorId('usuarios', sesion.user);
   var nivel = leerMemoria('profile', {}).level || (usuario && usuario.nivel) || 1;
-  var avisos = avisosDePrecio().concat(datosDe('notificaciones').filter(function (n) { return n.usuario === sesion.user; }));
+  var avisos = avisosDeLaCampana();
   var solicitudes = datosDe('usuarios').filter(function (u) { return relacionCon(u.usuario) === 'solicitud recibida'; });
   // El número de la campana cuenta solo lo que todavía no has visto (al abrir la ventana se marca como visto).
-  // Lo visto se guarda en este navegador ("ss.notisVistas": ids de avisos y @ de quienes te enviaron solicitud).
+  // Las de la base: las no leídas (campo leida, en cualquier navegador). Lo demás: lo visto en este navegador
+  // ("ss.notisVistas": claves de avisos y @ de quienes te enviaron solicitud).
   var vistas = leerMemoria('notisVistas', []) || [];
-  var claves = avisos.map(function (n) { return 'aviso:' + n.id; })
+  var claves = avisos.filter(function (n) { return n.origen !== 'base'; }).map(function (n) { return n.clave; })
     .concat(solicitudes.map(function (u) { return 'solicitud:' + u.usuario; }));
-  var cantidad = claves.filter(function (c) { return vistas.indexOf(c) === -1; }).length;
+  var noLeidas = avisos.filter(function (n) { return n.origen === 'base' && !n.leida; });
+  var cantidad = claves.filter(function (c) { return vistas.indexOf(c) === -1; }).length + noLeidas.length;
 
   acciones.innerHTML =
     '<a class="boton boton--secundario boton--icono navegacion__ocultar-movil" href="' + rutaPagina('amigos.html') + '" aria-label="Amigos">' + ICONO_AMIGOS + '</a>' +
@@ -1673,6 +1716,13 @@ function prepararEncabezado() {
   acciones.querySelector('[data-notificaciones]').addEventListener('click', function () {
     // Todo lo que está ahora queda visto: se quita el número de la campana
     guardarMemoria('notisVistas', vistas.concat(claves.filter(function (c) { return vistas.indexOf(c) === -1; })).slice(-200));
+    // Las de la base quedan leídas en la base (así el número también se quita en otro navegador)
+    noLeidas.forEach(function (n) {
+      actualizarDatos('notificaciones', n.id, { leida: true }).then(function () {
+        MIS_NOTIFICACIONES.forEach(function (x) { if (x.id === n.id) x.leida = true; });
+      }).catch(function () { /* se marcará la próxima vez */ });
+    });
+    noLeidas = [];
     var campana = this;
     var numero = campana.querySelector('.navegacion__contador');
     if (numero) numero.remove();
@@ -1682,14 +1732,41 @@ function prepararEncabezado() {
       ? '<a class="tarjeta tarjeta--enlace" href="' + rutaPagina('amigos.html') + '#solicitudes"><b>' + solicitudes.length + (solicitudes.length === 1 ? ' solicitud' : ' solicitudes') + ' de amistad</b>' +
         '<span class="tarjeta__texto">' + solicitudes.map(function (u) { return escapar(u.nombre); }).join(', ') + '</span></a>'
       : '') +
-      avisos.map(function (n) {
-        return '<a class="tarjeta tarjeta--enlace" href="' + rutaPagina(n.enlace) + '"><span>' + escapar(n.texto) + '</span>' +
-          (n.fecha ? '<span class="tarjeta__texto">' + formatearFecha(n.fecha) + '</span>' : '') + '</a>';
+      avisos.map(function (n, i) {
+        // Cada aviso: su texto (con enlace) y una ✕ para eliminarlo
+        return '<div class="fila" data-aviso="' + i + '">' +
+          '<a href="' + rutaPagina(n.enlace) + '"><span>' + escapar(n.texto) + '</span>' +
+            (n.fecha ? '<br><span class="tarjeta__texto">' + formatearFecha(n.fecha) + '</span>' : '') + '</a>' +
+          '<button class="boton boton--fantasma boton--icono boton--sm al-final" type="button" data-borrar-aviso="' + i + '" aria-label="Eliminar notificación: ' + escapar(n.texto) + '">' + ICONO_CERRAR + '</button>' +
+        '</div>';
       }).join('');
+    var vacio = '<div class="vacio">No tienes avisos nuevos.</div>';
     abrirModal({
       titulo: 'Notificaciones',
-      html: '<div class="pila pila--junta">' + (html || '<div class="vacio">No tienes avisos nuevos.</div>') + '</div>',
+      html: '<div class="pila pila--junta" id="lista-notificaciones">' + (html || vacio) + '</div>',
       acciones: [{ texto: 'Cerrar' }]
+    });
+    var lista = document.getElementById('lista-notificaciones');
+    lista.addEventListener('click', async function (e) {
+      var boton = e.target.closest('[data-borrar-aviso]');
+      if (!boton) return;
+      var aviso = avisos[Number(boton.dataset.borrarAviso)];
+      boton.disabled = true;
+      try {
+        await borrarAviso(aviso);
+      } catch (error) {
+        boton.disabled = false;
+        mostrarAviso('No pudimos borrar. Intenta de nuevo.');
+        return;
+      }
+      var tarjeta = boton.closest('[data-aviso]');
+      // El foco pasa a la ✕ siguiente (o a "Cerrar"), para seguir con el teclado
+      var siguiente = tarjeta.nextElementSibling || tarjeta.previousElementSibling;
+      tarjeta.remove();
+      if (!lista.children.length) lista.innerHTML = vacio;
+      var foco = siguiente && siguiente.querySelector ? siguiente.querySelector('[data-borrar-aviso]') : null;
+      (foco || document.querySelector('.modal__acciones .boton')).focus();
+      mostrarAviso('Notificación eliminada');
     });
   });
 
@@ -5991,6 +6068,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (siguiente && direccionCompleta(siguiente) !== location.href) { location.replace(siguiente); return; }
     // ¿La sesión es de una cuenta real con fila en usuarios? Entonces lo propio se lee y se guarda en la base
     if (!esError) { await reconocerMiFila(false); traerMiPerfilDeLaBase(); }
+    // La campana: las notificaciones propias de la base
+    if (!esError) await cargarMisNotificaciones();
     // Steam vinculada: en la base (y los +100 XP la primera vez)
     var avisoXp = esError ? null : await guardarSteamEnLaBase().catch(function (error) { console.error('No se pudo guardar Steam en la base:', error); return null; });
     if (avisoXp) aviso = aviso ? aviso + ' · ' + avisoXp : avisoXp;

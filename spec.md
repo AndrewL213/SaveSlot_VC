@@ -345,8 +345,8 @@ Se relaciona con: usuarios.id y eventos.id. Una por persona y evento. Inscribirs
 Qué guarda: los avisos de cada persona.
 Tipo de dato: personal
 Se guarda en: Supabase
-Desde la app se puede: ver las propias y marcarlas como leídas (ventana Notificaciones). Las crea la base: con cada voto "útil" a una reseña tuya y cuando se acerca el cierre de inscripciones de un evento tuyo.
-Hoy: los avisos de ejemplo salen de `js/data.js`; los de baja de precio de la lista de deseos de Steam los crea la app y quedan en el navegador (7 días); "leída" también se guarda en el navegador (al abrir la ventana, todo queda visto).
+Desde la app se puede: ver las propias, marcarlas como leídas (al abrir la ventana) y borrarlas una por una (ventana Notificaciones). Las crea la base: con cada voto "útil" a una reseña tuya y cuando se acerca el cierre de inscripciones de un evento tuyo (este último necesita una tarea programada que ejecute `crear_avisos_de_cierre`: todavía no existe).
+Hoy: los avisos de baja de precio de la lista de deseos de Steam los crea la app y quedan en el navegador (7 días; borrarlos también es en el navegador). Sin cuenta real se ven los avisos de ejemplo de `js/data.js`.
 Campos:
 - id: número — obligatorio
 - usuario: texto — obligatorio
@@ -476,8 +476,8 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 | `usuariosSteam` | Supabase Auth (`user_metadata.usuario`, ya se guarda ahí) | Sí |
 | `steamPerfil`, `steamBiblioteca`, `steamLogros`, `steamDeseos`, `steamResenas` | Ninguna: son copias de lo que da Steam, para mostrar algo mientras llega lo nuevo | — |
 | `juegos_igdb` | Ninguna: copia de los últimos 100 juegos de IGDB abiertos, para que reseñas, deseos y diario sepan su nombre y portada | — |
-| `avisosPrecio` | **notificaciones** (los avisos de baja de precio) | No |
-| `notisVistas` | **notificaciones** (campo `leida`) | No |
+| `avisosPrecio` | **notificaciones** (los avisos de baja de precio) | No (siguen en el navegador, 7 días) |
+| `notisVistas`, `notisBorradas` | **notificaciones** (campo `leida`; borrar) | Sí para las de la base; las de precio siguen en el navegador |
 | `steamRecientesVistos` | Ninguna: cuándo vio la app crecer el tiempo de cada juego reciente de Steam, para ordenarlos del último jugado al más antiguo (Steam no da la fecha de los juegos prestados o de prueba) |
 | `steamPreciosAvisados`, `steamPreciosRevisados` | Ninguna: recuerdan qué descuento ya se avisó y cuándo se revisó la lista de deseos de Steam |
 | `hideDemo`, `datosDe.*`, `duenoDatos` | Ninguna: son ayudas del modo demo y se quitan |
@@ -941,13 +941,15 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 ### 26. Ventana: Notificaciones
 - **Archivo de diseño:** sale desde disenos/js/app.js (campana del encabezado, solo con sesión iniciada)
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda ver sus avisos. Sabemos que funciona si la persona abre la ventana desde la campana.
-- **Número de la campana:** cuenta solo los avisos y solicitudes que todavía no has visto; al abrir la ventana se quita (lo visto se guarda en el navegador, `ss.notisVistas`).
-- **Qué funciona de verdad:** Avisos: Real (Supabase): votos "útil" a tus reseñas y cierre de inscripciones de tus eventos (hoy la base ya crea los de "útil", pero la campana todavía muestra los de ejemplo de `js/data.js`). Real (Steam): baja de precio de un juego de tu lista de deseos de Steam (se revisa cada 6 horas al abrir cualquier página; el aviso queda 7 días y se guarda en el navegador)
+- **Número de la campana:** cuenta solo lo que todavía no has visto: las notificaciones no leídas de la base y los avisos de precio y solicitudes nuevos (estos, en el navegador: `ss.notisVistas`). Al abrir la ventana se quita y las de la base quedan leídas en la base.
+- **Eliminar:** cada aviso tiene una ✕ ("Eliminar notificación") a la derecha. Los de la base se borran en la base; los de precio, en el navegador (no vuelven, salvo que el juego baje más). Si falla, avisa "No pudimos borrar". La tarjeta de solicitudes de amistad no se borra: se resuelve en Amigos.
+- **Qué funciona de verdad:** Avisos: Real (Supabase): votos "útil" a tus reseñas y cierre de inscripciones de tus eventos (los de cierre necesitan una tarea programada que todavía no existe). Sin cuenta real, los de ejemplo de `js/data.js`. Real (Steam): baja de precio de un juego de tu lista de deseos de Steam (se revisa cada 6 horas al abrir cualquier página; el aviso queda 7 días y se guarda en el navegador)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
   - La campana solo aparece con sesión iniciada y muestra cuántos avisos hay.
   - La ventana se cierra con "Cerrar", la X o Escape.
+  - Cada aviso se puede eliminar con su ✕, y el foco pasa al siguiente.
 
 ### 27. Contáctanos
 - **Archivo de diseño:** disenos/contacto.html (y la ventana "Mensaje guardado")

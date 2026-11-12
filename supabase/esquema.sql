@@ -560,12 +560,14 @@ drop policy if exists "inscripciones: cancelar las propias" on public.inscripcio
 create policy "inscripciones: cancelar las propias" on public.inscripciones for delete to authenticated using (usuario_id = (select public.mi_usuario_id()));
 grant select, insert, delete on table public.inscripciones to authenticated;
 
--- notificaciones: cada persona ve las suyas y las marca como leídas; las crea la base
+-- notificaciones: cada persona ve las suyas, las marca como leídas y las borra (una por una); las crea la base
 drop policy if exists "notificaciones: ver las propias" on public.notificaciones;
 create policy "notificaciones: ver las propias" on public.notificaciones for select to authenticated using (usuario_id = (select public.mi_usuario_id()));
 drop policy if exists "notificaciones: marcar las propias" on public.notificaciones;
 create policy "notificaciones: marcar las propias" on public.notificaciones for update to authenticated using (usuario_id = (select public.mi_usuario_id())) with check (usuario_id = (select public.mi_usuario_id()));
-grant select on table public.notificaciones to authenticated;
+drop policy if exists "notificaciones: borrar las propias" on public.notificaciones;
+create policy "notificaciones: borrar las propias" on public.notificaciones for delete to authenticated using (usuario_id = (select public.mi_usuario_id()));
+grant select, delete on table public.notificaciones to authenticated;
 grant update (leida) on table public.notificaciones to authenticated;
 
 -- chats_matchplay: cada persona ve, crea y borra sus chats
