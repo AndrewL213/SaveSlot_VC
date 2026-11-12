@@ -15,7 +15,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 |---|---|---|---|---|---|
 | 1. Inicio | `index.html` | ✅ | ✅ | ✅ (IGDB y Supabase; vistos recientemente de la base) | ✅ |
 | 3. Buscar juegos | `pages/buscar-juegos.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ✅ |
-| 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ⬜ |
+| 4. Juego random | `pages/juego-random.html` | ✅ | ✅ | ✅ (catálogo real de IGDB) | ✅ |
 | 5. MatchPlay | `pages/matchplay.html` | ✅ | ✅ | ✅ (tendencias de Supabase; chats en el navegador) | ⬜ |
 | 6. Detalle de juego | `pages/detalle-juego.html` | ✅ | ✅ | ✅ (IGDB y Supabase; guarda la lista de deseos) | ⬜ |
 | 7. Ventana: Dificultad de 1 a 10 | dentro de `pages/detalle-juego.html` | ✅ | ✅ | ✅ (texto fijo) | ⬜ |
@@ -71,7 +71,7 @@ Pasar a Supabase (las tablas ya existen en `esquema.sql`; hoy se guarda en el na
 - **Chats de MatchPlay** (tablas **chats_matchplay** y **mensajes_matchplay**), en el mismo paso que conectar una IA real a MatchPlay (hoy sus respuestas son simuladas).
 
 Arreglos:
-- Las descripciones de IGDB se traducen cada vez con el enlace gratis de Google; falta guardarlas en la tabla **traducciones** y pasar a DeepL.
+- **Urgente:** el enlace gratis de Google Translate ya está bloqueado (responde 429): hoy todas las descripciones salen en inglés. Solución sin código: poner `DEEPL_API_KEY` en Vercel (api/igdb.js ya la usa). Las descripciones de IGDB se traducen cada vez; falta guardarlas en la tabla **traducciones** y pasar a DeepL.
 - Opcional: desactivar los inicios de sesión anónimos en Supabase (el invitado ya no los usa).
 
 Al final: conectar **Xbox y PlayStation** (hoy Xbox es una demo en el navegador y PlayStation se registra a mano; la base todavía no acepta Xbox). Y una **web administrativa** para registrar torneos y sorteos fácilmente y ponerles precio real y XP (hoy los eventos se cargan con SQL). No está en spec.md: antes hay que agregarla allí, con quién puede entrar (un rol de administrador en Supabase) y qué puede cambiar.
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de Juego random (noviembre)**: cumple sus 4 criterios (el juego es del género elegido y «Dame otro» nunca repite el anterior). Tiene 15 géneros (el diseño, 9) y el género elegido usa el `.chip` activo del kit (blanco; el diseño lo tenía azul). **Problema general encontrado:** el enlace gratis de Google Translate responde 429 (bloqueado), así que hoy todas las descripciones de juegos salen en inglés (ver «Lo que falta»).
 - **Revisión de Buscar juegos (noviembre)**: cumple sus 6 criterios. Nota y dificultad salen con «—» hasta que los juegos tengan reseñas en SaveSlot. Arreglo: con el filtro de duración, si en el grupo de juegos que trae IGDB no cumple ninguno, el título dice «0 juegos» (antes «0+») y aparece «Ver más juegos» para buscar en los siguientes (antes parecía que no había nada).
 - **Revisión de la ventana Evento del mes (noviembre)**: cumple sus 4 criterios. Para igualar el diseño se agregó al kit la ventana centrada con ícono (`.modal--centrada` y `.modal__icono`, con `--exito` en verde; en componentes.html) y `abrirModal({ icono: 'trofeo' | 'listo' })`. En todas las ventanas, el foco al abrir ahora va al primer botón de acciones (antes iba a la ✕). Pendiente del kit: el ejemplo de pestañas de componentes.html se sale de lado en celular (420 px).
 - **Revisión de Inicio (noviembre)**: cumple sus 5 criterios (diseño, celular, buscar «Hades», vistos recientemente y ventana «Evento del mes»). Diferencias con el diseño que vienen de los datos reales: «Mejores juegos de la semana» no muestra nota (los juegos de IGDB todavía no tienen reseñas en SaveSlot), hay menos reseñas destacadas y el evento del mes está cerrado (la ventana solo sale si está abierto). Se actualizaron en todas las páginas la franja de arriba, el pie y la página «Más información» (ya no dicen que eventos y amigos son de ejemplo).
