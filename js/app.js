@@ -1552,8 +1552,17 @@ var ICONO_CERRAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 
 // Abre una ventana. opciones: { titulo, texto, html, acciones: [{ texto, href, principal, peligro, alTocar }] }
 // Una acción con alTocar ejecuta esa función y cierra la ventana.
+// Íconos de la ventana centrada (como en el diseño): trofeo (azul) y listo (verde)
+var ICONOS_MODAL = {
+  trofeo: { clase: '', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/></svg>' },
+  listo: { clase: ' modal__icono--exito', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>' }
+};
+
+// Abre una ventana. opciones: titulo, texto o html, acciones [{ texto, href | alTocar, principal, peligro }]
+// e icono ('trofeo' o 'listo'): con ícono, la ventana va centrada (.modal--centrada).
 function abrirModal(opciones) {
   var anterior = document.activeElement;
+  var icono = ICONOS_MODAL[opciones.icono] || null;
   var acciones = (opciones.acciones || []).map(function (a, i) {
     var clase = 'boton' + (a.peligro ? ' boton--peligro' : (a.principal ? '' : ' boton--secundario'));
     return a.href
@@ -1562,8 +1571,9 @@ function abrirModal(opciones) {
   }).join('');
   var fondo = crearElemento(
     '<div class="modal-fondo">' +
-      '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">' +
+      '<div class="modal' + (icono ? ' modal--centrada' : '') + '" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">' +
         '<button class="boton boton--fantasma boton--icono modal__cerrar" type="button" aria-label="Cerrar" data-cerrar>' + ICONO_CERRAR + '</button>' +
+        (icono ? '<span class="modal__icono' + icono.clase + '" aria-hidden="true">' + icono.svg + '</span>' : '') +
         '<h2 class="modal__titulo" id="modal-titulo">' + escapar(opciones.titulo) + '</h2>' +
         (opciones.texto ? '<p class="modal__texto">' + escapar(opciones.texto) + '</p>' : '') +
         (opciones.html || '') +
@@ -1590,7 +1600,8 @@ function abrirModal(opciones) {
   });
   document.addEventListener('keydown', alTeclear);
   document.body.appendChild(fondo);
-  var primero = fondo.querySelector('.modal__acciones .boton, .modal__cerrar');
+  // El foco va al primer botón de acciones (el principal, o "Cancelar" en una confirmación); si no hay, a la ✕
+  var primero = fondo.querySelector('.modal__acciones .boton') || fondo.querySelector('.modal__cerrar');
   if (primero) primero.focus();
   return cerrar;
 }
@@ -2162,6 +2173,7 @@ function pantallaIndex() {
     guardarVisita('eventoDelMesVisto', '1');
     setTimeout(function () {
       abrirModal({
+        icono: 'trofeo',
         titulo: delMes.titulo,
         texto: 'Evento del mes. Arma tu equipo y compite. ' + delMes.fecha_hora + ' · ' + delMes.cupos_ocupados + ' de ' + delMes.cupos_maximos + ' cupos ocupados.',
         acciones: [{ texto: 'Ver evento', href: rutaPagina('detalle-evento.html') + '?id=' + encodeURIComponent(delMes.id), principal: true }]

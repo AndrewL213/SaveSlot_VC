@@ -34,7 +34,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 
 | Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
-| 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ✅ | ✅ (Supabase) | ✅ |
 | 13. Eventos | `pages/eventos.html` | ✅ | ✅ | ✅ (Supabase; los cerrados con «CERRADO») | ⬜ |
 | 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase: inscribirse en la base; cerrados bloqueados) | ⬜ |
 | 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase; XP de la base) | ⬜ |
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de la ventana Evento del mes (noviembre)**: cumple sus 4 criterios. Para igualar el diseño se agregó al kit la ventana centrada con ícono (`.modal--centrada` y `.modal__icono`, con `--exito` en verde; en componentes.html) y `abrirModal({ icono: 'trofeo' | 'listo' })`. En todas las ventanas, el foco al abrir ahora va al primer botón de acciones (antes iba a la ✕). Pendiente del kit: el ejemplo de pestañas de componentes.html se sale de lado en celular (420 px).
 - **Revisión de Inicio (noviembre)**: cumple sus 5 criterios (diseño, celular, buscar «Hades», vistos recientemente y ventana «Evento del mes»). Diferencias con el diseño que vienen de los datos reales: «Mejores juegos de la semana» no muestra nota (los juegos de IGDB todavía no tienen reseñas en SaveSlot), hay menos reseñas destacadas y el evento del mes está cerrado (la ventana solo sale si está abierto). Se actualizaron en todas las páginas la franja de arriba, el pie y la página «Más información» (ya no dicen que eventos y amigos son de ejemplo).
 - **Avisos de cierre (noviembre)**: la tarea «avisos-de-cierre» de pg_cron (sección 8 de `esquema.sql`) crea cada hora los avisos «X cierra inscripciones pronto» para quien se inscribió, cuando faltan menos de 24 horas. Necesita la extensión pg_cron activada en Supabase (Database → Extensions).
 - **Vistos recientemente (noviembre)**: con una cuenta real, abrir un juego lo guarda en Supabase (tabla **vistos_recientes**, una fila por juego: volver a abrirlo solo cambia la fecha) e Inicio muestra los 6 más recientes de la base, en cualquier computador. Lo que estaba en el navegador se sube una vez. Los juegos que solo están en Steam se quedan en el navegador.
@@ -104,7 +105,7 @@ Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 - **Index.html**: la cabecera de la v3 viene con los estilos de una vista previa; en la app ya está arreglada (igual que en noviembre).
 - **Comunidad, pestaña Guías**: cada guía abre su juego (como en el diseño), no un Detalle de reseña; las guías de ejemplo no tienen texto completo.
 - **Detalle de evento**: la banda usa el color de cada evento (el diseño usa azul fijo para torneos y verde para sorteos). Premio, costo y organizadores siguen con los textos entre corchetes del diseño hasta tener los datos reales en Supabase.
-- **Notificaciones**: no muestra el aviso de comentarios del diseño («Kenneth y Daniela comentaron…»), porque la spec solo define avisos de votos «útil» y de cierre de inscripciones; las ventanas del kit no llevan el ícono de arriba del diseño.
+- **Notificaciones**: no muestra el aviso de comentarios del diseño («Kenneth y Daniela comentaron…»), porque la spec solo define avisos de votos «útil» y de cierre de inscripciones; las ventanas del kit no llevaban el ícono de arriba del diseño: ahora existe `.modal--centrada` con `.modal__icono` y se va agregando al revisar cada ventana.
 - **Avatares**: los de amigos no llevan el color de fondo de cada persona como en el diseño (el avatar del kit no tiene esa opción).
 - **Perfil de otro usuario**: «Juegos» cuenta los juegos que la persona calificó (el diseño suma un número fijo); el avatar grande es azul y no del color de la persona.
 - **Inicio**: «Mejores juegos de la semana» sale de IGDB («jugando ahora»). Tiene una sección «Lo más jugado en Steam» que el diseño no traía. El aviso de arriba y el pie ya dicen que el catálogo es real (IGDB).

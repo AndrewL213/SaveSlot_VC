@@ -2436,7 +2436,7 @@ button.navegacion__usuario {
 
 /* ==========================================================================
    Modal
-   .modal-fondo oscurece la pantalla; dentro va .modal.
+   .modal-fondo oscurece la pantalla; dentro va .modal (+ --centrada, con .modal__icono arriba).
    En celular el modal sale desde abajo.
    ========================================================================== */
 .modal-fondo {
@@ -2502,6 +2502,38 @@ button.navegacion__usuario {
 
 .modal__acciones > * {
   flex: 1;
+}
+
+/* Modal centrado con ícono arriba (Evento del mes y confirmaciones, como en el diseño).
+   .modal__icono: círculo de 72 px con el ícono (azul; --exito, verde, para "listo") */
+.modal--centrada {
+  align-items: center;
+  text-align: center;
+}
+
+.modal--centrada .modal__acciones {
+  align-self: stretch;
+}
+
+.modal__icono {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: calc(var(--espacio-8) + var(--espacio-7));
+  height: calc(var(--espacio-8) + var(--espacio-7));
+  border-radius: var(--radio-total);
+  background: var(--color-primario-tinte);
+  color: var(--color-primario);
+}
+
+.modal__icono--exito {
+  background: var(--color-exito-tinte);
+  color: var(--color-exito);
+}
+
+.modal__icono svg {
+  width: calc(var(--espacio-7) + var(--espacio-1));
+  height: calc(var(--espacio-7) + var(--espacio-1));
 }
 
 @media (max-width: 700px) {
