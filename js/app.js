@@ -1213,6 +1213,19 @@ function pedirJuego(id) {
   });
 }
 
+// Pide a IGDB los juegos (slug o número) que no están en data.js ni en la copia del navegador, para que
+// las pantallas los puedan dibujar (por ejemplo, en un computador nuevo). Los de Steam no se piden.
+// Devuelve una promesa: true si trajo alguno (hay que volver a dibujar), false si no faltaba nada.
+function traerJuegosQueFaltan(referencias) {
+  var faltan = referencias.filter(function (ref, i, todas) {
+    return ref != null && ref !== '' && todas.indexOf(ref) === i && !/^steam-/.test(ref) && !buscarPorId('juegos', ref);
+  });
+  if (!faltan.length) return Promise.resolve(false);
+  return Promise.all(faltan.map(function (ref) {
+    return pedirJuego(esNumeroDeJuego(ref) ? Number(ref) : ref).catch(function () { return null; });
+  })).then(function (juegos) { return juegos.some(Boolean); });
+}
+
 // Busca juegos de data.js con filtros: { texto, generos, plataformas, tipo, duracion, desde, hasta }.
 // Buscar juegos le pregunta a IGDB y usa esta función solo si IGDB no responde.
 function buscarJuegos(filtros) {
@@ -4613,11 +4626,16 @@ function pantallaPerfil() {
   }
 
   // Juegos favoritos (4 lugares)
-  var favoritos = perfil.favorites.slice(0, 4).map(function (id) { return buscarPorId('juegos', id); }).filter(Boolean);
-  document.getElementById('cantidad-favoritos').textContent = favoritos.length + ' de 4';
-  document.getElementById('favoritos-perfil').innerHTML = favoritos.map(function (j) {
-    return '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b></a>';
-  }).join('') + new Array(4 - favoritos.length + 1).join('<a class="vacio" href="editar-perfil.html#favoritos">+ Elegir favorito</a>');
+  function dibujarFavoritos() {
+    var favoritos = perfil.favorites.slice(0, 4).map(function (id) { return buscarPorId('juegos', id); }).filter(Boolean);
+    document.getElementById('cantidad-favoritos').textContent = favoritos.length + ' de 4';
+    var caja = document.getElementById('favoritos-perfil');
+    caja.innerHTML = favoritos.map(function (j) {
+      return '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b></a>';
+    }).join('') + new Array(4 - favoritos.length + 1).join('<a class="vacio" href="editar-perfil.html#favoritos">+ Elegir favorito</a>');
+    aplicarColores(caja);
+  }
+  dibujarFavoritos();
 
   // Actividad reciente: lo jugado en Steam las últimas 2 semanas y los últimos del diario (máx. 8)
   function dibujarRecientes() {
@@ -4771,6 +4789,16 @@ function pantallaPerfil() {
       try { await cambiarDeseo(id, true, posicion); } catch (error) { mostrarAviso('No pudimos guardar. Intenta de nuevo.'); }
       dibujarDeseos();
     } });
+  });
+
+  // Los juegos de IGDB que no están en este navegador (por ejemplo, en un computador nuevo) se piden
+  // a IGDB y se vuelven a dibujar favoritos, actividad y lista de deseos
+  var referencias = perfil.favorites.slice(0, 4).concat(leerPerfil().wishlist || [], diario.slice(0, 6).map(function (d) { return d.juego_igdb; }));
+  traerJuegosQueFaltan(referencias).then(function (trajo) {
+    if (!trajo) return;
+    dibujarFavoritos();
+    dibujarRecientes();
+    dibujarDeseos();
   });
 
   aplicarColores(document);

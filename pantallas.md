@@ -45,7 +45,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 |---|---|---|---|---|---|
 | 16. Iniciar sesión | `pages/iniciar-sesion.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ✅ |
 | 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ✅ |
-| 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam; misiones con api/steam/misiones.js; quitar de la lista de deseos y cancelar inscripciones en la base) | ⬜ |
+| 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam; misiones con api/steam/misiones.js; quitar de la lista de deseos y cancelar inscripciones en la base) | ✅ |
 | 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ (misiones de Supabase) | ⬜ |
 | 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase: guarda perfil público, favoritos, géneros y Steam vinculada) | ⬜ |
 | 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de Perfil (noviembre)**: cumple sus 4 criterios (muestra reseñas, favoritos, deseos, amigos y eventos; sin sesión pide iniciar sesión; celular). Arreglo: los juegos de IGDB que no estaban en este navegador desaparecían sin avisar de los favoritos, la lista de deseos (el número decía 1 y la lista, vacía) y la actividad del diario. Ahora se piden a IGDB con `traerJuegosQueFaltan` y se vuelven a dibujar. Falta revisar lo mismo en Perfil de otro usuario, Diario e Historial.
 - **Revisión de Crear cuenta (noviembre)**: cumple sus 6 criterios (los 5 errores de campo y el @ ocupado, el medidor de fuerza en 5 niveles, Google, Discord, Twitch y Steam con su página de error si fallan, y el aviso «Te enviamos un correo»). Se cambió el texto de abajo, que decía que la cuenta se guardaba solo en el navegador: ahora dice que se guarda en Supabase y que SaveSlot nunca ve la contraseña.
 - **Revisión de Iniciar sesión (noviembre)**: cumple sus 6 criterios sin cambios (errores junto al campo con correo mal escrito, sin contraseña o con una cuenta que no existe; al entrar, el encabezado muestra a la persona; «Entrar como invitado» abre un perfil vacío; Google, Discord, Twitch y Steam piden entrar con su servicio y, si falla, llevan a la página de error con su nombre; celular).
 - **Revisión de la ventana Inscripción confirmada (noviembre)**: cumple sus 3 criterios (el texto cambia en torneo, en torneo con los XP ya ganados y en sorteo). Ahora lleva el ✓ verde del diseño. Tiene además «Ver mis eventos» (el diseño solo traía «Listo»), que lleva a donde se comprueba el objetivo.
