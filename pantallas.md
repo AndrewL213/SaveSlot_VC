@@ -27,7 +27,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ (IGDB y Supabase: guarda reseñas, borradores y diario) | ✅ |
 | 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ (Supabase; XP de la base) | ✅ |
 | 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ✅ | ✅ (texto fijo) | ✅ |
-| 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
+| 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ (Supabase) | ✅ |
 | 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ✅ | ✅ (Supabase: lee y guarda útil, me gusta, comentarios y eliminar) | ⬜ |
 
 ## Eventos
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de Comunidad (noviembre)**: cumple sus 5 criterios sin cambios (pestañas Reseñas, De tus amigos y Guías; orden «Más útiles» y «Más recientes»; cada tarjeta abre su Detalle de reseña; celular). Hoy se ve casi vacía porque en la base hay una sola reseña real.
 - **Revisión de la ventana Necesitas una cuenta (noviembre)**: cumple sus 3 criterios. Como en el diseño, lleva el ícono de persona (`icono: 'usuario'`), «Crear cuenta gratis» va primero y el texto dice «Para …, crea tu cuenta gratis». Arreglo: Crear cuenta perdía la dirección de vuelta; ahora la pasa a Editar perfil (pasos 2 y 3) por correo, Google, Discord y Twitch, y al guardar vuelve a donde estaba la persona (sin dirección, al Perfil). Lo mismo al entrar por primera vez con Google, Discord o Twitch desde cualquier página. La vuelta real desde el correo de confirmación y desde Google se debe probar con una cuenta nueva.
 - **Revisión de la ventana Publicación confirmada (noviembre)**: cumple sus 3 criterios (dice «Reseña publicada» o «Guía publicada» y los XP ganados). Como en el diseño, ahora lleva el ✓ verde arriba (`icono: 'listo'`), también «Reseña actualizada», con cuenta real y como invitado.
 - **Revisión de Escribir reseña (noviembre)**: cumple sus 6 criterios (mínimo de 50 caracteres con su error, «Necesitas una cuenta» sin sesión, lo publicado aparece en el juego, el Diario y el Historial, y abre cualquier juego de IGDB). «Clip» sigue diciendo que llega pronto (Después); se corrigió el texto de la pestaña Clips de Detalle de juego, que decía que ya se podían subir.
