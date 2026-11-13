@@ -445,7 +445,13 @@ async function sincronizarSesionSupabase() {
   if (datosCuenta.foto) propio.foto = datosCuenta.foto;
   guardarMemoria('profile', propio);
   // La cuenta creada con Steam no es nueva: no se muestra "¡Cuenta creada!"
-  return nueva && !esCuentaSoloSteam(cuenta) ? rutaPagina('editar-perfil.html') + '?nuevo=1' : null;
+  if (!nueva || esCuentaSoloSteam(cuenta)) return null;
+  // Ya en Editar perfil (vino de Crear cuenta, con su ?nuevo=1 y su ?volver=): se queda
+  var aqui = location.pathname.split('/').pop() + location.search;
+  if (/^editar-perfil\.html/.test(aqui)) return null;
+  // Si no, a Editar perfil (pasos 2 y 3) y después de vuelta a esta página (la que pidió al entrar)
+  var volverAqui = PAGINA_DE_LA_APP.test(aqui) && !/^perfil\.html/.test(aqui) ? '&volver=' + encodeURIComponent(aqui) : '';
+  return rutaPagina('editar-perfil.html') + '?nuevo=1' + volverAqui;
 }
 
 // Botones de Google, Discord y Twitch: entran con ese servicio y vuelven a "destino".
@@ -1575,14 +1581,15 @@ var ICONO_CERRAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 
 // Abre una ventana. opciones: { titulo, texto, html, acciones: [{ texto, href, principal, peligro, alTocar }] }
 // Una acción con alTocar ejecuta esa función y cierra la ventana.
-// Íconos de la ventana centrada (como en el diseño): trofeo (azul) y listo (verde)
+// Íconos de la ventana centrada (como en el diseño): trofeo y usuario (azules) y listo (verde)
 var ICONOS_MODAL = {
+  usuario: { clase: '', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>' },
   trofeo: { clase: '', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/></svg>' },
   listo: { clase: ' modal__icono--exito', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>' }
 };
 
 // Abre una ventana. opciones: titulo, texto o html, acciones [{ texto, href | alTocar, principal, peligro }]
-// e icono ('trofeo' o 'listo'). Va centrada (.modal--centrada) si tiene ícono o es solo texto; con html, a la izquierda.
+// e icono ('trofeo', 'usuario' o 'listo'). Va centrada (.modal--centrada) si tiene ícono o es solo texto; con html, a la izquierda.
 function abrirModal(opciones) {
   var anterior = document.activeElement;
   var icono = ICONOS_MODAL[opciones.icono] || null;
@@ -1633,12 +1640,14 @@ function abrirModal(opciones) {
 // Ventana "Necesitas una cuenta": vuelve a esta página al terminar.
 function pedirCuenta(motivo) {
   var volver = encodeURIComponent(location.pathname.split('/').pop() + location.search);
+  // Como en el diseño: ícono de persona, y primero "Crear cuenta gratis" (la acción principal)
   abrirModal({
+    icono: 'usuario',
     titulo: 'Necesitas una cuenta',
-    texto: 'Crea tu cuenta gratis para ' + motivo + '. Solo toma un minuto.',
+    texto: 'Para ' + motivo + ', crea tu cuenta gratis. Solo toma un minuto.',
     acciones: [
-      { texto: 'Ya tengo cuenta', href: rutaPagina('iniciar-sesion.html') + '?volver=' + volver },
-      { texto: 'Crear cuenta gratis', href: rutaPagina('crear-cuenta.html') + '?volver=' + volver, principal: true }
+      { texto: 'Crear cuenta gratis', href: rutaPagina('crear-cuenta.html') + '?volver=' + volver, principal: true },
+      { texto: 'Ya tengo cuenta', href: rutaPagina('iniciar-sesion.html') + '?volver=' + volver }
     ]
   });
 }
@@ -4066,10 +4075,23 @@ function inicialesDe(nombre) {
   return nombre.trim().split(/\s+/).slice(0, 2).map(function (p) { return p[0]; }).join('').toUpperCase() || 'S';
 }
 
+// La dirección de vuelta (?volver=…), solo si es una página de la app; si no, null
+var PAGINA_DE_LA_APP = /^[a-z0-9\-]+\.html(\?[^<>"'\s]*)?$/i;
+function volverValido() {
+  var volver = new URLSearchParams(location.search).get('volver');
+  return volver && PAGINA_DE_LA_APP.test(volver) ? volver : null;
+}
+
+// Para pasar la dirección de vuelta a la siguiente página: "&volver=…" (o nada)
+function conVolver() {
+  var volver = volverValido();
+  return volver ? '&volver=' + encodeURIComponent(volver) : '';
+}
+
 // A dónde volver después de entrar (?volver=…): solo páginas de la app
 function destinoVolver() {
-  var volver = new URLSearchParams(location.search).get('volver');
-  if (!volver || !/^[a-z0-9\-]+\.html(\?[^<>"'\s]*)?$/i.test(volver)) return 'perfil.html';
+  var volver = volverValido();
+  if (!volver) return 'perfil.html';
   return /^(index|404)\.html/.test(volver) ? '../' + volver : volver;
 }
 
@@ -4161,7 +4183,8 @@ function pantallaRegistro() {
   document.getElementById('ir-a-entrar').href = 'iniciar-sesion.html' + location.search;
   activarBotonSteam();
   // Con Google, Discord o Twitch la cuenta se crea al volver; luego sigue a Editar perfil
-  activarBotonesServicios('editar-perfil.html?nuevo=1');
+  // Con la dirección de vuelta: al terminar los pasos 2 y 3, vuelve a donde estaba
+  activarBotonesServicios('editar-perfil.html?nuevo=1' + conVolver());
   var nombre = document.getElementById('nombre');
   var correo = document.getElementById('correo');
   var usuario = document.getElementById('usuario');
@@ -4212,7 +4235,7 @@ function pantallaRegistro() {
       // la fila de usuarios se crea al confirmar (sincronizarSesionSupabase). La contraseña solo la guarda Supabase.
       var r = await clienteSupabase.auth.signUp({
         email: llave, password: clave.value,
-        options: { data: { usuario: valorUsuario, nombre: nombre.value.trim() }, emailRedirectTo: direccionCompleta('editar-perfil.html?nuevo=1') }
+        options: { data: { usuario: valorUsuario, nombre: nombre.value.trim() }, emailRedirectTo: direccionCompleta('editar-perfil.html?nuevo=1' + conVolver()) }
       });
       if (r.error) {
         if (/already registered|already exists/i.test(r.error.message)) {
@@ -4229,13 +4252,13 @@ function pantallaRegistro() {
       }
       // Si el proyecto no pide confirmar el correo, la cuenta ya tiene sesión
       if (r.data && r.data.session) {
-        location.href = (await sincronizarSesionSupabase()) || 'editar-perfil.html?nuevo=1';
+        location.href = (await sincronizarSesionSupabase()) || 'editar-perfil.html?nuevo=1' + conVolver();
         return;
       }
       // Pide confirmar: se reemplaza el formulario por el aviso
       formulario.innerHTML = '<div class="vacio" role="status"><b>Te enviamos un correo a ' + escapar(llave) + '</b>' +
         '<span>Ábrelo y toca el enlace para activar tu cuenta. Después seguirás con tu perfil.</span>' +
-        '<a href="iniciar-sesion.html">Ya la confirmé: iniciar sesión</a></div>';
+        '<a href="iniciar-sesion.html' + escapar(location.search) + '">Ya la confirmé: iniciar sesión</a></div>';
     } catch (error) {
       console.error('No se pudo crear la cuenta:', error);
       marcarError(correo, document.getElementById('error-correo'), 'No pudimos crear la cuenta. Intenta de nuevo en un momento.');
@@ -5062,7 +5085,8 @@ function pantallaEditar() {
     }
     guardarMemoria('session', Object.assign({}, sesion, { user: nuevoUsuario, name: campoNombre.value.trim(), initials: inicialesDe(campoNombre.value) }));
     mostrarAviso('Cambios guardados');
-    setTimeout(function () { location.href = 'perfil.html'; }, 600);
+    var esNueva = !!new URLSearchParams(location.search).get('nuevo');
+    setTimeout(function () { location.href = esNueva ? destinoVolver() : 'perfil.html'; }, 600);
   });
 }
 
