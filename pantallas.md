@@ -47,7 +47,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 17. Crear cuenta | `pages/crear-cuenta.html` | ✅ | ✅ | ✅ (Supabase: usuarios) | ✅ |
 | 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam; misiones con api/steam/misiones.js; quitar de la lista de deseos y cancelar inscripciones en la base) | ✅ |
 | 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ (misiones de Supabase) | ✅ |
-| 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase: guarda perfil público, favoritos, géneros y Steam vinculada) | ⬜ |
+| 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase: guarda perfil público, favoritos, géneros y Steam vinculada) | ✅ |
 | 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ (Supabase: eliminar en la base) | ⬜ |
 | 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ (Steam; otras plataformas simuladas en data.js) | ⬜ |
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de Editar perfil (noviembre)**: cumple sus 6 criterios (no deja un quinto favorito, errores del @ inválido u ocupado, errores de la foto por tipo o por más de 8 MB). Arreglo: los favoritos de IGDB que no estaban en este navegador se quitaban de la lista al abrir la pantalla, y al guardar se borraban de la base. Ahora nunca se quitan solos: se ven «Cargando…» mientras llegan de IGDB, o «Juego no disponible» si IGDB no responde, y la persona decide.
 - **Revisión de la ventana Cómo ganar XP (noviembre)**: cumple sus 3 criterios sin cambios (se abre desde «¿Qué es el XP y cómo lo gano?» y se cierra con la X y con Escape, en computador y celular). Tiene más puntos que el diseño, que salen de las misiones de la base (amistad, crear la cuenta, misiones diarias y semanales). Diferencia menor: el título va a la izquierda (las ventanas con listas no van centradas); en el diseño va centrado.
 - **Revisión de Perfil (noviembre)**: cumple sus 4 criterios (muestra reseñas, favoritos, deseos, amigos y eventos; sin sesión pide iniciar sesión; celular). Arreglo: los juegos de IGDB que no estaban en este navegador desaparecían sin avisar de los favoritos, la lista de deseos (el número decía 1 y la lista, vacía) y la actividad del diario. Ahora se piden a IGDB con `traerJuegosQueFaltan` y se vuelven a dibujar. Falta revisar lo mismo en Perfil de otro usuario, Diario e Historial.
 - **Revisión de Crear cuenta (noviembre)**: cumple sus 6 criterios (los 5 errores de campo y el @ ocupado, el medidor de fuerza en 5 niveles, Google, Discord, Twitch y Steam con su página de error si fallan, y el aviso «Te enviamos un correo»). Se cambió el texto de abajo, que decía que la cuenta se guardaba solo en el navegador: ahora dice que se guarda en Supabase y que SaveSlot nunca ve la contraseña.

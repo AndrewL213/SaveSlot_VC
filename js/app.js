@@ -4928,13 +4928,16 @@ function pantallaEditar() {
     var parecidos = Object.keys(candidatos).filter(function (t) { return t.indexOf(texto) !== -1; });
     return parecidos.length === 1 ? candidatos[parecidos[0]] : null;
   }
+  // Los favoritos nunca se quitan solos: si un juego no está en este navegador, se ve "Cargando…" mientras
+  // llega de IGDB, o "Juego no disponible" si IGDB no responde. La persona decide si lo quita.
+  var favoritosSinDatos = {};
   function dibujarFavoritos() {
-    perfil.favorites = perfil.favorites.filter(function (id) { return buscarPorId('juegos', id); });
     var lleno = perfil.favorites.length >= MAXIMO_FAVORITOS;
     cajaFavoritos.innerHTML = perfil.favorites.map(function (id) {
       var j = buscarPorId('juegos', id);
-      return '<div class="portada"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b>' +
-        '<button class="portada__accion" type="button" data-quitar-favorito="' + escapar(id) + '" aria-label="Quitar ' + escapar(j.nombre_corto) + ' de favoritos">' + ICONO_CERRAR + '</button></div>';
+      var nombre = j ? j.nombre_corto : (favoritosSinDatos[id] ? 'Juego no disponible' : 'Cargando…');
+      return '<div class="portada"' + (j ? atributoColor(j.color) : '') + '>' + (j ? imagenPortada(j) : '') + '<b class="portada__titulo">' + escapar(nombre) + '</b>' +
+        '<button class="portada__accion" type="button" data-quitar-favorito="' + escapar(id) + '" aria-label="Quitar ' + escapar(nombre) + ' de favoritos">' + ICONO_CERRAR + '</button></div>';
     }).join('') + new Array(MAXIMO_FAVORITOS - perfil.favorites.length + 1).join('<div class="vacio">Espacio libre</div>');
     document.getElementById('pista-favoritos').textContent = lleno
       ? 'Ya tienes 4 favoritos. Quita uno para elegir otro.'
@@ -4992,6 +4995,11 @@ function pantallaEditar() {
   });
   botonAgregar.addEventListener('click', function () { agregarFavorito(); });
   dibujarFavoritos();
+  // Los favoritos de IGDB que no están en este navegador se piden; los que no lleguen quedan "no disponibles"
+  traerJuegosQueFaltan(perfil.favorites).then(function () {
+    perfil.favorites.forEach(function (id) { if (!buscarPorId('juegos', id)) favoritosSinDatos[id] = true; });
+    dibujarFavoritos();
+  });
   // Trae la biblioteca de Steam al día (para "¿Qué estás jugando ahora?" y las portadas de favoritos de Steam)
   if (perfil.accounts.Steam) {
     actualizarBibliotecaSteam().then(function (lista) {
