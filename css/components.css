@@ -613,6 +613,14 @@ legend.grupo-campo__etiqueta {
   min-width: 0;
 }
 
+/* Precio a la derecha de una opción: no aplasta el texto (máximo un tercio del ancho; si es largo, baja de línea) */
+.opcion__precio {
+  flex: none;
+  max-width: 33%;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
 .opcion--desactivada {
   opacity: 0.6;
   cursor: not-allowed;

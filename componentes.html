@@ -298,12 +298,12 @@
 
     <div class="cat-componente">
       <h3>Opción · <code>.opcion</code></h3>
-      <p>Un radio dentro de una tarjeta, para elegir una forma entre varias. La desactivada (<code>--desactivada</code>) lleva <code>disabled</code> en su input.</p>
+      <p>Un radio dentro de una tarjeta, para elegir una forma entre varias. La desactivada (<code>--desactivada</code>) lleva <code>disabled</code> en su input. El precio va a la derecha en <code>.opcion__precio</code> (no aplasta el texto).</p>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
         <fieldset class="grupo-campo">
           <legend class="grupo-campo__etiqueta">Cómo participar</legend>
           <label class="opcion"><input type="radio" name="ej-modo" value="xp" checked><span class="opcion__texto"><b>Gratis con 300 XP</b><br><span class="tarjeta__texto">Tienes 1.240 XP. Te quedarán 940.</span></span></label>
-          <label class="opcion opcion--desactivada"><input type="radio" name="ej-modo" value="pago" disabled><span class="opcion__texto"><b>Participación de pago</b><br><span class="tarjeta__texto">No disponible todavía.</span></span><b>[VALOR]</b></label>
+          <label class="opcion opcion--desactivada"><input type="radio" name="ej-modo" value="pago" disabled><span class="opcion__texto"><b>Participación de pago</b><br><span class="tarjeta__texto">No disponible todavía.</span></span><b class="opcion__precio">[VALOR]</b></label>
         </fieldset>
       </div>
     </div>

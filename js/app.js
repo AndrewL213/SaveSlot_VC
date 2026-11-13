@@ -3850,6 +3850,14 @@ function misEventos() {
   }).filter(Boolean);
 }
 
+// La parte en dinero de un costo como "300 XP o [VALOR]" (para la opción de pago): "[VALOR]".
+// Si el costo no tiene parte en XP, queda igual.
+function precioEnDinero(costo) {
+  var partes = String(costo || '').split(/\s+o\s+/);
+  var sinXp = partes.filter(function (p) { return !/\bXP\b/i.test(p); });
+  return sinXp.length ? sinXp.join(' o ') : String(costo || '');
+}
+
 // XP que pide un sorteo para entrar gratis (lo dice el evento; si no, 300)
 function xpDeSorteo(evento) {
   return typeof evento.xp_para_entrar === 'number' ? evento.xp_para_entrar : XP_SORTEO;
@@ -3942,7 +3950,8 @@ async function pantallaEvento() {
   var opcionPago = esTorneo && evento.gratis ? '' :
     '<label class="opcion opcion--desactivada"><input type="radio" name="forma" value="pago" disabled>' +
       '<span class="opcion__texto"><b>' + (esTorneo ? 'Pagar inscripción' : 'Participación de pago') + '</b><br>' +
-      '<span class="tarjeta__texto">No disponible todavía: los pagos aún no están conectados. No se te cobrará nada.</span></span><b>' + escapar(evento.costo) + '</b></label>';
+      '<span class="tarjeta__texto">No disponible todavía: los pagos aún no están conectados. No se te cobrará nada.</span></span>' +
+      '<b class="opcion__precio">' + escapar(precioEnDinero(evento.costo)) + '</b></label>';
 
   // Evento cerrado: en vez del formulario, el aviso (la base tampoco deja inscribirse)
   if (evento.cerrado) {

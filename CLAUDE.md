@@ -104,7 +104,7 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<ol class="pasos"><li class="pasos__paso" aria-current="step"><span class="pasos__numero">1</span><span><b>Tus datos</b></span></li></ol>`
 - `.escala` (+ `--dificultad`) con `.escala__opcion` (elegida con `aria-pressed="true"`; en dificultad, las anteriores con `--llena`):
   `<div class="escala" role="group" aria-label="Tu calificación"><button class="escala__opcion" type="button" aria-pressed="false">1</button>…</div>`
-- `.opcion` (+ `--desactivada`) con `.opcion__texto` (radio dentro de una tarjeta):
+- `.opcion` (+ `--desactivada`) con `.opcion__texto` y `.opcion__precio` (precio a la derecha, sin aplastar el texto) (radio dentro de una tarjeta):
   `<label class="opcion"><input type="radio" name="modo" value="xp"><span class="opcion__texto"><b>Gratis</b></span></label>`
 - `.casilla` (checkbox con su texto; se agrupan en `fieldset.grupo-campo` con `legend.grupo-campo__etiqueta`):
   `<label class="casilla"><input type="checkbox" name="genero" value="RPG">RPG</label>`
