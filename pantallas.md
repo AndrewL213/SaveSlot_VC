@@ -37,7 +37,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 2. Ventana: Evento del mes | dentro de `index.html` | ✅ | ✅ | ✅ (Supabase) | ✅ |
 | 13. Eventos | `pages/eventos.html` | ✅ | ✅ | ✅ (Supabase; los cerrados con «CERRADO») | ✅ |
 | 14. Detalle de evento | `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase: inscribirse en la base; cerrados bloqueados) | ✅ |
-| 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase; XP de la base) | ⬜ |
+| 15. Ventana: Inscripción confirmada | dentro de `pages/detalle-evento.html` | ✅ | ✅ | ✅ (Supabase; XP de la base) | ✅ |
 
 ## Cuenta, perfil y amigos
 
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de la ventana Inscripción confirmada (noviembre)**: cumple sus 3 criterios (el texto cambia en torneo, en torneo con los XP ya ganados y en sorteo). Ahora lleva el ✓ verde del diseño. Tiene además «Ver mis eventos» (el diseño solo traía «Listo»), que lleva a donde se comprueba el objetivo.
 - **Revisión de Detalle de evento (noviembre)**: cumple sus 5 criterios (torneo y sorteo como el diseño, celular, no inscribe sin equipo o sin reglamento, la opción de XP desactivada si no alcanza, y aparece en Mis eventos). Arreglo: en el sorteo, «Participación de pago» se veía aplastada (una palabra por línea). Se agregó al kit `.opcion__precio` (el precio a la derecha no aplasta el texto; en componentes.html) y la opción de pago muestra solo la parte en dinero del costo («[VALOR]», no «300 XP o [VALOR]»).
 - **Revisión de Eventos (noviembre)**: cumple sus 4 criterios sin cambios (filtros Todos, Torneos, Sorteos, Gratis y «Organiza» muestran solo lo que corresponde; sin resultados, mensaje y «Ver todos»; cada tarjeta abre su detalle; celular). Los textos entre corchetes («[MARCA]», «[VALOR]») son de los eventos de ejemplo de la base: se cambian al cargar eventos reales.
 - **Revisión de Detalle de reseña (noviembre)**: cumple sus 5 criterios sin cambios (se abre la misma reseña desde Comunidad, el juego e Inicio; un comentario vacío o de solo espacios no se envía; uno nuevo aparece y suma al contador; celular). Diferencia menor: el número de «Comentarios · 0» usa `.tarjeta__texto` (pequeño); en el diseño es del tamaño del título, y el kit no tiene un estilo para eso.

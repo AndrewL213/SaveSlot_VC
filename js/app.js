@@ -4033,8 +4033,9 @@ async function pantallaEvento() {
       guardarInscripcion({ usuario: usuarioActual(), evento: evento.id, equipo: datos.equipo, companero: datos.companero, forma: 'xp', fecha: hoy() });
     }
 
-    // 15. Ventana: Inscripción confirmada
+    // 15. Ventana: Inscripción confirmada (con el ✓ verde, como en el diseño)
     abrirModal({
+      icono: 'listo',
       titulo: esTorneo ? '¡Estás inscrito!' : '¡Ya participas!',
       texto: esTorneo
         ? (ganaXp ? 'Tu equipo tiene cupo y ganaste ' + XP_POR_TORNEO + ' XP.' : 'Tu equipo tiene cupo. Los ' + XP_POR_TORNEO + ' XP de este torneo ya los habías ganado.') +
