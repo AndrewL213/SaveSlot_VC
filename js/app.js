@@ -3307,6 +3307,7 @@ function mostrarEscribir(juego) {
       }
       if (editando) {
         abrirModal({
+          icono: 'listo',
           titulo: 'Reseña actualizada',
           texto: 'Los cambios ya se ven en tu historial y en la página del juego.',
           acciones: [{ texto: 'Ver reseña', href: 'detalle-resena.html?id=' + encodeURIComponent(guardada.id), principal: true }, { texto: 'Ir al historial', href: 'historial-resenas.html' }]
@@ -3317,6 +3318,7 @@ function mostrarEscribir(juego) {
       var perfil = await traerMiXp().catch(function () { return leerPerfil(); });
       // 9. Ventana: Publicación confirmada
       abrirModal({
+        icono: 'listo',
         titulo: (tipo === 'guia' ? 'Guía' : 'Reseña') + ' publicada',
         texto: 'Ganaste 50 XP. Vas en ' + formatearNumero(perfil.xp) + ' / ' + formatearNumero(XP_POR_NIVEL) + ' XP del nivel ' + perfil.level + '.',
         acciones: tipo === 'guia'
@@ -3365,6 +3367,7 @@ function mostrarEscribir(juego) {
         guardarResenasPropias(propias);
         botonPublicar.textContent = 'Guardar cambios';
         abrirModal({
+          icono: 'listo',
           titulo: 'Reseña actualizada',
           texto: 'Los cambios ya se ven en tu historial y en la página del juego.',
           acciones: [{ texto: 'Ver reseña', href: 'detalle-resena.html?id=' + encodeURIComponent(editando.id), principal: true }, { texto: 'Ir al historial', href: 'historial-resenas.html' }]
@@ -3386,6 +3389,7 @@ function mostrarEscribir(juego) {
 
       // 9. Ventana: Publicación confirmada
       abrirModal({
+        icono: 'listo',
         titulo: (tipo === 'guia' ? 'Guía' : 'Reseña') + ' publicada',
         texto: 'Ganaste 50 XP. Vas en ' + formatearNumero(perfil.xp) + ' / ' + formatearNumero(XP_POR_NIVEL) + ' XP del nivel ' + perfil.level + '.',
         acciones: tipo === 'guia'

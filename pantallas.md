@@ -25,7 +25,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
 | 8. Escribir reseña | `pages/escribir-resena.html` | ✅ | ✅ | ✅ (IGDB y Supabase: guarda reseñas, borradores y diario) | ✅ |
-| 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ (Supabase; XP de la base) | ⬜ |
+| 9. Ventana: Publicación confirmada | dentro de `pages/escribir-resena.html` | ✅ | ✅ | ✅ (Supabase; XP de la base) | ✅ |
 | 10. Ventana: Necesitas una cuenta | se abre en varias páginas | ✅ | ✅ | ✅ (texto fijo) | ⬜ |
 | 11. Comunidad | `pages/comunidad.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
 | 12. Detalle de reseña | `pages/detalle-resena.html` | ✅ | ✅ | ✅ (Supabase: lee y guarda útil, me gusta, comentarios y eliminar) | ⬜ |
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de la ventana Publicación confirmada (noviembre)**: cumple sus 3 criterios (dice «Reseña publicada» o «Guía publicada» y los XP ganados). Como en el diseño, ahora lleva el ✓ verde arriba (`icono: 'listo'`), también «Reseña actualizada», con cuenta real y como invitado.
 - **Revisión de Escribir reseña (noviembre)**: cumple sus 6 criterios (mínimo de 50 caracteres con su error, «Necesitas una cuenta» sin sesión, lo publicado aparece en el juego, el Diario y el Historial, y abre cualquier juego de IGDB). «Clip» sigue diciendo que llega pronto (Después); se corrigió el texto de la pestaña Clips de Detalle de juego, que decía que ya se podían subir.
 - **Revisión de la ventana Dificultad de 1 a 10 (noviembre)**: cumple sus 3 criterios (se abre desde «¿Cómo se calcula?» y se cierra con la X y con Escape). Como en el diseño, ahora todas las ventanas de solo texto van centradas (`.modal--centrada`); las que llevan listas (Notificaciones, Cómo ganar XP) siguen a la izquierda. El texto explica que la dificultad es de las reseñas de SaveSlot y las horas, de IGDB.
 - **Revisión de Detalle de juego (noviembre)**: cumple sus 7 criterios (pestañas, lista de deseos, spoiler, Steam y las rutas de error). Arreglos: (1) la nota, el número de calificaciones y la dificultad ahora se calculan con las reseñas publicadas de Supabase (antes los 12 juegos de ejemplo mostraban números inventados de `js/data.js`, como «9,6 · 7.720 calificaciones»); sin reseñas, «—». Vale en todas las pantallas (Inicio, Buscar, Juego random…). Las horas al 100 % no se pueden calcular: «—» con «Ver en HowLongToBeat». (2) La pestaña Logros decía «No hay logros registrados» junto al número 49 de Steam: ahora dice cuántos tiene en Steam y lleva a Logros. Las descripciones salen en inglés mientras Google Translate esté bloqueado.
