@@ -1216,6 +1216,7 @@ function pedirJuego(id) {
 // Pide a IGDB los juegos (slug o número) que no están en data.js ni en la copia del navegador, para que
 // las pantallas los puedan dibujar (por ejemplo, en un computador nuevo). Los de Steam no se piden.
 // Devuelve una promesa: true si trajo alguno (hay que volver a dibujar), false si no faltaba nada.
+var JUEGOS_NO_DISPONIBLES = {}; // los que IGDB no pudo entregar (se ven como "Juego no disponible")
 function traerJuegosQueFaltan(referencias) {
   var faltan = referencias.filter(function (ref, i, todas) {
     return ref != null && ref !== '' && todas.indexOf(ref) === i && !/^steam-/.test(ref) && !buscarPorId('juegos', ref);
@@ -1223,7 +1224,19 @@ function traerJuegosQueFaltan(referencias) {
   if (!faltan.length) return Promise.resolve(false);
   return Promise.all(faltan.map(function (ref) {
     return pedirJuego(esNumeroDeJuego(ref) ? Number(ref) : ref).catch(function () { return null; });
-  })).then(function (juegos) { return juegos.some(Boolean); });
+  })).then(function () {
+    faltan.forEach(function (ref) { if (!buscarPorId('juegos', ref)) JUEGOS_NO_DISPONIBLES[ref] = true; });
+    return true; // algo cambió: llegaron los juegos o ya se sabe que no están
+  });
+}
+
+// El juego de una referencia, o uno provisional para dibujar la fila sin esconderla ni romper la pantalla:
+// "Cargando…" mientras se pide a IGDB, o "Juego no disponible" si IGDB no lo entregó.
+function juegoOMarcador(ref) {
+  var juego = buscarPorId('juegos', ref);
+  if (juego) return juego;
+  var nombre = JUEGOS_NO_DISPONIBLES[ref] ? 'Juego no disponible' : 'Cargando…';
+  return { id: slugDeJuego(ref), nombre: nombre, nombre_corto: nombre, plataformas: [''], generos: [], color: null, portada: null, provisional: true };
 }
 
 // Busca juegos de data.js con filtros: { texto, generos, plataformas, tipo, duracion, desde, hasta }.
@@ -5295,8 +5308,7 @@ function pantallaDiario() {
 
     var mesAnterior = '';
     filas.innerHTML = lista.map(function (d) {
-      var j = buscarPorId('juegos', d.juego_igdb);
-      if (!j) return '';
+      var j = juegoOMarcador(d.juego_igdb); // nunca se esconde una fila: si falta el juego, se pide a IGDB (abajo)
       var mes = MESES[Number(String(d.fecha).slice(5, 7)) - 1];
       var mostrarMes = mes !== mesAnterior;
       mesAnterior = mes;
@@ -5324,6 +5336,8 @@ function pantallaDiario() {
   });
   selectorAnio.addEventListener('change', mostrar);
   mostrar();
+  // Los juegos que no están en este navegador se piden a IGDB y se vuelve a dibujar
+  traerJuegosQueFaltan(diario.map(function (d) { return d.juego_igdb; })).then(function (cambio) { if (cambio) mostrar(); });
 }
 
 // 22. Historial de reseñas
@@ -5357,8 +5371,7 @@ function pantallaHistorial() {
 
   function htmlFila(r) {
     if (r.de_steam) return htmlFilaSteam(r);
-    var j = buscarPorId('juegos', r.juego_igdb);
-    if (!j) return '';
+    var j = juegoOMarcador(r.juego_igdb); // nunca se esconde una reseña: si falta el juego, se pide a IGDB
     var comentarios = leerComentarios(r.id).length;
     return '<article class="tarjeta tarjeta--resena fila-historial"' + atributoColor(j.color) + '>' +
       '<a class="portada portada--enlace" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '" tabindex="-1" aria-hidden="true"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</a>' +
@@ -5473,6 +5486,8 @@ function pantallaHistorial() {
       mostrar();
     }).catch(function () { /* sin sesión de Steam o perfil privado */ });
   }
+  // Los juegos que no están en este navegador se piden a IGDB y se vuelve a dibujar
+  traerJuegosQueFaltan(mias().map(function (r) { return r.juego_igdb; })).then(function (cambio) { if (cambio) mostrar(); });
 }
 
 // 23. Logros (Steam real; las demás plataformas, datos de ejemplo)
@@ -5507,7 +5522,7 @@ function pantallaLogros() {
           '<span class="medidor' + (porcentaje === 100 ? ' medidor--exito' : '') + '" role="img" aria-label="' + porcentaje + '% de los logros"><span class="medidor__barra" data-ancho="' + porcentaje + '"></span></span></span>' +
         '<span>' + (porcentaje === 100 ? '<b class="nota nota--texto">100%</b> · ' : '') + '<b>' + p.obtenidos + '</b> <span class="tarjeta__texto">/ ' + p.totales + '</span></span>' +
         '<span class="etiqueta etiqueta--contorno">' + escapar(p.plataforma.toUpperCase()) + '</span></a>';
-    }).join('') || '<div class="vacio"><b>No tienes logros sincronizados de ' + escapar(plataforma) + '.</b><a href="editar-perfil.html#cuentas">Vincular cuenta</a></div>';
+    }).join('') || '<div class="vacio"><b>No tienes logros sincronizados ' + (plataforma === 'Todas' ? 'todavía' : 'de ' + escapar(plataforma)) + '.</b><a href="editar-perfil.html#cuentas">Vincular cuenta</a></div>';
     aplicarColores(caja);
   }
 
@@ -5971,17 +5986,20 @@ async function pantallaUsuario() {
     [Object.keys(persona.notas || {}).length, 'Juegos'], [resenas.length, 'Reseñas'], [enComun.length, 'En común'], [comunes.length, 'Amigos en común']
   ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
 
+  // Favoritos, juegos en común y reseñas. Un juego que no está en este navegador nunca rompe la página:
+  // se dibuja provisional ("Cargando…") y se vuelve a dibujar cuando llega de IGDB (al final).
+  var misNotas = {};
+  leerDiario().forEach(function (d) { var slug = slugDeJuego(d.juego_igdb); if (d.calificacion && !(slug in misNotas)) misNotas[slug] = d.calificacion; });
+  function dibujarJuegosDeLaPersona() {
   // Favoritos
   document.getElementById('favoritos-usuario').innerHTML = persona.favoritos.map(function (id) {
-    var j = buscarPorId('juegos', id);
-    return j ? '<a class="portada portada--enlace" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b></a>' : '';
+    var j = juegoOMarcador(id);
+    return '<a class="portada portada--enlace" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"' + atributoColor(j.color) + '>' + imagenPortada(j) + '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b></a>';
   }).join('');
 
   // Juegos en común: su nota frente a la tuya
-  var misNotas = {};
-  leerDiario().forEach(function (d) { var slug = slugDeJuego(d.juego_igdb); if (d.calificacion && !(slug in misNotas)) misNotas[slug] = d.calificacion; });
   document.getElementById('en-comun-usuario').innerHTML = enComun.length ? enComun.map(function (id) {
-    var j = buscarPorId('juegos', id);
+    var j = juegoOMarcador(id);
     var suya = persona.notas[id];
     var tuya = misNotas[id];
     return '<a class="fila fila--comparacion" href="detalle-juego.html?id=' + encodeURIComponent(j.id) + '"><span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span>' +
@@ -5992,15 +6010,18 @@ async function pantallaUsuario() {
 
   // Reseñas recientes
   document.getElementById('resenas-usuario').innerHTML = resenas.map(function (r) {
-    var j = buscarPorId('juegos', r.juego_igdb);
+    var j = juegoOMarcador(r.juego_igdb);
     return '<a class="tarjeta tarjeta--enlace tarjeta--resena" href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '"' + atributoColor(j.color) + '>' +
       '<span class="en-fila"><span class="portada portada--sm"' + atributoColor(j.color) + '>' + imagenPortada(j) + '</span><span><b>' + escapar(j.nombre_corto) + '</b><br><span class="tarjeta__texto">' + formatearFecha(r.fecha) + '</span></span>' +
         '<span class="nota al-final">' + r.calificacion + '<small>/10</small></span></span>' +
       '<p class="tarjeta__texto texto-corto">' + escapar(r.spoiler ? 'Contiene spoilers. Ábrela para leerla.' : r.texto) + '</p>' +
       '<span class="tarjeta__texto">♥ ' + formatearNumero(r.me_gusta) + ' · Útil ' + formatearNumero(r.votos_util) + '</span></a>';
   }).join('') || '<div class="vacio">Aún no publica reseñas.</div>';
-
   aplicarColores(document);
+  }
+  dibujarJuegosDeLaPersona();
+  var referencias = persona.favoritos.concat(enComun, resenas.map(function (r) { return r.juego_igdb; }));
+  traerJuegosQueFaltan(referencias).then(function (cambio) { if (cambio) dibujarJuegosDeLaPersona(); });
 }
 
 // 27. Contáctanos (y 28. Ventana: Mensaje guardado)
@@ -6048,6 +6069,7 @@ function pantallaContacto() {
       formulario.reset();
       // 28. Ventana: Mensaje guardado (el formulario queda vacío)
       abrirModal({
+        icono: 'listo',
         titulo: 'Mensaje guardado',
         texto: 'Tu mensaje le llegó al equipo de SaveSlot. Te responderemos a tu correo.',
         acciones: [{ texto: 'Volver al inicio', href: rutaPagina('index.html'), principal: true }, { texto: 'Cerrar' }]
