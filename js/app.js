@@ -2168,8 +2168,8 @@ function llenarMasJugadosSteam(rejilla) {
 // Lleva el logo de la plataforma (.etiqueta__logo), así se distingue de un vistazo.
 var ORIGENES = {
   SaveSlot: { clase: 'etiqueta--primario', logo: 'assets/favicon.svg' },
-  Steam: { clase: 'etiqueta--contorno', logo: 'assets/logo-steam.svg' },
-  Xbox: { clase: 'etiqueta--contorno' },
+  Steam: { clase: 'etiqueta--contorno', logo: 'assets/logo-steam.png' },
+  Xbox: { clase: 'etiqueta--contorno', logo: 'assets/logo-xbox.png' },
   PlayStation: { clase: 'etiqueta--contorno' }
 };
 function etiquetaOrigen(origen) {
@@ -4623,12 +4623,14 @@ function pantallaPerfil() {
     if (cuentasVinculadas.Steam) {
       var enlace = steam && steam.profileurl;
       lista.push((enlace ? '<a class="en-fila tarjeta__texto" href="' + escapar(enlace) + '" target="_blank" rel="noopener"' : '<span class="en-fila tarjeta__texto"') +
-        ' title="Tu cuenta de Steam"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-steam.svg')) + '" alt="Steam">@' + escapar(cuentasVinculadas.Steam) + (enlace ? '</a>' : '</span>'));
+        ' title="Tu cuenta de Steam"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-steam.png')) + '" alt="Steam">@' + escapar(cuentasVinculadas.Steam) + (enlace ? '</a>' : '</span>'));
     }
     var xboxDatos = tieneXbox() ? leerMemoria('xboxDatos', null) : null;
     ['Xbox', 'PlayStation', 'Nintendo'].forEach(function (p) {
       var extra = p === 'Xbox' && xboxDatos ? ' · ' + formatearNumero(xboxDatos.gamerscore) + ' G' : '';
-      if (cuentasVinculadas[p]) lista.push('<span class="tarjeta__texto" title="Tu cuenta de ' + p + '">' + p + ' @' + escapar(cuentasVinculadas[p]) + extra + '</span>');
+      if (!cuentasVinculadas[p]) return;
+      if (p === 'Xbox') lista.push('<span class="en-fila tarjeta__texto" title="Tu cuenta de Xbox"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox">@' + escapar(cuentasVinculadas.Xbox) + extra + '</span>');
+      else lista.push('<span class="tarjeta__texto" title="Tu cuenta de ' + p + '">' + p + ' @' + escapar(cuentasVinculadas[p]) + extra + '</span>');
     });
     var caja = document.getElementById('cuentas-perfil');
     caja.innerHTML = lista.join('<span class="tarjeta__texto" aria-hidden="true">·</span>');
@@ -5927,15 +5929,15 @@ function pantallaBiblioteca() {
     caja.innerHTML = lista.map(function (j) {
       if (j.xbox) {
         return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Buscar ' + escapar(j.nombre) + ' en Xbox">' +
-          '<span class="portada portada--enlace"></span>' +
+          '<span class="portada portada--enlace">' +
+            '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox" title="De tu cuenta de Xbox"></span>' +
           '<b>' + escapar(j.nombre_corto) + '</b>' +
-          '<span class="tarjeta__texto"><span class="etiqueta etiqueta--contorno">XBOX</span> ' +
-            (j.logros.totales ? j.logros.obtenidos + '/' + j.logros.totales + ' logros' : 'Jugado') + '</span></a>';
+          '<span class="tarjeta__texto">' + (j.logros.totales ? j.logros.obtenidos + '/' + j.logros.totales + ' logros' : 'Jugado') + '</span></a>';
       }
       return '<a href=""' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
         // De qué cuenta viene el juego: logo en la esquina inferior izquierda de la portada (hoy solo Steam)
         '<span class="portada portada--enlace">' + imagenPortada(j) +
-          '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-steam.svg')) + '" alt="Steam" title="De tu cuenta de Steam"></span>' +
+          '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-steam.png')) + '" alt="Steam" title="De tu cuenta de Steam"></span>' +
         '<b>' + escapar(j.nombre_corto) + '</b>' +
         '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
     }).join('') || (todos.length
