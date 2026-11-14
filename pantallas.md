@@ -48,22 +48,22 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 18. Perfil | `pages/perfil.html` | ✅ | ✅ | ✅ (Supabase y Steam; misiones con api/steam/misiones.js; quitar de la lista de deseos y cancelar inscripciones en la base) | ✅ |
 | 19. Ventana: Cómo ganar XP | dentro de `pages/perfil.html` | ✅ | ✅ | ✅ (misiones de Supabase) | ✅ |
 | 20. Editar perfil | `pages/editar-perfil.html` | ✅ | ✅ | ✅ (Supabase: guarda perfil público, favoritos, géneros y Steam vinculada) | ✅ |
-| 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ (Supabase: eliminar en la base) | ⬜ |
-| 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ (Steam; otras plataformas simuladas en data.js) | ⬜ |
-| 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ (Supabase: lee y guarda amistades y solicitudes; en línea en vivo) | ⬜ |
-| 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ (Supabase: agregar y eliminar amigo en la base; en línea en vivo) | ⬜ |
-| 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ✅ | ✅ (Supabase: lee, marca leídas y borra; precios de Steam en el navegador) | ⬜ |
-| 30. Biblioteca | `pages/biblioteca.html` | ✅ | ✅ | ✅ (datos reales de Steam) | ⬜ |
-| 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ (sesión) | ⬜ |
+| 21. Diario | `pages/diario.html` | ✅ | ✅ | ✅ (Supabase) | ✅ |
+| 22. Historial de reseñas | `pages/historial-resenas.html` | ✅ | ✅ | ✅ (Supabase: eliminar en la base) | ✅ |
+| 23. Logros | `pages/logros.html` | ✅ | ✅ | ✅ (Steam; otras plataformas simuladas en data.js) | ✅ |
+| 24. Amigos | `pages/amigos.html` | ✅ | ✅ | ✅ (Supabase: lee y guarda amistades y solicitudes; en línea en vivo) | ✅ |
+| 25. Perfil de otro usuario | `pages/perfil-usuario.html` | ✅ | ✅ | ✅ (Supabase: agregar y eliminar amigo en la base; en línea en vivo) | ✅ |
+| 26. Ventana: Notificaciones | se abre en todas las páginas (campana) | ✅ | ✅ | ✅ (Supabase: lee, marca leídas y borra; precios de Steam en el navegador) | ✅ |
+| 30. Biblioteca | `pages/biblioteca.html` | ✅ | ✅ | ✅ (datos reales de Steam) | ✅ |
+| 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ (sesión) | ✅ |
 
 ## Ayuda
 
 | Pantalla | Archivo | Separada | Con kit | Datos | Revisada vs spec |
 |---|---|---|---|---|---|
-| 27. Contáctanos | `pages/contacto.html` | ✅ | ✅ | ✅ (listas fijas de data.js; el mensaje se guarda en Supabase) | ⬜ |
-| 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ✅ | ✅ (Supabase) | ⬜ |
-| 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (data.js + revisión en vivo de IGDB, Steam y Supabase) | ⬜ |
+| 27. Contáctanos | `pages/contacto.html` | ✅ | ✅ | ✅ (listas fijas de data.js; el mensaje se guarda en Supabase) | ✅ |
+| 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ✅ | ✅ (Supabase) | ✅ |
+| 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (data.js + revisión en vivo de IGDB, Steam y Supabase) | ✅ |
 
 ## Lo que falta
 
@@ -81,6 +81,7 @@ Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
 Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
+- **Revisión de las pantallas 21 a 31 (noviembre, de una vez)**: todas cumplen sus criterios de «Está lista cuando». Arreglos: (1) Diario, Historial y Perfil de otro usuario escondían los juegos que no estaban en este navegador (el Diario decía «No hay registros» y el Historial «Ninguna reseña coincide con los filtros» sin filtros), y Perfil de otro usuario se rompía entera si la persona había reseñado uno de esos juegos. Ahora se dibujan con `juegoOMarcador` («Cargando…» o «Juego no disponible») y se piden a IGDB con `traerJuegosQueFaltan`. (2) Logros decía «No tienes logros sincronizados de Todas»: ahora «…todavía». (3) «Mensaje guardado» lleva el ✓ verde del diseño. (4) El pie de todas las páginas tiene «Biblioteca» (antes solo 3). Diferencias que quedan: Notificaciones sin el trofeo del diseño (lleva una lista); «Logros más raros» muestra los de ejemplo, con la nota «Datos de ejemplo».
 - **Revisión de Editar perfil (noviembre)**: cumple sus 6 criterios (no deja un quinto favorito, errores del @ inválido u ocupado, errores de la foto por tipo o por más de 8 MB). Arreglo: los favoritos de IGDB que no estaban en este navegador se quitaban de la lista al abrir la pantalla, y al guardar se borraban de la base. Ahora nunca se quitan solos: se ven «Cargando…» mientras llegan de IGDB, o «Juego no disponible» si IGDB no responde, y la persona decide.
 - **Revisión de la ventana Cómo ganar XP (noviembre)**: cumple sus 3 criterios sin cambios (se abre desde «¿Qué es el XP y cómo lo gano?» y se cierra con la X y con Escape, en computador y celular). Tiene más puntos que el diseño, que salen de las misiones de la base (amistad, crear la cuenta, misiones diarias y semanales). Diferencia menor: el título va a la izquierda (las ventanas con listas no van centradas); en el diseño va centrado.
 - **Revisión de Perfil (noviembre)**: cumple sus 4 criterios (muestra reseñas, favoritos, deseos, amigos y eventos; sin sesión pide iniciar sesión; celular). Arreglo: los juegos de IGDB que no estaban en este navegador desaparecían sin avisar de los favoritos, la lista de deseos (el número decía 1 y la lista, vacía) y la actividad del diario. Ahora se piden a IGDB con `traerJuegosQueFaltan` y se vuelven a dibujar. Falta revisar lo mismo en Perfil de otro usuario, Diario e Historial.
