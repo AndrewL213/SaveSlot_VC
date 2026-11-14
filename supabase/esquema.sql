@@ -27,11 +27,15 @@ create table if not exists public.usuarios (
   nivel integer not null default 1 check (nivel >= 1),                      -- lo cambia la base
   xp integer not null default 0 check (xp >= 0),                            -- XP dentro del nivel; lo cambia la base
   color text check (color ~ '^#[0-9A-Fa-f]{6}$'),
-  forma_de_entrar text not null default 'correo' check (forma_de_entrar in ('correo', 'google', 'discord', 'twitch', 'steam')),
+  forma_de_entrar text not null default 'correo' check (forma_de_entrar in ('correo', 'google', 'discord', 'twitch', 'steam', 'epic')),
   invitado boolean not null default false
 );
 -- foto: la foto de perfil que ven los demás (la subida a Storage, carpeta avatares, o la de Steam); vacía = iniciales.
 -- La pone la app de la propia persona (Editar perfil y al abrir cualquier página).
+-- forma_de_entrar acepta también Epic Games (para las tablas creadas antes de agregarlo)
+alter table public.usuarios drop constraint if exists usuarios_forma_de_entrar_check;
+alter table public.usuarios add constraint usuarios_forma_de_entrar_check
+  check (forma_de_entrar in ('correo', 'google', 'discord', 'twitch', 'steam', 'epic'));
 alter table public.usuarios add column if not exists foto text check (foto is null or foto ~ '^https://');
 
 -- usuarios_favoritos: los 4 juegos favoritos de cada persona (tabla aparte porque son varios por persona)
