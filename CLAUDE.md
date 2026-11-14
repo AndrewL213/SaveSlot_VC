@@ -93,7 +93,7 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<div class="encabezado-seccion"><h2 class="encabezado-seccion__titulo">Mejores juegos</h2><a class="encabezado-seccion__enlace" href="…">Ver todo</a></div>`
 - `.boton` (+ `--secundario`, `--fantasma`, `--peligro`, `--me-gusta`, `--sm`, `--bloque`, `--icono`; presionado con `aria-pressed="true"`):
   `<button class="boton boton--secundario" type="button">Cancelar</button>`
-- `.boton__logo` (logo de un servicio dentro de un botón; imágenes `assets/logo-google.svg`, `logo-discord.svg`, `logo-twitch.svg` y `logo-steam.svg`, con `alt=""` porque el botón ya dice el nombre):
+- `.boton__logo` (logo de un servicio dentro de un botón; imágenes `assets/logo-google.svg`, `logo-discord.svg`, `logo-twitch.svg`, `logo-steam.svg` y `logo-epic.png` (el oficial de Epic, sin cambiarle colores ni proporciones), con `alt=""` porque el botón ya dice el nombre):
   `<a class="boton boton--secundario" href="…"><img class="boton__logo" src="assets/logo-steam.svg" alt="">Steam</a>`
 - `.grupo-campo` con `.grupo-campo__etiqueta`, `__ayuda` (+ `--listo`, en verde), `__error`, y `.campo` (+ `--error`, `--sm`) para input, select y textarea:
   `<div class="grupo-campo"><label class="grupo-campo__etiqueta" for="c">Correo</label><input class="campo" id="c" type="email"></div>`
