@@ -4173,6 +4173,7 @@ async function sesionVencida() {
 function pantallaEntrar() {
   if (obtenerSesion()) { location.replace(destinoVolver()); return; }
   if (new URLSearchParams(location.search).get('vencida')) mostrarAviso('Tu sesión se cerró. Vuelve a entrar para seguir.');
+  if (tomarErrorDeVuelta()) mostrarAviso('No pudimos entrar con ese servicio. Inténtalo de nuevo o entra de otra forma.');
   document.getElementById('ir-a-crear').href = 'crear-cuenta.html' + location.search;
   activarBotonSteam();
   activarBotonesServicios(destinoVolver());
@@ -5165,6 +5166,15 @@ function pantallaEditar() {
   });
 }
 
+// El error con el que volvió un servicio (lo guarda js/supabase.js); se lee una sola vez
+function tomarErrorDeVuelta() {
+  try {
+    var guardado = sessionStorage.getItem('ss.errorVuelta');
+    sessionStorage.removeItem('ss.errorVuelta');
+    return guardado ? JSON.parse(guardado) : null;
+  } catch (e) { return null; }
+}
+
 // Formas de entrar (Editar perfil): Google, Discord y Twitch vinculados a la misma cuenta de Supabase.
 // Vincular usa linkIdentity (Supabase → Authentication → "Allow manual linking" activado): va al servicio
 // y vuelve aquí con ?vinculo=<servicio>. Si esa cuenta del servicio ya es de otra cuenta de SaveSlot,
@@ -5174,13 +5184,16 @@ function activarFormasDeEntrar(caja) {
   var params = new URLSearchParams(location.search);
   var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
   var vuelta = params.get('vinculo');
-  var error = params.get('error_code') || hash.get('error_code') || params.get('error') || hash.get('error');
+  // El error de la vuelta lo apartó js/supabase.js (para que no cierre la sesión)
+  var errorVuelta = tomarErrorDeVuelta();
+  var error = errorVuelta ? (errorVuelta.codigo || errorVuelta.error) : (params.get('error_code') || hash.get('error_code') || params.get('error') || hash.get('error'));
+  var detalleError = errorVuelta ? errorVuelta.detalle : (params.get('error_description') || hash.get('error_description') || '');
   if (vuelta) {
     params.delete('vinculo');
     ['error', 'error_code', 'error_description'].forEach(function (p) { params.delete(p); });
     history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + (error ? '' : location.hash));
     mostrarAviso(error
-      ? (/already|exists/i.test(error + (params.get('error_description') || hash.get('error_description') || ''))
+      ? (/already|exists/i.test(error + detalleError)
         ? 'Esa cuenta de ' + nombreServicio(vuelta) + ' ya está en otra cuenta de SaveSlot. Entra con ella, bórrala y vuelve a vincularla aquí.'
         : 'No pudimos vincular ' + nombreServicio(vuelta) + '. Inténtalo de nuevo.')
       : nombreServicio(vuelta) + ' vinculada: ya puedes entrar con ella.');
