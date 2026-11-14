@@ -391,13 +391,40 @@ async function conGoogle(texto) {
 
 // IGDB no deja ordenar una búsqueda por popularidad: se piden 50 y se ordenan aquí.
 // Primero los que se llaman igual a lo buscado; después, los que tienen más calificaciones.
+// Además del nombre principal (casi siempre en inglés), se buscan los nombres alternativos de IGDB
+// (alternative_names: traducidos, abreviados o de otras regiones), para que "Plantas contra Zombis"
+// encuentre Plants vs. Zombies. Las dos preguntas van a la vez; si la segunda falla, queda la primera.
 async function buscar(texto) {
-  const limpio = String(texto).replace(/["\\;]/g, ' ').trim().slice(0, 60);
+  const limpio = String(texto).replace(/["\\;*]/g, ' ').trim().slice(0, 60);
   if (!limpio) return [];
-  const juegos = await consultar('games', 'search "' + limpio + '"; ' + CAMPOS + ' where ' + SOLO_JUEGOS + '; limit 50;');
-  const igual = function (j) { return comparable(j.name) === comparable(limpio) ? 1 : 0; };
+  const [juegos, porOtroNombre] = await Promise.all([
+    consultar('games', 'search "' + limpio + '"; ' + CAMPOS + ' where ' + SOLO_JUEGOS + '; limit 50;'),
+    buscarPorOtroNombre(limpio)
+  ]);
+  const yaEstan = new Set(juegos.map(function (j) { return j.id; }));
+  porOtroNombre.juegos.forEach(function (j) { if (!yaEstan.has(j.id)) { juegos.push(j); yaEstan.add(j.id); } });
+  const buscado = comparable(limpio);
+  const igual = function (j) {
+    return comparable(j.name) === buscado || (porOtroNombre.nombres[j.id] || []).some(function (n) { return comparable(n) === buscado; }) ? 1 : 0;
+  };
   juegos.sort(function (a, b) { return igual(b) - igual(a) || (b.total_rating_count || 0) - (a.total_rating_count || 0); });
   return conHoras(juegos.slice(0, 20));
+}
+
+// Juegos con un nombre alternativo que contiene el texto. Devuelve { juegos, nombres: { id: [nombres] } }.
+async function buscarPorOtroNombre(limpio) {
+  try {
+    const otros = await consultar('alternative_names', 'fields game, name; where name ~ *"' + limpio + '"*; limit 100;');
+    const nombres = {};
+    otros.forEach(function (a) { if (a.game) nombres[a.game] = (nombres[a.game] || []).concat(a.name); });
+    const ids = Object.keys(nombres).slice(0, 100);
+    if (!ids.length) return { juegos: [], nombres: nombres };
+    const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS + '; limit 50;');
+    return { juegos: juegos, nombres: nombres };
+  } catch (e) {
+    console.error('No se pudo buscar por otros nombres: ' + e.message);
+    return { juegos: [], nombres: {} };
+  }
 }
 
 function comparable(texto) {
