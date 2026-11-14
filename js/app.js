@@ -41,7 +41,71 @@ function cuentaSupabase() {
 
 // Las cuentas creadas al entrar con Steam usan un correo interno (steam-<número>@saveslot.invalid)
 function esCuentaSoloSteam(cuenta) {
-  return /@saveslot\.invalid$/.test(String((cuenta && cuenta.email) || ''));
+  return /^steam-\d+@saveslot\.invalid$/.test(String((cuenta && cuenta.email) || ''));
+}
+// Las creadas al entrar con Epic Games, también (epic-<id>@saveslot.invalid)
+function esCuentaSoloEpic(cuenta) {
+  return /^epic-.+@saveslot\.invalid$/.test(String((cuenta && cuenta.email) || ''));
+}
+
+/* ---------- Epic Games ----------
+   Igual que Steam: api/epic/auth.js (en Vercel) habla con Epic y abre la sesión de Supabase.
+   Al volver, la página trae ?epic=1 y token_hash (entrar), vinculada=1 (vincular) o un error. */
+
+function irAEpic(destino, estado) {
+  var vuelta = new URL(destino || location.href, location.href);
+  vuelta.searchParams.set('epic', '1');
+  location.href = '/api/epic/auth?action=login&redirect_to=' + encodeURIComponent(vuelta.href) +
+    (estado ? '&vincular=' + encodeURIComponent(estado) : '');
+}
+
+// Vincula Epic a la cuenta abierta: pide al servidor un permiso firmado y va a Epic
+function vincularEpic(destino) {
+  return cuentaSupabase().then(function (sesion) {
+    if (!sesion) { irAEpic(destino); return; }
+    return fetch('/api/epic/auth?action=preparar', { method: 'POST', headers: { Authorization: 'Bearer ' + sesion.access_token } })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok || !d.estado) throw new Error(d.error || 'Sin permiso'); return d.estado; }); })
+      .then(function (estado) { irAEpic(destino, estado); });
+  });
+}
+
+// Al volver de Epic: abre la sesión (entrar) o refresca la cuenta (vincular). Devuelve el aviso a mostrar.
+// Lo demás (crear la fila en usuarios la primera vez) lo hace sincronizarSesionSupabase, al seguir cargando.
+function terminarVueltaDeEpic() {
+  var params = new URLSearchParams(location.search);
+  if (!params.get('epic')) return Promise.resolve(null);
+  var token = params.get('token_hash');
+  var vinculada = params.get('vinculada');
+  var fallo = params.get('error') || (tomarErrorDeVuelta() || {}).error;
+  ['epic', 'token_hash', 'type', 'error', 'vinculada'].forEach(function (p) { params.delete(p); });
+  history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + location.hash);
+  if (fallo === 'epic_en_otra_cuenta') {
+    return Promise.resolve('Esa cuenta de Epic Games ya está en otra cuenta de SaveSlot. Entra con Epic, borra esa cuenta en Editar perfil y vuelve a vincularla aquí.');
+  }
+  if (fallo === 'access_denied') return Promise.resolve('Cancelaste el permiso en Epic Games: no se cambió nada.');
+  if (fallo || !clienteSupabase) return Promise.resolve('No pudimos conectar con Epic Games. Inténtalo de nuevo.');
+  if (vinculada) {
+    return clienteSupabase.auth.refreshSession().then(function () { return 'Epic Games vinculada: ya puedes entrar con ella.'; },
+      function () { return 'Epic Games vinculada.'; });
+  }
+  if (!token) return Promise.resolve(null);
+  return clienteSupabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' }).then(function (r) {
+    if (r.error) throw r.error;
+    // Si el navegador tenía abierta otra cuenta, se cambia por la de Epic
+    var local = obtenerSesion();
+    if (local && local.auth_id !== r.data.user.id) guardarMemoria('session', null);
+    return 'Entraste con Epic Games';
+  }).catch(function () { return 'No pudimos conectar con Epic Games. Inténtalo de nuevo.'; });
+}
+
+// Botón "Epic Games" de Iniciar sesión y Crear cuenta
+function activarBotonEpic() {
+  var boton = document.querySelector('a[href*="servicio=Epic"]');
+  if (!boton || !clienteSupabase) return;
+  boton.addEventListener('click', function (e) {
+    e.preventDefault();
+    irAEpic(destinoVolver());
+  });
 }
 
 // Vincula Steam a la cuenta abierta (no crea otra): pide al servidor un permiso firmado y va a Steam
@@ -113,7 +177,8 @@ function terminarVueltaDeSteam() {
   var params = new URLSearchParams(location.search);
   if (!params.get('steam')) return Promise.resolve(null);
   var token = params.get('token_hash');
-  var fallo = params.get('error');
+  // El error lo aparta js/supabase.js antes de que supabase-js lo vea (ver tomarErrorDeVuelta)
+  var fallo = params.get('error') || (tomarErrorDeVuelta() || {}).error;
   var vinculada = params.get('vinculada');
   ['steam', 'token_hash', 'type', 'error', 'vinculada'].forEach(function (p) { params.delete(p); });
   history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + location.hash);
@@ -374,8 +439,8 @@ function anotarCuentaSteam(steam) {
    la conoce por su fila en la tabla usuarios (auth_id = id de la cuenta). Steam tiene su
    propio camino (api/steam/auth.js y terminarVueltaDeSteam, arriba). */
 
-// Epic Games es un proveedor propio de Supabase (Custom Providers, OpenID Connect): se llama "custom:epic"
-var SERVICIOS_SUPABASE = { Google: 'google', Discord: 'discord', Twitch: 'twitch', Epic: 'custom:epic' };
+// (Epic Games no va aquí: tiene su propio camino, como Steam: ver irAEpic)
+var SERVICIOS_SUPABASE = { Google: 'google', Discord: 'discord', Twitch: 'twitch' };
 var NOMBRE_SERVICIO = { Epic: 'Epic Games' }; // cómo se muestra (si no está aquí, la clave)
 function nombreServicio(clave) { return NOMBRE_SERVICIO[clave] || clave; }
 var FORMA_DE_ENTRAR = { email: 'correo', google: 'google', discord: 'discord', twitch: 'twitch', 'custom:epic': 'epic' };
@@ -429,7 +494,7 @@ async function sincronizarSesionSupabase() {
     var usuario = meta.usuario && usuarioLibre(meta.usuario) ? meta.usuario : usuarioPropuesto(meta.usuario || nombre, cuenta.id);
     var creada = await clienteSupabase.from('usuarios').insert({
       auth_id: cuenta.id, usuario: usuario, nombre: nombre, iniciales: inicialesDe(nombre),
-      forma_de_entrar: FORMA_DE_ENTRAR[(cuenta.app_metadata || {}).provider] || 'correo'
+      forma_de_entrar: esCuentaSoloEpic(cuenta) ? 'epic' : (FORMA_DE_ENTRAR[(cuenta.app_metadata || {}).provider] || 'correo')
     }).select().single();
     if (creada.error) { console.error('No se pudo crear el perfil en usuarios:', creada.error); throw creada.error; }
     fila = creada.data;
@@ -654,7 +719,7 @@ async function reconocerMiFila(crear) {
     var esSteam = !!(cuenta.app_metadata && cuenta.app_metadata.steam_id);
     fila = (await guardarDatos('usuarios', {
       auth_id: cuenta.id, usuario: usuario, nombre: nombre, iniciales: local.initials || inicialesDe(nombre),
-      forma_de_entrar: esSteam ? 'steam' : (FORMA_DE_ENTRAR[(cuenta.app_metadata || {}).provider] || 'correo')
+      forma_de_entrar: esSteam ? 'steam' : esCuentaSoloEpic(cuenta) ? 'epic' : (FORMA_DE_ENTRAR[(cuenta.app_metadata || {}).provider] || 'correo')
     }))[0];
     FILAS.usuarios = (FILAS.usuarios || []).concat(fila);
     DATOS_ARMADOS = {};
@@ -4176,6 +4241,7 @@ function pantallaEntrar() {
   if (tomarErrorDeVuelta()) mostrarAviso('No pudimos entrar con ese servicio. Inténtalo de nuevo o entra de otra forma.');
   document.getElementById('ir-a-crear').href = 'crear-cuenta.html' + location.search;
   activarBotonSteam();
+  activarBotonEpic();
   activarBotonesServicios(destinoVolver());
   var formulario = document.getElementById('formulario-entrar');
   var botonEntrar = formulario.querySelector('button[type="submit"]');
@@ -4235,6 +4301,7 @@ function pantallaRegistro() {
   if (obtenerSesion()) { location.replace('perfil.html'); return; }
   document.getElementById('ir-a-entrar').href = 'iniciar-sesion.html' + location.search;
   activarBotonSteam();
+  activarBotonEpic();
   // Con Google, Discord o Twitch la cuenta se crea al volver; luego sigue a Editar perfil
   // Con la dirección de vuelta: al terminar los pasos 2 y 3, vuelve a donde estaba
   activarBotonesServicios('editar-perfil.html?nuevo=1' + conVolver());
@@ -5200,6 +5267,18 @@ function activarFormasDeEntrar(caja) {
   }
 
   var identidades = [];
+  var cuentaActual = null; // para Epic Games: su vínculo está en app_metadata.epic_id (no es una identidad de Supabase)
+  function filaEpic() {
+    var meta = (cuentaActual && cuentaActual.app_metadata) || {};
+    var datos = (cuentaActual && cuentaActual.user_metadata) || {};
+    var soloEpic = esCuentaSoloEpic(cuentaActual);
+    return '<div class="fila fila--comparacion"><span><b>Epic Games</b></span>' +
+      (meta.epic_id
+        ? '<span class="estado estado--jugando al-final">Vinculada' + (datos.epic_nombre ? ' · ' + escapar(datos.epic_nombre) : '') + '</span>' +
+          (soloEpic ? '' : '<button class="boton boton--secundario boton--sm" type="button" data-quitar-epic>Desvincular</button>')
+        : '<button class="boton boton--sm al-final" type="button" data-epic>Vincular</button>') +
+      '</div>';
+  }
   function dibujar() {
     caja.innerHTML = Object.keys(SERVICIOS_SUPABASE).map(function (nombre) {
       var id = identidades.find(function (i) { return i.provider === SERVICIOS_SUPABASE[nombre]; });
@@ -5211,7 +5290,7 @@ function activarFormasDeEntrar(caja) {
             (identidades.length > 1 ? '<button class="boton boton--secundario boton--sm" type="button" data-quitar-forma="' + nombre + '">Desvincular</button>' : '')
           : '<button class="boton boton--sm al-final" type="button" data-forma="' + nombre + '">Vincular</button>') +
         '</div>';
-    }).join('');
+    }).join('') + filaEpic();
   }
   function cargar() {
     return cuentaSupabase().then(function (sesion) {
@@ -5219,9 +5298,11 @@ function activarFormasDeEntrar(caja) {
         caja.innerHTML = '<div class="vacio">Para vincularlas, entra con Google, Discord, Twitch, Epic Games o tu correo.</div>';
         return;
       }
-      return clienteSupabase.auth.getUserIdentities().then(function (r) {
-        if (r.error) throw r.error;
-        identidades = (r.data && r.data.identities) || [];
+      // getUser trae la cuenta al día (con epic_id aunque se haya vinculado hace un momento)
+      return Promise.all([clienteSupabase.auth.getUserIdentities(), clienteSupabase.auth.getUser()]).then(function (r) {
+        if (r[0].error) throw r[0].error;
+        identidades = (r[0].data && r[0].data.identities) || [];
+        cuentaActual = (r[1].data && r[1].data.user) || sesion.user;
         dibujar();
       });
     }).catch(function () { caja.innerHTML = '<div class="vacio">No pudimos cargar tus formas de entrar.</div>'; });
@@ -5229,6 +5310,35 @@ function activarFormasDeEntrar(caja) {
   caja.addEventListener('click', function (e) {
     var vincular = e.target.closest('[data-forma]');
     var quitar = e.target.closest('[data-quitar-forma]');
+    var epic = e.target.closest('[data-epic]');
+    var quitarEpic = e.target.closest('[data-quitar-epic]');
+    if (epic) {
+      epic.disabled = true;
+      epic.textContent = 'Conectando…';
+      var vueltaEpic = new URL(location.href);
+      vueltaEpic.hash = '';
+      vincularEpic(vueltaEpic.href).catch(function () {
+        epic.disabled = false;
+        epic.textContent = 'Vincular';
+        mostrarAviso('No pudimos conectar con Epic Games. Inténtalo de nuevo.');
+      });
+    }
+    if (quitarEpic) {
+      quitarEpic.disabled = true;
+      cuentaSupabase().then(function (sesion) {
+        return fetch('/api/epic/auth?action=desvincular', { method: 'POST', headers: { Authorization: 'Bearer ' + sesion.access_token } });
+      }).then(function (r) {
+        if (!r.ok) throw new Error('Epic ' + r.status);
+        return clienteSupabase.auth.refreshSession();
+      }).then(function () {
+        mostrarAviso('Epic Games desvinculada');
+        return cargar();
+      }).catch(function (error) {
+        console.error('No se pudo desvincular Epic Games:', error);
+        quitarEpic.disabled = false;
+        mostrarAviso('No pudimos desvincular Epic Games. Inténtalo de nuevo.');
+      });
+    }
     if (vincular) {
       var nombre = vincular.dataset.forma;
       vincular.disabled = true;
@@ -6281,7 +6391,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   var cargando = esError ? null : mostrarCargando();
   try {
     // Primero se termina la vuelta de Steam (si la hay), para que la pantalla ya vea la sesión
-    var aviso = await terminarVueltaDeSteam();
+    var aviso = (await terminarVueltaDeSteam()) || (await terminarVueltaDeEpic());
     if (esError) {
       await cargarDatos(tablas).catch(function (error) {
         console.error('La página de error sigue sin los datos de Supabase:', error);
