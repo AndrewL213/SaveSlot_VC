@@ -4157,9 +4157,22 @@ function activarOjo(boton, campo) {
   });
 }
 
+// ¿La sesión del navegador es de una cuenta real (Steam o Supabase) pero Supabase ya no tiene su sesión?
+// Pasa si la sesión se cerró en Supabase o venció: la app seguiría mostrando a la persona como conectada,
+// pero nada se podría guardar ni vincular. El invitado y la cuenta de demostración no tienen cuenta en Supabase.
+async function sesionVencida() {
+  var local = obtenerSesion();
+  if (!local || !clienteSupabase || local.invitado || local.user === 'invitado' || local.email === 'demo@saveslot') return false;
+  if (!local.steam && !local.auth_id) return false;
+  var r = await clienteSupabase.auth.getSession().catch(function () { return null; });
+  if (!r || r.error) return false; // si Supabase no responde, no se cierra nada
+  return !(r.data && r.data.session);
+}
+
 // 16. Iniciar sesión
 function pantallaEntrar() {
   if (obtenerSesion()) { location.replace(destinoVolver()); return; }
+  if (new URLSearchParams(location.search).get('vencida')) mostrarAviso('Tu sesión se cerró. Vuelve a entrar para seguir.');
   document.getElementById('ir-a-crear').href = 'crear-cuenta.html' + location.search;
   activarBotonSteam();
   activarBotonesServicios(destinoVolver());
@@ -6263,6 +6276,12 @@ document.addEventListener('DOMContentLoaded', async function () {
       });
     } else {
       await cargarDatos(tablas);
+    }
+    // La cuenta real cuya sesión de Supabase se cerró o venció: se pide entrar de nuevo
+    if (!esError && nombre !== 'entrar' && nombre !== 'registro' && await sesionVencida()) {
+      guardarMemoria('session', null);
+      location.replace(rutaPagina('iniciar-sesion.html') + '?vencida=1&volver=' + encodeURIComponent(location.pathname.split('/').pop() + location.search));
+      return;
     }
     // Sesión de Supabase que la app todavía no conoce (vuelta de Google, Discord, Twitch o del correo)
     var siguiente = esError ? null : await sincronizarSesionSupabase();
