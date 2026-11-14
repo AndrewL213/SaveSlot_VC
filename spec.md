@@ -14,8 +14,9 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
 ## Integraciones de backend del MVP
 - **Supabase**: todo lo que se guarda.
   - Cuentas: crear cuenta e iniciar sesión. También se puede "Entrar como invitado": sin cuenta, con un perfil vacío que se guarda solo en el navegador. Se entra con la cuenta de SaveSlot (correo y contraseña) o con Google, Discord, Twitch o Steam (proveedores de inicio de sesión de Supabase; sus claves se guardan en Supabase, nunca en el código).
-    - En la consola de cada servicio (Google Cloud, Discord y Twitch) la dirección de regreso es `https://jzshrfiezzysbkzdsjzf.supabase.co/auth/v1/callback`. Google está en modo «Prueba»: solo entran sus usuarios de prueba hasta publicar la app.
-    - Una sola cuenta, varias formas de entrar: en Editar perfil se vinculan Google, Discord y Twitch a la misma cuenta (vinculación manual de Supabase Auth, activada) y Steam se guarda en la cuenta abierta (`app_metadata.steam_id`). Después se entra a esa cuenta con cualquiera de ellos.
+    - Epic Games es un proveedor propio (Authentication → Custom Providers, OpenID Connect, `custom:epic`; emisor `https://api.epicgames.dev/epic/oauth/v2`, scopes `openid, basic_profile`, sin correo). En el portal de Epic: cliente «SaveSlot» (política GameClient) vinculado a la aplicación de Epic Account Services «SaveSlot», que sigue en borrador (Epic muestra un aviso de marca no revisada; para publicarla pide verificar un dominio propio).
+    - En la consola de cada servicio (Google Cloud, Discord, Twitch y Epic) la dirección de regreso es `https://jzshrfiezzysbkzdsjzf.supabase.co/auth/v1/callback`. Google está en modo «Prueba»: solo entran sus usuarios de prueba hasta publicar la app.
+    - Una sola cuenta, varias formas de entrar: en Editar perfil se vinculan Google, Discord, Twitch y Epic Games a la misma cuenta (vinculación manual de Supabase Auth, activada) y Steam se guarda en la cuenta abierta (`app_metadata.steam_id`). Después se entra a esa cuenta con cualquiera de ellos.
     - Borrar cuenta: la función `borrar_mi_cuenta()` (`supabase/borrar-cuenta.sql`, ya ejecutada) borra la cuenta de quien tiene la sesión y, en cascada, todo lo suyo en la base.
   - Base de datos: reseñas y borradores, votos, me gusta, comentarios, diario, perfil, cuentas vinculadas, misiones, amigos, eventos (torneos y sorteos), inscripciones, notificaciones, chats de MatchPlay, tendencias, destacados de Inicio, vistos recientemente, mensajes de contacto, traducciones y la copia de datos de Steam de cada juego (ver Datos).
   - Presencia: quién está en línea.
@@ -58,7 +59,7 @@ Se puede entrar y explorar sin cuenta. La cuenta se pide solo al escribir, comen
    Inicio (ventana Evento del mes) → Eventos → Detalle de evento (torneo o sorteo) → [sin cuenta: Necesitas una cuenta] → Inscripción confirmada → Perfil (Mis eventos)
 4. **Cuenta, perfil y amigos** (flujograma "Cuenta y perfil")
    Crear cuenta (paso 1) → Editar perfil (pasos 2 y 3: vincular plataformas y elegir favoritos) → Perfil → Diario · Historial de reseñas · Logros · Biblioteca · Editar perfil
-   Editar perfil → Formas de entrar (vincular Google, Discord o Twitch a la misma cuenta) · Borrar cuenta → Inicio
+   Editar perfil → Formas de entrar (vincular Google, Discord, Twitch o Epic Games a la misma cuenta) · Borrar cuenta → Inicio
    Entrar con Steam (Iniciar sesión o Crear cuenta) → Steam → Perfil, con Steam ya vinculada
    Menú de la cuenta (en la barra, en todas las páginas) → Mi perfil · Editar perfil · Cerrar sesión
    Perfil o Comunidad → Amigos → Perfil de otro usuario
@@ -145,7 +146,7 @@ Campos:
 - lista_deseos: lista de juegos (slug de IGDB) — lista de deseos de SaveSlot — opcional
 - insignias: lista de textos — "Fundador beta"… (las pone la base) — opcional
 - color: texto (#RRGGBB) — color del avatar — opcional
-- forma_de_entrar: opción (correo, google, discord, twitch, steam) — obligatorio
+- forma_de_entrar: opción (correo, google, discord, twitch, steam, epic) — obligatorio
 - invitado: sí/no — para un futuro invitado con cuenta (hoy el invitado no tiene fila en usuarios) — obligatorio
 Se relaciona con: Supabase Auth (id).
 - Calculados: estado "en línea" (presencia de Supabase: canal `en-linea`), "jugando" (en línea y con `jugando_ahora` o el juego de Steam que avisa la presencia), amigos en común, notas de cada juego (del diario).
@@ -744,7 +745,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Entrar con correo (cuenta de SaveSlot): Real (Supabase Auth, signInWithPassword). Si la contraseña no coincide o falta confirmar el correo, lo dice junto al campo.
   - Entrar como invitado: sin cuenta y sin pedir datos, con un perfil vacío ("Invitado", @invitado). No crea nada en Supabase: lo que hace (reseñas, diario, favoritos…) se guarda solo en ese navegador y no puede cambiar el @. Para guardar en la base, hay que crear una cuenta
   - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). Vuelve a la pantalla donde estaba, con Steam vinculada. Si Steam está vinculada a una cuenta de Google, Discord, Twitch o correo, abre esa cuenta.
-  - Google, Discord y Twitch: Real (proveedores de Supabase Auth, signInWithOAuth). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
+  - Google, Discord, Twitch y Epic Games: Real (proveedores de Supabase Auth, signInWithOAuth; Epic es un proveedor propio, `custom:epic`). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
@@ -765,8 +766,8 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 - **Qué funciona de verdad:**
   - Crear cuenta con correo (cuenta de SaveSlot): Real (Supabase Auth, signUp). Supabase pide confirmar el correo: después de crearla, la pantalla dice "Te enviamos un correo a…" y el enlace del correo lleva a Editar perfil con "¡Cuenta creada!". El @ y el nombre quedan en la cuenta y la fila de **usuarios** se crea al confirmar.
   - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). La cuenta nace con Steam vinculada y un @ sacado de su nombre de Steam, que puede cambiar en Editar perfil.
-  - Google, Discord y Twitch: Real (proveedores de Supabase Auth, signInWithOAuth). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
-  - Quien entra por primera vez con Google, Discord o Twitch recibe un @ libre sacado de su nombre en ese servicio (si está ocupado, con números), se crea su fila en **usuarios** y sigue a Editar perfil (pasos 2 y 3) con "¡Cuenta creada!", donde puede cambiar el @. Si ya tenía cuenta, entra con su perfil de la base aunque use otro navegador.
+  - Google, Discord, Twitch y Epic Games: Real (proveedores de Supabase Auth, signInWithOAuth; Epic es un proveedor propio, `custom:epic`). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
+  - Quien entra por primera vez con Google, Discord, Twitch o Epic Games recibe un @ libre sacado de su nombre en ese servicio (si está ocupado, con números), se crea su fila en **usuarios** y sigue a Editar perfil (pasos 2 y 3) con "¡Cuenta creada!", donde puede cambiar el @. Si ya tenía cuenta, entra con su perfil de la base aunque use otro navegador.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
   - Funciona en celular (375 px de ancho).
@@ -818,7 +819,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   1. Perfil público: foto, nombre, usuario (@), sobre mí, qué estás jugando
   2. 4 juegos favoritos
   3. Géneros favoritos (los 15 que entiende IGDB, en orden alfabético)
-  4. Cuentas vinculadas (plataformas y formas de entrar: Google, Discord y Twitch)
+  4. Cuentas vinculadas (plataformas y formas de entrar: Google, Discord, Twitch y Epic Games)
   5. Guardar o Cancelar
   6. Borrar cuenta
 - **Qué funciona de verdad:**
@@ -827,7 +828,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - "¿Qué estás jugando ahora?": con Steam vinculada, la primera opción es "Automático: lo que juegues en Steam" y se puede elegir un juego de la biblioteca de Steam o del catálogo; lo de Steam manda cuando estás jugando en Steam.
   - Favoritos: búsqueda sencilla: se escribe el nombre y se autocompleta con cualquier juego de IGDB, lo tengas o no (busca mientras escribes, desde 2 letras; sin texto no sugiere nada). Enter o «Agregar» lo suma.
   - Vincular Steam: Real (Steam). Si la cuenta es de Google, Discord, Twitch o correo, Steam se guarda en ESA cuenta (no crea otra) y después también se puede entrar con Steam a ella. Si esa cuenta de Steam ya está en otra cuenta de SaveSlot, avisa que hay que entrar con Steam, borrar esa cuenta y volver a vincularla. Con una cuenta real, Steam se guarda en **cuentas_vinculadas** al volver de Steam (también al entrar con Steam) y la base da los +100 XP la primera vez; si ya la tenías vinculada solo en el navegador, se sube una vez. Desvincular Steam y guardar borra su fila (entrar con Steam la vuelve a vincular, sin XP otra vez). Vincular Xbox: Simulado (en el navegador)
-  - Formas de entrar (Google, Discord y Twitch): Real (Supabase Auth, vinculación manual). Vincula o desvincula cada servicio en la misma cuenta, para entrar con cualquiera de ellos (siempre queda al menos una forma de entrar). Si ese servicio ya es de otra cuenta de SaveSlot, avisa igual que con Steam. La cuenta de demostración no puede. La cuenta creada al entrar con Steam también puede: después se entra a ella con Steam o con el servicio vinculado.
+  - Formas de entrar (Google, Discord, Twitch y Epic Games): Real (Supabase Auth, vinculación manual). Vincula o desvincula cada servicio en la misma cuenta, para entrar con cualquiera de ellos (siempre queda al menos una forma de entrar). Si ese servicio ya es de otra cuenta de SaveSlot, avisa igual que con Steam. La cuenta de demostración no puede. La cuenta creada al entrar con Steam también puede: después se entra a ella con Steam o con el servicio vinculado.
   - Borrar cuenta: Real (Supabase, función `borrar_mi_cuenta` en supabase/borrar-cuenta.sql). Pide confirmar; borra la cuenta y en cascada su perfil, reseñas, diario, amigos y cuentas vinculadas, su foto subida y lo guardado en ese navegador, cierra la sesión y vuelve a Inicio. No toca las cuentas de Steam, Google, Discord ni Twitch.
   - Vincular PlayStation o Nintendo: Después (no tienen conexión pública, según el diseño)
   - Foto de perfil: Real (Supabase Storage). Por defecto se usa la foto de Steam (si está vinculada) o las iniciales. "Cambiar foto" sube una imagen propia, recortada en cuadrado; "Usar la de Steam" vuelve a la de Steam y "Quitar foto" deja las iniciales. Al guardar, queda en la cuenta (`user_metadata.foto`) y se ve en el Perfil y en la barra. Sin sesión de Supabase (cuentas de correo de prueba y la de demostración), o si la subida falla, la foto queda solo en ese navegador y la app lo avisa.
@@ -987,7 +988,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 - **Qué funciona de verdad:**
   - Estado de los servicios: Real para catálogo (IGDB), Steam, base de datos y cuentas (Supabase): se revisan al abrir la página y dicen «Con fallas» si no responden. Los demás son fijos (data.js).
   - Errores de IGDB: según lo que responda, lleva a la variante que corresponde (límite de consultas, tiempo agotado a los 15 s, credenciales, mantenimiento, sin conexión o servicio caído) con «Reintentar» para volver a la página.
-  - «Acceso»: sale si falla entrar con Google, Discord o Twitch, con «Reintentar» y «Entrar de otra forma».
+  - «Acceso»: sale si falla entrar con Google, Discord, Twitch o Epic Games, con «Reintentar» y «Entrar de otra forma».
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, en todas sus variantes.
   - Funciona en celular (375 px de ancho).
