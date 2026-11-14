@@ -33,8 +33,9 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
     - Las tiendas, cuando no tienen el texto en español, mandan el de inglés: por eso se piden los dos idiomas y, si son iguales, se pasa a la siguiente. Cada tienda tiene 4 s para responder.
     - Cada juego trae `fuente_descripcion` (`steam`, `epic`, `traducida` o `igdb`).
   - Traducción de la descripción de IGDB (solo si no está en Steam ni en Epic):
-    - **Por ahora (temporal):** con el enlace gratis de Google Translate, sin clave. No es oficial: va contra las condiciones de Google y puede dejar de funcionar en cualquier momento. Se reemplaza al conectar Supabase.
-    - **Al conectar Supabase:** cada traducción se guarda una sola vez y se usa un traductor oficial: **DeepL** (plan gratis de 500.000 caracteres al mes; basta con poner la clave `DEEPL_API_KEY` en Vercel, y la función la usa en lugar de Google).
+    - Se traduce con **DeepL** (traductor oficial, plan gratis de 500.000 caracteres al mes), con la clave `DEEPL_API_KEY` en Vercel. Sin esa clave, se usa el enlace gratis de Google Translate: no es oficial, va contra las condiciones de Google y ya está bloqueado (responde 429).
+    - Cada traducción se guarda **una sola vez** en la tabla **traducciones** de Supabase (ver Datos): antes de traducir, la función mira si ya está ahí; si está, usa esa y no llama a DeepL. Escribe con la llave secreta de Supabase (`SUPABASE_SERVICE_ROLE_KEY`, solo en Vercel, la misma de `api/steam/`). Si Supabase falla o no está la llave, se traduce igual y no se guarda.
+    - Si IGDB cambia la descripción en inglés de un juego, sigue saliendo la traducción vieja: para traducirla de nuevo, se borra su fila en **traducciones**.
     - En las listas (`?buscar=` y `?populares=1`) la descripción queda en inglés, para no hacer 20 traducciones por búsqueda. Cada juego trae `idioma_descripcion` (`es` o `en`).
     - Si la traducción falla, la ficha llega igual, en inglés.
   - Mientras no esté conectada (o abriendo los archivos directo en el navegador), la app usa los juegos de `js/data.js`.

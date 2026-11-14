@@ -20,8 +20,8 @@ Digitales 3. Más contexto en README.md.
   y "en línea" usa la presencia en vivo de Supabase Realtime (canal `en-linea`).
   Catálogo de juegos: IGDB (de Twitch). La descripción en español sale
   de la tienda de Steam o, si no, de la de Epic Games (dirección no oficial);
-  si ninguna la tiene, se traduce la de IGDB (por ahora con el enlace gratis de
-  Google Translate, temporal; DeepL si se pone su clave). Steam (Steam Web
+  si ninguna la tiene, se traduce la de IGDB con DeepL y se guarda una sola
+  vez en la tabla traducciones de Supabase. Steam (Steam Web
   API, desde api/steam/): inicio de sesión, perfil, biblioteca, logros, lista
   de deseos, reseñas y precio, nota y jugadores de cada juego. Todo lo
   demás está en Supabase o, mientras falta conectarlo, en el navegador

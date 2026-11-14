@@ -4,6 +4,8 @@
 // es la única que habla con Twitch e IGDB. Así las claves nunca llegan al navegador.
 // Las claves se leen de las variables de entorno de Vercel: TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET,
 // y DEEPL_API_KEY (opcional) para traducir las descripciones al español.
+// SUPABASE_SERVICE_ROLE_KEY (la llave secreta de Supabase, solo en Vercel) para guardar cada traducción
+// una sola vez en la tabla traducciones. Sin ella, se traduce cada vez y no se guarda.
 //
 // Pedidos que acepta (solo estos seis):
 //   /api/igdb?buscar=zelda   → hasta 20 juegos que coinciden con el texto, los más conocidos primero
@@ -275,19 +277,72 @@ function textoSimple(texto) {
 }
 
 // Traduce la descripción al español. Si falla, queda en inglés: nunca rompe la ficha.
+//   0. Si ya está en la tabla traducciones de Supabase, usa esa (no se traduce otra vez).
 //   1. DeepL, si está la clave DEEPL_API_KEY en Vercel (traductor oficial).
 //   2. Si no, el enlace gratis de Google Translate.
 //      TEMPORAL: no es oficial (va contra las condiciones de Google y puede bloquearse).
-//      Se quita cuando conectemos Supabase y guardemos cada traducción una sola vez.
+// Lo que se traduce en 1 o 2 se guarda en traducciones para la próxima vez.
 async function traducirDescripcion(juego) {
   if (!juego.descripcion) return juego;
+  const guardada = await leerTraduccion(juego.id_igdb);
+  if (guardada) return conTraduccion(juego, guardada);
   try {
-    const texto = process.env.DEEPL_API_KEY ? await conDeepl(juego.descripcion) : await conGoogle(juego.descripcion);
-    if (texto) { juego.descripcion = texto; juego.idioma_descripcion = 'es'; juego.fuente_descripcion = 'traducida'; }
+    const traductor = process.env.DEEPL_API_KEY ? 'deepl' : 'google';
+    const texto = traductor === 'deepl' ? await conDeepl(juego.descripcion) : await conGoogle(juego.descripcion);
+    if (texto) {
+      conTraduccion(juego, texto);
+      await guardarTraduccion(juego.id_igdb, texto, traductor);
+    }
   } catch (e) {
     console.error('No se pudo traducir la descripción: ' + e.message);
   }
   return juego;
+}
+
+function conTraduccion(juego, texto) {
+  juego.descripcion = texto;
+  juego.idioma_descripcion = 'es';
+  juego.fuente_descripcion = 'traducida';
+  return juego;
+}
+
+/* ---------- Tabla traducciones de Supabase ----------
+   Solo el servidor escribe en ella (las reglas no dejan a nadie más), con la llave secreta que está
+   en Vercel. Si Supabase falla o no está la llave, se sigue sin guardar: nunca rompe la ficha. */
+
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://jzshrfiezzysbkzdsjzf.supabase.co';
+
+function cabecerasSupabase(extra) {
+  const llave = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return Object.assign({ apikey: llave, Authorization: 'Bearer ' + llave, 'Content-Type': 'application/json' }, extra);
+}
+
+async function leerTraduccion(igdbId) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !Number.isInteger(igdbId)) return null;
+  try {
+    const r = await llamar(SUPABASE_URL + '/rest/v1/traducciones?igdb_id=eq.' + igdbId + '&idioma=eq.es&select=texto', Object.assign({ headers: cabecerasSupabase() }, deTienda()));
+    if (!r.ok) throw new Error('Supabase respondió ' + r.status);
+    const fila = (await r.json())[0];
+    return fila ? fila.texto : null;
+  } catch (e) {
+    console.error('No se pudo leer la traducción guardada: ' + e.message);
+    return null;
+  }
+}
+
+async function guardarTraduccion(igdbId, texto, traductor) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !Number.isInteger(igdbId)) return;
+  try {
+    // Si dos visitas traducen el mismo juego a la vez, la segunda no hace nada (ignore-duplicates).
+    const r = await llamar(SUPABASE_URL + '/rest/v1/traducciones?on_conflict=igdb_id,idioma', Object.assign({
+      method: 'POST',
+      headers: cabecerasSupabase({ Prefer: 'resolution=ignore-duplicates,return=minimal' }),
+      body: JSON.stringify({ igdb_id: igdbId, idioma: 'es', texto: texto, traductor: traductor })
+    }, deTienda()));
+    if (!r.ok) throw new Error('Supabase respondió ' + r.status + ': ' + await r.text());
+  } catch (e) {
+    console.error('No se pudo guardar la traducción: ' + e.message);
+  }
 }
 
 async function conDeepl(texto) {
