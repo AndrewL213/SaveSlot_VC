@@ -39,20 +39,18 @@ async function portadasDeIgdb(juegos) {
   const permiso = await permisoDeIgdb().catch((e) => { console.error("IGDB permiso:", e.message); return null; });
   if (!permiso) { console.error("IGDB: sin permiso (¿faltan TWITCH_CLIENT_ID o TWITCH_CLIENT_SECRET?)"); return {}; }
   const portadas = {};
-  for (let i = 0; i < juegos.length; i += 10) {
-    const grupo = juegos.slice(i, i + 10);
-    const consulta = grupo.map((j, n) =>
-      `query games "j${n}" { fields cover.image_id; search "${nombreParaBuscar(j.name)}"; where cover != null; limit 1; };`).join("\n");
-    const r = await fetch("https://api.igdb.com/v4/multiquery", {
-      method: "POST", headers: { "Client-ID": process.env.TWITCH_CLIENT_ID, Authorization: `Bearer ${permiso}` }, body: consulta,
-    }).catch(() => null);
-    if (!r || !r.ok) { console.error("IGDB multiquery:", r ? r.status + " " + (await r.text()).slice(0, 300) : "sin respuesta"); continue; }
-    const respuesta = await r.json().catch(() => []);
-    respuesta.forEach((q) => {
-      const n = Number(String(q.name).slice(1));
-      const juego = q.result && q.result[0];
-      if (grupo[n] && juego && juego.cover) portadas[grupo[n].titleId] = `https://images.igdb.com/igdb/image/upload/t_cover_big/${juego.cover.image_id}.jpg`;
-    });
+  // De a 4 juegos a la vez (IGDB deja 4 consultas por segundo)
+  for (let i = 0; i < juegos.length; i += 4) {
+    await Promise.all(juegos.slice(i, i + 4).map(async (j) => {
+      const r = await fetch("https://api.igdb.com/v4/games", {
+        method: "POST", headers: { "Client-ID": process.env.TWITCH_CLIENT_ID, Authorization: `Bearer ${permiso}` },
+        body: `fields name, cover.image_id; search "${nombreParaBuscar(j.name)}"; where cover != null; limit 1;`,
+      }).catch(() => null);
+      if (!r || !r.ok) { console.error("IGDB portada de", j.name, r ? r.status : "sin respuesta"); return; }
+      const encontrado = ((await r.json().catch(() => [])) || [])[0];
+      if (encontrado && encontrado.cover) portadas[j.titleId] = `https://images.igdb.com/igdb/image/upload/t_cover_big/${encontrado.cover.image_id}.jpg`;
+      else console.error("IGDB no encontró portada para", j.name, "→", nombreParaBuscar(j.name));
+    }));
   }
   return portadas;
 }
@@ -142,7 +140,7 @@ module.exports = async function handler(req, res) {
       g.percent = conteo.total ? Math.round(conteo.unlocked / conteo.total * 100) : 0;
     }));
     // Portadas de IGDB
-    const portadas = await portadasDeIgdb(games.slice(0, 60)).catch(() => ({}));
+    const portadas = await portadasDeIgdb(games.slice(0, 40)).catch(() => ({}));
     games.forEach((g) => { g.cover = portadas[g.titleId] || null; });
 
     return json(res, 200, {
