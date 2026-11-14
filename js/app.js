@@ -162,10 +162,11 @@ function tieneXbox() {
   return !!(MI_FILA && filasDe('cuentas_vinculadas', 'usuario_id', MI_FILA.id).some(function (x) { return x.plataforma === 'xbox'; }));
 }
 
-// Un juego de Xbox con la forma de los demás (sin portada: Xbox no da una dirección de imagen que podamos usar)
+// Un juego de Xbox con la forma de los demás. La portada es la de IGDB (api/xbox/data.js la busca por el
+// nombre del juego): CLAUDE.md no deja usar las imágenes de Xbox. Si IGDB no lo encuentra, queda sin imagen.
 function juegoDeXbox(g) {
   return {
-    id: 'xbox-' + g.titleId, nombre: g.name, nombre_corto: g.name, portada: null, color: null, generos: [],
+    id: 'xbox-' + g.titleId, nombre: g.name, nombre_corto: g.name, portada: g.cover || null, credito_portada: g.cover ? 'IGDB' : null, color: null, generos: [],
     plataformas: ['Xbox'], horas: 0, ultima_vez: g.last_played || 0, xbox: true,
     logros: { obtenidos: g.unlocked, totales: g.total }
   };
@@ -6003,8 +6004,8 @@ function pantallaBiblioteca() {
     caja.innerHTML = lista.map(function (j) {
       if (j.xbox) {
         return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Buscar ' + escapar(j.nombre) + ' en Xbox">' +
-          '<span class="portada portada--enlace">' +
-            '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox" title="De tu cuenta de Xbox"></span>' +
+          '<span class="portada portada--enlace">' + imagenPortada(j) +
+            '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox" title="De tu cuenta de Xbox' + (j.portada ? ' · Portada: IGDB' : '') + '"></span>' +
           '<b>' + escapar(j.nombre_corto) + '</b>' +
           '<span class="tarjeta__texto">' + (j.logros.totales ? j.logros.obtenidos + '/' + j.logros.totales + ' logros' : 'Jugado') + '</span></a>';
       }
