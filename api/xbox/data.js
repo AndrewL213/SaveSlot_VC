@@ -36,8 +36,8 @@ function nombreParaBuscar(nombre) {
 }
 // { titleId: "https://images.igdb.com/.../t_cover_big/xxx.jpg" } para los juegos que IGDB encuentre
 async function portadasDeIgdb(juegos) {
-  const permiso = await permisoDeIgdb().catch(() => null);
-  if (!permiso) return {};
+  const permiso = await permisoDeIgdb().catch((e) => { console.error("IGDB permiso:", e.message); return null; });
+  if (!permiso) { console.error("IGDB: sin permiso (¿faltan TWITCH_CLIENT_ID o TWITCH_CLIENT_SECRET?)"); return {}; }
   const portadas = {};
   for (let i = 0; i < juegos.length; i += 10) {
     const grupo = juegos.slice(i, i + 10);
@@ -46,7 +46,7 @@ async function portadasDeIgdb(juegos) {
     const r = await fetch("https://api.igdb.com/v4/multiquery", {
       method: "POST", headers: { "Client-ID": process.env.TWITCH_CLIENT_ID, Authorization: `Bearer ${permiso}` }, body: consulta,
     }).catch(() => null);
-    if (!r || !r.ok) continue;
+    if (!r || !r.ok) { console.error("IGDB multiquery:", r ? r.status + " " + (await r.text()).slice(0, 300) : "sin respuesta"); continue; }
     const respuesta = await r.json().catch(() => []);
     respuesta.forEach((q) => {
       const n = Number(String(q.name).slice(1));
