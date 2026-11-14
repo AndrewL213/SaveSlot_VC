@@ -374,8 +374,11 @@ function anotarCuentaSteam(steam) {
    la conoce por su fila en la tabla usuarios (auth_id = id de la cuenta). Steam tiene su
    propio camino (api/steam/auth.js y terminarVueltaDeSteam, arriba). */
 
-var SERVICIOS_SUPABASE = { Google: 'google', Discord: 'discord', Twitch: 'twitch' };
-var FORMA_DE_ENTRAR = { email: 'correo', google: 'google', discord: 'discord', twitch: 'twitch' };
+// Epic Games es un proveedor propio de Supabase (Custom Providers, OpenID Connect): se llama "custom:epic"
+var SERVICIOS_SUPABASE = { Google: 'google', Discord: 'discord', Twitch: 'twitch', Epic: 'custom:epic' };
+var NOMBRE_SERVICIO = { Epic: 'Epic Games' }; // cómo se muestra (si no está aquí, la clave)
+function nombreServicio(clave) { return NOMBRE_SERVICIO[clave] || clave; }
+var FORMA_DE_ENTRAR = { email: 'correo', google: 'google', discord: 'discord', twitch: 'twitch', 'custom:epic': 'epic' };
 
 // Dirección completa de una página de la app (para que Supabase vuelva a ella)
 function direccionCompleta(ruta) {
@@ -5165,9 +5168,9 @@ function activarFormasDeEntrar(caja) {
     history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + (error ? '' : location.hash));
     mostrarAviso(error
       ? (/already|exists/i.test(error + (params.get('error_description') || hash.get('error_description') || ''))
-        ? 'Esa cuenta de ' + vuelta + ' ya está en otra cuenta de SaveSlot. Entra con ella, bórrala y vuelve a vincularla aquí.'
-        : 'No pudimos vincular ' + vuelta + '. Inténtalo de nuevo.')
-      : vuelta + ' vinculada: ya puedes entrar con ella.');
+        ? 'Esa cuenta de ' + nombreServicio(vuelta) + ' ya está en otra cuenta de SaveSlot. Entra con ella, bórrala y vuelve a vincularla aquí.'
+        : 'No pudimos vincular ' + nombreServicio(vuelta) + '. Inténtalo de nuevo.')
+      : nombreServicio(vuelta) + ' vinculada: ya puedes entrar con ella.');
   }
 
   var identidades = [];
@@ -5176,7 +5179,7 @@ function activarFormasDeEntrar(caja) {
       var id = identidades.find(function (i) { return i.provider === SERVICIOS_SUPABASE[nombre]; });
       var datos = (id && id.identity_data) || {};
       var quien = datos.email || datos.full_name || datos.name || datos.preferred_username || '';
-      return '<div class="fila fila--comparacion"><span><b>' + nombre + '</b></span>' +
+      return '<div class="fila fila--comparacion"><span><b>' + nombreServicio(nombre) + '</b></span>' +
         (id
           ? '<span class="estado estado--jugando al-final">Vinculada' + (quien ? ' · ' + escapar(quien) : '') + '</span>' +
             (identidades.length > 1 ? '<button class="boton boton--secundario boton--sm" type="button" data-quitar-forma="' + nombre + '">Desvincular</button>' : '')
@@ -5187,7 +5190,7 @@ function activarFormasDeEntrar(caja) {
   function cargar() {
     return cuentaSupabase().then(function (sesion) {
       if (!sesion) {
-        caja.innerHTML = '<div class="vacio">Para vincularlas, entra con Google, Discord, Twitch o tu correo.</div>';
+        caja.innerHTML = '<div class="vacio">Para vincularlas, entra con Google, Discord, Twitch, Epic Games o tu correo.</div>';
         return;
       }
       return clienteSupabase.auth.getUserIdentities().then(function (r) {
@@ -5213,7 +5216,7 @@ function activarFormasDeEntrar(caja) {
         console.error('No se pudo vincular ' + nombre + ':', error);
         vincular.disabled = false;
         vincular.textContent = 'Vincular';
-        mostrarAviso('No pudimos vincular ' + nombre + '. Inténtalo de nuevo.');
+        mostrarAviso('No pudimos vincular ' + nombreServicio(nombre) + '. Inténtalo de nuevo.');
       });
     }
     if (quitar) {
@@ -5222,12 +5225,12 @@ function activarFormasDeEntrar(caja) {
       quitar.disabled = true;
       clienteSupabase.auth.unlinkIdentity(identidad).then(function (r) {
         if (r.error) throw r.error;
-        mostrarAviso(servicio + ' desvinculada');
+        mostrarAviso(nombreServicio(servicio) + ' desvinculada');
         return cargar();
       }).catch(function (error) {
         console.error('No se pudo desvincular ' + servicio + ':', error);
         quitar.disabled = false;
-        mostrarAviso('No pudimos desvincular ' + servicio + '. Inténtalo de nuevo.');
+        mostrarAviso('No pudimos desvincular ' + nombreServicio(servicio) + '. Inténtalo de nuevo.');
       });
     }
   });
