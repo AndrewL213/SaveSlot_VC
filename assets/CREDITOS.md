@@ -20,10 +20,12 @@ solo para identificar cada juego y siempre se indica su fuente y su dueño.
 | portada-valorant.jpg | Valorant | Aportada por el equipo (origen por confirmar) | © Riot Games |
 | favicon.svg, icono-app-*.png | SaveSlot | Diseños del equipo | Equipo SaveSlot |
 | avatar-prueba.jpg | Foto de perfil de prueba (catálogo de componentes) | Fan art de Hyoma Chigiri (Blue Lock) aportado por el equipo; autor desconocido | Personaje © Muneyuki Kaneshiro, Yusuke Nomura / Kodansha. Reemplazar antes del lanzamiento público |
-| logo-google.svg, logo-discord.svg, logo-twitch.svg, logo-steam.svg | Logos de los servicios para iniciar sesión | Simple Icons (CC0) para Discord, Twitch y Steam; logo «G» de Google | © Google, Discord, Twitch (Amazon) y Valve. Se usan solo en los botones de iniciar sesión, según las guías de marca de cada servicio |
+| logo-google.svg, logo-discord.svg, logo-twitch.svg | Logos de los servicios para iniciar sesión | Simple Icons (CC0) para Discord y Twitch; logo «G» de Google | © Google, Discord y Twitch (Amazon). Se usan solo en los botones de iniciar sesión, según las guías de marca de cada servicio |
+| logo-steam.png | Logo de Steam (botón de iniciar sesión, etiquetas y portadas de la Biblioteca) | Logo de Steam aportado por el equipo; solo escalado a 128×128 | © Valve. Sin cambiar colores ni proporciones |
+| logo-xbox.png | Logo de Xbox (cuenta vinculada en Perfil, etiquetas y portadas de la Biblioteca) | Logo de Xbox aportado por el equipo; solo escalado a 128×128 | © Microsoft. Sin cambiar colores ni proporciones |
 | logo-epic.png | Logo de Epic Games para el botón de iniciar sesión | Logo oficial de Epic Games («Epic Games logo for EOS users», enlazado desde las pautas de diseño de Epic Account Services); solo recortado y escalado | © Epic Games. Se usa solo en el botón de iniciar sesión, sin cambiar colores ni proporciones, según las pautas de Epic |
 
-SaveSlot no está respaldado ni patrocinado por Riot Games, Nintendo, Valve, Google, Discord, Twitch ni ninguna de las
+SaveSlot no está respaldado ni patrocinado por Riot Games, Nintendo, Valve, Google, Discord, Twitch, Microsoft ni ninguna de las
 empresas mencionadas. Todas las marcas pertenecen a sus dueños.
 
 ## Kits de prensa oficiales (revisados el 2026-11-02)
