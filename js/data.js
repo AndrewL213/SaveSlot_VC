@@ -1660,11 +1660,11 @@ const DATOS = {
     { id: "nintendo", nombre: "Nintendo" }
   ],
   // Cuentas de juego que se pueden vincular (Editar perfil). Steam es real (api/steam);
-  // Xbox, simulado; PlayStation y Nintendo no tienen conexión pública.
+  // Xbox, real con una cuenta de verdad (Xbox Live; demo con el invitado); PlayStation y Nintendo no tienen conexión pública.
   cuentas: [
     { id: "steam", nombre: "Steam", nota: "Se conecta con tu cuenta de Steam", vincula: true },
     { id: "playstation", nombre: "PlayStation", nota: "No tiene conexión pública: registra tus juegos a mano", vincula: false },
-    { id: "xbox", nombre: "Xbox", nota: "Se conecta mediante OpenXBL (servicio de terceros)", vincula: true },
+    { id: "xbox", nombre: "Xbox", nota: "Se conecta con tu cuenta de Microsoft (Xbox Live)", vincula: true },
     { id: "nintendo", nombre: "Nintendo", nota: "No tiene conexión pública: registra tus juegos a mano", vincula: false }
   ],
   // Estado de una partida (Escribir reseña y Diario), con el color de su etiqueta
@@ -1909,7 +1909,7 @@ const DATOS = {
     { id: "s13", servicio: "Tu actividad: reseñas, diario, amigos, inscripciones, avisos y vistos", proveedor: "Supabase (como invitado, este navegador)", estado: "conectado", texto: "Conectado" },
     { id: "s14", servicio: "Chats de MatchPlay", proveedor: "Este navegador", estado: "demo", texto: "Modo demo" },
     { id: "s3", servicio: "MatchPlay (IA)", proveedor: "Por definir", estado: "demo", texto: "Modo demo" },
-    { id: "s5", servicio: "Cuentas: Xbox", proveedor: "OpenXBL (tercero)", estado: "pendiente", texto: "Sin clave" },
+    { id: "s5", servicio: "Cuentas: Xbox", proveedor: "Xbox Live (Microsoft)", estado: "pendiente", texto: "Falta el secret de Azure" },
     { id: "s6", servicio: "Cuentas: PlayStation", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
     { id: "s7", servicio: "Cuentas: Nintendo", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
     { id: "s9", servicio: "Clips y transmisiones", proveedor: "Twitch API", estado: "pendiente", texto: "Pendiente" },

@@ -98,6 +98,100 @@ function terminarVueltaDeEpic() {
   }).catch(function () { return 'No pudimos conectar con Epic Games. Inténtalo de nuevo.'; });
 }
 
+/* ---------- Xbox (cuenta de Microsoft) ----------
+   api/xbox/auth.js vincula la cuenta de Xbox a la cuenta abierta (solo vincular, no sirve para entrar)
+   y api/xbox/data.js trae el gamertag, el gamerscore, los juegos jugados y sus logros.
+   Al volver de Microsoft, la página trae ?xbox=1 y vinculada=1 (con el gamertag) o un error. */
+
+function vincularXbox(destino) {
+  return cuentaSupabase().then(function (sesion) {
+    if (!sesion) throw new Error('Sin sesión');
+    return fetch('/api/xbox/auth?action=preparar', { method: 'POST', headers: { Authorization: 'Bearer ' + sesion.access_token } })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok || !d.estado) throw new Error(d.error || 'Sin permiso'); return d.estado; }); })
+      .then(function (estado) {
+        var vuelta = new URL(destino || location.href, location.href);
+        vuelta.hash = '';
+        vuelta.searchParams.set('xbox', '1');
+        location.href = '/api/xbox/auth?action=login&redirect_to=' + encodeURIComponent(vuelta.href) + '&vincular=' + encodeURIComponent(estado);
+      });
+  });
+}
+
+function desvincularXbox() {
+  return cuentaSupabase().then(function (sesion) {
+    if (!sesion) throw new Error('Sin sesión');
+    return fetch('/api/xbox/auth?action=desvincular', { method: 'POST', headers: { Authorization: 'Bearer ' + sesion.access_token } });
+  }).then(function (r) {
+    if (!r.ok) throw new Error('Xbox ' + r.status);
+    if (MI_FILA) FILAS.cuentas_vinculadas = (FILAS.cuentas_vinculadas || []).filter(function (x) { return !(x.usuario_id === MI_FILA.id && x.plataforma === 'xbox'); });
+    DATOS_ARMADOS = {};
+    var perfil = leerPerfil();
+    perfil.accounts = perfil.accounts || {};
+    perfil.accounts.Xbox = null;
+    guardarMemoria('profile', perfil);
+    guardarMemoria('xboxDatos', null);
+  });
+}
+
+// Pide los datos de Xbox de la cuenta abierta: { gamertag, gamerscore, foto, games }
+function pedirXbox() {
+  return cuentaSupabase().then(function (sesion) {
+    if (!sesion) throw new Error('Sin sesión');
+    return fetch('/api/xbox/data', { method: 'POST', headers: { Authorization: 'Bearer ' + sesion.access_token } });
+  }).then(function (r) {
+    return r.json().then(function (d) {
+      if (!r.ok) { var error = new Error(d.error || 'Xbox no respondió'); error.vencido = !!d.vencido; error.sinVinculo = !!d.sin_vinculo; throw error; }
+      guardarMemoria('xboxDatos', d);
+      return d;
+    });
+  });
+}
+
+// ¿La cuenta tiene Xbox vinculada de verdad? (fila "xbox" en cuentas_vinculadas)
+function tieneXbox() {
+  return !!(MI_FILA && filasDe('cuentas_vinculadas', 'usuario_id', MI_FILA.id).some(function (x) { return x.plataforma === 'xbox'; }));
+}
+
+// Un juego de Xbox con la forma de los demás (sin portada: Xbox no da una dirección de imagen que podamos usar)
+function juegoDeXbox(g) {
+  return {
+    id: 'xbox-' + g.titleId, nombre: g.name, nombre_corto: g.name, portada: null, color: null, generos: [],
+    plataformas: ['Xbox'], horas: 0, ultima_vez: g.last_played || 0, xbox: true,
+    logros: { obtenidos: g.unlocked, totales: g.total }
+  };
+}
+
+// Al volver de Microsoft: devuelve el aviso a mostrar (o null). El perfil del navegador se pone al día.
+function terminarVueltaDeXbox() {
+  var params = new URLSearchParams(location.search);
+  if (!params.get('xbox')) return Promise.resolve(null);
+  var vinculada = params.get('vinculada');
+  var gamertag = params.get('gamertag');
+  var fallo = params.get('error') || (tomarErrorDeVuelta() || {}).error;
+  ['xbox', 'vinculada', 'gamertag', 'error'].forEach(function (p) { params.delete(p); });
+  history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + location.hash);
+  if (fallo === 'xbox_en_otra_cuenta') return Promise.resolve('Esa cuenta de Xbox ya está vinculada a otra cuenta de SaveSlot.');
+  if (fallo === 'sin_perfil_xbox') return Promise.resolve('Esa cuenta de Microsoft todavía no tiene perfil de Xbox. Crea tu gamertag en xbox.com y vuelve a intentarlo.');
+  if (fallo === 'access_denied') return Promise.resolve('Cancelaste el permiso en Microsoft: no se cambió nada.');
+  if (fallo || !vinculada) return Promise.resolve('No pudimos conectar con Xbox. Inténtalo de nuevo.');
+  var perfil = leerPerfil();
+  perfil.accounts = perfil.accounts || {};
+  perfil.accounts.Xbox = gamertag || 'Xbox';
+  guardarMemoria('profile', perfil);
+  return Promise.resolve('Xbox vinculada · ' + (gamertag || ''));
+}
+
+// Xbox en el perfil del navegador = lo que dice la base (cuenta real). La de demostración queda en el navegador.
+async function sincronizarXboxDeLaBase() {
+  if (!MI_FILA) return null;
+  var perfil = leerPerfil();
+  perfil.accounts = perfil.accounts || {};
+  var fila = filasDe('cuentas_vinculadas', 'usuario_id', MI_FILA.id).find(function (x) { return x.plataforma === 'xbox'; });
+  var nombre = fila ? fila.nombre : null;
+  if ((perfil.accounts.Xbox || null) !== nombre) { perfil.accounts.Xbox = nombre; guardarMemoria('profile', perfil); }
+  return null;
+}
+
 // Botón "Epic Games" de Iniciar sesión y Crear cuenta
 function activarBotonEpic() {
   var boton = document.querySelector('a[href*="servicio=Epic"]');
@@ -372,6 +466,7 @@ function tieneSteam() {
 
 // A dónde lleva un juego: su ficha en SaveSlot o, si viene de Steam, su página en la tienda de Steam
 function enlaceJuego(juego) {
+  if (juego.xbox) return 'https://www.xbox.com/es-CO/search?q=' + encodeURIComponent(juego.nombre);
   return juego.steam
     ? 'https://store.steampowered.com/app/' + juego.appid + '/'
     : 'detalle-juego.html?id=' + encodeURIComponent(juego.id);
@@ -798,7 +893,7 @@ async function cambiarDeseo(idJuego, agregar, posicion) {
 /* ---------- Steam vinculada en la base (tabla cuentas_vinculadas) ----------
    Con una cuenta real, Steam vinculada = su fila "steam" en la base (la ven todos). La base solo deja
    guardarla si la cuenta de Supabase tiene Steam de verdad (steam_id en app_metadata) y da los +100 XP
-   de la misión "vincular" una sola vez. Xbox y PlayStation siguen en el navegador (demo). */
+   de la misión "vincular" una sola vez. Xbox la guarda el servidor (api/xbox/auth.js); PlayStation sigue en el navegador (demo). */
 var STEAM_RECIEN_VINCULADA = false; // true si en esta página se volvió de Steam (vincular o entrar)
 
 // Devuelve un texto para el aviso ("+100 XP") si la base acaba de dar el XP, o null.
@@ -4530,8 +4625,10 @@ function pantallaPerfil() {
       lista.push((enlace ? '<a class="en-fila tarjeta__texto" href="' + escapar(enlace) + '" target="_blank" rel="noopener"' : '<span class="en-fila tarjeta__texto"') +
         ' title="Tu cuenta de Steam"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-steam.svg')) + '" alt="Steam">@' + escapar(cuentasVinculadas.Steam) + (enlace ? '</a>' : '</span>'));
     }
+    var xboxDatos = tieneXbox() ? leerMemoria('xboxDatos', null) : null;
     ['Xbox', 'PlayStation', 'Nintendo'].forEach(function (p) {
-      if (cuentasVinculadas[p]) lista.push('<span class="tarjeta__texto" title="Tu cuenta de ' + p + '">' + p + ' @' + escapar(cuentasVinculadas[p]) + '</span>');
+      var extra = p === 'Xbox' && xboxDatos ? ' · ' + formatearNumero(xboxDatos.gamerscore) + ' G' : '';
+      if (cuentasVinculadas[p]) lista.push('<span class="tarjeta__texto" title="Tu cuenta de ' + p + '">' + p + ' @' + escapar(cuentasVinculadas[p]) + extra + '</span>');
     });
     var caja = document.getElementById('cuentas-perfil');
     caja.innerHTML = lista.join('<span class="tarjeta__texto" aria-hidden="true">·</span>');
@@ -4539,6 +4636,8 @@ function pantallaPerfil() {
   }
   document.getElementById('usuario-perfil').textContent = '@' + sesion.user;
   dibujarCuentas(leerMemoria('steamPerfil', null));
+  // Xbox real: trae el gamerscore (y deja los juegos listos para Biblioteca y Logros)
+  if (tieneXbox()) pedirXbox().then(function () { dibujarCuentas(leerMemoria('steamPerfil', null)); }).catch(function () {});
   document.getElementById('insignias-perfil').innerHTML = '<span class="etiqueta etiqueta--primario">NIVEL ' + escapar(perfil.level) + '</span>' +
     (datosUsuario.insignias || []).map(function (i) { return '<span class="etiqueta etiqueta--contorno">' + escapar(i.toUpperCase()) + '</span>'; }).join('');
   document.getElementById('compartir-perfil').addEventListener('click', function () {
@@ -5126,7 +5225,7 @@ function pantallaEditar() {
     chip.setAttribute('aria-pressed', String(perfil.genres.indexOf(g) !== -1));
   });
 
-  // Cuentas vinculadas: Steam real (en la base con una cuenta real); Xbox demo, en el navegador
+  // Cuentas vinculadas: Steam y Xbox reales (en la base con una cuenta real); con el invitado, Xbox es demo en el navegador
   var cajaCuentas = document.getElementById('cuentas-editar');
   function dibujarCuentas() {
     // Cuentas que se pueden vincular (cuentas en data.js)
@@ -5144,6 +5243,19 @@ function pantallaEditar() {
   cajaCuentas.addEventListener('click', function (e) {
     var vincular = e.target.closest('[data-vincular]');
     var desvincular = e.target.closest('[data-desvincular]');
+    if (desvincular && desvincular.dataset.desvincular === 'Xbox' && tieneXbox()) {
+      // Xbox real: se desvincula en el servidor de una vez
+      desvincular.disabled = true;
+      desvincularXbox().then(function () {
+        perfil.accounts.Xbox = null;
+        dibujarCuentas();
+        mostrarAviso('Xbox desvinculada');
+      }).catch(function () {
+        desvincular.disabled = false;
+        mostrarAviso('No pudimos desvincular Xbox. Inténtalo de nuevo.');
+      });
+      return;
+    }
     if (desvincular) {
       var plataforma = desvincular.dataset.desvincular;
       var anterior = perfil.accounts[plataforma];
@@ -5162,6 +5274,17 @@ function pantallaEditar() {
         vincular.disabled = false;
         vincular.textContent = 'Vincular';
         mostrarAviso('No pudimos conectar con Steam. Inténtalo de nuevo.');
+      });
+      return;
+    }
+    if (vincular && vincular.dataset.vincular === 'Xbox' && MI_FILA) {
+      // Xbox es real con una cuenta de verdad: se va a Microsoft y vuelve aquí ya vinculada
+      vincular.disabled = true;
+      vincular.textContent = 'Conectando…';
+      vincularXbox(location.href).catch(function () {
+        vincular.disabled = false;
+        vincular.textContent = 'Vincular';
+        mostrarAviso('No pudimos conectar con Xbox. Inténtalo de nuevo.');
       });
       return;
     }
@@ -5685,9 +5808,37 @@ function pantallaLogros() {
     }));
     progreso.sort(function (a, b) { return b.obtenidos / b.totales - a.obtenidos / a.totales; });
     resumen = { desbloqueados: datos.summary.unlocked, promedio: datos.summary.average, juegos_completos: datos.summary.complete, raros: datos.summary.rare };
+    resumenSteam = resumen;
     raros = datos.rarest.map(function (l) { return { nombre: l.name, juego: l.game, porcentaje: l.percent, obtenido: l.achieved }; });
     var nota = document.getElementById('nota-logros');
-    if (nota) nota.textContent = 'Logros de Steam de tus 30 juegos más jugados (Steam Web API). Xbox llegará con OpenXBL.';
+    if (nota) nota.textContent = 'Logros de Steam de tus 30 juegos más jugados (Steam Web API)' + (tieneXbox() ? ' y de tus juegos de Xbox (Xbox Live).' : '.');
+    if (xboxGuardado) { usarXbox(xboxGuardado); return; }
+    mostrarResumen();
+    mostrar();
+    mostrarRaros();
+  }
+
+  // Logros reales de Xbox: reemplazan los de ejemplo de Xbox y se suman al resumen
+  var xboxGuardado = null;
+  var resumenSteam = null;
+  function usarXbox(datos) {
+    xboxGuardado = datos;
+    progreso = progreso.filter(function (p) { return p.plataforma !== 'Xbox'; }).concat(datos.games.filter(function (g) { return g.total > 0; }).map(function (g) {
+      return { juego: 'xbox-' + g.titleId, juego_steam: juegoDeXbox(g), obtenidos: g.unlocked, totales: g.total, plataforma: 'Xbox' };
+    }));
+    progreso.sort(function (a, b) { return b.obtenidos / b.totales - a.obtenidos / a.totales; });
+    var deXbox = progreso.filter(function (p) { return p.plataforma === 'Xbox'; });
+    var reales = progreso.filter(function (p) { return p.plataforma === 'Xbox' || (resumenSteam && p.plataforma === 'Steam'); });
+    resumen = {
+      desbloqueados: (resumenSteam ? resumenSteam.desbloqueados : 0) + deXbox.reduce(function (s, p) { return s + p.obtenidos; }, 0),
+      promedio: reales.length ? Math.round(reales.reduce(function (s, p) { return s + p.obtenidos / p.totales * 100; }, 0) / reales.length) : 0,
+      juegos_completos: reales.filter(function (p) { return p.obtenidos === p.totales; }).length,
+      raros: resumenSteam ? resumenSteam.raros : 0 // Xbox no dice qué tan raro es cada logro
+    };
+    var nota = document.getElementById('nota-logros');
+    if (nota) nota.textContent = resumenSteam
+      ? 'Logros de Steam de tus 30 juegos más jugados (Steam Web API) y de tus juegos de Xbox (Xbox Live).'
+      : 'Logros de tus juegos de Xbox (Xbox Live). Los logros raros solo los da Steam.';
     mostrarResumen();
     mostrar();
     mostrarRaros();
@@ -5729,6 +5880,19 @@ function pantallaLogros() {
     if (botonActualizar) { botonActualizar.hidden = false; botonActualizar.addEventListener('click', cargarSteam); }
     cargarSteam();
   }
+
+  // Xbox (cuenta real con Xbox vinculada)
+  function cargarXbox() {
+    pedirXbox().then(function (datos) { usarXbox(datos); }).catch(function (error) {
+      if (estado && error.vencido) estado.textContent = 'El permiso de Xbox venció: vuelve a vincular Xbox en Editar perfil.';
+    });
+  }
+  if (tieneXbox()) {
+    var xboxMemoria = leerMemoria('xboxDatos', null);
+    if (xboxMemoria) usarXbox(xboxMemoria);
+    if (botonActualizar) { botonActualizar.hidden = false; botonActualizar.addEventListener('click', cargarXbox); }
+    cargarXbox();
+  }
 }
 
 // Biblioteca de Steam (pantalla nueva: pages/biblioteca.html)
@@ -5737,7 +5901,9 @@ function pantallaBiblioteca() {
   var caja = document.getElementById('biblioteca-juegos');
   var buscador = document.getElementById('buscar-biblioteca');
   var orden = 'horas';
-  var juegos = leerBibliotecaSteam();
+  var juegos = tieneSteam() ? leerBibliotecaSteam() : [];
+  // Juegos de Xbox (cuenta real con Xbox vinculada): van junto a los de Steam, sin portada
+  var juegosXbox = tieneXbox() ? ((leerMemoria('xboxDatos', null) || { games: [] }).games.map(juegoDeXbox)) : [];
   // ?orden=recientes (desde "Este año" del Perfil) abre la biblioteca ya ordenada
   var ordenPedido = new URLSearchParams(location.search).get('orden');
   var ORDENES = {
@@ -5747,30 +5913,39 @@ function pantallaBiblioteca() {
   };
 
   function dibujar() {
+    var todos = juegos.concat(juegosXbox);
     var total = juegos.reduce(function (s, j) { return s + j.horas; }, 0);
-    var jugados = juegos.filter(function (j) { return j.horas > 0; }).length;
+    // Los de Xbox salen de tu historial de juego: todos están jugados (Xbox no da las horas)
+    var jugados = juegos.filter(function (j) { return j.horas > 0; }).length + juegosXbox.length;
     document.getElementById('resumen-biblioteca').innerHTML = [
-      [formatearNumero(juegos.length), 'Juegos'], [formatearNumero(Math.round(total)), 'Horas jugadas'],
-      [formatearNumero(jugados), 'Jugados'], [formatearNumero(juegos.length - jugados), 'Sin estrenar']
+      [formatearNumero(todos.length), 'Juegos'], [formatearNumero(Math.round(total)), juegosXbox.length ? 'Horas en Steam' : 'Horas jugadas'],
+      [formatearNumero(jugados), 'Jugados'], [formatearNumero(todos.length - jugados), 'Sin estrenar']
     ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
 
     var texto = buscador.value.trim().toLowerCase();
-    var lista = juegos.filter(function (j) { return !texto || j.nombre.toLowerCase().indexOf(texto) !== -1; }).sort(ORDENES[orden]);
+    var lista = todos.filter(function (j) { return !texto || j.nombre.toLowerCase().indexOf(texto) !== -1; }).sort(ORDENES[orden]);
     caja.innerHTML = lista.map(function (j) {
-      return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
+      if (j.xbox) {
+        return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Buscar ' + escapar(j.nombre) + ' en Xbox">' +
+          '<span class="portada portada--enlace"></span>' +
+          '<b>' + escapar(j.nombre_corto) + '</b>' +
+          '<span class="tarjeta__texto"><span class="etiqueta etiqueta--contorno">XBOX</span> ' +
+            (j.logros.totales ? j.logros.obtenidos + '/' + j.logros.totales + ' logros' : 'Jugado') + '</span></a>';
+      }
+      return '<a href=""' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
         // De qué cuenta viene el juego: logo en la esquina inferior izquierda de la portada (hoy solo Steam)
         '<span class="portada portada--enlace">' + imagenPortada(j) +
           '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-steam.svg')) + '" alt="Steam" title="De tu cuenta de Steam"></span>' +
         '<b>' + escapar(j.nombre_corto) + '</b>' +
         '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
-    }).join('') || (juegos.length
+    }).join('') || (todos.length
       ? '<div class="vacio">Ningún juego de tu biblioteca coincide con «' + escapar(buscador.value.trim()) + '».</div>'
       : '');
   }
 
-  if (!tieneSteam()) {
+  if (!tieneSteam() && !tieneXbox()) {
     document.getElementById('resumen-biblioteca').hidden = true;
-    caja.outerHTML = '<div class="vacio"><b>Vincula tu cuenta de Steam para ver tu biblioteca.</b><a href="editar-perfil.html#cuentas">Vincular Steam</a></div>';
+    caja.outerHTML = '<div class="vacio"><b>Vincula tu cuenta de Steam o de Xbox para ver tu biblioteca.</b><a href="editar-perfil.html#cuentas">Vincular cuenta</a></div>';
     return;
   }
 
@@ -5789,6 +5964,14 @@ function pantallaBiblioteca() {
 
   dibujar();
 
+  var estado = document.getElementById('estado-biblioteca');
+  if (tieneXbox()) {
+    pedirXbox().then(function (datos) { juegosXbox = datos.games.map(juegoDeXbox); dibujar(); }).catch(function (error) {
+      if (error.vencido) estado.textContent = 'El permiso de Xbox venció: vuelve a vincular Xbox en Editar perfil.';
+    });
+  }
+  if (!tieneSteam()) return;
+
   // Jugados en las últimas 2 semanas (del perfil de Steam)
   function dibujarRecientesBiblioteca(steam) {
     var lista = (steam && steam.recent_games) || [];
@@ -5803,7 +5986,6 @@ function pantallaBiblioteca() {
     dibujarRecientesBiblioteca(steam);
   }).catch(function () {});
 
-  var estado = document.getElementById('estado-biblioteca');
   estado.textContent = juegos.length ? 'Actualizando con Steam…' : 'Trayendo tu biblioteca de Steam…';
   actualizarBibliotecaSteam().then(function (lista) {
     juegos = lista;
@@ -6395,7 +6577,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   var cargando = esError ? null : mostrarCargando();
   try {
     // Primero se termina la vuelta de Steam (si la hay), para que la pantalla ya vea la sesión
-    var aviso = (await terminarVueltaDeSteam()) || (await terminarVueltaDeEpic());
+    var aviso = (await terminarVueltaDeSteam()) || (await terminarVueltaDeEpic()) || (await terminarVueltaDeXbox());
     if (esError) {
       await cargarDatos(tablas).catch(function (error) {
         console.error('La página de error sigue sin los datos de Supabase:', error);
@@ -6420,6 +6602,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Steam vinculada: en la base (y los +100 XP la primera vez)
     var avisoXp = esError ? null : await guardarSteamEnLaBase().catch(function (error) { console.error('No se pudo guardar Steam en la base:', error); return null; });
     if (avisoXp) aviso = aviso ? aviso + ' · ' + avisoXp : avisoXp;
+    // Xbox vinculada: la fila de la base manda (la pone api/xbox/auth.js, con los +100 XP)
+    if (!esError) {
+      await sincronizarXboxDeLaBase();
+      if (aviso && /^Xbox vinculada/.test(aviso)) await traerMiXp().catch(function () { /* se verá al recargar */ });
+    }
     // En línea: las pantallas que muestran el estado de las personas esperan la primera lista de conectados
     if (!esError) {
       var presencia = iniciarPresencia();
