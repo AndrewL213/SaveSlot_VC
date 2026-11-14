@@ -805,7 +805,8 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Jugando ahora, recientes, nivel e insignias, biblioteca y lista de deseos de Steam: Real (Steam)
   - Quitar de lista de deseos: Real (Supabase, con "Deshacer"; la lista de Steam solo se ve)
   - Cancelar inscripción: Real (Supabase; pide confirmación porque en un sorteo el XP usado no se devuelve, y libera el cupo). Como invitado, en el navegador con "Deshacer"
-  - Conexiones: Steam Real; Xbox Real (gamertag y gamerscore, `api/xbox/data.js`)
+  - Conexiones: Steam Real; Xbox Real (gamertag y gamerscore, `api/xbox/data.js`); Epic Games Real (solo el nombre de la cuenta: Epic no comparte biblioteca, logros ni nivel)
+  - Bajo el nombre: tus cuentas (Steam, Xbox y Epic, con su logo) y, junto al nivel de SaveSlot, una etiqueta por plataforma: STEAM NIVEL · INSIGNIAS y XBOX gamerscore. Juegos, Este año y Logros suman Steam y Xbox
   - Copiar enlace del perfil: Simulado
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
