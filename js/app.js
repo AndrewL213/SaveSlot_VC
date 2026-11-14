@@ -69,6 +69,16 @@ function vincularEpic(destino) {
   });
 }
 
+// Epic Games de la cuenta abierta: { id, nombre } o null. Epic solo comparte el nombre de la cuenta
+// (con el permiso basic_profile): no da la biblioteca, los logros ni un nivel.
+function miEpic() {
+  return cuentaSupabase().then(function (sesion) {
+    var u = sesion && sesion.user;
+    var id = u && u.app_metadata && u.app_metadata.epic_id;
+    return id ? { id: id, nombre: (u.user_metadata && u.user_metadata.epic_nombre) || 'Epic Games' } : null;
+  }).catch(function () { return null; });
+}
+
 // Al volver de Epic: abre la sesión (entrar) o refresca la cuenta (vincular). Devuelve el aviso a mostrar.
 // Lo demás (crear la fila en usuarios la primera vez) lo hace sincronizarSesionSupabase, al seguir cargando.
 function terminarVueltaDeEpic() {
@@ -4625,23 +4635,46 @@ function pantallaPerfil() {
       lista.push((enlace ? '<a class="en-fila tarjeta__texto" href="' + escapar(enlace) + '" target="_blank" rel="noopener"' : '<span class="en-fila tarjeta__texto"') +
         ' title="Tu cuenta de Steam"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-steam.png')) + '" alt="Steam">@' + escapar(cuentasVinculadas.Steam) + (enlace ? '</a>' : '</span>'));
     }
-    var xboxDatos = tieneXbox() ? leerMemoria('xboxDatos', null) : null;
+    // (el gamerscore de Xbox va en su etiqueta, junto al nivel)
     ['Xbox', 'PlayStation', 'Nintendo'].forEach(function (p) {
-      var extra = p === 'Xbox' && xboxDatos ? ' · ' + formatearNumero(xboxDatos.gamerscore) + ' G' : '';
+      var extra = '';
       if (!cuentasVinculadas[p]) return;
       if (p === 'Xbox') lista.push('<span class="en-fila tarjeta__texto" title="Tu cuenta de Xbox"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox">@' + escapar(cuentasVinculadas.Xbox) + extra + '</span>');
       else lista.push('<span class="tarjeta__texto" title="Tu cuenta de ' + p + '">' + p + ' @' + escapar(cuentasVinculadas[p]) + extra + '</span>');
     });
+    if (epicPerfil) lista.push('<span class="en-fila tarjeta__texto" title="Tu cuenta de Epic Games"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-epic.png')) + '" alt="Epic Games">' + escapar(epicPerfil.nombre) + '</span>');
     var caja = document.getElementById('cuentas-perfil');
     caja.innerHTML = lista.join('<span class="tarjeta__texto" aria-hidden="true">·</span>');
     caja.hidden = !lista.length;
   }
   document.getElementById('usuario-perfil').textContent = '@' + sesion.user;
   dibujarCuentas(leerMemoria('steamPerfil', null));
-  // Xbox real: trae el gamerscore (y deja los juegos listos para Biblioteca y Logros)
-  if (tieneXbox()) pedirXbox().then(function () { dibujarCuentas(leerMemoria('steamPerfil', null)); }).catch(function () {});
   document.getElementById('insignias-perfil').innerHTML = '<span class="etiqueta etiqueta--primario">NIVEL ' + escapar(perfil.level) + '</span>' +
     (datosUsuario.insignias || []).map(function (i) { return '<span class="etiqueta etiqueta--contorno">' + escapar(i.toUpperCase()) + '</span>'; }).join('');
+  // Etiqueta de una plataforma junto al nivel de SaveSlot (Steam: nivel e insignias; Xbox: gamerscore)
+  function ponerEtiquetaPlataforma(clave, logo, texto) {
+    var insignias = document.getElementById('insignias-perfil');
+    var etiqueta = insignias.querySelector('[data-' + clave + ']');
+    if (!etiqueta) {
+      insignias.insertAdjacentHTML('beforeend', '<span class="etiqueta etiqueta--contorno" data-' + clave + '></span>');
+      etiqueta = insignias.querySelector('[data-' + clave + ']');
+    }
+    etiqueta.innerHTML = '<img class="etiqueta__logo" src="' + escapar(rutaRecurso(logo)) + '" alt="">' + escapar(texto);
+  }
+  function usarXboxEnPerfil(datos) {
+    if (!datos) return;
+    ponerEtiquetaPlataforma('xbox', 'assets/logo-xbox.png', 'XBOX ' + formatearNumero(datos.gamerscore) + ' G');
+    dibujarCuentas(leerMemoria('steamPerfil', null));
+    actualizarConXbox();
+  }
+  // Xbox real: trae el gamerscore y los juegos (Juegos, Este año y Logros los suman)
+  if (tieneXbox()) {
+    usarXboxEnPerfil(leerMemoria('xboxDatos', null));
+    pedirXbox().then(usarXboxEnPerfil).catch(function () {});
+  }
+  // Epic Games: solo el nombre de la cuenta
+  var epicPerfil = null;
+  if (MI_FILA) miEpic().then(function (epic) { epicPerfil = epic; dibujarCuentas(leerMemoria('steamPerfil', null)); });
   document.getElementById('compartir-perfil').addEventListener('click', function () {
     copiarEnlace(location.href.split('?')[0].replace('perfil.html', 'perfil-usuario.html?id=' + encodeURIComponent(sesion.user)), 'Enlace del perfil copiado');
   });
@@ -4674,11 +4707,8 @@ function pantallaPerfil() {
       caja.innerHTML = '<p class="tarjeta__texto">No está jugando ahora. Último en Steam: <b>' + escapar(ultimo.name) + '</b> · ' +
         tiempoReciente(ultimo) + ' en las últimas 2 semanas.</p>';
     }
-    var insignias = document.getElementById('insignias-perfil');
-    var nivel = insignias.querySelector('[data-steam]');
     if (steam.steam_level != null) {
-      if (!nivel) { insignias.insertAdjacentHTML('beforeend', '<span class="etiqueta etiqueta--contorno" data-steam></span>'); nivel = insignias.querySelector('[data-steam]'); }
-      nivel.textContent = 'STEAM NIVEL ' + steam.steam_level + (steam.badges ? ' · ' + steam.badges + ' INSIGNIAS' : '');
+      ponerEtiquetaPlataforma('steam', 'assets/logo-steam.png', 'STEAM NIVEL ' + steam.steam_level + (steam.badges ? ' · ' + steam.badges + ' INSIGNIAS' : ''));
     }
     dibujarRecientes();
     if (typeof actualizarEsteAnio === 'function') actualizarEsteAnio();
@@ -4798,15 +4828,24 @@ function pantallaPerfil() {
   var anio = String(new Date().getFullYear());
   var logrosSteam = (perfil.accounts || {}).Steam ? leerMemoria('steamLogros', null) : null;
   var bibliotecaSteam = (perfil.accounts || {}).Steam ? leerBibliotecaSteam() : [];
+  var conBiblioteca = !!((perfil.accounts || {}).Steam || tieneXbox());
+  // Juegos de Xbox (con sus logros): se suman a Juegos, Este año y Logros
+  function juegosXbox() { return tieneXbox() ? ((leerMemoria('xboxDatos', null) || { games: [] }).games) : []; }
+  function logrosXbox() { return juegosXbox().reduce(function (s, g) { return s + (g.unlocked || 0); }, 0); }
+  function logrosTotales() {
+    var steamLogros = logrosSteam ? logrosSteam.summary.unlocked : 0;
+    if (!logrosSteam && !tieneXbox()) return resumenLogros ? resumenLogros.desbloqueados : 0;
+    return steamLogros + logrosXbox();
+  }
   document.getElementById('estadisticas-perfil').innerHTML = [
-    // Con Steam vinculada, "Juegos" es tu biblioteca de Steam; si no, los juegos del diario
-    (perfil.accounts || {}).Steam ? ['Juegos', bibliotecaSteam.length, 'biblioteca.html'] : ['Juegos', diario.length, 'diario.html'],
-    ['Este año', juegosEsteAnio(bibliotecaSteam, leerMemoria('steamPerfil', null)), (perfil.accounts || {}).Steam ? 'biblioteca.html?orden=recientes' : 'diario.html'],
+    // Con Steam o Xbox vinculada, "Juegos" es tu biblioteca (Steam + Xbox); si no, los juegos del diario
+    conBiblioteca ? ['Juegos', bibliotecaSteam.length + juegosXbox().length, 'biblioteca.html'] : ['Juegos', diario.length, 'diario.html'],
+    ['Este año', juegosEsteAnio(bibliotecaSteam, leerMemoria('steamPerfil', null)), conBiblioteca ? 'biblioteca.html?orden=recientes' : 'diario.html'],
     ['Reseñas', resenas.length + ((perfil.accounts || {}).Steam ? (leerMemoria('steamResenas', null) || { reviews: [] }).reviews.length : 0), 'historial-resenas.html'],
-    ['Logros', formatearNumero(logrosSteam ? logrosSteam.summary.unlocked : (resumenLogros ? resumenLogros.desbloqueados : 0)), 'logros.html'],
+    ['Logros', formatearNumero(logrosTotales()), 'logros.html'],
     ['Lista de deseos', perfil.wishlist.length + ((perfil.accounts || {}).Steam ? (leerMemoria('steamDeseos', null) || { games: [] }).games.length : 0), '#deseos']
   ].map(function (d) {
-    return '<a class="dato" href="' + d[2] + '"' + (d[0] === 'Este año' ? ' data-este-anio title="Juegos que jugaste este año: en Steam y en tu diario"' : '') + '>' +
+    return '<a class="dato" href="' + d[2] + '"' + (d[0] === 'Este año' ? ' data-este-anio title="Juegos que jugaste este año: en Steam, en Xbox y en tu diario"' : '') + '>' +
       '<span class="dato__valor">' + d[1] + '</span><span class="dato__etiqueta">' + d[0] + '</span></a>';
   }).join('');
 
@@ -4819,8 +4858,19 @@ function pantallaPerfil() {
     biblioteca.forEach(function (j) { if (j.ultima_vez >= desde) vistos['steam-' + j.appid] = true; });
     var hace2Semanas = Date.now() / 1000 - 14 * 24 * 3600;
     if (hace2Semanas >= desde) ((steam && steam.recent_games) || []).forEach(function (g) { vistos['steam-' + g.appid] = true; });
+    juegosXbox().forEach(function (g) { if (g.last_played >= desde) vistos['xbox-' + g.titleId] = true; });
     diario.forEach(function (d) { if (String(d.fecha).slice(0, 4) === anio) vistos['diario-' + d.juego_igdb] = true; });
     return Object.keys(vistos).length;
+  }
+  // Al llegar los datos de Xbox: Juegos, Este año y Logros los suman
+  function actualizarConXbox() {
+    var caja = document.getElementById('estadisticas-perfil');
+    if (!caja || !bibliotecaSteam) return; // las estadísticas aún no están dibujadas
+    var juegos = caja.querySelector('a[href="biblioteca.html"] .dato__valor');
+    if (juegos) juegos.textContent = bibliotecaSteam.length + juegosXbox().length;
+    var logros = caja.querySelector('a[href="logros.html"] .dato__valor');
+    if (logros) logros.textContent = formatearNumero(logrosTotales());
+    actualizarEsteAnio();
   }
   function actualizarEsteAnio() {
     var dato = document.querySelector('#estadisticas-perfil [data-este-anio] .dato__valor');
@@ -4917,9 +4967,9 @@ function pantallaPerfil() {
         '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
         '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
     }).join('') || '<div class="vacio">Trayendo tu biblioteca de Steam…</div>';
-    var dato = document.querySelector('#estadisticas-perfil a[href="biblioteca.html"] .dato__valor');
-    if (dato) dato.textContent = lista.length;
     bibliotecaSteam = lista;
+    var dato = document.querySelector('#estadisticas-perfil a[href="biblioteca.html"] .dato__valor');
+    if (dato) dato.textContent = lista.length + juegosXbox().length;
     actualizarEsteAnio();
     dibujarGeneros(lista);
   }
@@ -5229,9 +5279,19 @@ function pantallaEditar() {
 
   // Cuentas vinculadas: Steam y Xbox reales (en la base con una cuenta real); con el invitado, Xbox es demo en el navegador
   var cajaCuentas = document.getElementById('cuentas-editar');
+  var epicEditar = null; // Epic Games (cuenta real): su vínculo está en la cuenta de Supabase
   function dibujarCuentas() {
     // Cuentas que se pueden vincular (cuentas en data.js)
     cajaCuentas.innerHTML = datosDe('cuentas').map(function (p) {
+      if (p.id === 'epic') {
+        // Epic se vincula y se quita en "Formas de entrar" (también sirve para entrar); aquí se ve su estado
+        if (!MI_FILA) return '';
+        return '<div class="fila fila--comparacion"><span><b>' + p.nombre + '</b><br><span class="tarjeta__texto">' + p.nota + '</span></span>' +
+          (epicEditar
+            ? '<span class="estado estado--jugando al-final">Vinculada · ' + escapar(epicEditar.nombre) + '</span><a class="boton boton--secundario boton--sm" href="#formas-entrar">Gestionar</a>'
+            : '<button class="boton boton--sm al-final" type="button" data-vincular-epic>Vincular</button>') +
+          '</div>';
+      }
       var nombre = perfil.accounts[p.nombre];
       return '<div class="fila fila--comparacion"><span><b>' + p.nombre + '</b><br><span class="tarjeta__texto">' + p.nota + '</span></span>' +
         (nombre
@@ -5242,7 +5302,21 @@ function pantallaEditar() {
       '</div>';
     }).join('');
   }
+  if (MI_FILA) miEpic().then(function (epic) { epicEditar = epic; dibujarCuentas(); });
   cajaCuentas.addEventListener('click', function (e) {
+    var vincularEpicBoton = e.target.closest('[data-vincular-epic]');
+    if (vincularEpicBoton) {
+      vincularEpicBoton.disabled = true;
+      vincularEpicBoton.textContent = 'Conectando…';
+      var vueltaEpic = new URL(location.href);
+      vueltaEpic.hash = 'cuentas';
+      vincularEpic(vueltaEpic.href).catch(function () {
+        vincularEpicBoton.disabled = false;
+        vincularEpicBoton.textContent = 'Vincular';
+        mostrarAviso('No pudimos conectar con Epic Games. Inténtalo de nuevo.');
+      });
+      return;
+    }
     var vincular = e.target.closest('[data-vincular]');
     var desvincular = e.target.closest('[data-desvincular]');
     if (desvincular && desvincular.dataset.desvincular === 'Xbox' && tieneXbox()) {

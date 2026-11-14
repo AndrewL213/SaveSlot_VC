@@ -1660,11 +1660,13 @@ const DATOS = {
     { id: "nintendo", nombre: "Nintendo" }
   ],
   // Cuentas de juego que se pueden vincular (Editar perfil). Steam es real (api/steam);
-  // Xbox, real con una cuenta de verdad (Xbox Live; demo con el invitado); PlayStation y Nintendo no tienen conexión pública.
+  // Xbox, real con una cuenta de verdad (Xbox Live; demo con el invitado); Epic Games solo con una cuenta real
+  // (se vincula en Formas de entrar; no da biblioteca); PlayStation y Nintendo no tienen conexión pública.
   cuentas: [
     { id: "steam", nombre: "Steam", nota: "Se conecta con tu cuenta de Steam", vincula: true },
     { id: "playstation", nombre: "PlayStation", nota: "No tiene conexión pública: registra tus juegos a mano", vincula: false },
     { id: "xbox", nombre: "Xbox", nota: "Se conecta con tu cuenta de Microsoft (Xbox Live)", vincula: true },
+    { id: "epic", nombre: "Epic Games", nota: "Solo tu nombre de Epic: Epic no comparte tu biblioteca, tus logros ni un nivel", vincula: true },
     { id: "nintendo", nombre: "Nintendo", nota: "No tiene conexión pública: registra tus juegos a mano", vincula: false }
   ],
   // Estado de una partida (Escribir reseña y Diario), con el color de su etiqueta
