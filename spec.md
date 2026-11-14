@@ -25,8 +25,14 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
 - **IGDB** (de Twitch): catálogo de juegos (búsqueda, filtros, ficha y tiempos para terminar). Sus claves (Client ID y Client Secret de Twitch) se guardan en Vercel y se usan solo desde una función en `api/`, que también renueva el token de acceso; nunca van en el código del navegador (IGDB tampoco acepta pedidos directos desde el navegador). Uso no comercial: si SaveSlot se vuelve comercial, hay que pedir permiso a Twitch.
   - La función es `api/igdb.js`. Acepta solo seis pedidos: `?buscar=texto` (hasta 20 juegos, los más conocidos primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo, duración y año), `?random=1` (un juego al azar entre los 300 más conocidos de un género) y `?steam=1` (los 10 juegos más jugados en Steam: la lista pública de Steam, sin clave, con el pico de jugadores de ayer; IGDB pone los datos de cada juego). `?explorar` también dice cuántos juegos hay en total. Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`). La app también elige la variante por el código de respuesta (429 límite, 408 o más de 15 s tiempo, 401/403 credenciales, 503 mantenimiento, sin internet) y la página de error trae «Reintentar» para volver.
   - Vercel guarda cada respuesta una hora, para hacer menos consultas a IGDB.
-  - Las respuestas usan los mismos nombres de campos que las tablas (minúsculas con guion bajo). La app agrega `v=2` (la versión de ese formato) a cada consulta, para que Vercel no entregue respuestas guardadas con un formato viejo; si el formato cambia otra vez, se sube ese número (`VERSION_API` en `js/app.js`).
-  - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) la traduce al español:
+  - Las respuestas usan los mismos nombres de campos que las tablas (minúsculas con guion bajo). La app agrega `v=3` (la versión de ese formato) a cada consulta, para que Vercel no entregue respuestas guardadas con un formato viejo; si el formato cambia otra vez, se sube ese número (`VERSION_API` en `js/app.js`).
+  - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) y el juego random (`?random=1`) la buscan en español, en este orden:
+    1. **Tienda de Steam** (API oficial, sin clave: `store.steampowered.com/api/appdetails`, con `l=spanish`), si el juego está en Steam.
+    2. **Tienda de Epic Games** (dirección no oficial, sin clave: `store-content.ak.epicgames.com/api/es-ES/content/products/…`; puede cambiar sin aviso), si el juego está en Epic. IGDB da la dirección del juego en Epic.
+    3. Si ninguna la tiene en español, se traduce la de IGDB (ver abajo).
+    - Las tiendas, cuando no tienen el texto en español, mandan el de inglés: por eso se piden los dos idiomas y, si son iguales, se pasa a la siguiente. Cada tienda tiene 4 s para responder.
+    - Cada juego trae `fuente_descripcion` (`steam`, `epic`, `traducida` o `igdb`).
+  - Traducción de la descripción de IGDB (solo si no está en Steam ni en Epic):
     - **Por ahora (temporal):** con el enlace gratis de Google Translate, sin clave. No es oficial: va contra las condiciones de Google y puede dejar de funcionar en cualquier momento. Se reemplaza al conectar Supabase.
     - **Al conectar Supabase:** cada traducción se guarda una sola vez y se usa un traductor oficial: **DeepL** (plan gratis de 500.000 caracteres al mes; basta con poner la clave `DEEPL_API_KEY` en Vercel, y la función la usa en lugar de Google).
     - En las listas (`?buscar=` y `?populares=1`) la descripción queda en inglés, para no hacer 20 traducciones por búsqueda. Cada juego trae `idioma_descripcion` (`es` o `en`).
@@ -584,7 +590,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   2. Botones: Escribir reseña, Lista de deseos, Preguntar a MatchPlay
   3. Datos clave (tiempo, dificultad, calificación, logros)
   4. Pestañas: Reseñas, Guías, Clips, Logros
-  5. Sobre el juego (la descripción; si es larga, "Leer más". Si viene de IGDB, dice "Descripción de IGDB, traducida automáticamente")
+  5. Sobre el juego (la descripción; si es larga, "Leer más". Abajo dice de dónde viene: "Descripción de la tienda de Steam", "Descripción de la tienda de Epic Games", "Descripción de IGDB, traducida automáticamente" o "Descripción de IGDB, en inglés")
   6. Ficha del juego
   7. "Si te gusta, prueba"
 - **Qué funciona de verdad:**

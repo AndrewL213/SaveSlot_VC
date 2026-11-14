@@ -31,7 +31,7 @@ let permiso = null;
 let permisoVence = 0;
 
 // Campos que se le piden a IGDB por cada juego.
-const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count, game_modes, external_games.uid, external_games.external_game_source, external_games.category;';
+const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count, game_modes, external_games.uid, external_games.external_game_source, external_games.category, external_games.url;';
 
 const POR_PAGINA = 24;
 
@@ -182,10 +182,13 @@ function traducir(j, horas) {
   const desarrolla = (j.involved_companies || []).find(function (c) { return c.developer && c.company; });
   // Número del juego en Steam (IGDB lo guarda en external_games; Steam es la fuente 1)
   const enSteam = (j.external_games || []).find(function (e) { return (e.external_game_source === 1 || e.category === 1) && /^\d+$/.test(e.uid); });
+  // Nombre del juego en la tienda de Epic: sale de su dirección (…/p/hades → hades)
+  const enEpic = (j.external_games || []).map(function (e) { return /epicgames\.com\/(?:[a-z-]+\/)*(?:p|product)\/([a-z0-9-]{1,100})/i.exec(e.url || ''); }).find(Boolean);
   return {
     id: j.slug,
     id_igdb: j.id,
     appid_steam: enSteam ? Number(enSteam.uid) : null, // para precio, nota y reseñas de Steam (api/steam/)
+    slug_epic: enEpic ? enEpic[1].toLowerCase() : null, // para la descripción en español de Epic
     nombre: j.name,
     nombre_corto: j.name,
     generos: generos,
@@ -196,12 +199,79 @@ function traducir(j, horas) {
     // Solo online: tiene modos de juego y ninguno es "un jugador" (1). No tiene historia que medir.
     solo_online: !!(j.game_modes && j.game_modes.length && j.game_modes.indexOf(1) === -1),
     horas_historia: horas,
-    descripcion: j.summary || '', // IGDB solo la tiene en inglés; la ficha (?id=) la traduce
+    descripcion: j.summary || '', // IGDB solo la tiene en inglés; la ficha (?id=) la busca en español
     idioma_descripcion: 'en',
+    fuente_descripcion: 'igdb', // de dónde sale: igdb, steam, epic o traducida
     portada: j.cover ? 'https://images.igdb.com/igdb/image/upload/t_cover_big/' + j.cover.image_id + '.jpg' : null,
     credito_portada: j.cover ? 'IGDB' : null,
     color: null // IGDB no tiene color: la página usa el color neutro del kit
   };
+}
+
+// Busca la descripción en español, en este orden (si algo falla, pasa al siguiente: nunca rompe la ficha):
+//   1. La de la tienda de Steam (API oficial), si el juego está en Steam.
+//   2. La de la tienda de Epic Games (dirección no oficial: puede cambiar sin aviso), si está en Epic.
+//   3. La de IGDB, traducida (traducirDescripcion). Si tampoco se puede, queda en inglés.
+async function descripcionEnEspanol(juego) {
+  const intentos = [
+    ['steam', juego.appid_steam && function () { return descripcionDeSteam(juego.appid_steam); }],
+    ['epic', juego.slug_epic && function () { return descripcionDeEpic(juego.slug_epic); }]
+  ];
+  for (const [fuente, pedir] of intentos) {
+    if (!pedir) continue;
+    try {
+      const texto = await pedir();
+      if (texto) { juego.descripcion = texto; juego.idioma_descripcion = 'es'; juego.fuente_descripcion = fuente; return juego; }
+    } catch (e) {
+      console.error('No se pudo traer la descripción de ' + fuente + ': ' + e.message);
+    }
+  }
+  return traducirDescripcion(juego);
+}
+
+// Las tiendas no deben demorar la ficha: si no responden en 4 segundos, se pasa a la siguiente.
+function deTienda() {
+  return { signal: AbortSignal.timeout(4000) };
+}
+
+// Las tiendas, si no tienen el texto en español, mandan el de inglés. Por eso se piden los dos:
+// si son iguales, no hay traducción y se devuelve null.
+function soloSiEstaTraducida(espanol, ingles) {
+  return espanol && espanol !== ingles ? espanol : null;
+}
+
+// Steam trae "short_description", a veces con HTML (&quot;, <br>): se deja en texto simple.
+async function descripcionDeSteam(appid) {
+  const pedir = async function (idioma) {
+    const r = await llamar('https://store.steampowered.com/api/appdetails?appids=' + appid + '&l=' + idioma + '&filters=basic', deTienda());
+    if (!r.ok) throw new Error('Steam respondió ' + r.status);
+    const datos = (await r.json())[appid];
+    return datos && datos.success ? textoSimple(datos.data.short_description) : '';
+  };
+  const [espanol, ingles] = await Promise.all([pedir('spanish'), pedir('english')]);
+  return soloSiEstaTraducida(espanol, ingles);
+}
+
+// Epic trae la descripción corta (shortDescription) o la larga, con formato markdown (**negrita**): se quita.
+async function descripcionDeEpic(slug) {
+  const pedir = async function (idioma) {
+    const r = await llamar('https://store-content.ak.epicgames.com/api/' + idioma + '/content/products/' + slug, deTienda());
+    if (!r.ok) throw new Error('Epic respondió ' + r.status);
+    const pagina = ((await r.json()).pages || []).find(function (p) { return p.data && p.data.about; });
+    const sobre = pagina ? pagina.data.about : {};
+    return textoSimple((sobre.shortDescription || sobre.description || '').replace(/\*\*|__|^#+\s*/gm, ''));
+  };
+  const [espanol, ingles] = await Promise.all([pedir('es-ES'), pedir('en-US')]);
+  return soloSiEstaTraducida(espanol, ingles);
+}
+
+// Quita etiquetas HTML y cambia los códigos (&amp;, &quot;…) por su letra.
+function textoSimple(texto) {
+  const codigos = { amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', nbsp: ' ' };
+  return String(texto || '')
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '')
+    .replace(/&(#\d+|[a-z]+);/gi, function (todo, c) { return c[0] === '#' ? String.fromCharCode(Number(c.slice(1))) : (codigos[c.toLowerCase()] || todo); })
+    .replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 // Traduce la descripción al español. Si falla, queda en inglés: nunca rompe la ficha.
@@ -213,7 +283,7 @@ async function traducirDescripcion(juego) {
   if (!juego.descripcion) return juego;
   try {
     const texto = process.env.DEEPL_API_KEY ? await conDeepl(juego.descripcion) : await conGoogle(juego.descripcion);
-    if (texto) { juego.descripcion = texto; juego.idioma_descripcion = 'es'; }
+    if (texto) { juego.descripcion = texto; juego.idioma_descripcion = 'es'; juego.fuente_descripcion = 'traducida'; }
   } catch (e) {
     console.error('No se pudo traducir la descripción: ' + e.message);
   }
@@ -342,7 +412,7 @@ async function random(filtros) {
   const posicion = Math.min(Math.floor(Math.random() * tope), Math.max(tope - 2, 0));
   const juegos = await consultar('games', CAMPOS + ' where ' + where + '; sort total_rating_count desc; limit 2; offset ' + posicion + ';');
   const elegido = juegos.find(function (j) { return j.slug !== excepto; }) || juegos[0];
-  return elegido ? traducirDescripcion((await conHoras([elegido]))[0]) : null;
+  return elegido ? descripcionEnEspanol((await conHoras([elegido]))[0]) : null;
 }
 
 // id puede ser el slug ("hades--1", el que va en las direcciones) o el número de IGDB (113112, el de las tablas).
@@ -353,7 +423,7 @@ async function ficha(id) {
   else throw falla('juego', 404);
   const juegos = await consultar('games', CAMPOS.replace(';', ', similar_games;') + ' where ' + condicion + '; limit 1;');
   if (!juegos.length) throw falla('juego', 404);
-  const juego = await traducirDescripcion((await conHoras(juegos))[0]);
+  const juego = await descripcionEnEspanol((await conHoras(juegos))[0]);
   juego.similares = await similares(juegos[0].similar_games);
   return juego;
 }

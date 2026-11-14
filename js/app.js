@@ -1165,7 +1165,7 @@ function slugDeJuego(ref) {
 
 // Datos del catálogo que manda IGDB. Los de la comunidad (calificación, dificultad, votos…),
 // la portada de assets/ y el color se quedan como están en data.js.
-var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'similares'];
+var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'fuente_descripcion', 'similares'];
 
 // Junta un juego de data.js con el mismo juego de IGDB (cualquiera de los dos puede faltar).
 /* ---------- Datos de la comunidad de SaveSlot ----------
@@ -1219,7 +1219,7 @@ function guardarJuegoIgdb(juego) {
 
 // Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
 // Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
-var VERSION_API = 2;
+var VERSION_API = 3;
 
 // La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
 // se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
@@ -3177,7 +3177,11 @@ function mostrarJuego(juego) {
     if (juego.idioma_descripcion) {
       var fuente = document.getElementById('fuente-descripcion');
       fuente.hidden = false;
-      fuente.textContent = juego.idioma_descripcion === 'es' ? 'Descripción de IGDB, traducida automáticamente.' : 'Descripción de IGDB, en inglés.';
+      fuente.textContent = {
+        steam: 'Descripción de la tienda de Steam.',
+        epic: 'Descripción de la tienda de Epic Games.',
+        traducida: 'Descripción de IGDB, traducida automáticamente.'
+      }[juego.fuente_descripcion] || (juego.idioma_descripcion === 'es' ? 'Descripción de IGDB, traducida automáticamente.' : 'Descripción de IGDB, en inglés.');
     }
   }
 
