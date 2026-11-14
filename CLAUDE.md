@@ -27,7 +27,8 @@ Digitales 3. Más contexto en README.md.
   de deseos, reseñas y precio, nota y jugadores de cada juego. Todo lo
   demás está en Supabase o, mientras falta conectarlo, en el navegador
   (localStorage). Solo son simulados (en js/data.js) las respuestas de la IA de
-  MatchPlay y los logros de PlayStation y Nintendo (ver spec.md).
+  MatchPlay y los logros de PlayStation (ver spec.md). Nintendo no se vincula ni
+  tiene logros; sus juegos sí están en el catálogo.
 
 ## Estructura del proyecto
 - disenos/: diseños originales. Solo de referencia: nunca los modifiques.

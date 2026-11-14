@@ -1312,33 +1312,6 @@ const DATOS = {
   ],
   logros: [
     {
-      id: "l1",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
-      nombre: "Primer santuario",
-      descripcion: "Completa tu primer santuario",
-      porcentaje: 92,
-      obtenido: true,
-      plataforma: null
-    },
-    {
-      id: "l2",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
-      nombre: "Explorador del cielo",
-      descripcion: "Visita todas las islas del cielo",
-      porcentaje: 14,
-      obtenido: true,
-      plataforma: null
-    },
-    {
-      id: "l3",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
-      nombre: "Maestro Zonai",
-      descripcion: "Fusiona 50 dispositivos distintos",
-      porcentaje: 8,
-      obtenido: false,
-      plataforma: null
-    },
-    {
       id: "l4",
       juego: "five-nights-at-freddys-into-the-pit",
       nombre: "Sin un rasguño",
@@ -1581,14 +1554,6 @@ const DATOS = {
   ],
   progreso_logros: [
     {
-      id: "p1",
-      usuario: "samluq",
-      juego: "the-legend-of-zelda-tears-of-the-kingdom",
-      obtenidos: 86,
-      totales: 139,
-      plataforma: "Nintendo"
-    },
-    {
       id: "p2",
       usuario: "samluq",
       juego: "five-nights-at-freddys-into-the-pit",
@@ -1661,13 +1626,12 @@ const DATOS = {
   ],
   // Cuentas de juego que se pueden vincular (Editar perfil). Steam es real (api/steam);
   // Xbox, real con una cuenta de verdad (Xbox Live; demo con el invitado); Epic Games solo con una cuenta real
-  // (se vincula en Formas de entrar; no da biblioteca); PlayStation y Nintendo no tienen conexión pública.
+  // (se vincula en Formas de entrar; no da biblioteca); PlayStation no tiene conexión pública.
   cuentas: [
     { id: "steam", nombre: "Steam", nota: "Se conecta con tu cuenta de Steam", vincula: true },
     { id: "playstation", nombre: "PlayStation", nota: "No tiene conexión pública: registra tus juegos a mano", vincula: false },
     { id: "xbox", nombre: "Xbox", nota: "Se conecta con tu cuenta de Microsoft (Xbox Live)", vincula: true },
-    { id: "epic", nombre: "Epic Games", nota: "Solo tu nombre de Epic: Epic no comparte tu biblioteca, tus logros ni un nivel", vincula: true },
-    { id: "nintendo", nombre: "Nintendo", nota: "No tiene conexión pública: registra tus juegos a mano", vincula: false }
+    { id: "epic", nombre: "Epic Games", nota: "Solo tu nombre de Epic: Epic no comparte tu biblioteca, tus logros ni un nivel", vincula: true }
   ],
   // Estado de una partida (Escribir reseña y Diario), con el color de su etiqueta
   estados_partida: [
@@ -1686,7 +1650,7 @@ const DATOS = {
   ],
   // Preguntas frecuentes de Contáctanos
   preguntas_frecuentes: [
-    { id: "vincular", pregunta: "¿Por qué no puedo vincular PlayStation o Nintendo?", respuesta: "No ofrecen una conexión pública para webs como SaveSlot. Puedes registrar tus juegos a mano en tu diario." },
+    { id: "vincular", pregunta: "¿Por qué no puedo vincular PlayStation?", respuesta: "No ofrece una conexión pública para webs como SaveSlot. Puedes registrar tus juegos a mano en tu diario." },
     { id: "xp", pregunta: "¿Qué es el XP?", respuesta: "Son puntos que ganas al reseñar, vincular cuentas e inscribirte en torneos. Con 300 XP entras gratis a un sorteo." },
     { id: "datos", pregunta: "¿Dónde se guardan mis datos?", respuesta: "En este prototipo, solo en tu navegador. Si borras los datos del navegador, se borra tu actividad." },
     { id: "dificultad", pregunta: "¿Cómo se calcula la dificultad de un juego?", respuesta: "Es el promedio de lo que votan los jugadores al reseñarlo, de 1 (relajado) a 10 (brutal)." },
@@ -1915,7 +1879,6 @@ const DATOS = {
     { id: "s3", servicio: "MatchPlay (IA)", proveedor: "Por definir", estado: "demo", texto: "Modo demo" },
     { id: "s5", servicio: "Tu Xbox: gamertag, juegos y logros", proveedor: "Xbox Live (cuenta de Microsoft), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "xbox" },
     { id: "s6", servicio: "Cuentas: PlayStation", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
-    { id: "s7", servicio: "Cuentas: Nintendo", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
     { id: "s9", servicio: "Clips y transmisiones", proveedor: "Twitch API", estado: "pendiente", texto: "Pendiente" },
     { id: "s10", servicio: "Pagos de eventos", proveedor: "Pasarela de pagos", estado: "no-disponible", texto: "No disponible" }
   ]

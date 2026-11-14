@@ -30,7 +30,7 @@ Gamers casuales de 15 a 24 años en España y Latinoamérica que hoy tienen que 
 - **Steam**: entrar con Steam, y ver perfil, biblioteca, logros, lista de deseos, reseñas y el precio, la nota y los jugadores de cada juego.
 - **Todavía en el navegador** (falta pasarlos a Supabase): chats de MatchPlay.
 - **Xbox**: vincular la cuenta de Microsoft y ver el gamertag, los juegos y los logros (Xbox Live). En la ficha de cada juego, precio, nota, edad (PEGI) y Game Pass de la tienda de Xbox.
-- **Simulado**: las respuestas de la IA de MatchPlay y los logros de PlayStation y Nintendo.
+- **Simulado**: las respuestas de la IA de MatchPlay y los logros de PlayStation. Nintendo no se vincula (sus juegos sí están en el catálogo).
 
 ## Cómo está organizado este repo
 

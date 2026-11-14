@@ -54,7 +54,7 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
   - `api/steam/sincronizar.js`: Vercel la ejecuta cada día a las 9:00 UTC (4:00 a. m. en Colombia; `crons` en `vercel.json`) y actualiza hasta 200 juegos de la tabla **juegos**. Solo responde a Vercel (variable `CRON_SECRET`).
   - Steam ya no da un JSON público de reseñas: las reseñas de cada juego y las tuyas se leen de las páginas públicas de la comunidad de Steam. Funciona, pero si Steam cambia esas páginas hay que ajustar `resenas.js` y `my_reviews`.
   - Logros, lista de deseos y reseñas necesitan que en Steam «Detalles de juego» esté en **Público**. Si no, la app explica cómo cambiarlo.
-- Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros de PlayStation y Nintendo (los de Steam y Xbox son reales) y el estado de los servicios que no se pueden revisar (los de IGDB, Steam y Supabase se revisan de verdad en la página de error).
+- Siguen **Simulados** solo lo que depende de servicios externos que no están en el MVP: las respuestas de la IA de MatchPlay, los logros de PlayStation (los de Steam y Xbox son reales) y el estado de los servicios que no se pueden revisar (los de IGDB, Steam y Supabase se revisan de verdad en la página de error).
 
 ## Flujo
 
@@ -169,7 +169,7 @@ Se guarda en: Supabase
 Desde la app se puede: ver (Perfil, Perfil de otro usuario) · agregar, cambiar y borrar las propias (Editar perfil). Quien entra con Steam la tiene desde el inicio.
 Campos:
 - usuario: texto — dueño — obligatorio
-- plataforma: opción de **cuentas** (steam o xbox; playstation y nintendo son Después) — obligatorio
+- plataforma: opción de **cuentas** (steam o xbox; playstation es Después) — obligatorio
 - nombre: texto — nombre en la plataforma — obligatorio
 - estado: opción (verificada, pendiente) — obligatorio
 Se relaciona con: usuarios.id. Una por persona y plataforma. Steam es real (su número queda en `app_metadata.steam_id`): la base solo deja guardar la fila de Steam si la cuenta de Supabase tiene ese número, y da los +100 XP de "vincular" una sola vez. Xbox es real: la fila la pone el servidor (`api/xbox/auth.js`) al volver de Microsoft, también con los +100 XP la primera vez; desde la app no se puede agregar. Con el invitado, Xbox sigue como demo en el navegador.
@@ -843,7 +843,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Vincular Steam: Real (Steam). Si la cuenta es de Google, Discord, Twitch o correo, Steam se guarda en ESA cuenta (no crea otra) y después también se puede entrar con Steam a ella. Si esa cuenta de Steam ya está en otra cuenta de SaveSlot, avisa que hay que entrar con Steam, borrar esa cuenta y volver a vincularla. Con una cuenta real, Steam se guarda en **cuentas_vinculadas** al volver de Steam (también al entrar con Steam) y la base da los +100 XP la primera vez; si ya la tenías vinculada solo en el navegador, se sube una vez. Desvincular Steam y guardar borra su fila (entrar con Steam la vuelve a vincular, sin XP otra vez). Vincular Xbox: Real (cuenta de Microsoft, `api/xbox/auth.js`; se va a Microsoft y vuelve a Editar perfil ya vinculada; desvincular borra las filas en el servidor). Con el invitado, demo en el navegador
   - Formas de entrar (Google, Discord, Twitch y Epic Games): Real (Supabase Auth, vinculación manual). Vincula o desvincula cada servicio en la misma cuenta, para entrar con cualquiera de ellos (siempre queda al menos una forma de entrar). Si ese servicio ya es de otra cuenta de SaveSlot, avisa igual que con Steam. La cuenta de demostración no puede. La cuenta creada al entrar con Steam también puede: después se entra a ella con Steam o con el servicio vinculado.
   - Borrar cuenta: Real (Supabase, función `borrar_mi_cuenta` en supabase/borrar-cuenta.sql). Pide confirmar; borra la cuenta y en cascada su perfil, reseñas, diario, amigos y cuentas vinculadas, su foto subida y lo guardado en ese navegador, cierra la sesión y vuelve a Inicio. No toca las cuentas de Steam, Google, Discord ni Twitch.
-  - Vincular PlayStation o Nintendo: Después (no tienen conexión pública, según el diseño)
+  - Vincular PlayStation: Después (no tiene conexión pública, según el diseño). Nintendo no se vincula ni tiene logros en SaveSlot (no tiene conexión pública ni logros propios); sus juegos sí están en el catálogo
   - Foto de perfil: Real (Supabase Storage). Por defecto se usa la foto de Steam (si está vinculada) o las iniciales. "Cambiar foto" sube una imagen propia, recortada en cuadrado; "Usar la de Steam" vuelve a la de Steam y "Quitar foto" deja las iniciales. Al guardar, queda en la cuenta (`user_metadata.foto`) y se ve en el Perfil y en la barra. Sin sesión de Supabase (cuentas de correo de prueba y la de demostración), o si la subida falla, la foto queda solo en ese navegador y la app lo avisa.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).

@@ -338,7 +338,7 @@ function terminarVueltaDeSteam() {
       recordarUsuarioSteam(steam.steamid, usuario);
       iniciarSesion({ name: nombre, user: usuario, initials: inicialesDe(nombre), email: '', steam: true, steamid: steam.steamid }, {
         profile: { user: usuario, xp: XP_POR_CUENTA, level: 1, bio: '', since: hoy(), favorites: [], wishlist: [], genres: [], playing: null,
-          accounts: { Steam: nombre, PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: [] },
+          accounts: { Steam: nombre, PlayStation: null, Xbox: null }, missionsDone: [] },
         myReviews: [], diary: [], joined: [], inscripciones: [], friends: {}, chatsMatchplay: []
       });
       var propio = leerPerfil();
@@ -574,7 +574,7 @@ function perfilDesdeFila(persona) {
   return {
     user: persona.usuario, xp: persona.xp || 0, level: persona.nivel || 1, bio: persona.sobre_mi || '', since: persona.miembro_desde || hoy(),
     favorites: persona.favoritos || [], wishlist: persona.lista_deseos || [], genres: persona.generos_favoritos || [], playing: persona.jugando_ahora || null,
-    accounts: { Steam: null, PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: []
+    accounts: { Steam: null, PlayStation: null, Xbox: null }, missionsDone: []
   };
 }
 
@@ -1044,7 +1044,7 @@ function filasDe(tabla, columna, valor) {
 }
 
 function porOrden(a, b) { return a.orden - b.orden; }
-var NOMBRE_PLATAFORMA = { steam: 'Steam', xbox: 'Xbox', playstation: 'PlayStation', nintendo: 'Nintendo' };
+var NOMBRE_PLATAFORMA = { steam: 'Steam', xbox: 'Xbox', playstation: 'PlayStation' };
 
 // Ids de los amigos (amistad aceptada) de una persona
 function amigosDeId(idUsuario) {
@@ -2940,7 +2940,7 @@ function pantallaMatchplay() {
 function perfilVacio(usuario) {
   return {
     user: usuario, xp: 0, level: 1, bio: '', since: hoy(), favorites: [], wishlist: [], genres: [], playing: null,
-    accounts: { Steam: null, PlayStation: null, Xbox: null, Nintendo: null }, missionsDone: []
+    accounts: { Steam: null, PlayStation: null, Xbox: null }, missionsDone: []
   };
 }
 
@@ -4662,7 +4662,7 @@ function pantallaPerfil() {
         ' title="Tu cuenta de Steam"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-steam.png')) + '" alt="Steam">@' + escapar(cuentasVinculadas.Steam) + (enlace ? '</a>' : '</span>'));
     }
     // (el gamerscore de Xbox va en su etiqueta, junto al nivel)
-    ['Xbox', 'PlayStation', 'Nintendo'].forEach(function (p) {
+    ['Xbox', 'PlayStation'].forEach(function (p) {
       var extra = '';
       if (!cuentasVinculadas[p]) return;
       if (p === 'Xbox') lista.push('<span class="en-fila tarjeta__texto" title="Tu cuenta de Xbox"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox">@' + escapar(cuentasVinculadas.Xbox) + extra + '</span>');
@@ -4792,7 +4792,7 @@ function pantallaPerfil() {
 
   // Conexiones (simulado)
   var cuentas = perfil.accounts || {};
-  document.getElementById('conexiones-perfil').innerHTML = ['Steam', 'PlayStation', 'Xbox', 'Nintendo'].map(function (plataforma) {
+  document.getElementById('conexiones-perfil').innerHTML = ['Steam', 'PlayStation', 'Xbox'].map(function (plataforma) {
     var nombre = cuentas[plataforma];
     return '<div class="fila"><span><b>' + plataforma + '</b> <span class="tarjeta__texto">' + escapar(nombre || '') + '</span></span>' +
       (nombre ? '<span class="etiqueta etiqueta--exito al-final">Verificada</span>' : '<a class="al-final" href="editar-perfil.html#cuentas"><b>Vincular</b></a>') + '</div>';
