@@ -6499,6 +6499,9 @@ function revisarServicio(prueba) {
   else if (prueba === 'base') pedido = clienteSupabase.from('misiones').select('id').limit(1).then(function (r) { if (r.error) throw r.error; });
   else if (prueba === 'cuentas') pedido = fetch(SUPABASE_URL + '/auth/v1/health', { headers: { apikey: SUPABASE_LLAVE_PUBLICABLE } })
     .then(function (r) { if (!r.ok) throw new Error('Auth ' + r.status); });
+  // Xbox: sin sesión responde 401 («Inicia sesión») si está configurado; 500 si falta su clave en Vercel
+  else if (prueba === 'xbox') pedido = fetch('/api/xbox/auth?action=preparar', { method: 'POST' })
+    .then(function (r) { if (r.status !== 401) throw new Error('Xbox ' + r.status); });
   else return Promise.resolve(true);
   return pedido.then(function () { return true; }, function (e) { console.error('Servicio ' + prueba + ' con fallas:', e); return false; });
 }

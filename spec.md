@@ -458,7 +458,7 @@ Se relaciona con: ninguna.
   - **temas_contacto** y **preguntas_frecuentes** (Contáctanos)
   - **atajos_inicio**, **ideas_matchplay**, **reglas_eventos** y **organizadores** (filtro de Eventos)
   - **variantes_error**: id, codigo, titulo, texto, consejos, reintentar, espera, accion, servicio_por_defecto
-  - **estado_servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto, prueba (opcional: igdb, steam, base o cuentas; con ella la página de error revisa de verdad si el servicio responde)
+  - **estado_servicios**: id, servicio, proveedor, estado (conectado, demo, pendiente o no disponible), texto, prueba (opcional: igdb, steam, base, cuentas o xbox; con ella la página de error revisa de verdad si el servicio responde)
   - Las opciones de orden y los rangos de los filtros ("Más recientes", "A–Z", "9–10", "< 10 h"…) son parte de la interfaz y siguen en el HTML.
 - **Datos de ejemplo (`js/data.js`):** quedan solo como registro (la app ya no los muestra). Las personas de ejemplo ya no están en Supabase (se borraron con `supabase/limpiar-ejemplos.sql` y `esquema.sql` ya no las carga): la comunidad es de cuentas reales.
 - **Simulados (`js/data.js`):** respuestas_matchplay (las respuestas de la IA), y logros, progreso_logros y resumen_logros de otras plataformas (los de Steam son reales).
@@ -995,7 +995,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   3. Botones: Reintentar, Ir al inicio, Reportar el problema
   4. Estado de los servicios
 - **Qué funciona de verdad:**
-  - Estado de los servicios: Real para catálogo (IGDB), Steam, base de datos y cuentas (Supabase): se revisan al abrir la página y dicen «Con fallas» si no responden. Los demás son fijos (data.js).
+  - Estado de los servicios: Real para catálogo (IGDB), Steam, base de datos y cuentas (Supabase) y Xbox (que su clave esté en Vercel): se revisan al abrir la página y dicen «Con fallas» si no responden. Los demás son fijos (data.js).
   - Errores de IGDB: según lo que responda, lleva a la variante que corresponde (límite de consultas, tiempo agotado a los 15 s, credenciales, mantenimiento, sin conexión o servicio caído) con «Reintentar» para volver a la página.
   - «Acceso»: sale si falla entrar con Google, Discord, Twitch o Epic Games, con «Reintentar» y «Entrar de otra forma».
 - **Está lista cuando:**

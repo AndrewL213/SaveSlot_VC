@@ -1899,17 +1899,18 @@ const DATOS = {
       reintentar: false
     }
   ],
-  // prueba: qué revisa 404.html al abrirse (ver revisarServicio en app.js); sin prueba, el estado es fijo
+  // prueba (igdb, steam, base, cuentas o xbox): qué revisa 404.html al abrirse (ver revisarServicio en app.js); sin prueba, el estado es fijo
   estado_servicios: [
     { id: "s1", servicio: "Catálogo de juegos", proveedor: "IGDB (Twitch), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "igdb" },
     { id: "s12", servicio: "Lo más jugado, precios, notas y reseñas de Steam (se actualiza cada día)", proveedor: "Steam (tienda y comunidad) + Supabase", estado: "conectado", texto: "Conectado", prueba: "steam" },
     { id: "s2", servicio: "Base de datos (perfiles, reseñas, eventos, misiones)", proveedor: "Supabase", estado: "conectado", texto: "Conectado", prueba: "base" },
-    { id: "s8", servicio: "Cuentas: correo, Google, Discord, Twitch y Steam", proveedor: "Supabase Auth + Steam OpenID", estado: "conectado", texto: "Conectado", prueba: "cuentas" },
+    { id: "s8", servicio: "Cuentas: correo, Google, Discord, Twitch, Steam y Epic Games", proveedor: "Supabase Auth + Steam OpenID + Epic Games", estado: "conectado", texto: "Conectado", prueba: "cuentas" },
     { id: "s4", servicio: "Tu Steam: perfil, biblioteca, logros, deseos y reseñas", proveedor: "Steam Web API (Vercel)", estado: "conectado", texto: "Conectado" },
-    { id: "s13", servicio: "Tu actividad: reseñas, diario, amigos, inscripciones, avisos y vistos", proveedor: "Supabase (como invitado, este navegador)", estado: "conectado", texto: "Conectado" },
+    { id: "s15", servicio: "Descripciones de juegos en español", proveedor: "Tiendas de Steam y Epic Games + DeepL (guardadas en Supabase)", estado: "conectado", texto: "Conectado" },
+    { id: "s13", servicio: "Tu actividad: reseñas, diario, amigos, inscripciones, avisos y vistos", proveedor: "Supabase (el invitado, en este navegador)", estado: "conectado", texto: "Conectado" },
     { id: "s14", servicio: "Chats de MatchPlay", proveedor: "Este navegador", estado: "demo", texto: "Modo demo" },
     { id: "s3", servicio: "MatchPlay (IA)", proveedor: "Por definir", estado: "demo", texto: "Modo demo" },
-    { id: "s5", servicio: "Cuentas: Xbox", proveedor: "Xbox Live (Microsoft)", estado: "pendiente", texto: "Falta el secret de Azure" },
+    { id: "s5", servicio: "Tu Xbox: gamertag, juegos y logros", proveedor: "Xbox Live (cuenta de Microsoft), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "xbox" },
     { id: "s6", servicio: "Cuentas: PlayStation", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
     { id: "s7", servicio: "Cuentas: Nintendo", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
     { id: "s9", servicio: "Clips y transmisiones", proveedor: "Twitch API", estado: "pendiente", texto: "Pendiente" },

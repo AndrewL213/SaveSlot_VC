@@ -25,11 +25,12 @@ Gamers casuales de 15 a 24 años en España y Latinoamérica que hoy tienen que 
 ## Con qué funciona
 
 - **Páginas**: HTML, CSS y JavaScript, sin paso de compilación, publicadas en Vercel.
-- **Cuentas y base de datos**: Supabase. Se entra con correo, Google, Discord, Twitch o Steam (o como invitado, sin cuenta). En la base se guardan los perfiles, reseñas, votos «útil», me gusta, comentarios, diario, lista de deseos, Steam vinculada, amigos, eventos, inscripciones, notificaciones, vistos recientemente, misiones y los mensajes de Contáctanos; «en línea» se ve en vivo.
+- **Cuentas y base de datos**: Supabase. Se entra con correo, Google, Discord, Twitch, Steam o Epic Games (o como invitado, sin cuenta). En la base se guardan los perfiles, reseñas, votos «útil», me gusta, comentarios, diario, lista de deseos, Steam y Xbox vinculadas, amigos, eventos, inscripciones, notificaciones, vistos recientemente, misiones y los mensajes de Contáctanos; «en línea» se ve en vivo.
 - **Catálogo de juegos**: IGDB (de Twitch), con la descripción en español de la tienda de Steam o de Epic Games (o traducida, si no está en ninguna).
 - **Steam**: entrar con Steam, y ver perfil, biblioteca, logros, lista de deseos, reseñas y el precio, la nota y los jugadores de cada juego.
 - **Todavía en el navegador** (falta pasarlos a Supabase): chats de MatchPlay.
-- **Simulado**: las respuestas de la IA de MatchPlay, los logros de otras plataformas (los de Steam son reales) y Xbox (demo).
+- **Xbox**: vincular la cuenta de Microsoft y ver el gamertag, los juegos y los logros (Xbox Live).
+- **Simulado**: las respuestas de la IA de MatchPlay y los logros de PlayStation y Nintendo.
 
 ## Cómo está organizado este repo
 

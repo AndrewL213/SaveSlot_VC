@@ -63,21 +63,16 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 |---|---|---|---|---|---|
 | 27. Contáctanos | `pages/contacto.html` | ✅ | ✅ | ✅ (listas fijas de data.js; el mensaje se guarda en Supabase) | ✅ |
 | 28. Ventana: Mensaje guardado | dentro de `pages/contacto.html` | ✅ | ✅ | ✅ (Supabase) | ✅ |
-| 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (data.js + revisión en vivo de IGDB, Steam y Supabase) | ✅ |
+| 29. Error y estado de servicios | `404.html` (en la raíz) | ✅ | ✅ | ✅ (data.js + revisión en vivo de IGDB, Steam, Supabase y Xbox) | ✅ |
 
 ## Lo que falta
 
 Pasar a Supabase (las tablas ya existen en `esquema.sql`; hoy se guarda en el navegador):
 - **Chats de MatchPlay** (tablas **chats_matchplay** y **mensajes_matchplay**), en el mismo paso que conectar una IA real a MatchPlay (hoy sus respuestas son simuladas).
 
-Arreglos:
-- Opcional: desactivar los inicios de sesión anónimos en Supabase (el invitado ya no los usa).
-
 Al final: conectar **PlayStation** (se registra a mano; Xbox ya es real con Xbox Live). Y una **web administrativa** para registrar torneos y sorteos fácilmente y ponerles precio real y XP (hoy los eventos se cargan con SQL). No está en spec.md: antes hay que agregarla allí, con quién puede entrar (un rol de administrador en Supabase) y qué puede cambiar.
 
 Después (así lo marca spec.md): mensajes entre amigos, clips y pagos.
-
-Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 
 ## Pendientes para la revisión vs spec
 - **Revisión de las pantallas 21 a 31 (noviembre, de una vez)**: todas cumplen sus criterios de «Está lista cuando». Arreglos: (1) Diario, Historial y Perfil de otro usuario escondían los juegos que no estaban en este navegador (el Diario decía «No hay registros» y el Historial «Ninguna reseña coincide con los filtros» sin filtros), y Perfil de otro usuario se rompía entera si la persona había reseñado uno de esos juegos. Ahora se dibujan con `juegoOMarcador` («Cargando…» o «Juego no disponible») y se piden a IGDB con `traerJuegosQueFaltan`. (2) Logros decía «No tienes logros sincronizados de Todas»: ahora «…todavía». (3) «Mensaje guardado» lleva el ✓ verde del diseño. (4) El pie de todas las páginas tiene «Biblioteca» (antes solo 3). Diferencias que quedan: Notificaciones sin el trofeo del diseño (lleva una lista); «Logros más raros» muestra los de ejemplo, con la nota «Datos de ejemplo».
@@ -105,6 +100,7 @@ Revisión: la columna «Revisada vs spec» sigue en ⬜ en todas las pantallas.
 - **Vistos recientemente (noviembre)**: con una cuenta real, abrir un juego lo guarda en Supabase (tabla **vistos_recientes**, una fila por juego: volver a abrirlo solo cambia la fecha) e Inicio muestra los 6 más recientes de la base, en cualquier computador. Lo que estaba en el navegador se sube una vez. Los juegos que solo están en Steam se quedan en el navegador.
 - **Notificaciones (noviembre)**: con una cuenta real, la campana muestra las notificaciones de la base (tabla **notificaciones**), las marca como leídas al abrirla y cada aviso se puede eliminar con su ✕ (nuevo: el diseño no lo traía). Cada aviso usa `.fila` en vez de una tarjeta-enlace, para que la ✕ quede a la derecha. Los avisos de precio de Steam siguen en el navegador. Los de cierre de inscripciones todavía no llegan (falta el cron, en «Lo que falta»).
 - **Cuentas vinculadas (noviembre)**: con una cuenta real, Steam vinculada se guarda en Supabase (tabla **cuentas_vinculadas**) y la base da los +100 XP de «vincular» una sola vez (antes la app los sumaba solo en el navegador y se perdían al abrir otra página). La base solo acepta la fila de Steam si la cuenta de Supabase tiene Steam de verdad. Desvincular y guardar la borra; entrar con Steam la vuelve a vincular. Xbox sigue como demo del navegador (al final).
+- **Inicios de sesión anónimos apagados (noviembre)**: en Supabase (Authentication → Sign In / Providers) ya no se permiten. El invitado no los usa: entra sin cuenta de Supabase y sus datos quedan en este navegador.
 - **Xbox real (noviembre)**: vincular Xbox con la cuenta de Microsoft (aplicación «SaveSlot» de Azure, `api/xbox/`). Editar perfil la vincula y desvincula de verdad; Perfil muestra el gamertag y el gamerscore; Biblioteca suma los juegos de Xbox (sin portada, con la etiqueta XBOX y sus logros); Logros muestra el progreso de Xbox y lo suma al resumen. Con el invitado, Xbox sigue como demo.
 - **Inscripciones a eventos (noviembre)**: con una cuenta real, inscribirse (Detalle de evento) y cancelar (Perfil, Mis eventos) guardan en Supabase (tabla **inscripciones**). Cancelar ahora pide confirmación en vez de «Deshacer», porque en un sorteo volver a inscribirse cobraría el XP otra vez. Los eventos que ya cerraron inscripciones dicen «CERRADO» y no dejan inscribirse (lo revisa también la base: sección 5 de `esquema.sql`); la ventana «Evento del mes» no se abre si el evento cerró. El XP de cada sorteo sale del evento (no fijo en 300). Si te vuelves a inscribir a un torneo, la ventana ya no dice «ganaste 100 XP» (la base solo los da una vez). Hoy casi todos los eventos de ejemplo están cerrados (sus fechas eran de octubre).
 - **Lista de deseos (noviembre)**: con una cuenta real, «+ Lista de deseos» (Detalle de juego) y «Quitar» (Perfil) guardan en Supabase (tabla **lista_deseos**), con «Deshacer». Lo que una cuenta tenía solo en el navegador se sube a la base una vez. El invitado sigue en el navegador.
