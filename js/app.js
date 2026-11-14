@@ -1271,7 +1271,7 @@ function slugDeJuego(ref) {
 
 // Datos del catálogo que manda IGDB. Los de la comunidad (calificación, dificultad, votos…),
 // la portada de assets/ y el color se quedan como están en data.js.
-var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'fuente_descripcion', 'similares'];
+var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'fuente_descripcion', 'id_tienda_xbox', 'similares'];
 
 // Junta un juego de data.js con el mismo juego de IGDB (cualquiera de los dos puede faltar).
 /* ---------- Datos de la comunidad de SaveSlot ----------
@@ -1325,7 +1325,7 @@ function guardarJuegoIgdb(juego) {
 
 // Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
 // Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
-var VERSION_API = 3;
+var VERSION_API = 4;
 
 // La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
 // se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
@@ -3263,6 +3263,30 @@ function mostrarJuego(juego) {
     pedirResenasSteam(appidLocal);
   }
 
+  // Tienda de Xbox (api/xbox/juego): precio, nota de sus usuarios, Game Pass y PEGI. Va debajo de la línea de Steam.
+  function mostrarDatosXbox(j) {
+    if (!j) return;
+    var precio = j.gratis ? '<b>Gratis</b>'
+      : (j.precio ? (j.descuento ? '<span class="etiqueta etiqueta--exito">-' + escapar(j.descuento) + '%</span> <s>' + escapar(j.precio_original || '') + '</s> ' : '') + '<b>' + escapar(j.precio) + '</b>' : '');
+    var partes = [
+      (j.game_pass || []).length ? '<span class="etiqueta etiqueta--exito" title="Incluido en Game Pass (' + escapar(j.game_pass.join(' y ')) + ')">Game Pass</span>' : '',
+      precio,
+      j.nota ? formatearNota(j.nota) + ' de 5 (' + formatearNumero(j.calificaciones) + ' calificaciones)' : '',
+      '<a href="' + escapar(j.enlace) + '" target="_blank" rel="noopener">Ver en la tienda de Xbox</a>'
+    ].filter(Boolean);
+    var steamLinea = document.getElementById('steam-juego');
+    (steamLinea || document.getElementById('plataformas-juego')).insertAdjacentHTML('afterend', '<p class="tarjeta__texto" id="xbox-juego"></p>');
+    document.getElementById('xbox-juego').innerHTML = etiquetaOrigen('Xbox') + ' ' + partes.join(' · ');
+    // Clasificación por edad, en la ficha de datos
+    if (j.pegi) document.getElementById('ficha').insertAdjacentHTML('beforeend', '<dt>Edad</dt><dd>' + escapar(j.pegi) + '</dd>');
+  }
+  if (juego.id_tienda_xbox || juego.plataformas.indexOf('Xbox') !== -1) {
+    fetch('/api/xbox/juego?' + (juego.id_tienda_xbox ? 'tienda=' + encodeURIComponent(juego.id_tienda_xbox) + '&' : '') + 'nombre=' + encodeURIComponent(juego.nombre))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (datos) { mostrarDatosXbox(datos && datos.juego); })
+      .catch(function () { /* sin la tienda de Xbox: la ficha queda sin esa línea */ });
+  }
+
   // Ficha y "Si te gusta, prueba" (otros juegos del mismo género)
   // Sobre el juego: la descripción, recortada si es larga ("Leer más" la muestra entera)
   var descripcion = (juego.descripcion || '').trim();
@@ -3286,6 +3310,7 @@ function mostrarJuego(juego) {
       fuente.textContent = {
         steam: 'Descripción de la tienda de Steam.',
         epic: 'Descripción de la tienda de Epic Games.',
+        xbox: 'Descripción de la tienda de Xbox.',
         traducida: 'Descripción de IGDB, traducida automáticamente.'
       }[juego.fuente_descripcion] || (juego.idioma_descripcion === 'es' ? 'Descripción de IGDB, traducida automáticamente.' : 'Descripción de IGDB, en inglés.');
     }

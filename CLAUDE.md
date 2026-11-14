@@ -19,9 +19,10 @@ Digitales 3. Más contexto en README.md.
   reglas en supabase/esquema.sql. Las cuentas también son de Supabase (Supabase Auth),
   y "en línea" usa la presencia en vivo de Supabase Realtime (canal `en-linea`).
   Catálogo de juegos: IGDB (de Twitch). La descripción en español sale
-  de la tienda de Steam o, si no, de la de Epic Games (dirección no oficial);
+  de la tienda de Steam o, si no, de la de Epic Games o la de Xbox (direcciones no oficiales);
   si ninguna la tiene, se traduce la de IGDB con DeepL y se guarda una sola
-  vez en la tabla traducciones de Supabase. Steam (Steam Web
+  vez en la tabla traducciones de Supabase. La tienda de Xbox (api/xbox/juego.js,
+  sin clave) da precio, nota, PEGI y Game Pass en la ficha. Steam (Steam Web
   API, desde api/steam/): inicio de sesión, perfil, biblioteca, logros, lista
   de deseos, reseñas y precio, nota y jugadores de cada juego. Todo lo
   demás está en Supabase o, mientras falta conectarlo, en el navegador

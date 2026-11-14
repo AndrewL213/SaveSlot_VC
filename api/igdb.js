@@ -26,6 +26,8 @@
 // Responde con los juegos en el mismo formato que js/data.js. Si algo falla, responde
 // { error: '…' } con el mismo nombre que las variantes de la página de error (variantes_error, en js/data.js).
 
+const tiendaXbox = require('./xbox/_tienda'); // la tienda de Xbox: descripción en español
+
 const LIMITE_DE_ESPERA = 8000; // milisegundos; después se responde "tiempo"
 
 // El permiso de acceso de Twitch dura unos 60 días: se guarda mientras la función siga viva.
@@ -186,11 +188,18 @@ function traducir(j, horas) {
   const enSteam = (j.external_games || []).find(function (e) { return (e.external_game_source === 1 || e.category === 1) && /^\d+$/.test(e.uid); });
   // Nombre del juego en la tienda de Epic: sale de su dirección (…/p/hades → hades)
   const enEpic = (j.external_games || []).map(function (e) { return /epicgames\.com\/(?:[a-z-]+\/)*(?:p|product)\/([a-z0-9-]{1,100})/i.exec(e.url || ''); }).find(Boolean);
+  // Número del juego en la tienda de Xbox (Microsoft Store): 12 letras y números al final de su dirección
+  // (o el número solo, en uid, si la fuente es Microsoft: la 11)
+  const enMicrosoft = (j.external_games || []).map(function (e) {
+    if ((e.external_game_source === 11 || e.category === 11) && /^[0-9A-Z]{12}$/i.test(e.uid || '')) return [e.uid, e.uid];
+    return /(?:microsoft|xbox)\.com\//i.test(e.url || '') ? /\/([0-9A-Z]{12})(?:[/?#]|$)/i.exec(e.url) : null;
+  }).find(Boolean);
   return {
     id: j.slug,
     id_igdb: j.id,
     appid_steam: enSteam ? Number(enSteam.uid) : null, // para precio, nota y reseñas de Steam (api/steam/)
     slug_epic: enEpic ? enEpic[1].toLowerCase() : null, // para la descripción en español de Epic
+    id_tienda_xbox: enMicrosoft ? enMicrosoft[1].toUpperCase() : null, // para la tienda de Xbox (api/xbox/juego)
     nombre: j.name,
     nombre_corto: j.name,
     generos: generos,
@@ -203,7 +212,7 @@ function traducir(j, horas) {
     horas_historia: horas,
     descripcion: j.summary || '', // IGDB solo la tiene en inglés; la ficha (?id=) la busca en español
     idioma_descripcion: 'en',
-    fuente_descripcion: 'igdb', // de dónde sale: igdb, steam, epic o traducida
+    fuente_descripcion: 'igdb', // de dónde sale: igdb, steam, epic, xbox o traducida
     portada: j.cover ? 'https://images.igdb.com/igdb/image/upload/t_cover_big/' + j.cover.image_id + '.jpg' : null,
     credito_portada: j.cover ? 'IGDB' : null,
     color: null // IGDB no tiene color: la página usa el color neutro del kit
@@ -213,11 +222,14 @@ function traducir(j, horas) {
 // Busca la descripción en español, en este orden (si algo falla, pasa al siguiente: nunca rompe la ficha):
 //   1. La de la tienda de Steam (API oficial), si el juego está en Steam.
 //   2. La de la tienda de Epic Games (dirección no oficial: puede cambiar sin aviso), si está en Epic.
-//   3. La de IGDB, traducida (traducirDescripcion). Si tampoco se puede, queda en inglés.
+//   3. La de la tienda de Xbox (dirección no oficial, api/xbox/_tienda.js), si el juego está en Xbox.
+//   4. La de IGDB, traducida (traducirDescripcion). Si tampoco se puede, queda en inglés.
 async function descripcionEnEspanol(juego) {
+  const enXbox = juego.id_tienda_xbox || juego.plataformas.indexOf('Xbox') !== -1;
   const intentos = [
     ['steam', juego.appid_steam && function () { return descripcionDeSteam(juego.appid_steam); }],
-    ['epic', juego.slug_epic && function () { return descripcionDeEpic(juego.slug_epic); }]
+    ['epic', juego.slug_epic && function () { return descripcionDeEpic(juego.slug_epic); }],
+    ['xbox', enXbox && function () { return descripcionDeXbox(juego.id_tienda_xbox, juego.nombre); }]
   ];
   for (const [fuente, pedir] of intentos) {
     if (!pedir) continue;
@@ -265,6 +277,13 @@ async function descripcionDeEpic(slug) {
   };
   const [espanol, ingles] = await Promise.all([pedir('es-ES'), pedir('en-US')]);
   return soloSiEstaTraducida(espanol, ingles);
+}
+
+// La tienda de Xbox ya dice en qué idioma viene el texto (resumen() solo lo devuelve si es español).
+async function descripcionDeXbox(idTienda, nombre) {
+  const id = await tiendaXbox.idDelJuego(idTienda, nombre);
+  const p = id ? await tiendaXbox.producto(id) : null;
+  return p ? textoSimple(tiendaXbox.resumen(p).descripcion) || null : null;
 }
 
 // Quita etiquetas HTML y cambia los códigos (&amp;, &quot;…) por su letra.
