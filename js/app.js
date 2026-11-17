@@ -1414,7 +1414,7 @@ function guardarJuegoIgdb(juego) {
 
 // Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
 // Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
-var VERSION_API = 7;
+var VERSION_API = 8;
 
 // La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
 // se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
@@ -1528,7 +1528,7 @@ function filtrarJuegos(juegos, filtros) {
 
 // ¿El juego es del tipo elegido en Buscar? (lo mismo que pide api/igdb.js al explorar)
 // AAA e Indie: su "tipo". Gratis, Multijugador, Remakes y Próximos: su lista "tipos" (de IGDB).
-// Exclusivos: sale en la plataforma elegida y en ninguna otra consola (PC no cuenta);
+// Exclusivos (estrictos): sale solo en la plataforma elegida (tampoco en PC);
 // exclusivo de PC: en ninguna consola. Necesita una sola plataforma elegida.
 var CONSOLAS = ['PlayStation', 'Xbox', 'Nintendo'];
 function cumpleTipo(juego, filtros) {
@@ -1539,7 +1539,7 @@ function cumpleTipo(juego, filtros) {
   if (filtros.plataformas.length !== 1) return false;
   return filtros.plataformas.some(function (p) {
     if (p === 'PC') return juego.plataformas.indexOf('PC') !== -1 && !consolas.length;
-    return consolas.length === 1 && consolas[0] === p;
+    return consolas.length === 1 && consolas[0] === p && juego.plataformas.indexOf('PC') === -1;
   });
 }
 
@@ -2273,8 +2273,8 @@ function conDatosLocales(juego) {
 //   así que van los que más gente marca como "jugando" en IGDB y salen en esa consola.
 var MAS_JUGADO = {
   steam: { pedido: { steam: 1 }, texto: 'Juegos de PC con más jugadores a la vez ayer (el pico del día), según Steam.' },
-  Xbox: { pedido: { populares: 1, plataforma: 'Xbox' }, texto: 'Popular en IGDB: los juegos de Xbox que más gente marca como «jugando ahora». Xbox no publica cuántos jugadores tiene cada uno.' },
-  PlayStation: { pedido: { populares: 1, plataforma: 'PlayStation' }, texto: 'Popular en IGDB: los juegos de PlayStation que más gente marca como «jugando ahora». PlayStation no publica cuántos jugadores tiene cada uno.' }
+  Xbox: { pedido: { populares: 1, plataforma: 'Xbox' }, texto: 'Popular en IGDB: los juegos de Xbox (que no están en PlayStation) que más gente marca como «jugando ahora». Xbox no publica cuántos jugadores tiene cada uno.' },
+  PlayStation: { pedido: { populares: 1, plataforma: 'PlayStation' }, texto: 'Popular en IGDB: los juegos de PlayStation (que no están en Xbox) que más gente marca como «jugando ahora». PlayStation no publica cuántos jugadores tiene cada uno.' }
 };
 
 // Llena la rejilla y activa las pestañas (#pestanas-mas-jugado).
@@ -2696,7 +2696,7 @@ function pantallaBuscar() {
       vistos = [];
       titulo.textContent = 'Exclusivos';
       resultados.innerHTML = '<div class="vacio"><b>Elige una plataforma en «Plataforma» para ver sus exclusivos.</b>' +
-        '<span>Solo una: por ejemplo Xbox, para ver los juegos que no salen en PlayStation ni en Nintendo (pueden estar en PC).</span></div>';
+        '<span>Solo una: por ejemplo Xbox, para ver los juegos que solo salen en Xbox (ni en PlayStation, ni en Nintendo, ni en PC).</span></div>';
       return;
     }
     if (siguiente) {

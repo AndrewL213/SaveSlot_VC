@@ -496,16 +496,16 @@ const MODOS_MULTIJUGADOR = [2, 3, 4, 5, 6];
 const PALABRAS_GRATIS = ['free-to-play'];
 const CONSOLAS = ['PlayStation', 'Xbox', 'Nintendo'];
 
-// Exclusivos: salen en esa plataforma y en ninguna de las otras consolas (como se dice en el día a día:
-// un exclusivo de Xbox puede salir también en PC). Exclusivo de PC: no sale en ninguna consola.
+// Exclusivos (estrictos): salen solo en esa plataforma. Un exclusivo de Xbox no sale en PlayStation,
+// Nintendo ni PC; uno de PC no sale en ninguna consola.
 // Necesita exactamente una plataforma elegida: IGDB rechazó la versión con varias a la vez
 // (grupos "(… & …) | (… & …)"). Sin una sola plataforma no hay resultados y la página pide elegirla.
 function condicionExclusivos(elegidas) {
   const familias = elegidas.filter(function (p) { return ['PC'].concat(CONSOLAS).indexOf(p) !== -1; });
   if (familias.length !== 1) return 'id = 0';
   const f = familias[0];
-  // Las consolas que no puede tener (para PC, todas). "platforms = (…)" ya lo pone el filtro de plataforma.
-  const prohibidas = [].concat.apply([], CONSOLAS.filter(function (c) { return c !== f; }).map(function (c) { return PLATAFORMAS[c]; }));
+  // Las plataformas que no puede tener: todas las demás. "platforms = (…)" ya lo pone el filtro de plataforma.
+  const prohibidas = [].concat.apply([], ['PC'].concat(CONSOLAS).filter(function (c) { return c !== f; }).map(function (c) { return PLATAFORMAS[c]; }));
   return 'platforms != (' + prohibidas.join(',') + ')';
 }
 
@@ -622,7 +622,8 @@ async function similares(ids) {
 // Mejores juegos de la semana: los que más gente marca como "jugando ahora" en IGDB.
 // El número de ese tipo de popularidad se busca una vez por su nombre y se guarda.
 let numeroJugando = null;
-// Con plataforma ("Xbox" o "PlayStation"): los más jugados que salen en esa plataforma.
+// Con plataforma ("Xbox" o "PlayStation"): los más jugados que salen en esa consola y no en la otra
+// (los que están en las dos, como Fortnite o GTA V, hacían que las dos pestañas se vieran iguales).
 // IGDB no separa la popularidad por plataforma: se toman los 500 más jugados y se dejan los de esa.
 async function populares(plataforma) {
   if (!numeroJugando) {
@@ -635,7 +636,7 @@ async function populares(plataforma) {
   if (!lista.length) return [];
   const ids = lista.map(function (p) { return p.game_id; });
   const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS +
-    (deEsa ? ' & platforms = (' + deEsa.join(',') + ')' : '') + '; limit ' + cuantos + ';');
+    (deEsa ? ' & platforms = (' + deEsa.join(',') + ') & platforms != (' + PLATAFORMAS[plataforma === 'Xbox' ? 'PlayStation' : 'Xbox'].join(',') + ')' : '') + '; limit ' + cuantos + ';');
   juegos.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); });
   return conHoras(juegos.slice(0, 10));
 }
