@@ -28,6 +28,14 @@ const SUPABASE_LLAVE_PUBLICABLE = "sb_publishable_jEY8jb8ffoEHueH1qxhwhg_W6Kl8Y2
   } catch (e) { /* sin sessionStorage: sigue igual */ }
 })();
 
+// Vuelta con el enlace de "Recuperar contraseña" (pages/recuperar-contrasena.html): la dirección trae
+// #…&type=recovery. supabase-js la lee y la borra al crear el cliente, así que se anota antes.
+var VUELTA_RECUPERAR = (function () {
+  try { return new URLSearchParams(location.hash.replace(/^#/, "")).get("type") === "recovery"; } catch (e) { return false; }
+})();
+
 // Si la librería supabase-js no cargó (por ejemplo, sin internet), el cliente queda en null
 // y la app sigue funcionando con los datos de js/data.js.
 const clienteSupabase = window.supabase ? supabase.createClient(SUPABASE_URL, SUPABASE_LLAVE_PUBLICABLE) : null;
+// Supabase también avisa la vuelta de recuperar con su evento PASSWORD_RECOVERY
+if (clienteSupabase) clienteSupabase.auth.onAuthStateChange(function (evento) { if (evento === "PASSWORD_RECOVERY") VUELTA_RECUPERAR = true; });

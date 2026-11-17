@@ -37,6 +37,9 @@ alter table public.usuarios drop constraint if exists usuarios_forma_de_entrar_c
 alter table public.usuarios add constraint usuarios_forma_de_entrar_check
   check (forma_de_entrar in ('correo', 'google', 'discord', 'twitch', 'steam', 'epic'));
 alter table public.usuarios add column if not exists foto text check (foto is null or foto ~ '^https://');
+-- El @ no se repite aunque cambien las mayúsculas: "Samluq" y "samluq" son el mismo (la app compara igual).
+-- Si ya hubiera dos así, esta línea falla: primero hay que cambiarle el @ a una de las dos.
+create unique index if not exists usuarios_usuario_sin_mayusculas on public.usuarios (lower(usuario));
 
 -- usuarios_favoritos: los 4 juegos favoritos de cada persona (tabla aparte porque son varios por persona)
 create table if not exists public.usuarios_favoritos (

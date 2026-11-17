@@ -67,9 +67,11 @@
         <label class="grupo-campo__etiqueta" for="correo">Correo</label>
         <input class="campo" id="correo" type="email" autocomplete="email" aria-describedby="error-correo">
         <span class="grupo-campo__error" id="error-correo" hidden></span>
+        <button class="boton boton--fantasma boton--sm" type="button" id="reenviar-confirmacion" hidden>Reenviar el correo de confirmación</button>
+        <span class="grupo-campo__ayuda" id="estado-reenvio" aria-live="polite"></span>
       </div>
       <div class="grupo-campo">
-        <div class="en-fila en-fila--entre"><label class="grupo-campo__etiqueta" for="clave">Contraseña</label><a class="grupo-campo__ayuda" href="contacto.html?tema=cuenta">¿La olvidaste?</a></div>
+        <div class="en-fila en-fila--entre"><label class="grupo-campo__etiqueta" for="clave">Contraseña</label><a class="grupo-campo__ayuda" href="recuperar-contrasena.html" data-recuperar>¿La olvidaste?</a></div>
         <div class="campo-clave"><input class="campo-clave__campo" id="clave" type="password" autocomplete="current-password" aria-describedby="error-clave"><button class="boton boton--fantasma boton--icono boton--sm" type="button" id="ver-clave" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
         <span class="grupo-campo__error" id="error-clave" hidden></span>
       </div>

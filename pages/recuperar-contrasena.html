@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Recuperar contraseña · SaveSlot</title>
+<meta name="description" content="Pon una contraseña nueva para tu cuenta de SaveSlot.">
+<meta name="theme-color" content="#12161D">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body data-pantalla="recuperar">
+
+<header class="navegacion">
+  <div class="navegacion__contenido">
+    <a class="navegacion__logo" href="../index.html"><img src="../assets/favicon.svg" alt="">SaveSlot</a>
+    <nav aria-label="Principal">
+      <ul class="navegacion__enlaces">
+        <li><a class="navegacion__enlace" href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li>
+        <li><a class="navegacion__enlace" href="buscar-juegos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4M15.5 12h.01M18 14h.01"/></svg><span>Juegos</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--escritorio" href="comunidad.html"><span>Comunidad</span></a></li>
+        <li><a class="navegacion__enlace" href="eventos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Eventos</span></a></li>
+        <li><a class="navegacion__enlace" href="matchplay.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>MatchPlay</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--movil" href="iniciar-sesion.html" data-enlace-cuenta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span data-texto>Entrar</span></a></li>
+      </ul>
+    </nav>
+    <form class="navegacion__buscar" role="search" action="buscar-juegos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="solo-lectores" for="buscar-encabezado">Buscar juegos</label>
+      <input class="navegacion__buscar-campo" id="buscar-encabezado" name="q" type="search" placeholder="Buscar juegos">
+    </form>
+    <div class="navegacion__acciones" data-acciones-sesion>
+      <a class="boton boton--secundario boton--sm navegacion__ocultar-movil" href="iniciar-sesion.html">Iniciar sesión</a>
+      <a class="boton boton--sm" href="crear-cuenta.html">Crear cuenta</a>
+    </div>
+  </div>
+</header>
+
+<div class="franja" data-franja role="region" aria-label="Aviso del prototipo">
+  <span>Prototipo académico: el catálogo de juegos (IGDB), las cuentas, Steam, la comunidad y los eventos ya son reales; MatchPlay (IA) todavía responde con ejemplos. <a class="franja__enlace" href="../404.html?tipo=demo">Más información</a></span>
+  <button class="boton boton--fantasma boton--icono boton--sm" type="button" data-cerrar-franja aria-label="Ocultar aviso del prototipo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+
+<main class="acceso">
+  <section class="acceso__lado" aria-labelledby="titulo-lado">
+    <h1 class="titulo-pagina" id="titulo-lado">Vuelve a tu partida.</h1>
+    <p class="bajada">Te enviamos un enlace a tu correo para que pongas una contraseña nueva. Tu progreso sigue donde lo dejaste.</p>
+  </section>
+  <section class="acceso__formulario">
+    <form class="acceso__caja" id="formulario-pedir" novalidate aria-labelledby="titulo-pedir">
+      <h2 class="titulo-pagina" id="titulo-pedir">Recupera tu contraseña</h2>
+      <p class="tarjeta__texto">Escribe el correo de tu cuenta y te enviamos un enlace para poner una contraseña nueva.</p>
+      <div class="grupo-campo">
+        <label class="grupo-campo__etiqueta" for="correo">Correo</label>
+        <input class="campo" id="correo" type="email" autocomplete="email" placeholder="tu@correo.com" aria-describedby="error-correo">
+        <span class="grupo-campo__error" id="error-correo" hidden></span>
+      </div>
+      <button class="boton boton--bloque" type="submit">Enviarme el enlace</button>
+      <p class="tarjeta__texto acceso__nota">¿Entraste con Steam, Epic Games, Google, Discord o Twitch? Esa cuenta no tiene contraseña de SaveSlot: entra con ese servicio.</p>
+      <p class="tarjeta__texto acceso__nota"><a href="iniciar-sesion.html">Volver a iniciar sesión</a></p>
+    </form>
+    <div class="acceso__caja" id="aviso-enviado" hidden>
+      <div class="vacio" role="status">
+        <b>Revisa tu correo</b>
+        <span>Si hay una cuenta con <b id="correo-enviado"></b>, te enviamos un enlace para poner una contraseña nueva. Puede tardar unos minutos: revisa también el correo no deseado.</span>
+        <button class="boton boton--fantasma boton--sm" type="button" id="pedir-otra-vez">Usar otro correo o pedirlo otra vez</button>
+        <a href="iniciar-sesion.html">Volver a iniciar sesión</a>
+      </div>
+    </div>
+    <form class="acceso__caja" id="formulario-nueva" novalidate hidden aria-labelledby="titulo-nueva">
+      <h2 class="titulo-pagina" id="titulo-nueva">Pon tu contraseña nueva</h2>
+      <div class="grupo-campo">
+        <label class="grupo-campo__etiqueta" for="clave">Contraseña nueva</label>
+        <div class="campo-clave"><input class="campo-clave__campo" id="clave" type="password" autocomplete="new-password" aria-describedby="texto-fuerza error-clave"><button class="boton boton--fantasma boton--icono boton--sm" type="button" id="ver-clave" aria-label="Mostrar contraseña" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+        <div class="fuerza-clave" id="fuerza" data-nivel="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <span class="grupo-campo__ayuda" id="texto-fuerza" aria-live="polite">Escribe al menos 8 caracteres.</span>
+        <span class="grupo-campo__error" id="error-clave" hidden></span>
+      </div>
+      <button class="boton boton--bloque" type="submit">Guardar contraseña</button>
+    </form>
+  </section>
+</main>
+
+<footer class="pie">
+  <div class="pie__contenido">
+    <div class="pie__marca">
+      <a class="pie__logo" href="../index.html">SaveSlot</a>
+      <p class="pie__frase">Tu solución gamer. Todos tus juegos y sus comunidades en un solo lugar.</p>
+    </div>
+    <nav class="pie__columnas" aria-label="Pie de página">
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Explora</h2>
+        <a class="pie__enlace" href="buscar-juegos.html">Juegos</a>
+        <a class="pie__enlace" href="juego-random.html">Juego random</a>
+        <a class="pie__enlace" href="eventos.html">Eventos</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Cuenta</h2>
+        <a class="pie__enlace" href="perfil.html">Mi perfil</a>
+        <a class="pie__enlace" href="amigos.html">Amigos</a>
+        <a class="pie__enlace" href="historial-resenas.html">Historial de reseñas</a>
+        <a class="pie__enlace" href="diario.html">Diario</a>
+        <a class="pie__enlace" href="logros.html">Logros</a>
+        <a class="pie__enlace" href="biblioteca.html">Biblioteca</a>
+        <a class="pie__enlace" href="iniciar-sesion.html" data-pie-sesion>Iniciar sesión</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Ayuda</h2>
+        <a class="pie__enlace" href="contacto.html">Contáctanos</a>
+        <a class="pie__enlace" href="../404.html?tipo=estado">Estado de servicios</a>
+        <a class="pie__enlace" href="eventos.html#reglas">Reglas de eventos</a>
+      </div>
+    </nav>
+    <p class="pie__creditos">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos, marcas y portadas pertenecen a sus dueños; portadas de Steam, IGDB y Wikipedia. Catálogo de juegos: IGDB.com. Cuentas: Supabase. Datos de Steam: reales (Steam Web API). Comunidad, eventos y amigos: Supabase. MatchPlay: ejemplo.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" integrity="sha384-rwykjmWNwVxboyFmvK9OXN0wj9hnMHA2aAHtits54DuACyCq0M2PrSNxhRb+hvXT" crossorigin="anonymous"></script>
+<script src="../js/supabase.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+</body>
+</html>

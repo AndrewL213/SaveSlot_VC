@@ -598,10 +598,20 @@ async function sincronizarSesionSupabase() {
     var meta = cuenta.user_metadata || {};
     var nombre = meta.nombre || meta.full_name || meta.name || meta.preferred_username || meta.user_name || String(cuenta.email || '').split('@')[0] || 'Jugador';
     var usuario = meta.usuario && usuarioLibre(meta.usuario) ? meta.usuario : usuarioPropuesto(meta.usuario || nombre, cuenta.id);
-    var creada = await clienteSupabase.from('usuarios').insert({
-      auth_id: cuenta.id, usuario: usuario, nombre: nombre, iniciales: inicialesDe(nombre),
-      forma_de_entrar: esCuentaSoloEpic(cuenta) ? 'epic' : (FORMA_DE_ENTRAR[(cuenta.app_metadata || {}).provider] || 'correo')
-    }).select().single();
+    var filaNueva = function (u) {
+      return clienteSupabase.from('usuarios').insert({
+        auth_id: cuenta.id, usuario: u, nombre: nombre, iniciales: inicialesDe(nombre),
+        forma_de_entrar: esCuentaSoloEpic(cuenta) ? 'epic' : (FORMA_DE_ENTRAR[(cuenta.app_metadata || {}).provider] || 'correo')
+      }).select().single();
+    };
+    var creada = await filaNueva(usuario);
+    // El @ lo tomó otra persona entre que se registró y confirmó el correo (23505: ya existe en la base,
+    // sin importar mayúsculas): se le pone uno libre parecido y Editar perfil se lo avisa
+    if (creada.error && creada.error.code === '23505') {
+      var otro = usuarioPropuesto(usuario + String(Date.now()).slice(-3), cuenta.id);
+      creada = await filaNueva(otro);
+      if (!creada.error && meta.usuario) guardarMemoria('usuarioOcupado', { antes: meta.usuario, ahora: otro });
+    }
     if (creada.error) { console.error('No se pudo crear el perfil en usuarios:', creada.error); throw creada.error; }
     fila = creada.data;
     FILAS.usuarios = (FILAS.usuarios || []).concat(fila); // para que las pantallas ya la vean
@@ -4357,6 +4367,39 @@ function activarOjo(boton, campo) {
   });
 }
 
+// Medidor de fuerza (.fuerza-clave): largo, mayúsculas y minúsculas, números y símbolos (Crear cuenta y Recuperar contraseña)
+var TEXTOS_FUERZA = ['Escribe al menos 8 caracteres.', 'Débil. Agrega mayúsculas y números.', 'Regular. Agrega un número o símbolo.', 'Buena. Agrega un símbolo para hacerla fuerte.', 'Fuerte.'];
+function activarMedidorFuerza(campo, barra, texto) {
+  campo.addEventListener('input', function () {
+    var v = campo.value;
+    var nivel = (v.length >= 8 ? 1 : 0) + (/[A-Z]/.test(v) && /[a-z]/.test(v) ? 1 : 0) + (/\d/.test(v) ? 1 : 0) + (/[^A-Za-z0-9]/.test(v) ? 1 : 0);
+    barra.dataset.nivel = nivel;
+    texto.textContent = TEXTOS_FUERZA[nivel];
+  });
+}
+
+// Botón "Reenviar el correo" de confirmación (Supabase Auth, resend). Supabase pide esperar un poco entre envíos.
+function activarReenvio(boton, estado, correoDe, vuelta) {
+  boton.addEventListener('click', async function () {
+    var correo = correoDe();
+    if (!correoValido(correo)) { estado.textContent = 'Escribe primero tu correo.'; return; }
+    boton.disabled = true;
+    estado.textContent = 'Enviando…';
+    try {
+      var r = await clienteSupabase.auth.resend({ type: 'signup', email: correo, options: { emailRedirectTo: vuelta } });
+      if (r.error) throw r.error;
+      estado.textContent = 'Listo: te lo enviamos otra vez. Revisa también el correo no deseado.';
+    } catch (error) {
+      console.error('No se pudo reenviar el correo:', error);
+      estado.textContent = /seconds|rate|429/i.test(error.message || '') || error.status === 429
+        ? 'Ya te enviamos uno hace poco. Espera un minuto y vuelve a intentarlo.'
+        : 'No pudimos reenviarlo. Intenta de nuevo en un momento.';
+    } finally {
+      setTimeout(function () { boton.disabled = false; }, 60000); // no más de uno por minuto
+    }
+  });
+}
+
 // ¿La sesión del navegador es de una cuenta real (Steam o Supabase) pero Supabase ya no tiene su sesión?
 // Pasa si la sesión se cerró en Supabase o venció: la app seguiría mostrando a la persona como conectada,
 // pero nada se podría guardar ni vincular. El invitado y la cuenta de demostración no tienen cuenta en Supabase.
@@ -4385,6 +4428,9 @@ function pantallaEntrar() {
   var errorCorreo = document.getElementById('error-correo');
   var errorClave = document.getElementById('error-clave');
   activarOjo(document.getElementById('ver-clave'), clave);
+  enlazarRecuperar(correo);
+  activarReenvio(document.getElementById('reenviar-confirmacion'), document.getElementById('estado-reenvio'),
+    function () { return correo.value.trim().toLowerCase(); }, direccionCompleta('editar-perfil.html?nuevo=1' + conVolver()));
 
   formulario.addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -4401,6 +4447,7 @@ function pantallaEntrar() {
       if (r.error) {
         if (/not confirmed/i.test(r.error.message)) {
           marcarError(correo, errorCorreo, 'Primero confirma tu correo: abre el enlace que te enviamos.');
+          document.getElementById('reenviar-confirmacion').hidden = false;
           correo.focus();
         } else if (/invalid login credentials/i.test(r.error.message)) {
           marcarError(clave, errorClave, 'El correo o la contraseña no coinciden. Revísalos o crea una cuenta.');
@@ -4448,14 +4495,11 @@ function pantallaRegistro() {
   var mensajeUsuario = document.getElementById('mensaje-usuario');
   activarOjo(document.getElementById('ver-clave'), clave);
 
-  // Medidor de fuerza: largo, mayúsculas y minúsculas, números y símbolos
-  var textosFuerza = ['Escribe al menos 8 caracteres.', 'Débil. Agrega mayúsculas y números.', 'Regular. Agrega un número o símbolo.', 'Buena. Agrega un símbolo para hacerla fuerte.', 'Fuerte.'];
-  clave.addEventListener('input', function () {
-    var v = clave.value;
-    var nivel = (v.length >= 8 ? 1 : 0) + (/[A-Z]/.test(v) && /[a-z]/.test(v) ? 1 : 0) + (/\d/.test(v) ? 1 : 0) + (/[^A-Za-z0-9]/.test(v) ? 1 : 0);
-    document.getElementById('fuerza').dataset.nivel = nivel;
-    document.getElementById('texto-fuerza').textContent = textosFuerza[nivel];
-  });
+  activarMedidorFuerza(clave, document.getElementById('fuerza'), document.getElementById('texto-fuerza'));
+  enlazarRecuperar(correo);
+  // "Ya existe una cuenta con ese correo": sus enlaces se esconden al cambiar el correo
+  correo.addEventListener('input', function () { document.getElementById('ayuda-correo-usado').hidden = true; });
+  document.getElementById('ayuda-correo-usado').querySelector('a[href^="iniciar"]').href = 'iniciar-sesion.html' + location.search;
 
   usuario.addEventListener('input', function () {
     var valor = usuario.value.trim();
@@ -4510,15 +4554,130 @@ function pantallaRegistro() {
         location.href = (await sincronizarSesionSupabase()) || 'editar-perfil.html?nuevo=1' + conVolver();
         return;
       }
+      // Con la confirmación por correo, Supabase no da error si el correo ya tiene cuenta (para no revelarlo):
+      // devuelve una cuenta sin identidades y no envía nada. Se dice la verdad junto al campo.
+      if (r.data && r.data.user && (r.data.user.identities || []).length === 0) {
+        marcarError(correo, document.getElementById('error-correo'), 'Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.');
+        document.getElementById('ayuda-correo-usado').hidden = false;
+        correo.focus();
+        return;
+      }
       // Pide confirmar: se reemplaza el formulario por el aviso
       formulario.innerHTML = '<div class="vacio" role="status"><b>Te enviamos un correo a ' + escapar(llave) + '</b>' +
         '<span>Ábrelo y toca el enlace para activar tu cuenta. Después seguirás con tu perfil.</span>' +
-        '<a href="iniciar-sesion.html' + escapar(location.search) + '">Ya la confirmé: iniciar sesión</a></div>';
+        '<a href="iniciar-sesion.html' + escapar(location.search) + '">Ya la confirmé: iniciar sesión</a>' +
+        '<button class="boton boton--fantasma boton--sm" type="button" id="reenviar-registro">¿No te llegó? Reenviar el correo</button>' +
+        '<span class="grupo-campo__ayuda" id="estado-reenvio" aria-live="polite"></span></div>';
+      activarReenvio(document.getElementById('reenviar-registro'), document.getElementById('estado-reenvio'), function () { return llave; },
+        direccionCompleta('editar-perfil.html?nuevo=1' + conVolver()));
     } catch (error) {
       console.error('No se pudo crear la cuenta:', error);
       marcarError(correo, document.getElementById('error-correo'), 'No pudimos crear la cuenta. Intenta de nuevo en un momento.');
     } finally {
       if (botonCrear.isConnected) { botonCrear.disabled = false; botonCrear.textContent = 'Crear cuenta'; }
+    }
+  });
+}
+
+// Enlaces "¿La olvidaste?" / "Recuperar contraseña" (data-recuperar): llevan el correo ya escrito
+function enlazarRecuperar(campoCorreo) {
+  document.querySelectorAll('[data-recuperar]').forEach(function (enlace) {
+    enlace.addEventListener('click', function () {
+      var c = campoCorreo.value.trim();
+      enlace.href = 'recuperar-contrasena.html' + (correoValido(c) ? '?correo=' + encodeURIComponent(c) : '');
+    });
+  });
+}
+
+// 32. Recuperar contraseña
+//   Paso 1: el correo → Supabase manda un enlace (resetPasswordForEmail) que vuelve a esta misma página.
+//   Paso 2: al volver con el enlace (js/supabase.js anota VUELTA_RECUPERAR antes de que supabase-js lo lea),
+//   la persona ya tiene una sesión de recuperación y pone la contraseña nueva (updateUser).
+function pantallaRecuperar() {
+  var paso1 = document.getElementById('formulario-pedir');
+  var paso2 = document.getElementById('formulario-nueva');
+  var correo = document.getElementById('correo');
+  var errorCorreo = document.getElementById('error-correo');
+  var params = new URLSearchParams(location.search);
+  if (correoValido(params.get('correo') || '')) correo.value = params.get('correo');
+
+  // ¿Volvió con un enlace vencido o ya usado? (js/supabase.js lo aparta de la dirección)
+  var fallo = tomarErrorDeVuelta();
+  if (fallo) {
+    marcarError(correo, errorCorreo, 'Ese enlace venció o ya se usó. Escribe tu correo y te enviamos otro.');
+  }
+
+  paso1.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var valor = correo.value.trim().toLowerCase();
+    if (!marcarError(correo, errorCorreo, correoValido(valor) ? '' : (valor ? 'Al correo le falta algo. Ejemplo: samuel@correo.com' : 'Escribe tu correo.'))) { correo.focus(); return; }
+    var boton = paso1.querySelector('button[type="submit"]');
+    boton.disabled = true;
+    boton.textContent = 'Enviando…';
+    try {
+      var r = await clienteSupabase.auth.resetPasswordForEmail(valor, { redirectTo: direccionCompleta('recuperar-contrasena.html') });
+      if (r.error && !(/seconds|rate/i.test(r.error.message) || r.error.status === 429)) throw r.error;
+      // Siempre el mismo aviso: no se dice si el correo tiene cuenta (para no revelar quién está registrado)
+      document.getElementById('aviso-enviado').hidden = false;
+      document.getElementById('correo-enviado').textContent = valor;
+      paso1.hidden = true;
+    } catch (error) {
+      console.error('No se pudo pedir el enlace:', error);
+      marcarError(correo, errorCorreo, 'No pudimos enviar el enlace. Intenta de nuevo en un momento.');
+    } finally {
+      boton.disabled = false;
+      boton.textContent = 'Enviarme el enlace';
+    }
+  });
+  document.getElementById('pedir-otra-vez').addEventListener('click', function () {
+    document.getElementById('aviso-enviado').hidden = true;
+    paso1.hidden = false;
+    correo.focus();
+  });
+
+  // Paso 2: con el enlace del correo
+  if (typeof VUELTA_RECUPERAR === 'undefined' || !VUELTA_RECUPERAR || fallo) return;
+  paso1.hidden = true;
+  paso2.hidden = false;
+  var clave = document.getElementById('clave');
+  var errorClave = document.getElementById('error-clave');
+  activarOjo(document.getElementById('ver-clave'), clave);
+  activarMedidorFuerza(clave, document.getElementById('fuerza'), document.getElementById('texto-fuerza'));
+  clave.focus();
+  paso2.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!marcarError(clave, errorClave, clave.value.length >= 8 ? '' : 'La contraseña necesita al menos 8 caracteres.')) { clave.focus(); return; }
+    var boton = paso2.querySelector('button[type="submit"]');
+    boton.disabled = true;
+    boton.textContent = 'Guardando…';
+    try {
+      var r = await clienteSupabase.auth.updateUser({ password: clave.value });
+      if (r.error) {
+        if (/different from the old|same/i.test(r.error.message)) {
+          marcarError(clave, errorClave, 'Es igual a la anterior: elige una distinta.');
+          clave.focus();
+          return;
+        }
+        if (/session|jwt|expired/i.test(r.error.message)) {
+          marcarError(clave, errorClave, 'El enlace venció. Pide otro desde el paso anterior.');
+          return;
+        }
+        if (/password/i.test(r.error.message)) {
+          marcarError(clave, errorClave, 'Supabase no aceptó esa contraseña: prueba una más larga o con más variedad.');
+          clave.focus();
+          return;
+        }
+        throw r.error;
+      }
+      // Ya entró: a su perfil (con "Contraseña guardada")
+      await sincronizarSesionSupabase();
+      guardarMemoria('avisoAlEntrar', 'Contraseña guardada. Ya entraste a tu cuenta.');
+      location.href = 'perfil.html';
+    } catch (error) {
+      console.error('No se pudo guardar la contraseña:', error);
+      marcarError(clave, errorClave, 'No pudimos guardar la contraseña. Intenta de nuevo en un momento.');
+    } finally {
+      if (boton.isConnected) { boton.disabled = false; boton.textContent = 'Guardar contraseña'; }
     }
   });
 }
@@ -5096,6 +5255,15 @@ function pantallaEditar() {
   var campoNombre = document.getElementById('nombre-visible');
 
   if (new URLSearchParams(location.search).get('nuevo')) document.getElementById('bienvenida').hidden = false;
+  // Su @ lo tomó otra persona antes de que confirmara el correo (ver sincronizarSesionSupabase)
+  var ocupado = leerMemoria('usuarioOcupado', null);
+  if (ocupado) {
+    guardarMemoria('usuarioOcupado', null);
+    mostrarAviso('Tu @' + ocupado.antes + ' ya estaba ocupado: te dejamos @' + ocupado.ahora + '.', { texto: 'Cambiarlo', alTocar: function () {
+      var campo = document.getElementById('usuario-fijo');
+      if (campo) { campo.scrollIntoView({ block: 'center' }); campo.focus(); }
+    } });
+  }
   // Foto de perfil: subir una propia, volver a la de Steam o quitarla (iniciales)
   var cajaAvatar = document.getElementById('avatar-editar');
   var ayudaFoto = document.getElementById('foto-ayuda');
@@ -6621,6 +6789,7 @@ var PANTALLAS = {
   evento: pantallaEvento,
   entrar: pantallaEntrar,
   registro: pantallaRegistro,
+  recuperar: pantallaRecuperar,
   perfil: pantallaPerfil,
   editar: pantallaEditar,
   diario: pantallaDiario,
@@ -6692,7 +6861,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       await cargarDatos(tablas);
     }
     // La cuenta real cuya sesión de Supabase se cerró o venció: se pide entrar de nuevo
-    if (!esError && nombre !== 'entrar' && nombre !== 'registro' && await sesionVencida()) {
+    if (!esError && nombre !== 'entrar' && nombre !== 'registro' && nombre !== 'recuperar' && await sesionVencida()) {
       guardarMemoria('session', null);
       location.replace(rutaPagina('iniciar-sesion.html') + '?vencida=1&volver=' + encodeURIComponent(location.pathname.split('/').pop() + location.search));
       return;
@@ -6722,6 +6891,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     prepararFranja();
     prepararPie();
     if (pantalla) await pantalla();
+    // Aviso que dejó la página anterior (por ejemplo, "Contraseña guardada" al volver de Recuperar contraseña)
+    var avisoAlEntrar = leerMemoria('avisoAlEntrar', null);
+    if (avisoAlEntrar) { guardarMemoria('avisoAlEntrar', null); aviso = aviso ? aviso + ' · ' + avisoAlEntrar : avisoAlEntrar; }
     if (aviso) mostrarAviso(aviso);
     else if (!esError && nombre !== 'perfil') revisarBajasDePrecio(false);
   } catch (error) {

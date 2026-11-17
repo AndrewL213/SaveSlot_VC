@@ -755,7 +755,8 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   4. Explorar sin cuenta
   5. Google, Discord, Twitch y Steam (cuatro botones con su logo, debajo del botón principal: primero va la cuenta de SaveSlot)
 - **Qué funciona de verdad:**
-  - Entrar con correo (cuenta de SaveSlot): Real (Supabase Auth, signInWithPassword). Si la contraseña no coincide o falta confirmar el correo, lo dice junto al campo.
+  - Entrar con correo (cuenta de SaveSlot): Real (Supabase Auth, signInWithPassword). Si la contraseña no coincide o falta confirmar el correo, lo dice junto al campo. Si falta confirmar, aparece «Reenviar el correo de confirmación» (Supabase Auth, resend).
+  - "¿La olvidaste?": lleva a Recuperar contraseña (pantalla 32), con el correo ya escrito si lo había.
   - Entrar como invitado: sin cuenta y sin pedir datos, con un perfil vacío ("Invitado", @invitado). No crea nada en Supabase: lo que hace (reseñas, diario, favoritos…) se guarda solo en ese navegador y no puede cambiar el @. Para guardar en la base, hay que crear una cuenta
   - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). Vuelve a la pantalla donde estaba, con Steam vinculada. Si Steam está vinculada a una cuenta de Google, Discord, Twitch o correo, abre esa cuenta.
   - Google, Discord, Twitch y Epic Games: Real (Google, Discord y Twitch con los proveedores de Supabase Auth, signInWithOAuth; Epic con `api/epic/auth.js`, como Steam). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
@@ -777,7 +778,8 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   4. Crear cuenta
   5. Google, Discord, Twitch y Steam (cuatro botones con su logo, debajo del botón principal: primero va la cuenta de SaveSlot)
 - **Qué funciona de verdad:**
-  - Crear cuenta con correo (cuenta de SaveSlot): Real (Supabase Auth, signUp). Supabase pide confirmar el correo: después de crearla, la pantalla dice "Te enviamos un correo a…" y el enlace del correo lleva a Editar perfil con "¡Cuenta creada!". El @ y el nombre quedan en la cuenta y la fila de **usuarios** se crea al confirmar.
+  - Crear cuenta con correo (cuenta de SaveSlot): Real (Supabase Auth, signUp). Supabase pide confirmar el correo: después de crearla, la pantalla dice "Te enviamos un correo a…" y el enlace del correo lleva a Editar perfil con "¡Cuenta creada!". El @ y el nombre quedan en la cuenta y la fila de **usuarios** se crea al confirmar. Junto al aviso, «Reenviar el correo» (Supabase Auth, resend; Supabase pide esperar un poco entre envíos). Si el correo ya tiene cuenta (Supabase no da error, pero la cuenta llega sin identidades), dice «Ya existe una cuenta con ese correo» con enlaces a Iniciar sesión y Recuperar contraseña, y no dice que envió un correo.
+  - El @ no se repite aunque cambien las mayúsculas («Samluq» y «samluq» son el mismo): lo revisa la app y la base (índice único con `lower(usuario)`). Si al confirmar el correo el @ ya lo tomó otra persona, se le asigna uno libre parecido y Editar perfil avisa «Tu @… ya estaba ocupado: te dejamos @…», donde puede cambiarlo.
   - Steam: Real (`api/steam/auth.js` en Vercel + sesión de Supabase). La cuenta nace con Steam vinculada y un @ sacado de su nombre de Steam, que puede cambiar en Editar perfil.
   - Google, Discord, Twitch y Epic Games: Real (Google, Discord y Twitch con los proveedores de Supabase Auth, signInWithOAuth; Epic con `api/epic/auth.js`, como Steam). Vuelven a la pantalla donde estaba la persona. Si el servicio falla, el botón lleva a la página de error con la variante «acceso» y su nombre.
   - Quien entra por primera vez con Google, Discord, Twitch o Epic Games recibe un @ libre sacado de su nombre en ese servicio (si está ocupado, con números), se crea su fila en **usuarios** y sigue a Editar perfil (pasos 2 y 3) con "¡Cuenta creada!", donde puede cambiar el @. Si ya tenía cuenta, entra con su perfil de la base aunque use otro navegador.
@@ -1032,3 +1034,22 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 - **Está lista cuando:**
   - Funciona en celular (375 px de ancho).
   - Se cierra al tocar fuera o con Escape, y se recorre con las flechas.
+
+### 32. Recuperar contraseña
+- **Archivo de diseño:** no tiene (usa el mismo marco de Iniciar sesión y los componentes del kit)
+- **Objetivo:** Esta pantalla existe para que el gamer casual pueda volver a entrar si olvidó su contraseña. Sabemos que funciona si la persona pone una contraseña nueva y entra sin escribirle al equipo.
+- **Contenido:**
+  1. Paso 1: correo y "Enviarme el enlace"
+  2. Aviso: "Si hay una cuenta con ese correo, te enviamos un enlace" (no dice si el correo existe, para no revelar quién tiene cuenta)
+  3. Paso 2 (al abrir el enlace del correo): contraseña nueva, con mostrar u ocultar y el medidor de fuerza, y "Guardar contraseña"
+  4. Volver a Iniciar sesión
+- **Qué funciona de verdad:**
+  - Enviar el enlace: Real (Supabase Auth, resetPasswordForEmail; el enlace vuelve a `pages/recuperar-contrasena.html`, que debe estar en las Redirect URLs de Supabase).
+  - Poner la contraseña nueva: Real (Supabase Auth, updateUser). Después entra a la cuenta y va al Perfil.
+  - Si el enlace venció o ya se usó, lo dice y deja pedir otro.
+  - Las cuentas creadas con Steam, Epic Games, Google, Discord o Twitch no tienen contraseña de SaveSlot: entran con ese servicio.
+- **Está lista cuando:**
+  - Funciona en celular (375 px de ancho).
+  - Con el correo mal escrito, o la contraseña de menos de 8 caracteres, muestra el error junto al campo.
+  - Con el enlace del correo, deja poner la contraseña nueva y entra a la cuenta.
+  - Con un enlace vencido, avisa y deja pedir otro.
