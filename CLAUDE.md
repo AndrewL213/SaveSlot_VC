@@ -47,7 +47,7 @@ Digitales 3. Más contexto en README.md.
   fija, con integrity), js/supabase.js, js/data.js y js/app.js.
 - api/: funciones de Vercel que usan claves secretas (por ejemplo,
   api/igdb.js, la consulta a IGDB, y api/steam/, el inicio de sesión y los
-  datos de Steam: perfil, biblioteca y logros, api/epic/auth.js, entrar con Epic Games, y api/xbox/, vincular Xbox y sus juegos y logros). JavaScript sin paso de compilación.
+  datos de Steam: perfil, biblioteca y logros, api/epic/auth.js, entrar con Epic Games, y api/xbox/, vincular Xbox y sus juegos y logros; api/_vuelta.js tiene las comprobaciones de seguridad al volver de ellos). JavaScript sin paso de compilación.
 - supabase/: el código SQL de Supabase. esquema.sql tiene todas las tablas, reglas
   y funciones de la app (se puede ejecutar varias veces); aparte están juegos.sql y
   usuarios_steam.sql (Steam), usuarios_epic.sql (Epic Games), usuarios_xbox.sql (Xbox), avatares.sql (fotos de perfil), borrar-cuenta.sql y

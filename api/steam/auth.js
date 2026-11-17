@@ -16,24 +16,30 @@
 // Después, entrar con Steam abre la cuenta a la que se vinculó.
 //
 // Variables de entorno (Vercel > Settings > Environment Variables):
-//   STEAM_API_KEY y SUPABASE_SERVICE_ROLE_KEY (o sb_secret_...). Opcionales: SUPABASE_URL, ALLOWED_REDIRECTS
+//   STEAM_API_KEY y SUPABASE_SERVICE_ROLE_KEY (o sb_secret_...). Opcionales: SUPABASE_URL, ALLOWED_REDIRECTS,
+//   PERMITIR_LOCALHOST=1 (solo para probar en local; ver api/_vuelta.js)
+//
+// Seguridad al volver de Steam (además de la firma, que confirma Steam):
+//   · la respuesta tiene que ser de Steam (openid.op_endpoint) y para ESTA función, con los mismos datos con que
+//     salió (openid.return_to): así nadie reenvía aquí una respuesta que Steam generó para otro sitio;
+//   · la marca del navegador (cookie) tiene que coincidir: vuelve el mismo navegador que empezó (login CSRF).
 
 const STEAM_OPENID = "https://steamcommunity.com/openid/login";
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://jzshrfiezzysbkzdsjzf.supabase.co";
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const STEAM_API_KEY = process.env.STEAM_API_KEY;
-// Lista separada por comas de orígenes permitidos para volver después del login
-const ALLOWED_REDIRECTS = (process.env.ALLOWED_REDIRECTS || "https://saveslot-pi.vercel.app")
-  .split(",").map((s) => s.trim()).filter(Boolean);
+const vuelta = require("../_vuelta");
+const isAllowed = vuelta.permitido; // solo páginas de la app (localhost solo con PERMITIR_LOCALHOST=1)
+const MARCA = "ss_steam_marca";
+const RUTA_MARCA = "/api/steam/auth";
 
-// Compara el origen exacto (evita trucos como https://saveslot-pi.vercel.app.otro.com).
-// localhost y 127.0.0.1 se permiten en cualquier puerto para probar en local.
-function isAllowed(url) {
-  try {
-    const u = new URL(url);
-    if (["localhost", "127.0.0.1"].includes(u.hostname)) return true;
-    return ALLOWED_REDIRECTS.some((a) => new URL(a).origin === u.origin);
-  } catch { return false; }
+// ¿La respuesta de Steam se generó para esta función y con los mismos datos con que salió?
+function respuestaParaSaveSlot(url, selfUrl) {
+  if (url.searchParams.get("openid.op_endpoint") !== STEAM_OPENID) return false;
+  let rt;
+  try { rt = new URL(url.searchParams.get("openid.return_to") || ""); } catch { return false; }
+  if (`${rt.origin}${rt.pathname}` !== selfUrl || rt.searchParams.get("action") !== "callback") return false;
+  return ["redirect_to", "vincular", "marca"].every((k) => (rt.searchParams.get(k) || "") === (url.searchParams.get(k) || ""));
 }
 
 const crypto = require("crypto");
@@ -141,8 +147,9 @@ module.exports = async function handler(req, res) {
   // 1) Mandar al usuario a Steam
   if (action === "login") {
     const vincular = url.searchParams.get("vincular");
+    const marca = vuelta.crearMarca(res, MARCA, RUTA_MARCA);
     const returnTo = `${selfUrl}?action=callback&redirect_to=${encodeURIComponent(redirectTo)}` +
-      (vincular ? `&vincular=${encodeURIComponent(vincular)}` : "");
+      (vincular ? `&vincular=${encodeURIComponent(vincular)}` : "") + `&marca=${marca}`;
     const p = new URLSearchParams({
       "openid.ns": "http://specs.openid.net/auth/2.0",
       "openid.mode": "checkid_setup",
@@ -168,6 +175,10 @@ module.exports = async function handler(req, res) {
         body: verify,
       }).then((r) => r.text());
       if (!check.includes("is_valid:true")) throw new Error("Firma OpenID inválida");
+      if (!respuestaParaSaveSlot(url, selfUrl)) throw new Error("Respuesta de Steam no válida");
+      const marcaOk = vuelta.marcaValida(req, MARCA, url.searchParams.get("marca"));
+      vuelta.borrarMarca(res, MARCA, RUTA_MARCA);
+      if (!marcaOk) throw new Error("navegador_distinto");
 
       const claimed = url.searchParams.get("openid.claimed_id") ?? "";
       const m = claimed.match(/^https?:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/);

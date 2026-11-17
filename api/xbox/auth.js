@@ -14,14 +14,8 @@
 
 const x = require("./_xbox");
 
-const PERMITIDOS = (process.env.ALLOWED_REDIRECTS || "https://saveslot-pi.vercel.app").split(",").map((s) => s.trim()).filter(Boolean);
-function permitido(url) {
-  try {
-    const u = new URL(url);
-    if (["localhost", "127.0.0.1"].includes(u.hostname)) return true;
-    return PERMITIDOS.some((a) => new URL(a).origin === u.origin);
-  } catch { return false; }
-}
+// Solo se vuelve a páginas de la app (localhost solo con PERMITIR_LOCALHOST=1; ver api/_vuelta.js)
+const permitido = require("../_vuelta").permitido;
 function json(res, estado, datos) {
   res.statusCode = estado;
   res.setHeader("Content-Type", "application/json");

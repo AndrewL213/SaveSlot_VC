@@ -29,18 +29,13 @@ const EPIC_SECRET = process.env.EPIC_CLIENT_SECRET;
 const EPIC_AUTORIZAR = "https://www.epicgames.com/id/authorize";
 const EPIC_TOKEN = "https://api.epicgames.dev/epic/oauth/v2/token";
 const EPIC_CUENTAS = "https://api.epicgames.dev/epic/id/v2/accounts";
-const ALLOWED_REDIRECTS = (process.env.ALLOWED_REDIRECTS || "https://saveslot-pi.vercel.app")
-  .split(",").map((s) => s.trim()).filter(Boolean);
 const DIEZ_MINUTOS = 10 * 60 * 1000;
-
-// Solo se vuelve a páginas de la app (o a localhost para probar)
-function permitido(url) {
-  try {
-    const u = new URL(url);
-    if (["localhost", "127.0.0.1"].includes(u.hostname)) return true;
-    return ALLOWED_REDIRECTS.some((a) => new URL(a).origin === u.origin);
-  } catch { return false; }
-}
+const vuelta = require("../_vuelta");
+// Solo se vuelve a páginas de la app (localhost solo con PERMITIR_LOCALHOST=1; ver api/_vuelta.js)
+const permitido = vuelta.permitido;
+// Marca del navegador (login CSRF): va en la cookie y dentro del state; al volver tienen que coincidir
+const MARCA = "ss_epic_marca";
+const RUTA_MARCA = "/api/epic/auth";
 
 // Datos firmados con la llave secreta (que nunca sale del servidor): nadie los puede inventar ni cambiar
 const firmar = (texto) => crypto.createHmac("sha256", SERVICE_ROLE).update(texto).digest("base64url");
@@ -143,7 +138,7 @@ module.exports = async function handler(req, res) {
     }
     const p = new URLSearchParams({
       client_id: EPIC_ID, response_type: "code", scope: "basic_profile",
-      redirect_uri: miDireccion, state: empacar({ r: destino, u }),
+      redirect_uri: miDireccion, state: empacar({ r: destino, u, m: vuelta.crearMarca(res, MARCA, RUTA_MARCA) }),
     });
     return ir(res, `${EPIC_AUTORIZAR}?${p}`);
   }
@@ -151,6 +146,9 @@ module.exports = async function handler(req, res) {
   // 2) Epic vuelve aquí con ?code=… (o ?error=… si la persona no dio permiso)
   const estado = desempacar(url.searchParams.get("state"));
   if (!estado || !permitido(estado.r)) return json(res, 400, { error: "Vuelta de Epic no válida o vencida. Inténtalo de nuevo." });
+  const marcaOk = vuelta.marcaValida(req, MARCA, estado.m);
+  vuelta.borrarMarca(res, MARCA, RUTA_MARCA);
+  if (!marcaOk) return volver(res, estado.r, { error: "navegador_distinto" });
   if (url.searchParams.get("error")) return volver(res, estado.r, { error: url.searchParams.get("error") });
   const code = url.searchParams.get("code");
   if (!code) return volver(res, estado.r, { error: "sin_codigo" });
