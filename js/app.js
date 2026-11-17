@@ -174,8 +174,8 @@ function juegoDeXbox(g) {
 
 /* ---------- PlayStation (ID de PSN) ----------
    PlayStation no tiene "Iniciar sesión con PlayStation" para otras webs. Se escribe el ID de PSN, se pone un
-   código de SaveSlot en el «Sobre mí» de PSN (prueba que es tuyo) y api/playstation/auth.js lo vincula.
-   api/playstation/data.js trae los trofeos públicos (con psn-api, no oficial). */
+   código de SaveSlot en el «Sobre mí» de PSN (prueba que es tuyo) y api/playstation.js (?action=vincular) lo vincula.
+   ?action=datos trae los trofeos públicos (con psn-api, no oficial). */
 function llamarPlayStation(ruta, cuerpo) {
   return cuentaSupabase().then(function (sesion) {
     if (!sesion) throw new Error('Sin sesión');
@@ -193,7 +193,7 @@ function llamarPlayStation(ruta, cuerpo) {
   });
 }
 function pedirPlayStation() {
-  return llamarPlayStation('/api/playstation/data').then(function (d) { guardarMemoria('psnDatos', d); return d; });
+  return llamarPlayStation('/api/playstation?action=datos').then(function (d) { guardarMemoria('psnDatos', d); return d; });
 }
 function tienePlayStation() {
   return !!(MI_FILA && filasDe('cuentas_vinculadas', 'usuario_id', MI_FILA.id).some(function (x) { return x.plataforma === 'playstation'; }));
@@ -5786,12 +5786,12 @@ function pantallaEditar() {
       botonPsn.disabled = true;
       if (accionPsn === 'buscar') {
         psn.id = (document.getElementById('psn-id') || {}).value.trim();
-        llamarPlayStation('/api/playstation/auth?action=codigo', { onlineId: psn.id }).then(function (d) {
+        llamarPlayStation('/api/playstation?action=codigo', { onlineId: psn.id }).then(function (d) {
           psn = { paso: 'codigo', id: d.onlineId, codigo: d.codigo, error: '' };
         }).catch(function (error) { psn.error = errorDePlayStation(error); }).then(dibujarCuentas);
       }
       if (accionPsn === 'verificar') {
-        llamarPlayStation('/api/playstation/auth?action=vincular', { onlineId: psn.id }).then(function (d) {
+        llamarPlayStation('/api/playstation?action=vincular', { onlineId: psn.id }).then(function (d) {
           psn = { paso: null, id: '', codigo: '', error: '' };
           anotarPlayStation(d.onlineId);
           perfil.accounts.PlayStation = d.onlineId;
@@ -5800,7 +5800,7 @@ function pantallaEditar() {
         }).catch(function (error) { psn.error = errorDePlayStation(error); }).then(dibujarCuentas);
       }
       if (accionPsn === 'desvincular') {
-        llamarPlayStation('/api/playstation/auth?action=desvincular').then(function () {
+        llamarPlayStation('/api/playstation?action=desvincular').then(function () {
           anotarPlayStation(null);
           perfil.accounts.PlayStation = null;
           mostrarAviso('PlayStation desvinculada');
