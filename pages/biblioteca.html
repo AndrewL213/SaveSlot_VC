@@ -71,13 +71,28 @@
     <input class="campo campo--sm" id="buscar-biblioteca" type="search" placeholder="Buscar en tu biblioteca">
   </div>
 
+  <div class="en-fila" role="group" aria-label="Filtrar tu biblioteca" id="filtros-biblioteca">
+    <div class="en-fila en-fila--fija orden">
+      <label class="grupo-campo__ayuda" for="plataforma-biblioteca">Plataforma</label>
+      <select class="campo campo--sm" id="plataforma-biblioteca"><option value="">Todas</option><option value="steam">Steam</option><option value="xbox">Xbox</option></select>
+    </div>
+    <div class="en-fila en-fila--fija orden">
+      <label class="grupo-campo__ayuda" for="genero-biblioteca">Género</label>
+      <select class="campo campo--sm" id="genero-biblioteca"><option value="">Todos</option></select>
+    </div>
+    <div class="en-fila en-fila--fija orden">
+      <label class="grupo-campo__ayuda" for="estado-filtro-biblioteca">Estado</label>
+      <select class="campo campo--sm" id="estado-filtro-biblioteca"><option value="">Todos</option><option value="jugados">Jugados</option><option value="sin-estrenar">Sin estrenar</option><option value="completos">Con todos los logros</option></select>
+    </div>
+  </div>
+
   <section class="seccion" aria-labelledby="titulo-biblioteca">
     <h2 class="solo-lectores" id="titulo-biblioteca">Tus juegos</h2>
     <p class="tarjeta__texto" id="estado-biblioteca" aria-live="polite"></p>
     <div class="rejilla-biblioteca" id="biblioteca-juegos" aria-live="polite"></div>
   </section>
 
-  <p class="tarjeta__texto">Datos y portadas de Steam (Steam Web API); datos de Xbox (Xbox Live) con portadas de IGDB. Cada juego abre su página en la tienda de Steam o la búsqueda de Xbox.</p>
+  <p class="tarjeta__texto">Datos y portadas de Steam (Steam Web API); datos de Xbox (Xbox Live) con portadas de IGDB. Cada juego abre su ficha en SaveSlot. Los logros completos de Steam se cuentan en tus 30 juegos más jugados.</p>
 
 </main>
 

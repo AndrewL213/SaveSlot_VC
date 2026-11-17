@@ -1,7 +1,7 @@
 // /api/xbox/data — los datos de Xbox de quien tiene la sesión (POST con "Authorization: Bearer <sesión>")
 //
 // Responde { gamertag, gamerscore, foto, games: [...] }. Cada juego:
-//   { titleId, name, last_played (segundos), unlocked, total, gamerscore, total_gamerscore, percent }
+//   { titleId, name, last_played (segundos), unlocked, total, gamerscore, total_gamerscore, percent, cover, slug }
 // Si la cuenta no tiene Xbox vinculada responde 404 { error, sin_vinculo: true }.
 // Usa el refresh_token guardado en usuarios_xbox (y guarda el nuevo que da Microsoft).
 //
@@ -34,7 +34,8 @@ function nombreParaBuscar(nombre) {
     .replace(/\s*[-–:]\s*(windows 10|pocket|java|bedrock) edition$/i, "")
     .replace(/"/g, "").trim();
 }
-// { titleId: "https://images.igdb.com/.../t_cover_big/xxx.jpg" } para los juegos que IGDB encuentre
+// { titleId: { cover: "https://images.igdb.com/.../t_cover_big/xxx.jpg", slug: "halo-infinite" } }
+// para los juegos que IGDB encuentre. El slug sirve para abrir la ficha del juego en SaveSlot.
 async function portadasDeIgdb(juegos) {
   const permiso = await permisoDeIgdb().catch((e) => { console.error("IGDB permiso:", e.message); return null; });
   if (!permiso) { console.error("IGDB: sin permiso (¿faltan TWITCH_CLIENT_ID o TWITCH_CLIENT_SECRET?)"); return {}; }
@@ -44,11 +45,11 @@ async function portadasDeIgdb(juegos) {
     await Promise.all(juegos.slice(i, i + 4).map(async (j) => {
       const r = await fetch("https://api.igdb.com/v4/games", {
         method: "POST", headers: { "Client-ID": process.env.TWITCH_CLIENT_ID, Authorization: `Bearer ${permiso}` },
-        body: `fields name, cover.image_id; search "${nombreParaBuscar(j.name)}"; where cover != null; limit 1;`,
+        body: `fields name, slug, cover.image_id; search "${nombreParaBuscar(j.name)}"; where cover != null; limit 1;`,
       }).catch(() => null);
       if (!r || !r.ok) { console.error("IGDB portada de", j.name, r ? r.status : "sin respuesta"); return; }
       const encontrado = ((await r.json().catch(() => [])) || [])[0];
-      if (encontrado && encontrado.cover) portadas[j.titleId] = `https://images.igdb.com/igdb/image/upload/t_cover_big/${encontrado.cover.image_id}.jpg`;
+      if (encontrado && encontrado.cover) portadas[j.titleId] = { cover: `https://images.igdb.com/igdb/image/upload/t_cover_big/${encontrado.cover.image_id}.jpg`, slug: encontrado.slug || null };
       else console.error("IGDB no encontró portada para", j.name, "→", nombreParaBuscar(j.name));
     }));
   }
@@ -141,7 +142,11 @@ module.exports = async function handler(req, res) {
     }));
     // Portadas de IGDB
     const portadas = await portadasDeIgdb(games.slice(0, 40)).catch(() => ({}));
-    games.forEach((g) => { g.cover = portadas[g.titleId] || null; });
+    games.forEach((g) => {
+      const igdb = portadas[g.titleId] || {};
+      g.cover = igdb.cover || null;
+      g.slug = igdb.slug || null; // ficha en SaveSlot (detalle-juego.html?id=slug)
+    });
 
     return json(res, 200, {
       gamertag: ajustes.Gamertag || xsts.gamertag,

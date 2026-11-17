@@ -529,6 +529,18 @@ async function ficha(id) {
   return juego;
 }
 
+// La ficha de un juego de Steam por su número (appid), para que la Biblioteca y el Perfil abran
+// la ficha de SaveSlot: IGDB guarda el número de Steam en external_games (fuente 1 = Steam).
+async function fichaDeSteam(appid) {
+  if (!/^\d{1,10}$/.test(appid)) throw falla('juego', 404);
+  const enlaces = await consultar('external_games', 'fields game; where uid = "' + appid + '" & (external_game_source = 1 | category = 1); limit 5;');
+  const ids = enlaces.map(function (e) { return e.game; }).filter(Number.isInteger);
+  if (!ids.length) throw falla('juego', 404);
+  // Si hay varios (un juego y su edición), el principal: el que pasa el filtro de SOLO_JUEGOS
+  const principales = await consultar('games', 'fields id; where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS + '; sort total_rating_count desc; limit 1;');
+  return ficha(String((principales[0] || { id: ids[0] }).id));
+}
+
 // "Si te gusta, prueba": hasta 6 juegos parecidos que IGDB ya tiene calculados.
 async function similares(ids) {
   const numeros = (ids || []).filter(function (n) { return Number.isInteger(n); }).slice(0, 12);
@@ -598,11 +610,12 @@ module.exports = async function (req, res) {
     let respuesta;
     if (q.buscar !== undefined) respuesta = { juegos: await buscar(q.buscar) };
     else if (q.id !== undefined) respuesta = { juego: await ficha(String(q.id)) };
+    else if (q.steam_app !== undefined) respuesta = { juego: await fichaDeSteam(String(q.steam_app)) };
     else if (q.populares !== undefined) respuesta = { juegos: await populares(String(q.plataforma || '')) };
     else if (q.explorar !== undefined) respuesta = await explorar(q);
     else if (q.random !== undefined) respuesta = { juego: await random(q) };
     else if (q.steam !== undefined) respuesta = { juegos: await masJugadosSteam() };
-    else { res.status(400).json({ error: 'pedido', detalle: 'Usa ?buscar=, ?id=, ?populares=1, ?explorar=1, ?random=1 o ?steam=1' }); return; }
+    else { res.status(400).json({ error: 'pedido', detalle: 'Usa ?buscar=, ?id=, ?steam_app=, ?populares=1, ?explorar=1, ?random=1 o ?steam=1' }); return; }
     // Vercel guarda la respuesta una hora: menos consultas a IGDB y más rápido para todos.
     // El juego al azar no se guarda: cada pedido debe dar uno distinto.
     res.setHeader('Cache-Control', q.random !== undefined ? 'no-store' : 's-maxage=3600, stale-while-revalidate=86400');

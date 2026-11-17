@@ -166,7 +166,7 @@ function tieneXbox() {
 // nombre del juego): CLAUDE.md no deja usar las imágenes de Xbox. Si IGDB no lo encuentra, queda sin imagen.
 function juegoDeXbox(g) {
   return {
-    id: 'xbox-' + g.titleId, nombre: g.name, nombre_corto: g.name, portada: g.cover || null, credito_portada: g.cover ? 'IGDB' : null, color: null, generos: [],
+    id: 'xbox-' + g.titleId, slug: g.slug || null, nombre: g.name, nombre_corto: g.name, portada: g.cover || null, credito_portada: g.cover ? 'IGDB' : null, color: null, generos: [],
     plataformas: ['Xbox'], horas: 0, ultima_vez: g.last_played || 0, xbox: true,
     logros: { obtenidos: g.unlocked, totales: g.total }
   };
@@ -409,9 +409,26 @@ function tiempoReciente(g) {
 function htmlRecienteSteam(g) {
   var j = juegoDeSteam(g);
   var tiempo = tiempoReciente(g);
-  return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="' + escapar(j.nombre) + ': ' + tiempo + ' en las últimas 2 semanas">' +
+  return '<a href="' + escapar(enlaceJuego(j)) + '" title="' + escapar(j.nombre) + ': ' + tiempo + ' en las últimas 2 semanas">' +
     '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
     '<span class="nota nota--texto">' + tiempo + '</span></a>';
+}
+
+// Juegos de Xbox jugados en las últimas 2 semanas (de tu historial de Xbox; Xbox no da las horas,
+// así que se dice cuándo lo jugaste por última vez)
+var DOS_SEMANAS = 14 * 24 * 60 * 60 * 1000;
+function recientesXbox(datos) {
+  return ((datos && datos.games) || []).filter(function (g) { return g.last_played && Date.now() - g.last_played * 1000 < DOS_SEMANAS; });
+}
+function htmlRecienteXbox(g) {
+  var j = juegoDeXbox(g);
+  var cuando = textoHace(g.last_played * 1000);
+  return '<a href="' + escapar(enlaceJuego(j)) + '" title="' + escapar(j.nombre) + ': lo jugaste en Xbox ' + cuando + '">' +
+    '<span class="portada portada--enlace">' + imagenPortada(j) +
+      // Sin portada (IGDB no lo encontró): el nombre va sobre el fondo neutro
+      (j.portada ? '' : '<b class="portada__titulo">' + escapar(j.nombre_corto) + '</b>') +
+      '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox"></span>' +
+    '<span class="tarjeta__texto">' + cuando + '</span></a>';
 }
 
 // ---------- Foto de perfil ----------
@@ -490,12 +507,24 @@ function tieneSteam() {
   return !!(leerPerfil().accounts || {}).Steam;
 }
 
-// A dónde lleva un juego: su ficha en SaveSlot o, si viene de Steam, su página en la tienda de Steam
+// A dónde lleva un juego: siempre a su ficha en SaveSlot.
+// - De Steam: la ficha lo busca en IGDB por su número de Steam (?steam=); si IGDB no lo tiene, va a Buscar con su nombre.
+// - De Xbox: por el slug de IGDB que encontró api/xbox/data; sin slug, a Buscar con su nombre.
 function enlaceJuego(juego) {
-  if (juego.xbox) return 'https://www.xbox.com/es-CO/search?q=' + encodeURIComponent(juego.nombre);
-  return juego.steam
-    ? 'https://store.steampowered.com/app/' + juego.appid + '/'
-    : 'detalle-juego.html?id=' + encodeURIComponent(juego.id);
+  if (juego.xbox) {
+    return juego.slug
+      ? rutaPagina('detalle-juego.html') + '?id=' + encodeURIComponent(juego.slug)
+      : rutaPagina('buscar-juegos.html') + '?q=' + encodeURIComponent(nombreParaBuscar(juego.nombre));
+  }
+  if (juego.steam) return rutaPagina('detalle-juego.html') + '?steam=' + encodeURIComponent(juego.appid) + '&nombre=' + encodeURIComponent(juego.nombre);
+  return rutaPagina('detalle-juego.html') + '?id=' + encodeURIComponent(juego.id);
+}
+
+// "Forza Horizon 5 (PC)", "Halo™: MCC para Windows" → el nombre para buscarlo en SaveSlot
+function nombreParaBuscar(nombre) {
+  return String(nombre || '').replace(/[™®©]/g, '')
+    .replace(/\s*[-–:]?\s*(para|for)\s+(android|ios|iphone|windows(\s*10|\s*11)?|pc|xbox[\w\s|]*)$/i, '')
+    .replace(/\s*\((pc|windows|xbox[^)]*|android|ios)\)$/i, '').trim();
 }
 
 // ---------- Usuario (@) ----------
@@ -3130,7 +3159,24 @@ function htmlCalaveras(dificultad) {
 
 // 6. Detalle de juego (y 7. Ventana: Dificultad de 1 a 10)
 function pantallaJuego() {
-  var id = idDeJuego(new URLSearchParams(location.search).get('id'));
+  var parametros = new URLSearchParams(location.search);
+  // Desde la Biblioteca o el Perfil: un juego de Steam por su número (?steam=730&nombre=…)
+  var appid = parametros.get('steam');
+  if (appid && /^\d{1,10}$/.test(appid)) {
+    preguntarIgdb({ steam_app: appid }).then(function (datos) {
+      guardarJuegoIgdb(datos.juego);
+      // La dirección queda como la de cualquier ficha (?id=slug): se puede compartir y volver
+      history.replaceState(null, '', location.pathname + '?id=' + encodeURIComponent(datos.juego.id));
+      mostrarJuego(unirConIgdb(datosDe('juegos').find(function (x) { return x.id === datos.juego.id; }) || null, datos.juego));
+    }, function (error) {
+      // IGDB no lo tiene (programas, juegos muy chicos…): se busca por su nombre
+      var nombre = parametros.get('nombre');
+      if (error && error.estado === 404 && nombre) location.replace(rutaPagina('buscar-juegos.html') + '?q=' + encodeURIComponent(nombreParaBuscar(nombre)));
+      else location.replace(error && error.estado === 404 ? rutaPagina('404.html') + '?tipo=juego' : direccionErrorServicio(error, 'IGDB'));
+    });
+    return;
+  }
+  var id = idDeJuego(parametros.get('id'));
   pedirJuego(id).then(mostrarJuego, function (error) {
     location.replace(error && error.estado === 404 ? rutaPagina('404.html') + '?tipo=juego' : direccionErrorServicio(error, 'IGDB'));
   });
@@ -4948,7 +4994,9 @@ function pantallaPerfil() {
     ponerEtiquetaPlataforma('xbox', 'assets/logo-xbox.png', 'XBOX ' + formatearNumero(datos.gamerscore) + ' G');
     dibujarCuentas(leerMemoria('steamPerfil', null));
     actualizarConXbox();
+    if (recientesListos) dibujarRecientes(); // llegaron los juegos de Xbox: van a Actividad reciente
   }
+  var recientesListos = false;
   // Xbox real: trae el gamerscore y los juegos (Juegos, Este año y Logros los suman)
   if (tieneXbox()) {
     usarXboxEnPerfil(leerMemoria('xboxDatos', null));
@@ -4963,7 +5011,7 @@ function pantallaPerfil() {
 
   // Actividad: qué está jugando
   document.getElementById('jugando-perfil').innerHTML = jugando
-    ? '<a class="fila fila--jugando" href="' + escapar(enlaceJuego(jugando)) + '"' + (jugando.steam ? ' target="_blank" rel="noopener"' : '') + '><span class="portada portada--sm"' + atributoColor(jugando.color) + '>' + imagenPortada(jugando) + '</span>' +
+    ? '<a class="fila fila--jugando" href="' + escapar(enlaceJuego(jugando)) + '"><span class="portada portada--sm"' + atributoColor(jugando.color) + '>' + imagenPortada(jugando) + '</span>' +
       '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(jugando.nombre_corto) + '</b><br><span class="tarjeta__texto">Lo elegiste en tu perfil</span></span></a>'
     : '<p class="tarjeta__texto">No está jugando nada en este momento.</p>';
 
@@ -4982,7 +5030,7 @@ function pantallaPerfil() {
       var actual = juegoDeSteam(steam.playing_now);
       avatar.classList.add('avatar--jugando');
       if (!avatar.querySelector('.avatar__punto')) avatar.insertAdjacentHTML('beforeend', '<span class="avatar__punto"></span>');
-      caja.innerHTML = '<a class="fila fila--jugando" href="' + escapar(enlaceJuego(actual)) + '" target="_blank" rel="noopener"><span class="portada portada--sm">' + imagenPortada(actual) + '</span>' +
+      caja.innerHTML = '<a class="fila fila--jugando" href="' + escapar(enlaceJuego(actual)) + '"><span class="portada portada--sm">' + imagenPortada(actual) + '</span>' +
         '<span><span class="estado estado--jugando">Jugando ahora</span><br><b>' + escapar(actual.nombre) + '</b><br><span class="tarjeta__texto">En Steam</span></span></a>';
     } else if (!jugando && steam.recent_games && steam.recent_games.length) {
       var ultimo = steam.recent_games[0];
@@ -5171,9 +5219,11 @@ function pantallaPerfil() {
   }
   dibujarFavoritos();
 
-  // Actividad reciente: lo jugado en Steam las últimas 2 semanas y los últimos del diario (máx. 8)
+  // Actividad reciente: lo jugado en Steam y en Xbox las últimas 2 semanas y los últimos del diario (máx. 8)
   function dibujarRecientes() {
+    recientesListos = true;
     var deSteam = perfilSteam && perfilSteam.recent_games ? perfilSteam.recent_games.map(htmlRecienteSteam) : [];
+    var deXbox = tieneXbox() ? recientesXbox(leerMemoria('xboxDatos', null)).map(htmlRecienteXbox) : [];
     var delDiario = diario.slice(0, 6).map(function (d) {
       var j = buscarPorId('juegos', d.juego_igdb);
       if (!j) return '';
@@ -5182,7 +5232,7 @@ function pantallaPerfil() {
         '<span class="' + (abandonado ? 'etiqueta etiqueta--error' : 'nota nota--texto') + '">' + (abandonado ? 'Abandonado' : d.calificacion + '/10') + (d.me_gusta ? ' ♥' : '') + '</span></a>';
     }).filter(Boolean);
     var caja = document.getElementById('recientes-perfil');
-    caja.innerHTML = deSteam.concat(delDiario).slice(0, 8).join('') || '<div class="vacio">Aún no registras juegos. <a href="buscar-juegos.html">Busca uno</a></div>';
+    caja.innerHTML = deSteam.concat(deXbox, delDiario).slice(0, 8).join('') || '<div class="vacio">Aún no registras juegos. <a href="buscar-juegos.html">Busca uno</a></div>';
     aplicarColores(caja);
   }
   dibujarRecientes();
@@ -5245,7 +5295,7 @@ function pantallaPerfil() {
     seccion.hidden = false;
     var top = lista.slice().sort(function (a, b) { return b.horas - a.horas; }).slice(0, 6);
     document.getElementById('biblioteca-perfil').innerHTML = top.map(function (j) {
-      return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
+      return '<a href="' + escapar(enlaceJuego(j)) + '" title="Ver la ficha de ' + escapar(j.nombre) + '">' +
         '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
         '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
     }).join('') || '<div class="vacio">Trayendo tu biblioteca de Steam…</div>';
@@ -5281,7 +5331,7 @@ function pantallaPerfil() {
     var steam = visibles.map(function (g) {
       var j = juegoDeSteam(g);
       return '<div class="tarjeta deseo"><span class="portada portada--sm">' + imagenPortada(j) + '</span>' +
-        '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener"><b>' + escapar(j.nombre) + '</b><br><span class="tarjeta__texto">Steam' +
+        '<a href="' + escapar(enlaceJuego(j)) + '"><b>' + escapar(j.nombre) + '</b><br><span class="tarjeta__texto">Steam' +
           (g.price ? ' · ' + (g.original_price ? '<s>' + escapar(g.original_price) + '</s> ' : '') + escapar(g.price) : '') + '</span></a>' +
         (g.discount_pct ? '<span class="etiqueta etiqueta--exito al-final">-' + escapar(g.discount_pct) + '%</span>' : '') + '</div>';
     }).join('');
@@ -5996,7 +6046,7 @@ function pantallaHistorial() {
   function htmlFilaSteam(r) {
     var j = juegoDeSteam(r);
     return '<article class="tarjeta tarjeta--resena fila-historial">' +
-      '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">' + imagenPortada(j) + '</a>' +
+      '<a class="portada portada--enlace" href="' + escapar(enlaceJuego(j)) + '" tabindex="-1" aria-hidden="true">' + imagenPortada(j) + '</a>' +
       '<div class="fila-historial__cuerpo">' +
         '<div class="en-fila en-fila--entre"><div><a href="' + escapar(r.enlace) + '" target="_blank" rel="noopener"><b class="tarjeta__titulo">' + escapar(j.nombre) + '</b></a> ' + etiquetaOrigen('Steam') + '<br>' +
           '<span class="tarjeta__texto">' + (r.fecha ? formatearFecha(r.fecha) + ' · ' : '') + formatearNumero(r.horas) + ' h</span></div>' +
@@ -6294,34 +6344,96 @@ function pantallaBiblioteca() {
       [formatearNumero(jugados), 'Jugados'], [formatearNumero(todos.length - jugados), 'Sin estrenar']
     ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
 
-    // Con la biblioteca vacía, ordenar o buscar no hace nada: se desactivan
+    // Con la biblioteca vacía, ordenar, buscar o filtrar no hace nada: se desactivan
     document.querySelectorAll('[data-orden]').forEach(function (c) { c.disabled = !todos.length; });
     buscador.disabled = !todos.length;
+    [filtroPlataforma, filtroGenero, filtroEstado].forEach(function (f) { f.disabled = !todos.length; });
+    llenarGeneros(todos);
     var texto = buscador.value.trim().toLowerCase();
-    var lista = todos.filter(function (j) { return !texto || j.nombre.toLowerCase().indexOf(texto) !== -1; }).sort(ORDENES[orden]);
+    var plataforma = filtroPlataforma.value, genero = filtroGenero.value, estadoPedido = filtroEstado.value;
+    var lista = todos.filter(function (j) {
+      if (texto && j.nombre.toLowerCase().indexOf(texto) === -1) return false;
+      if (plataforma === 'steam' && !j.steam) return false;
+      if (plataforma === 'xbox' && !j.xbox) return false;
+      if (genero && (j.generos || []).indexOf(genero) === -1) return false;
+      // Los de Xbox salen de tu historial: siempre están jugados
+      var jugado = j.xbox || j.horas > 0;
+      if (estadoPedido === 'jugados' && !jugado) return false;
+      if (estadoPedido === 'sin-estrenar' && jugado) return false;
+      if (estadoPedido === 'completos' && !logrosCompletos(j)) return false;
+      return true;
+    }).sort(ORDENES[orden]);
+    var hayFiltros = texto || plataforma || genero || estadoPedido;
     caja.innerHTML = lista.map(function (j) {
       if (j.xbox) {
-        return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Buscar ' + escapar(j.nombre) + ' en Xbox">' +
+        return '<a href="' + escapar(enlaceJuego(j)) + '" title="Ver la ficha de ' + escapar(j.nombre) + '">' +
           '<span class="portada portada--enlace">' + imagenPortada(j) +
             '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox" title="De tu cuenta de Xbox' + (j.portada ? ' · Portada: IGDB' : '') + '"></span>' +
           '<b>' + escapar(j.nombre_corto) + '</b>' +
           '<span class="tarjeta__texto">' + (j.logros.totales ? j.logros.obtenidos + '/' + j.logros.totales + ' logros' : 'Jugado') + '</span></a>';
       }
-      return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
+      return '<a href="' + escapar(enlaceJuego(j)) + '" title="Ver la ficha de ' + escapar(j.nombre) + '">' +
         // De qué cuenta viene el juego: logo en la esquina inferior izquierda de la portada (hoy solo Steam)
         '<span class="portada portada--enlace">' + imagenPortada(j) +
           '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-steam.png')) + '" alt="Steam" title="De tu cuenta de Steam"></span>' +
         '<b>' + escapar(j.nombre_corto) + '</b>' +
         '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Sin estrenar') + '</span></a>';
-    }).join('') || (todos.length
-      ? '<div class="vacio">Ningún juego de tu biblioteca coincide con «' + escapar(buscador.value.trim()) + '».</div>'
+    }).join('') || (todos.length && hayFiltros
+      ? '<div class="vacio"><b>Ningún juego de tu biblioteca coincide' + (texto ? ' con «' + escapar(buscador.value.trim()) + '»' : '') + (plataforma || genero || estadoPedido ? ' con estos filtros' : '') + '.</b>' +
+        '<button class="boton boton--secundario boton--sm" type="button" id="limpiar-filtros-biblioteca">Quitar filtros</button></div>'
       : '');
   }
+
+  // Filtros: plataforma, género (los de Steam; Xbox no los da) y estado
+  var filtroPlataforma = document.getElementById('plataforma-biblioteca');
+  var filtroGenero = document.getElementById('genero-biblioteca');
+  var filtroEstado = document.getElementById('estado-filtro-biblioteca');
+  // Logros de Steam por juego (de "Logros": los 30 juegos más jugados)
+  var logrosPorJuego = {};
+  ((tieneSteam() && leerMemoria('steamLogros', null)) || { games: [] }).games.forEach(function (g) { logrosPorJuego[g.appid] = g; });
+  function logrosCompletos(j) {
+    var l = j.xbox ? { total: j.logros.totales, unlocked: j.logros.obtenidos } : logrosPorJuego[j.appid];
+    return !!(l && l.total > 0 && l.unlocked >= l.total);
+  }
+  function llenarGeneros(todos) {
+    var elegido = filtroGenero.value;
+    var generos = [];
+    todos.forEach(function (j) { (j.generos || []).forEach(function (g) { if (generos.indexOf(g) === -1) generos.push(g); }); });
+    generos.sort(function (a, b) { return a.localeCompare(b, 'es'); });
+    if (elegido && generos.indexOf(elegido) === -1) generos.push(elegido);
+    filtroGenero.innerHTML = '<option value="">Todos</option>' + generos.map(function (g) {
+      return '<option value="' + escapar(g) + '"' + (g === elegido ? ' selected' : '') + '>' + escapar(g) + '</option>';
+    }).join('');
+  }
+  [filtroPlataforma, filtroGenero, filtroEstado].forEach(function (f) { f.addEventListener('change', dibujar); });
+  // "Con todos los logros" sin los logros de Steam guardados (nunca se abrió Logros): se traen una vez
+  var trayendoLogros = false;
+  filtroEstado.addEventListener('change', function () {
+    if (filtroEstado.value !== 'completos' || !tieneSteam() || leerMemoria('steamLogros', null) || trayendoLogros) return;
+    trayendoLogros = true;
+    var estadoTexto = document.getElementById('estado-biblioteca');
+    estadoTexto.textContent = 'Trayendo tus logros de Steam…';
+    pedirSteam('achievements_summary').then(function (datos) {
+      guardarMemoria('steamLogros', datos);
+      (datos.games || []).forEach(function (g) { logrosPorJuego[g.appid] = g; });
+      estadoTexto.textContent = '';
+      dibujar();
+    }).catch(function () {
+      estadoTexto.textContent = 'No pudimos traer tus logros de Steam: revisa que tus detalles de juego sean públicos.';
+    }).then(function () { trayendoLogros = false; });
+  });
+  caja.addEventListener('click', function (e) {
+    if (!e.target.closest('#limpiar-filtros-biblioteca')) return;
+    buscador.value = '';
+    [filtroPlataforma, filtroGenero, filtroEstado].forEach(function (f) { f.value = ''; });
+    dibujar();
+  });
 
   if (!tieneSteam() && !tieneXbox()) {
     document.getElementById('resumen-biblioteca').hidden = true;
     document.querySelectorAll('[data-orden]').forEach(function (c) { c.disabled = true; });
     buscador.disabled = true;
+    [filtroPlataforma, filtroGenero, filtroEstado].forEach(function (f) { f.disabled = true; });
     caja.outerHTML = '<div class="vacio"><b>Vincula tu cuenta de Steam o de Xbox para ver tu biblioteca.</b><a href="editar-perfil.html#cuentas">Vincular cuenta</a></div>';
     return;
   }
