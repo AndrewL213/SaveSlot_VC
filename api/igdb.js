@@ -470,7 +470,7 @@ async function condiciones(filtros, extras) {
   const plataformas = [].concat.apply([], lista(filtros.plataformas).map(function (p) { return PLATAFORMAS[p] || []; }));
   if (plataformas.length) partes.push('platforms = (' + plataformas.join(',') + ')');
   if (filtros.tipo === 'Indie') partes.push('genres = (32)');
-  if (filtros.tipo === 'AAA') partes.push('genres = !(32)');
+  if (filtros.tipo === 'AAA') partes.push('genres != (32)'); // '!= (…)': no tiene ninguno de esos (la forma '= !(…)' IGDB la rechazaba)
   if (filtros.tipo === 'Multijugador') partes.push('game_modes = (' + MODOS_MULTIJUGADOR.join(',') + ')');
   if (filtros.tipo === 'Remakes') partes.push('game_type = (8,9)'); // 8 remake, 9 remaster
   if (filtros.tipo === 'Gratis') {
@@ -506,7 +506,7 @@ function condicionExclusivos(elegidas) {
   const f = familias[0];
   // Las consolas que no puede tener (para PC, todas). "platforms = (…)" ya lo pone el filtro de plataforma.
   const prohibidas = [].concat.apply([], CONSOLAS.filter(function (c) { return c !== f; }).map(function (c) { return PLATAFORMAS[c]; }));
-  return 'platforms = !(' + prohibidas.join(',') + ')';
+  return 'platforms != (' + prohibidas.join(',') + ')';
 }
 
 // Número del estado "Early Access" (acceso anticipado) en IGDB: se busca una vez por su nombre.
