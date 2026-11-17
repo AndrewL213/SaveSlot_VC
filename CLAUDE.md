@@ -27,7 +27,7 @@ Digitales 3. Más contexto en README.md.
   de deseos, reseñas y precio, nota y jugadores de cada juego. Todo lo
   demás está en Supabase o, mientras falta conectarlo, en el navegador
   (localStorage). Solo son simulados (en js/data.js) las respuestas de la IA de
-  MatchPlay y los logros de PlayStation (ver spec.md). Nintendo no se vincula ni
+  MatchPlay (ver spec.md). PlayStation usa la librería no oficial psn-api (package.json, solo para api/). Nintendo no se vincula ni
   tiene logros; sus juegos sí están en el catálogo.
 
 ## Estructura del proyecto
@@ -49,10 +49,10 @@ Digitales 3. Más contexto en README.md.
   de arranque antes de que se pinte la página).
 - api/: funciones de Vercel que usan claves secretas (por ejemplo,
   api/igdb.js, la consulta a IGDB, y api/steam/, el inicio de sesión y los
-  datos de Steam: perfil, biblioteca y logros, api/epic/auth.js, entrar con Epic Games, y api/xbox/, vincular Xbox y sus juegos y logros; api/_vuelta.js tiene las comprobaciones de seguridad al volver de ellos). JavaScript sin paso de compilación.
+  datos de Steam: perfil, biblioteca y logros, api/epic/auth.js, entrar con Epic Games, api/playstation/, vincular PlayStation y sus trofeos (con psn-api), y api/xbox/, vincular Xbox y sus juegos y logros; api/_vuelta.js tiene las comprobaciones de seguridad al volver de ellos). JavaScript sin paso de compilación.
 - supabase/: el código SQL de Supabase. esquema.sql tiene todas las tablas, reglas
   y funciones de la app (se puede ejecutar varias veces); aparte están juegos.sql y
-  usuarios_steam.sql (Steam), usuarios_epic.sql (Epic Games), usuarios_xbox.sql (Xbox), avatares.sql (fotos de perfil), borrar-cuenta.sql y
+  usuarios_steam.sql (Steam), usuarios_epic.sql (Epic Games), usuarios_xbox.sql (Xbox), usuarios_playstation.sql (PlayStation), avatares.sql (fotos de perfil), borrar-cuenta.sql y
   limpiar-ejemplos.sql. Si creas o cambias una tabla, guarda aquí su SQL.
 - vercel.json: las tareas automáticas de Vercel (crons), como la
   actualización diaria de los datos de Steam.

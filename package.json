@@ -1,0 +1,8 @@
+{
+  "name": "saveslot",
+  "private": true,
+  "description": "SaveSlot: las páginas no se compilan; este archivo solo le dice a Vercel qué librerías usan las funciones de api/.",
+  "dependencies": {
+    "psn-api": "2.18.1"
+  }
+}
