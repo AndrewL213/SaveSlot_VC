@@ -194,13 +194,28 @@ function terminarVueltaDeXbox() {
 
 // Xbox en el perfil del navegador = lo que dice la base (cuenta real). La de demostración queda en el navegador.
 async function sincronizarXboxDeLaBase() {
-  if (!MI_FILA) return null;
+  if (!MI_FILA) { quitarXboxDeDemostracion(); return null; }
   var perfil = leerPerfil();
   perfil.accounts = perfil.accounts || {};
   var fila = filasDe('cuentas_vinculadas', 'usuario_id', MI_FILA.id).find(function (x) { return x.plataforma === 'xbox'; });
   var nombre = fila ? fila.nombre : null;
   if ((perfil.accounts.Xbox || null) !== nombre) { perfil.accounts.Xbox = nombre; guardarMemoria('profile', perfil); }
   return null;
+}
+
+// El invitado ya no puede "vincular" Xbox de mentira. Si lo hizo antes (queda como "invitado_xbox"),
+// se quita, y también los +100 XP que daba (servían para entrar a sorteos).
+function quitarXboxDeDemostracion() {
+  var sesion = obtenerSesion();
+  if (!sesion) return;
+  var perfil = leerPerfil();
+  var demo = String(sesion.user) + '_xbox';
+  if (!perfil.accounts || perfil.accounts.Xbox !== demo) return;
+  perfil.accounts.Xbox = null;
+  perfil.xp = (perfil.xp || 0) - XP_POR_CUENTA;
+  while (perfil.xp < 0 && perfil.level > 1) { perfil.level -= 1; perfil.xp += XP_POR_NIVEL; }
+  if (perfil.xp < 0) perfil.xp = 0;
+  guardarMemoria('profile', perfil);
 }
 
 // Botón "Epic Games" de Iniciar sesión y Crear cuenta
@@ -2740,10 +2755,10 @@ function responderMatchplay(pregunta) {
 function pantallaMatchplay() {
   var HORA = 3600000;
   var ahora = Date.now();
-  // Chats guardados en el navegador (hasta conectar Supabase); la primera vez, los de ejemplo
-  var chats = leerMemoria('chatsMatchplay', null) || datosDe('chats_matchplay').map(function (c) {
-    return { id: c.id, titulo: c.titulo, fecha: ahora - c.horas_atras * HORA, mensajes: c.mensajes };
-  });
+  // Chats guardados en el navegador (hasta conectar Supabase). Empieza vacío: antes, quien no tenía chats
+  // veía 3 de ejemplo como si fueran suyos; si quedaron guardados, se quitan.
+  var deEjemplo = datosDe('chats_matchplay').map(function (c) { return c.id; });
+  var chats = (leerMemoria('chatsMatchplay', null) || []).filter(function (c) { return deEjemplo.indexOf(c.id) === -1; });
   var activo = null;
   var esperando = false;
 
@@ -5540,6 +5555,20 @@ function pantallaEditar() {
         dibujarCuentas();
       } });
     }
+    if (vincular && vincular.dataset.vincular === 'Steam' && clienteSupabase && !MI_FILA) {
+      // Invitado: Steam no se puede vincular a "nada"; entrar con Steam crea una cuenta nueva. Se avisa antes.
+      abrirModal({
+        icono: 'usuario',
+        titulo: 'Steam abre una cuenta nueva',
+        texto: 'Como invitado no tienes cuenta: al seguir, entras con Steam y se crea una cuenta de SaveSlot nueva. ' +
+          'Lo que hiciste como invitado (reseñas, diario, favoritos) se queda en este navegador y no pasa a esa cuenta.',
+        acciones: [
+          { texto: 'Seguir con Steam', principal: true, alTocar: function () { irASteam(location.href); } },
+          { texto: 'Cancelar' }
+        ]
+      });
+      return;
+    }
     if (vincular && vincular.dataset.vincular === 'Steam' && clienteSupabase) {
       // Steam es real: se va a Steam y vuelve aquí ya vinculada (a esta misma cuenta)
       vincular.disabled = true;
@@ -5562,18 +5591,9 @@ function pantallaEditar() {
       });
       return;
     }
-    if (vincular) {
-      vincular.disabled = true;
-      vincular.textContent = 'Conectando…';
-      setTimeout(function () {
-        perfil.accounts[vincular.dataset.vincular] = sesion.user + '_' + vincular.dataset.vincular.toLowerCase();
-        var conXp = sumarXp(XP_POR_CUENTA);
-        perfil.xp = conXp.xp;
-        perfil.level = conXp.level;
-        dibujarCuentas();
-        mostrarAviso(vincular.dataset.vincular + ' vinculada (demo) · +' + XP_POR_CUENTA + ' XP');
-      }, 600);
-    }
+    // Invitado (sin cuenta): Xbox solo se vincula a una cuenta de verdad. Antes había una vinculación de
+    // demostración que regalaba +100 XP (y ese XP servía para entrar a sorteos): ya no.
+    if (vincular) pedirCuenta('vincular ' + vincular.dataset.vincular);
   });
   dibujarCuentas();
   activarFormasDeEntrar(document.getElementById('formas-entrar'));

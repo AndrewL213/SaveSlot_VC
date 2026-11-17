@@ -475,7 +475,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 | Clave en el navegador | Tabla de Supabase | ¿Ya está? |
 |---|---|---|
 | `session`, `accounts` | Supabase Auth y **usuarios** | Sí |
-| `profile` | **usuarios** (con favoritos, géneros y lista de deseos), **cuentas_vinculadas** y **misiones_cumplidas** (`missionsDone`) | Sí (Steam y Xbox en **cuentas_vinculadas**; con el invitado, Xbox es demo en el navegador). La lista de deseos y Steam que solo estaban en el navegador se suben una vez |
+| `profile` | **usuarios** (con favoritos, géneros y lista de deseos), **cuentas_vinculadas** y **misiones_cumplidas** (`missionsDone`) | Sí (Steam y Xbox en **cuentas_vinculadas**; el invitado no puede vincular cuentas). La lista de deseos y Steam que solo estaban en el navegador se suben una vez |
 | `myReviews`, `draft.<juego>` | **resenas** (publicadas y borradores) | Sí (el guardado automático mientras se escribe sigue en el navegador) |
 | `votosUtil` | **votos_util** | Sí |
 | `meGustaResenas` | **me_gusta_resenas** | Sí |
@@ -578,7 +578,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   6. Aviso "MatchPlay puede equivocarse"
 - **Qué funciona de verdad:**
   - Respuestas de la IA: Simulado
-  - Guardar chats, borrarlos y votar respuestas: Real (Supabase). Hoy: en el navegador
+  - Guardar chats, borrarlos y votar respuestas: Real (Supabase). Hoy: en el navegador. «Mis chats» empieza vacío (no hay chats de ejemplo)
   - Tendencias: Real (Supabase)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
@@ -846,6 +846,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Vincular Steam: Real (Steam). Si la cuenta es de Google, Discord, Twitch o correo, Steam se guarda en ESA cuenta (no crea otra) y después también se puede entrar con Steam a ella. Si esa cuenta de Steam ya está en otra cuenta de SaveSlot, avisa que hay que entrar con Steam, borrar esa cuenta y volver a vincularla. Con una cuenta real, Steam se guarda en **cuentas_vinculadas** al volver de Steam (también al entrar con Steam) y la base da los +100 XP la primera vez; si ya la tenías vinculada solo en el navegador, se sube una vez. Desvincular Steam y guardar borra su fila (entrar con Steam la vuelve a vincular, sin XP otra vez). Vincular Xbox: Real (cuenta de Microsoft, `api/xbox/auth.js`; se va a Microsoft y vuelve a Editar perfil ya vinculada; desvincular borra las filas en el servidor). Con el invitado, demo en el navegador
   - Formas de entrar (Google, Discord, Twitch y Epic Games): Real (Supabase Auth, vinculación manual). Vincula o desvincula cada servicio en la misma cuenta, para entrar con cualquiera de ellos (siempre queda al menos una forma de entrar). Si ese servicio ya es de otra cuenta de SaveSlot, avisa igual que con Steam. La cuenta de demostración no puede. La cuenta creada al entrar con Steam también puede: después se entra a ella con Steam o con el servicio vinculado.
   - Borrar cuenta: Real (Supabase, función `borrar_mi_cuenta` en supabase/borrar-cuenta.sql). Pide confirmar; borra la cuenta y en cascada su perfil, reseñas, diario, amigos y cuentas vinculadas, su foto subida y lo guardado en ese navegador, cierra la sesión y vuelve a Inicio. No toca las cuentas de Steam, Google, Discord ni Twitch.
+  - Invitado: no puede vincular cuentas porque no tiene cuenta. «Vincular» Xbox abre «Necesitas una cuenta» (no hay vinculación de demostración ni XP). «Vincular» Steam avisa antes que entrar con Steam crea una cuenta nueva y que lo hecho como invitado se queda en ese navegador («Seguir con Steam» o «Cancelar»).
   - Vincular PlayStation: Después (no tiene conexión pública, según el diseño). Nintendo no se vincula ni tiene logros en SaveSlot (no tiene conexión pública ni logros propios); sus juegos sí están en el catálogo
   - Foto de perfil: Real (Supabase Storage). Por defecto se usa la foto de Steam (si está vinculada) o las iniciales. "Cambiar foto" sube una imagen propia, recortada en cuadrado; "Usar la de Steam" vuelve a la de Steam y "Quitar foto" deja las iniciales. Al guardar, queda en la cuenta (`user_metadata.foto`) y se ve en el Perfil y en la barra. Sin sesión de Supabase (cuentas de correo de prueba y la de demostración), o si la subida falla, la foto queda solo en ese navegador y la app lo avisa.
 - **Está lista cuando:**

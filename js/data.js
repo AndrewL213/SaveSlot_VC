@@ -1150,6 +1150,7 @@ const DATOS = {
       preguntas_hoy: 860
     }
   ],
+  // Chats de ejemplo viejos: ya no se muestran. MatchPlay los usa solo para quitarlos de quien los tenga guardados.
   chats_matchplay: [
     {
       id: "c1",
