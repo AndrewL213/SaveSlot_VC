@@ -313,7 +313,7 @@ Se relaciona con: usuarios.id (dos veces). Una fila por pareja. "Solicitud envia
 ### eventos
 Qué guarda: torneos y sorteos.
 Tipo de dato: compartida
-Se guarda en: Supabase. Al crear la tabla se cargan los 6 eventos de ejemplo de `js/data.js` (torneos y sorteos).
+Se guarda en: Supabase. Al crear la tabla se cargan 6 eventos de ejemplo (torneos y sorteos, en `supabase/esquema.sql`). Son de ejemplo y lo dicen: su descripción empieza con «Evento de ejemplo del prototipo…», no usan marcas ni organizadores reales y sus cupos ocupados son las inscripciones reales. `supabase/eventos-ejemplo.sql` les pone fechas futuras cuando las suyas pasan (hasta que existan eventos reales o la web administrativa).
 Desde la app se puede: ver (Inicio, Eventos, Detalle de evento). Los crea el equipo desde el panel de Supabase. Los cupos ocupados los cambia la base.
 Campos:
 - id: texto — nombre corto, va en la dirección (`copa-2v2`) — obligatorio
@@ -607,7 +607,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Línea de Xbox (Game Pass, precio, nota) y edad (PEGI): Real (tienda de Xbox, `api/xbox/juego.js`; se guarda un día). Solo en la ficha: en las listas no se marca Game Pass todavía
   - Editar o eliminar mi reseña: Real (Supabase)
   - Lista de deseos: Real (Supabase: tabla **lista_deseos**; agregar crea la fila y quitar la borra por su id; se puede deshacer). Mientras guarda, el botón se desactiva; si falla, avisa «No pudimos guardar» y queda como estaba. Como invitado, en el navegador
-  - Número de logros: Real si el juego está en Steam. La pestaña Logros todavía no trae la lista del juego: dice cuántos tiene en Steam y lleva a la pantalla Logros
+  - Número de logros: Real si el juego está en Steam (si no, la pestaña dice que no hay logros registrados; nunca un número de ejemplo). La pestaña Logros todavía no trae la lista del juego: dice cuántos tiene en Steam y lleva a la pantalla Logros
   - Pestaña Clips: Después (el diseño dice que llega con la API de Twitch)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).

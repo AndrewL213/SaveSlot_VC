@@ -3140,6 +3140,7 @@ function mostrarJuego(juego) {
   // Reseñas de Steam del juego (llegan después) y filtro por origen
   var steam = { resenas: [], resumen: null, appid: null };
   var origen = 'Todas';
+  var logrosEnSteam = 0; // el total real de Steam, cuando llega (mostrarDatosSteam)
   var pestanas = [
     { id: 'resenas', nombre: 'Reseñas', numero: resenas.length, html: function () {
       var filtro = '<div class="en-fila en-fila--desliza" role="group" aria-label="Origen de la reseña">' +
@@ -3170,7 +3171,8 @@ function mostrarJuego(juego) {
     { id: 'clips', nombre: 'Clips', numero: 0, html: function () {
       return '<div class="vacio"><b>Los clips llegarán con la API de Twitch.</b><span>Mientras tanto, cuenta tu experiencia en una reseña o una guía.</span></div>';
     } },
-    { id: 'logros', nombre: 'Logros', numero: juego.logros_totales, html: function () {
+    // El número de logros solo sale de Steam (mostrarDatosSteam): el de data.js era de ejemplo
+    { id: 'logros', nombre: 'Logros', numero: 0, html: function () {
       return logros.length ? logros.map(function (l) {
         return '<article class="tarjeta"><div class="en-fila">' +
           '<span class="etiqueta ' + (l.obtenido ? 'etiqueta--exito">Obtenido' : 'etiqueta--contorno">Pendiente') + '</span>' +
@@ -3178,9 +3180,9 @@ function mostrarJuego(juego) {
           '<span class="tarjeta__texto al-final">' + String(l.porcentaje).replace('.', ',') + '% lo tiene</span>' +
         '</div></article>';
       }).join('')
-        : juego.logros_totales
+        : logrosEnSteam
           // El número es real (Steam); la lista de logros del juego todavía no se trae
-          ? '<div class="vacio"><b>Este juego tiene ' + formatearNumero(juego.logros_totales) + ' logros en Steam.</b>' +
+          ? '<div class="vacio"><b>Este juego tiene ' + formatearNumero(logrosEnSteam) + ' logros en Steam.</b>' +
             '<span>Tus logros de Steam están en Logros.</span><a class="boton boton--secundario boton--sm" href="logros.html">Ver mis logros</a></div>'
           : '<div class="vacio">No hay logros registrados para este juego.</div>';
     } }
@@ -3254,9 +3256,11 @@ function mostrarJuego(juego) {
     linea.innerHTML = etiquetaOrigen('Steam') + ' ' + partes.join(' · ');
     // Logros: el total real de Steam
     if (j.steam_logros) {
+      logrosEnSteam = j.steam_logros;
       pestanas[3].numero = j.steam_logros;
       var contador = cajaPestanas.querySelector('[data-pestana="logros"] .contador');
       if (contador) contador.textContent = formatearNumero(j.steam_logros);
+      if (pestanaActual === 'logros') mostrarPestana('logros');
     }
   }
 
