@@ -470,7 +470,7 @@ async function condiciones(filtros, extras) {
   const plataformas = [].concat.apply([], lista(filtros.plataformas).map(function (p) { return PLATAFORMAS[p] || []; }));
   if (plataformas.length) partes.push('platforms = (' + plataformas.join(',') + ')');
   if (filtros.tipo === 'Indie') partes.push('genres = (32)');
-  if (filtros.tipo === 'AAA') partes.push('genres != (32)'); // '!= (…)': no tiene ninguno de esos (la forma '= !(…)' IGDB la rechazaba)
+  if (filtros.tipo === 'AAA') partes.push(ningunoDe('genres', [32]));
   if (filtros.tipo === 'Multijugador') partes.push('game_modes = (' + MODOS_MULTIJUGADOR.join(',') + ')');
   if (filtros.tipo === 'Remakes') partes.push('game_type = (8,9)'); // 8 remake, 9 remaster
   if (filtros.tipo === 'Gratis') {
@@ -506,7 +506,14 @@ function condicionExclusivos(elegidas) {
   const f = familias[0];
   // Las plataformas que no puede tener: todas las demás. "platforms = (…)" ya lo pone el filtro de plataforma.
   const prohibidas = [].concat.apply([], ['PC'].concat(CONSOLAS).filter(function (c) { return c !== f; }).map(function (c) { return PLATAFORMAS[c]; }));
-  return 'platforms != (' + prohibidas.join(',') + ')';
+  return ningunoDe('platforms', prohibidas);
+}
+
+// "No tiene ninguno de estos": una condición por número (campo != 6 & campo != 14…).
+// En un campo con lista, "!= 6" es "no contiene el 6". Las formas "= !(…)" y "!= (…)" con varios
+// números no funcionaron como se esperaba en IGDB (la primera daba error; la segunda dejaba pasar juegos).
+function ningunoDe(campo, numeros) {
+  return numeros.map(function (n) { return campo + ' != ' + n; }).join(' & ');
 }
 
 // Número del estado "Early Access" (acceso anticipado) en IGDB: se busca una vez por su nombre.
@@ -636,7 +643,7 @@ async function populares(plataforma) {
   if (!lista.length) return [];
   const ids = lista.map(function (p) { return p.game_id; });
   const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS +
-    (deEsa ? ' & platforms = (' + deEsa.join(',') + ') & platforms != (' + PLATAFORMAS[plataforma === 'Xbox' ? 'PlayStation' : 'Xbox'].join(',') + ')' : '') + '; limit ' + cuantos + ';');
+    (deEsa ? ' & platforms = (' + deEsa.join(',') + ') & ' + ningunoDe('platforms', PLATAFORMAS[plataforma === 'Xbox' ? 'PlayStation' : 'Xbox']) : '') + '; limit ' + cuantos + ';');
   juegos.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); });
   return conHoras(juegos.slice(0, 10));
 }

@@ -1414,7 +1414,7 @@ function guardarJuegoIgdb(juego) {
 
 // Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
 // Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
-var VERSION_API = 8;
+var VERSION_API = 9;
 
 // La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
 // se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
