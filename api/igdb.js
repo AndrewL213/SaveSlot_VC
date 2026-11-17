@@ -443,7 +443,9 @@ function comparable(texto) {
 let numerosDePalabras = null;
 async function numerosDe(slugs) {
   if (!numerosDePalabras) {
-    const encontradas = await consultar('keywords', 'fields id, slug; where slug = ("' + Object.keys(PALABRAS_CLAVE).join('","') + '"); limit 50;');
+    // Las de los géneros (PALABRAS_CLAVE) y las del tipo "Gratis" (PALABRAS_GRATIS)
+    const todas = Object.keys(PALABRAS_CLAVE).concat(PALABRAS_GRATIS);
+    const encontradas = await consultar('keywords', 'fields id, slug; where slug = ("' + todas.join('","') + '"); limit 50;');
     numerosDePalabras = {};
     encontradas.forEach(function (k) { numerosDePalabras[k.slug] = k.id; });
   }
@@ -496,15 +498,15 @@ const CONSOLAS = ['PlayStation', 'Xbox', 'Nintendo'];
 
 // Exclusivos: salen en esa plataforma y en ninguna de las otras consolas (como se dice en el día a día:
 // un exclusivo de Xbox puede salir también en PC). Exclusivo de PC: no sale en ninguna consola.
-// Si no se eligió plataforma, cuenta un exclusivo de cualquier consola.
+// Necesita exactamente una plataforma elegida: IGDB rechazó la versión con varias a la vez
+// (grupos "(… & …) | (… & …)"). Sin una sola plataforma no hay resultados y la página pide elegirla.
 function condicionExclusivos(elegidas) {
   const familias = elegidas.filter(function (p) { return ['PC'].concat(CONSOLAS).indexOf(p) !== -1; });
-  const opciones = (familias.length ? familias : CONSOLAS).map(function (f) {
-    // Las consolas que no puede tener (para PC, todas)
-    const prohibidas = [].concat.apply([], CONSOLAS.filter(function (c) { return c !== f; }).map(function (c) { return PLATAFORMAS[c]; }));
-    return '(platforms = (' + PLATAFORMAS[f].join(',') + ') & platforms = !(' + prohibidas.join(',') + '))';
-  });
-  return '(' + opciones.join(' | ') + ')';
+  if (familias.length !== 1) return 'id = 0';
+  const f = familias[0];
+  // Las consolas que no puede tener (para PC, todas). "platforms = (…)" ya lo pone el filtro de plataforma.
+  const prohibidas = [].concat.apply([], CONSOLAS.filter(function (c) { return c !== f; }).map(function (c) { return PLATAFORMAS[c]; }));
+  return 'platforms = !(' + prohibidas.join(',') + ')';
 }
 
 // Número del estado "Early Access" (acceso anticipado) en IGDB: se busca una vez por su nombre.

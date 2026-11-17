@@ -539,7 +539,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   1. Buscador
   2. Cantidad de resultados
   3. Lista de resultados con portada, de 24 en 24 con "Ver más juegos" (sin texto); con texto, hasta 20
-  4. Filtros: género, plataforma, tipo, duración de la historia, año. Si lo escrito es un género ("terror"), se marca ese filtro. Tipo (se elige uno): Todos, AAA, Indie, **Exclusivos** (salen en la plataforma elegida y en ninguna otra consola: un exclusivo de Xbox puede estar también en PC; de PC, en ninguna consola; sin plataforma, de cualquier consola), **Gratis** (palabra clave «free-to-play» de IGDB), **Multijugador / cooperativo** (modos de juego de IGDB), **Remakes y remasters** y **Próximos y acceso anticipado** (salen después de hoy o están en «Early Access»; ordenados por cuánta gente los espera)
+  4. Filtros: género, plataforma, tipo, duración de la historia, año. Si lo escrito es un género ("terror"), se marca ese filtro. Tipo (se elige uno): Todos, AAA, Indie, **Exclusivos** (salen en la plataforma elegida y en ninguna otra consola: un exclusivo de Xbox puede estar también en PC; de PC, en ninguna consola. Hay que elegir una sola plataforma: si no, la página lo pide), **Gratis** (palabra clave «free-to-play» de IGDB), **Multijugador / cooperativo** (modos de juego de IGDB), **Remakes y remasters** y **Próximos y acceso anticipado** (salen después de hoy o están en «Early Access»; ordenados por cuánta gente los espera)
   5. Botones Juego random y Limpiar filtros
   6. Lo más jugado (solo sin búsqueda ni filtros), con las mismas pestañas Steam, Xbox y PlayStation que el Inicio: con su puesto y, en Steam, sus jugadores; cada uno abre su ficha
 - **Qué funciona de verdad:**

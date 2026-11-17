@@ -1414,7 +1414,7 @@ function guardarJuegoIgdb(juego) {
 
 // Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
 // Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
-var VERSION_API = 6;
+var VERSION_API = 7;
 
 // La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
 // se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
@@ -1529,14 +1529,15 @@ function filtrarJuegos(juegos, filtros) {
 // ¿El juego es del tipo elegido en Buscar? (lo mismo que pide api/igdb.js al explorar)
 // AAA e Indie: su "tipo". Gratis, Multijugador, Remakes y Próximos: su lista "tipos" (de IGDB).
 // Exclusivos: sale en la plataforma elegida y en ninguna otra consola (PC no cuenta);
-// exclusivo de PC: en ninguna consola. Sin plataforma elegida, exclusivo de cualquier consola.
+// exclusivo de PC: en ninguna consola. Necesita una sola plataforma elegida.
 var CONSOLAS = ['PlayStation', 'Xbox', 'Nintendo'];
 function cumpleTipo(juego, filtros) {
   if (filtros.tipo === 'AAA' || filtros.tipo === 'Indie') return juego.tipo === filtros.tipo;
   if (filtros.tipo !== 'Exclusivos') return (juego.tipos || []).indexOf(filtros.tipo) !== -1;
   var consolas = juego.plataformas.filter(function (p) { return CONSOLAS.indexOf(p) !== -1; });
-  var elegidas = filtros.plataformas.length ? filtros.plataformas : CONSOLAS;
-  return elegidas.some(function (p) {
+  // Igual que api/igdb.js: hace falta exactamente una plataforma elegida
+  if (filtros.plataformas.length !== 1) return false;
+  return filtros.plataformas.some(function (p) {
     if (p === 'PC') return juego.plataformas.indexOf('PC') !== -1 && !consolas.length;
     return consolas.length === 1 && consolas[0] === p;
   });
@@ -2690,6 +2691,14 @@ function pantallaBuscar() {
     // "Lo más jugado en Steam" solo cuando no se está buscando ni filtrando
     buscando = !!(texto || f.generos.length || f.plataformas.length || f.tipo || f.duracion || f.desde || f.hasta);
     seccionSteam.hidden = buscando || !steamListo;
+    // Exclusivos necesita una sola plataforma elegida (los de Xbox, los de PlayStation…)
+    if (f.tipo === 'Exclusivos' && f.plataformas.length !== 1) {
+      vistos = [];
+      titulo.textContent = 'Exclusivos';
+      resultados.innerHTML = '<div class="vacio"><b>Elige una plataforma en «Plataforma» para ver sus exclusivos.</b>' +
+        '<span>Solo una: por ejemplo Xbox, para ver los juegos que no salen en PlayStation ni en Nintendo (pueden estar en PC).</span></div>';
+      return;
+    }
     if (siguiente) {
       var boton = document.getElementById('ver-mas');
       if (boton) { boton.disabled = true; boton.textContent = 'Cargando…'; }
