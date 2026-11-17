@@ -1424,7 +1424,7 @@ const DATOS = {
   // (se vincula en Formas de entrar; no da biblioteca); PlayStation no tiene conexión pública.
   cuentas: [
     { id: "steam", nombre: "Steam", nota: "Se conecta con tu cuenta de Steam", vincula: true },
-    { id: "playstation", nombre: "PlayStation", nota: "No tiene conexión pública: registra tus juegos a mano", vincula: false },
+    { id: "playstation", nombre: "PlayStation", nota: "Con tu ID de PSN: trae tus trofeos públicos (con una cuenta; como invitado, regístralos a mano)", vincula: false },
     { id: "xbox", nombre: "Xbox", nota: "Se conecta con tu cuenta de Microsoft (Xbox Live)", vincula: true },
     { id: "epic", nombre: "Epic Games", nota: "Solo tu nombre de Epic: Epic no comparte tu biblioteca, tus logros ni un nivel", vincula: true }
   ],
@@ -1673,7 +1673,7 @@ const DATOS = {
     { id: "s14", servicio: "Chats de MatchPlay", proveedor: "Este navegador", estado: "demo", texto: "Modo demo" },
     { id: "s3", servicio: "MatchPlay (IA)", proveedor: "Por definir", estado: "demo", texto: "Modo demo" },
     { id: "s5", servicio: "Tu Xbox: gamertag, juegos y logros", proveedor: "Xbox Live (cuenta de Microsoft), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "xbox" },
-    { id: "s6", servicio: "Cuentas: PlayStation", proveedor: "—", estado: "no-disponible", texto: "Sin API" },
+    { id: "s6", servicio: "Cuentas: PlayStation", proveedor: "PlayStation Network (psn-api, no oficial)", estado: "pendiente", texto: "Falta el NPSSO" },
     { id: "s9", servicio: "Clips y transmisiones", proveedor: "Twitch API", estado: "pendiente", texto: "Pendiente" },
     { id: "s10", servicio: "Pagos de eventos", proveedor: "Pasarela de pagos", estado: "no-disponible", texto: "No disponible" }
   ]

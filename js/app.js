@@ -172,6 +172,62 @@ function juegoDeXbox(g) {
   };
 }
 
+/* ---------- PlayStation (ID de PSN) ----------
+   PlayStation no tiene "Iniciar sesión con PlayStation" para otras webs. Se escribe el ID de PSN, se pone un
+   código de SaveSlot en el «Sobre mí» de PSN (prueba que es tuyo) y api/playstation/auth.js lo vincula.
+   api/playstation/data.js trae los trofeos públicos (con psn-api, no oficial). */
+function llamarPlayStation(ruta, cuerpo) {
+  return cuentaSupabase().then(function (sesion) {
+    if (!sesion) throw new Error('Sin sesión');
+    return fetch(ruta, { method: 'POST', headers: { Authorization: 'Bearer ' + sesion.access_token, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo || {}) });
+  }).then(function (r) {
+    return r.json().catch(function () { return {}; }).then(function (d) {
+      if (!r.ok) {
+        var error = new Error(d.error || 'PlayStation no respondió');
+        ['no_existe', 'sin_codigo', 'en_otra_cuenta', 'npsso', 'privado', 'sin_vinculo'].forEach(function (k) { error[k] = !!d[k]; });
+        error.codigo = d.codigo;
+        throw error;
+      }
+      return d;
+    });
+  });
+}
+function pedirPlayStation() {
+  return llamarPlayStation('/api/playstation/data').then(function (d) { guardarMemoria('psnDatos', d); return d; });
+}
+function tienePlayStation() {
+  return !!(MI_FILA && filasDe('cuentas_vinculadas', 'usuario_id', MI_FILA.id).some(function (x) { return x.plataforma === 'playstation'; }));
+}
+// Quita o pone la fila "playstation" de cuentas_vinculadas en lo que ya cargó esta página
+function anotarPlayStation(onlineId) {
+  if (!MI_FILA) return;
+  FILAS.cuentas_vinculadas = (FILAS.cuentas_vinculadas || []).filter(function (x) { return !(x.usuario_id === MI_FILA.id && x.plataforma === 'playstation'); });
+  if (onlineId) FILAS.cuentas_vinculadas.push({ usuario_id: MI_FILA.id, plataforma: 'playstation', nombre: onlineId, estado: 'verificada' });
+  DATOS_ARMADOS = {};
+  var perfil = leerPerfil();
+  perfil.accounts = perfil.accounts || {};
+  perfil.accounts.PlayStation = onlineId || null;
+  guardarMemoria('profile', perfil);
+  if (!onlineId) guardarMemoria('psnDatos', null);
+}
+// PlayStation en el perfil del navegador = lo que dice la base (cuenta real)
+function sincronizarPlayStationDeLaBase() {
+  if (!MI_FILA) return;
+  var perfil = leerPerfil();
+  perfil.accounts = perfil.accounts || {};
+  var fila = filasDe('cuentas_vinculadas', 'usuario_id', MI_FILA.id).find(function (x) { return x.plataforma === 'playstation'; });
+  var nombre = fila ? fila.nombre : null;
+  if ((perfil.accounts.PlayStation || null) !== nombre) { perfil.accounts.PlayStation = nombre; guardarMemoria('profile', perfil); }
+}
+// Un juego de PlayStation con la forma de los demás (portada de IGDB, como los de Xbox)
+function juegoDePlayStation(g) {
+  return {
+    id: 'psn-' + g.id, slug: g.slug || null, nombre: g.name, nombre_corto: g.name, portada: g.cover || null, credito_portada: g.cover ? 'IGDB' : null, color: null, generos: [],
+    plataformas: ['PlayStation'], horas: Math.round((g.minutes || 0) / 6) / 10, ultima_vez: g.last_played || 0, playstation: true,
+    logros: { obtenidos: g.unlocked, totales: g.total }
+  };
+}
+
 // Al volver de Microsoft: devuelve el aviso a mostrar (o null). El perfil del navegador se pone al día.
 function terminarVueltaDeXbox() {
   var params = new URLSearchParams(location.search);
@@ -511,7 +567,7 @@ function tieneSteam() {
 // - De Steam: la ficha lo busca en IGDB por su número de Steam (?steam=); si IGDB no lo tiene, va a Buscar con su nombre.
 // - De Xbox: por el slug de IGDB que encontró api/xbox/data; sin slug, a Buscar con su nombre.
 function enlaceJuego(juego) {
-  if (juego.xbox) {
+  if (juego.xbox || juego.playstation) {
     return juego.slug
       ? rutaPagina('detalle-juego.html') + '?id=' + encodeURIComponent(juego.slug)
       : rutaPagina('buscar-juegos.html') + '?q=' + encodeURIComponent(nombreParaBuscar(juego.nombre));
@@ -5012,7 +5068,17 @@ function pantallaPerfil() {
       insignias.insertAdjacentHTML('beforeend', '<span class="etiqueta etiqueta--contorno" data-' + clave + '></span>');
       etiqueta = insignias.querySelector('[data-' + clave + ']');
     }
-    etiqueta.innerHTML = '<img class="etiqueta__logo" src="' + escapar(rutaRecurso(logo)) + '" alt="">' + escapar(texto);
+    etiqueta.innerHTML = (logo ? '<img class="etiqueta__logo" src="' + escapar(rutaRecurso(logo)) + '" alt="">' : '') + escapar(texto);
+  }
+  // PlayStation: nivel de trofeos y platinos (sin logo: no hay un logo oficial de PlayStation en assets/)
+  function usarPsnEnPerfil(datos) {
+    if (!datos) return;
+    if (datos.nivel != null) ponerEtiquetaPlataforma('psn', null, 'PSN NIVEL ' + datos.nivel + (datos.trofeos && datos.trofeos.platino ? ' · ' + datos.trofeos.platino + ' PLATINOS' : ''));
+    actualizarConXbox();
+  }
+  if (tienePlayStation()) {
+    usarPsnEnPerfil(leerMemoria('psnDatos', null));
+    pedirPlayStation().then(usarPsnEnPerfil).catch(function () {});
   }
   function usarXboxEnPerfil(datos) {
     if (!datos) return;
@@ -5183,24 +5249,26 @@ function pantallaPerfil() {
   var anio = String(new Date().getFullYear());
   var logrosSteam = (perfil.accounts || {}).Steam ? leerMemoria('steamLogros', null) : null;
   var bibliotecaSteam = (perfil.accounts || {}).Steam ? leerBibliotecaSteam() : [];
-  var conBiblioteca = !!((perfil.accounts || {}).Steam || tieneXbox());
+  var conBiblioteca = !!((perfil.accounts || {}).Steam || tieneXbox() || tienePlayStation());
   // Juegos de Xbox (con sus logros): se suman a Juegos, Este año y Logros
   function juegosXbox() { return tieneXbox() ? ((leerMemoria('xboxDatos', null) || { games: [] }).games) : []; }
-  function logrosXbox() { return juegosXbox().reduce(function (s, g) { return s + (g.unlocked || 0); }, 0); }
+  function juegosPsn() { return tienePlayStation() ? ((leerMemoria('psnDatos', null) || { games: [] }).games) : []; }
+  function juegosDeConsolas() { return juegosXbox().length + juegosPsn().length; }
+  function logrosXbox() { return juegosXbox().concat(juegosPsn()).reduce(function (s, g) { return s + (g.unlocked || 0); }, 0); }
   function logrosTotales() {
     var steamLogros = logrosSteam ? logrosSteam.summary.unlocked : 0;
-    if (!logrosSteam && !tieneXbox()) return resumenLogros ? resumenLogros.desbloqueados : 0;
-    return steamLogros + logrosXbox();
+    if (!logrosSteam && !tieneXbox() && !tienePlayStation()) return resumenLogros ? resumenLogros.desbloqueados : 0;
+    return steamLogros + logrosXbox(); // logros de Steam y Xbox + trofeos de PlayStation
   }
   document.getElementById('estadisticas-perfil').innerHTML = [
     // Con Steam o Xbox vinculada, "Juegos" es tu biblioteca (Steam + Xbox); si no, los juegos del diario
-    conBiblioteca ? ['Juegos', bibliotecaSteam.length + juegosXbox().length, 'biblioteca.html'] : ['Juegos', diario.length, 'diario.html'],
+    conBiblioteca ? ['Juegos', bibliotecaSteam.length + juegosDeConsolas(), 'biblioteca.html'] : ['Juegos', diario.length, 'diario.html'],
     ['Este año', juegosEsteAnio(bibliotecaSteam, leerMemoria('steamPerfil', null)), conBiblioteca ? 'biblioteca.html?orden=recientes' : 'diario.html'],
     ['Reseñas', resenas.length + ((perfil.accounts || {}).Steam ? (leerMemoria('steamResenas', null) || { reviews: [] }).reviews.length : 0), 'historial-resenas.html'],
     ['Logros', formatearNumero(logrosTotales()), 'logros.html'],
     ['Lista de deseos', perfil.wishlist.length + ((perfil.accounts || {}).Steam ? (leerMemoria('steamDeseos', null) || { games: [] }).games.length : 0), '#deseos']
   ].map(function (d) {
-    return '<a class="dato" href="' + d[2] + '"' + (d[0] === 'Este año' ? ' data-este-anio title="Juegos que jugaste este año: en Steam, en Xbox y en tu diario"' : '') + '>' +
+    return '<a class="dato" href="' + d[2] + '"' + (d[0] === 'Este año' ? ' data-este-anio title="Juegos que jugaste este año: en Steam, Xbox, PlayStation y tu diario"' : '') + '>' +
       '<span class="dato__valor">' + d[1] + '</span><span class="dato__etiqueta">' + d[0] + '</span></a>';
   }).join('');
 
@@ -5214,6 +5282,7 @@ function pantallaPerfil() {
     var hace2Semanas = Date.now() / 1000 - 14 * 24 * 3600;
     if (hace2Semanas >= desde) ((steam && steam.recent_games) || []).forEach(function (g) { vistos['steam-' + g.appid] = true; });
     juegosXbox().forEach(function (g) { if (g.last_played >= desde) vistos['xbox-' + g.titleId] = true; });
+    juegosPsn().forEach(function (g) { if (g.last_played >= desde) vistos['psn-' + g.id] = true; });
     diario.forEach(function (d) { if (String(d.fecha).slice(0, 4) === anio) vistos['diario-' + d.juego_igdb] = true; });
     return Object.keys(vistos).length;
   }
@@ -5222,7 +5291,7 @@ function pantallaPerfil() {
     var caja = document.getElementById('estadisticas-perfil');
     if (!caja || !bibliotecaSteam) return; // las estadísticas aún no están dibujadas
     var juegos = caja.querySelector('a[href="biblioteca.html"] .dato__valor');
-    if (juegos) juegos.textContent = bibliotecaSteam.length + juegosXbox().length;
+    if (juegos) juegos.textContent = bibliotecaSteam.length + juegosDeConsolas();
     var logros = caja.querySelector('a[href="logros.html"] .dato__valor');
     if (logros) logros.textContent = formatearNumero(logrosTotales());
     actualizarEsteAnio();
@@ -5326,7 +5395,7 @@ function pantallaPerfil() {
     }).join('') || '<div class="vacio">Trayendo tu biblioteca de Steam…</div>';
     bibliotecaSteam = lista;
     var dato = document.querySelector('#estadisticas-perfil a[href="biblioteca.html"] .dato__valor');
-    if (dato) dato.textContent = lista.length + juegosXbox().length;
+    if (dato) dato.textContent = lista.length + juegosDeConsolas();
     actualizarEsteAnio();
     dibujarGeneros(lista);
   }
@@ -5646,9 +5715,44 @@ function pantallaEditar() {
   // Cuentas vinculadas: Steam y Xbox reales (en la base con una cuenta real); con el invitado, Xbox es demo en el navegador
   var cajaCuentas = document.getElementById('cuentas-editar');
   var epicEditar = null; // Epic Games (cuenta real): su vínculo está en la cuenta de Supabase
+  // PlayStation (cuenta real): 1) escribir el ID de PSN, 2) poner el código en «Sobre mí» y verificar
+  var psn = { paso: null, id: '', codigo: '', error: '' };
+  function htmlPlayStation(p) {
+    var nombre = perfil.accounts.PlayStation;
+    var fila = '<div class="fila fila--comparacion"><span><b>' + p.nombre + '</b><br><span class="tarjeta__texto">' + p.nota + '</span></span>' +
+      (nombre
+        ? '<span class="estado estado--jugando al-final">Vinculada · ' + escapar(nombre) + '</span><button class="boton boton--secundario boton--sm" type="button" data-psn="desvincular">Desvincular</button>'
+        : (psn.paso ? '' : '<button class="boton boton--sm al-final" type="button" data-psn="abrir">Vincular</button>')) +
+      '</div>';
+    if (nombre || !psn.paso) return fila;
+    var error = psn.error ? '<p class="grupo-campo__error" role="alert">' + escapar(psn.error) + '</p>' : '';
+    if (psn.paso === 'id') {
+      return fila + '<div class="grupo-campo">' +
+        '<label class="grupo-campo__etiqueta" for="psn-id">Tu ID de PSN (online ID)</label>' +
+        '<div class="en-fila"><input class="campo campo--sm" id="psn-id" type="text" autocomplete="off" spellcheck="false" maxlength="16" value="' + escapar(psn.id) + '" placeholder="Por ejemplo: Ludr3ss">' +
+        '<button class="boton boton--sm" type="button" data-psn="buscar">Siguiente</button>' +
+        '<button class="boton boton--fantasma boton--sm" type="button" data-psn="cerrar">Cancelar</button></div>' +
+        '<span class="grupo-campo__ayuda">Tus trofeos deben ser públicos en PlayStation (Ajustes → Usuarios y cuentas → Privacidad).</span>' + error + '</div>';
+    }
+    return fila + '<div class="grupo-campo">' +
+      '<span class="grupo-campo__etiqueta">Prueba que <b>' + escapar(psn.id) + '</b> es tuyo</span>' +
+      '<span class="grupo-campo__ayuda">Pon este código en el «Sobre mí» de tu perfil de PlayStation (en la consola o en la app PlayStation: Perfil → Editar perfil → Sobre mí) y toca Verificar. Después lo puedes quitar.</span>' +
+      '<div class="en-fila"><b class="etiqueta etiqueta--primario">' + escapar(psn.codigo) + '</b>' +
+        '<button class="boton boton--secundario boton--sm" type="button" data-psn="copiar">Copiar</button>' +
+        '<button class="boton boton--sm" type="button" data-psn="verificar">Verificar</button>' +
+        '<button class="boton boton--fantasma boton--sm" type="button" data-psn="cerrar">Cancelar</button></div>' + error + '</div>';
+  }
+  function errorDePlayStation(error) {
+    if (error.no_existe) return 'No encontramos ese ID de PSN. Revisa cómo se escribe.';
+    if (error.sin_codigo) return 'Todavía no vemos el código en tu «Sobre mí». Guárdalo en PlayStation, espera un minuto y vuelve a tocar Verificar.';
+    if (error.en_otra_cuenta) return 'Ese ID de PSN ya está vinculado a otra cuenta de SaveSlot.';
+    if (error.npsso) return 'PlayStation no está disponible por ahora. Inténtalo más tarde.';
+    return error.message || 'PlayStation no respondió. Inténtalo de nuevo.';
+  }
   function dibujarCuentas() {
     // Cuentas que se pueden vincular (cuentas en data.js)
     cajaCuentas.innerHTML = datosDe('cuentas').map(function (p) {
+      if (p.id === 'playstation' && MI_FILA) return htmlPlayStation(p);
       if (p.id === 'epic') {
         // Epic se vincula y se quita en "Formas de entrar" (también sirve para entrar); aquí se ve su estado
         if (!MI_FILA) return '';
@@ -5669,7 +5773,43 @@ function pantallaEditar() {
     }).join('');
   }
   if (MI_FILA) miEpic().then(function (epic) { epicEditar = epic; dibujarCuentas(); });
+  cajaCuentas.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.id === 'psn-id') { e.preventDefault(); var b = cajaCuentas.querySelector('[data-psn="buscar"]'); if (b) b.click(); }
+  });
   cajaCuentas.addEventListener('click', function (e) {
+    var botonPsn = e.target.closest('[data-psn]');
+    if (botonPsn) {
+      var accionPsn = botonPsn.dataset.psn;
+      if (accionPsn === 'abrir') { psn = { paso: 'id', id: '', codigo: '', error: '' }; dibujarCuentas(); var campo = document.getElementById('psn-id'); if (campo) campo.focus(); return; }
+      if (accionPsn === 'cerrar') { psn = { paso: null, id: '', codigo: '', error: '' }; dibujarCuentas(); return; }
+      if (accionPsn === 'copiar') { copiarEnlace(psn.codigo, 'Código copiado'); return; }
+      botonPsn.disabled = true;
+      if (accionPsn === 'buscar') {
+        psn.id = (document.getElementById('psn-id') || {}).value.trim();
+        llamarPlayStation('/api/playstation/auth?action=codigo', { onlineId: psn.id }).then(function (d) {
+          psn = { paso: 'codigo', id: d.onlineId, codigo: d.codigo, error: '' };
+        }).catch(function (error) { psn.error = errorDePlayStation(error); }).then(dibujarCuentas);
+      }
+      if (accionPsn === 'verificar') {
+        llamarPlayStation('/api/playstation/auth?action=vincular', { onlineId: psn.id }).then(function (d) {
+          psn = { paso: null, id: '', codigo: '', error: '' };
+          anotarPlayStation(d.onlineId);
+          perfil.accounts.PlayStation = d.onlineId;
+          mostrarAviso('PlayStation vinculada · ' + d.onlineId);
+          traerMiXp().catch(function () {});
+        }).catch(function (error) { psn.error = errorDePlayStation(error); }).then(dibujarCuentas);
+      }
+      if (accionPsn === 'desvincular') {
+        llamarPlayStation('/api/playstation/auth?action=desvincular').then(function () {
+          anotarPlayStation(null);
+          perfil.accounts.PlayStation = null;
+          mostrarAviso('PlayStation desvinculada');
+        }).catch(function () {
+          mostrarAviso('No pudimos desvincular PlayStation. Inténtalo de nuevo.');
+        }).then(dibujarCuentas);
+      }
+      return;
+    }
     var vincularEpicBoton = e.target.closest('[data-vincular-epic]');
     if (vincularEpicBoton) {
       vincularEpicBoton.disabled = true;
@@ -6258,37 +6398,51 @@ function pantallaLogros() {
     resumenSteam = resumen;
     raros = datos.rarest.map(function (l) { return { nombre: l.name, juego: l.game, porcentaje: l.percent, obtenido: l.achieved }; });
     var nota = document.getElementById('nota-logros');
-    if (nota) nota.textContent = 'Logros de Steam de tus 30 juegos más jugados (Steam Web API)' + (tieneXbox() ? ' y de tus juegos de Xbox (Xbox Live).' : '.');
-    if (xboxGuardado) { usarXbox(xboxGuardado); return; }
+    if (nota) nota.textContent = 'Logros de Steam de tus 30 juegos más jugados (Steam Web API).';
+    if (Object.keys(consolas).length) { recalcularConsolas(); return; }
     mostrarResumen();
     mostrar();
     mostrarRaros();
   }
 
-  // Logros reales de Xbox: reemplazan los de ejemplo de Xbox y se suman al resumen
-  var xboxGuardado = null;
+  // Logros reales de Xbox y trofeos de PlayStation: reemplazan los de ejemplo de esa plataforma y se suman al resumen
+  var consolas = {}; // { Xbox: [progreso], PlayStation: [progreso] }
   var resumenSteam = null;
-  function usarXbox(datos) {
-    xboxGuardado = datos;
-    progreso = progreso.filter(function (p) { return p.plataforma !== 'Xbox'; }).concat(datos.games.filter(function (g) { return g.total > 0; }).map(function (g) {
-      return { juego: 'xbox-' + g.titleId, juego_steam: juegoDeXbox(g), obtenidos: g.unlocked, totales: g.total, plataforma: 'Xbox' };
-    }));
+  function usarConsola(nombre, entradas) {
+    consolas[nombre] = entradas;
+    recalcularConsolas();
+  }
+  function recalcularConsolas() {
+    var deConsolas = [];
+    Object.keys(consolas).forEach(function (k) { deConsolas = deConsolas.concat(consolas[k]); });
+    progreso = progreso.filter(function (p) { return !consolas[p.plataforma]; }).concat(deConsolas);
     progreso.sort(function (a, b) { return b.obtenidos / b.totales - a.obtenidos / a.totales; });
-    var deXbox = progreso.filter(function (p) { return p.plataforma === 'Xbox'; });
-    var reales = progreso.filter(function (p) { return p.plataforma === 'Xbox' || (resumenSteam && p.plataforma === 'Steam'); });
+    var reales = progreso.filter(function (p) { return consolas[p.plataforma] || (resumenSteam && p.plataforma === 'Steam'); });
     resumen = {
-      desbloqueados: (resumenSteam ? resumenSteam.desbloqueados : 0) + deXbox.reduce(function (s, p) { return s + p.obtenidos; }, 0),
+      desbloqueados: (resumenSteam ? resumenSteam.desbloqueados : 0) + deConsolas.reduce(function (s, p) { return s + p.obtenidos; }, 0),
       promedio: reales.length ? Math.round(reales.reduce(function (s, p) { return s + p.obtenidos / p.totales * 100; }, 0) / reales.length) : 0,
       juegos_completos: reales.filter(function (p) { return p.obtenidos === p.totales; }).length,
-      raros: resumenSteam ? resumenSteam.raros : 0 // Xbox no dice qué tan raro es cada logro
+      raros: resumenSteam ? resumenSteam.raros : 0 // Xbox y PlayStation no dicen qué tan raro es cada logro
     };
+    var fuentes = [];
+    if (resumenSteam) fuentes.push('Steam (tus 30 juegos más jugados, Steam Web API)');
+    if (consolas.Xbox) fuentes.push('Xbox (Xbox Live)');
+    if (consolas.PlayStation) fuentes.push('PlayStation (trofeos públicos de PSN)');
     var nota = document.getElementById('nota-logros');
-    if (nota) nota.textContent = resumenSteam
-      ? 'Logros de Steam de tus 30 juegos más jugados (Steam Web API) y de tus juegos de Xbox (Xbox Live).'
-      : 'Logros de tus juegos de Xbox (Xbox Live). Los logros raros solo los da Steam.';
+    if (nota) nota.textContent = 'Logros de ' + fuentes.join(', ').replace(/, ([^,]*)$/, ' y $1') + '.' + (resumenSteam ? '' : ' Los logros raros solo los da Steam.');
     mostrarResumen();
     mostrar();
     mostrarRaros();
+  }
+  function usarXbox(datos) {
+    usarConsola('Xbox', datos.games.filter(function (g) { return g.total > 0; }).map(function (g) {
+      return { juego: 'xbox-' + g.titleId, juego_steam: juegoDeXbox(g), obtenidos: g.unlocked, totales: g.total, plataforma: 'Xbox' };
+    }));
+  }
+  function usarPlayStation(datos) {
+    usarConsola('PlayStation', datos.games.filter(function (g) { return g.total > 0; }).map(function (g) {
+      return { juego: 'psn-' + g.id, juego_steam: juegoDePlayStation(g), obtenidos: g.unlocked, totales: g.total, plataforma: 'PlayStation' };
+    }));
   }
 
   document.getElementById('filtro-plataforma').addEventListener('click', function (e) {
@@ -6340,6 +6494,19 @@ function pantallaLogros() {
     if (botonActualizar) { botonActualizar.hidden = false; botonActualizar.addEventListener('click', cargarXbox); }
     cargarXbox();
   }
+
+  // PlayStation (cuenta real con PlayStation vinculada): trofeos públicos
+  function cargarPlayStation() {
+    pedirPlayStation().then(usarPlayStation).catch(function (error) {
+      if (estado && error.privado) estado.textContent = 'Tus trofeos de PlayStation no son públicos: cámbialo en PlayStation (Privacidad → Trofeos → Cualquiera).';
+    });
+  }
+  if (tienePlayStation()) {
+    var psnMemoria = leerMemoria('psnDatos', null);
+    if (psnMemoria) usarPlayStation(psnMemoria);
+    if (botonActualizar) { botonActualizar.hidden = false; botonActualizar.addEventListener('click', cargarPlayStation); }
+    cargarPlayStation();
+  }
 }
 
 // Biblioteca de Steam (pantalla nueva: pages/biblioteca.html)
@@ -6351,6 +6518,8 @@ function pantallaBiblioteca() {
   var juegos = tieneSteam() ? leerBibliotecaSteam() : [];
   // Juegos de Xbox (cuenta real con Xbox vinculada): van junto a los de Steam, sin portada
   var juegosXbox = tieneXbox() ? ((leerMemoria('xboxDatos', null) || { games: [] }).games.map(juegoDeXbox)) : [];
+  // Juegos de PlayStation (los que tienen trofeos), también con portada de IGDB
+  var juegosPsn = tienePlayStation() ? ((leerMemoria('psnDatos', null) || { games: [] }).games.map(juegoDePlayStation)) : [];
   // ?orden=recientes (desde "Este año" del Perfil) abre la biblioteca ya ordenada
   var ordenPedido = new URLSearchParams(location.search).get('orden');
   var ORDENES = {
@@ -6360,12 +6529,12 @@ function pantallaBiblioteca() {
   };
 
   function dibujar() {
-    var todos = juegos.concat(juegosXbox);
-    var total = juegos.reduce(function (s, j) { return s + j.horas; }, 0);
-    // Los de Xbox salen de tu historial de juego: todos están jugados (Xbox no da las horas)
-    var jugados = juegos.filter(function (j) { return j.horas > 0; }).length + juegosXbox.length;
+    var todos = juegos.concat(juegosXbox, juegosPsn);
+    var total = juegos.concat(juegosPsn).reduce(function (s, j) { return s + j.horas; }, 0);
+    // Los de Xbox y PlayStation salen de tu historial: todos están jugados (Xbox no da las horas)
+    var jugados = juegos.filter(function (j) { return j.horas > 0; }).length + juegosXbox.length + juegosPsn.length;
     document.getElementById('resumen-biblioteca').innerHTML = [
-      [formatearNumero(todos.length), 'Juegos'], [formatearNumero(Math.round(total)), juegosXbox.length ? 'Horas en Steam' : 'Horas jugadas'],
+      [formatearNumero(todos.length), 'Juegos'], [formatearNumero(Math.round(total)), juegosXbox.length ? 'Horas (sin Xbox)' : 'Horas jugadas'],
       [formatearNumero(jugados), 'Jugados'], [formatearNumero(todos.length - jugados), 'Sin estrenar']
     ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
 
@@ -6380,9 +6549,10 @@ function pantallaBiblioteca() {
       if (texto && j.nombre.toLowerCase().indexOf(texto) === -1) return false;
       if (plataforma === 'steam' && !j.steam) return false;
       if (plataforma === 'xbox' && !j.xbox) return false;
+      if (plataforma === 'playstation' && !j.playstation) return false;
       if (genero && (j.generos || []).indexOf(genero) === -1) return false;
       // Los de Xbox salen de tu historial: siempre están jugados
-      var jugado = j.xbox || j.horas > 0;
+      var jugado = j.xbox || j.playstation || j.horas > 0;
       if (estadoPedido === 'jugados' && !jugado) return false;
       if (estadoPedido === 'sin-estrenar' && jugado) return false;
       if (estadoPedido === 'completos' && !logrosCompletos(j)) return false;
@@ -6390,6 +6560,13 @@ function pantallaBiblioteca() {
     }).sort(ORDENES[orden]);
     var hayFiltros = texto || plataforma || genero || estadoPedido;
     caja.innerHTML = lista.map(function (j) {
+      if (j.playstation) {
+        // Sin logo en la portada: no hay un logo oficial de PlayStation en assets/
+        return '<a href="' + escapar(enlaceJuego(j)) + '" title="Ver la ficha de ' + escapar(j.nombre) + (j.portada ? ' · Portada: IGDB' : '') + '">' +
+          '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
+          '<b>' + escapar(j.nombre_corto) + '</b>' +
+          '<span class="tarjeta__texto">PlayStation · ' + (j.horas ? formatearNumero(j.horas) + ' h · ' : '') + j.logros.obtenidos + '/' + j.logros.totales + ' trofeos</span></a>';
+      }
       if (j.xbox) {
         return '<a href="' + escapar(enlaceJuego(j)) + '" title="Ver la ficha de ' + escapar(j.nombre) + '">' +
           '<span class="portada portada--enlace">' + imagenPortada(j) +
@@ -6417,7 +6594,7 @@ function pantallaBiblioteca() {
   var logrosPorJuego = {};
   ((tieneSteam() && leerMemoria('steamLogros', null)) || { games: [] }).games.forEach(function (g) { logrosPorJuego[g.appid] = g; });
   function logrosCompletos(j) {
-    var l = j.xbox ? { total: j.logros.totales, unlocked: j.logros.obtenidos } : logrosPorJuego[j.appid];
+    var l = (j.xbox || j.playstation) ? { total: j.logros.totales, unlocked: j.logros.obtenidos } : logrosPorJuego[j.appid];
     return !!(l && l.total > 0 && l.unlocked >= l.total);
   }
   function llenarGeneros(todos) {
@@ -6454,12 +6631,12 @@ function pantallaBiblioteca() {
     dibujar();
   });
 
-  if (!tieneSteam() && !tieneXbox()) {
+  if (!tieneSteam() && !tieneXbox() && !tienePlayStation()) {
     document.getElementById('resumen-biblioteca').hidden = true;
     document.querySelectorAll('[data-orden]').forEach(function (c) { c.disabled = true; });
     buscador.disabled = true;
     [filtroPlataforma, filtroGenero, filtroEstado].forEach(function (f) { f.disabled = true; });
-    caja.outerHTML = '<div class="vacio"><b>Vincula tu cuenta de Steam o de Xbox para ver tu biblioteca.</b><a href="editar-perfil.html#cuentas">Vincular cuenta</a></div>';
+    caja.outerHTML = '<div class="vacio"><b>Vincula tu cuenta de Steam, Xbox o PlayStation para ver tu biblioteca.</b><a href="editar-perfil.html#cuentas">Vincular cuenta</a></div>';
     return;
   }
 
@@ -6482,6 +6659,11 @@ function pantallaBiblioteca() {
   if (tieneXbox()) {
     pedirXbox().then(function (datos) { juegosXbox = datos.games.map(juegoDeXbox); dibujar(); }).catch(function (error) {
       if (error.vencido) estado.textContent = 'El permiso de Xbox venció: vuelve a vincular Xbox en Editar perfil.';
+    });
+  }
+  if (tienePlayStation()) {
+    pedirPlayStation().then(function (datos) { juegosPsn = datos.games.map(juegoDePlayStation); dibujar(); }).catch(function (error) {
+      if (error.privado) estado.textContent = 'Tus trofeos de PlayStation no son públicos: cámbialo en PlayStation (Privacidad → Trofeos → Cualquiera).';
     });
   }
   if (!tieneSteam()) return;
@@ -7144,6 +7326,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Xbox vinculada: la fila de la base manda (la pone api/xbox/auth.js, con los +100 XP)
     if (!esError) {
       await sincronizarXboxDeLaBase();
+      sincronizarPlayStationDeLaBase();
       if (aviso && /^Xbox vinculada/.test(aviso)) await traerMiXp().catch(function () { /* se verá al recargar */ });
     }
     // En línea: las pantallas que muestran el estado de las personas esperan la primera lista de conectados
