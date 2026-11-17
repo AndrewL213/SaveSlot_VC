@@ -66,10 +66,15 @@
 
   <section class="seccion" id="steam-seccion" aria-labelledby="titulo-steam" hidden>
     <div class="encabezado-seccion">
-      <h2 class="encabezado-seccion__titulo" id="titulo-steam">Lo más jugado en Steam</h2>
+      <h2 class="encabezado-seccion__titulo" id="titulo-steam">Lo más jugado</h2>
     </div>
-    <p class="tarjeta__texto">Juegos de PC con más jugadores a la vez ayer, según Steam.</p>
-    <ul class="rejilla-juegos lista-limpia" id="steam-juegos"></ul>
+    <div class="pestanas" role="tablist" aria-label="Plataforma" id="pestanas-mas-jugado">
+      <button class="pestanas__boton" type="button" role="tab" id="pestana-steam" aria-controls="steam-juegos" aria-selected="true" data-plataforma="steam">Steam</button>
+      <button class="pestanas__boton" type="button" role="tab" id="pestana-xbox" aria-controls="steam-juegos" aria-selected="false" data-plataforma="Xbox">Xbox</button>
+      <button class="pestanas__boton" type="button" role="tab" id="pestana-playstation" aria-controls="steam-juegos" aria-selected="false" data-plataforma="PlayStation">PlayStation</button>
+    </div>
+    <p class="tarjeta__texto" id="explica-mas-jugado">Juegos de PC con más jugadores a la vez ayer, según Steam.</p>
+    <ul class="rejilla-juegos lista-limpia" id="steam-juegos" role="tabpanel" aria-labelledby="pestana-steam"></ul>
   </section>
 
   <div class="division">

@@ -12,8 +12,15 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/styles.css">
+<script src="js/arranque.js"></script>
 </head>
 <body data-pantalla="index">
+
+<!-- Animación al abrir el sitio (una vez por visita). Decorativa: el contenido sigue debajo. -->
+<div class="arranque" id="arranque" aria-hidden="true">
+  <svg class="arranque__logo" viewBox="0 0 32 32"><rect class="arranque__marco" x="5" y="8" width="22" height="16" rx="3" pathLength="100"/><rect class="arranque__barra" x="9" y="18" width="14" height="3"/></svg>
+  <b class="arranque__nombre">SaveSlot</b>
+</div>
 
 <header class="navegacion">
   <div class="navegacion__contenido">
@@ -79,11 +86,16 @@
 
   <section class="seccion" id="steam-seccion" aria-labelledby="titulo-steam" hidden>
     <div class="encabezado-seccion">
-      <h2 class="encabezado-seccion__titulo" id="titulo-steam">Lo más jugado en Steam</h2>
+      <h2 class="encabezado-seccion__titulo" id="titulo-steam">Lo más jugado</h2>
       <a class="encabezado-seccion__enlace" href="pages/buscar-juegos.html">Buscar juegos</a>
     </div>
-    <p class="tarjeta__texto">Juegos de PC con más jugadores a la vez ayer, según Steam.</p>
-    <ul class="rejilla-juegos lista-limpia" id="steam-juegos"></ul>
+    <div class="pestanas" role="tablist" aria-label="Plataforma" id="pestanas-mas-jugado">
+      <button class="pestanas__boton" type="button" role="tab" id="pestana-steam" aria-controls="steam-juegos" aria-selected="true" data-plataforma="steam">Steam</button>
+      <button class="pestanas__boton" type="button" role="tab" id="pestana-xbox" aria-controls="steam-juegos" aria-selected="false" data-plataforma="Xbox">Xbox</button>
+      <button class="pestanas__boton" type="button" role="tab" id="pestana-playstation" aria-controls="steam-juegos" aria-selected="false" data-plataforma="PlayStation">PlayStation</button>
+    </div>
+    <p class="tarjeta__texto" id="explica-mas-jugado">Juegos de PC con más jugadores a la vez ayer, según Steam.</p>
+    <ul class="rejilla-juegos lista-limpia" id="steam-juegos" role="tabpanel" aria-labelledby="pestana-steam"></ul>
   </section>
 
   <section class="seccion" aria-labelledby="titulo-resenas">

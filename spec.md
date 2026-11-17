@@ -25,7 +25,7 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
 - **Cabeceras de seguridad** (`vercel.json`, en todas las direcciones): Content-Security-Policy (scripts solo de la app y de cdn.jsdelivr.net, más el script en línea de `404.html` por su huella sha256; conexiones solo a la app y a Supabase; imágenes de cualquier dirección https; nadie puede meter la app en un marco), X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy y Permissions-Policy (sin cámara, micrófono, ubicación ni pagos).
   - Su clave pública va en el código; los datos se protegen con reglas de acceso en la base.
 - **IGDB** (de Twitch): catálogo de juegos (búsqueda, filtros, ficha y tiempos para terminar). Sus claves (Client ID y Client Secret de Twitch) se guardan en Vercel y se usan solo desde una función en `api/`, que también renueva el token de acceso; nunca van en el código del navegador (IGDB tampoco acepta pedidos directos desde el navegador). Uso no comercial: si SaveSlot se vuelve comercial, hay que pedir permiso a Twitch.
-  - La función es `api/igdb.js`. Acepta solo seis pedidos: `?buscar=texto` (hasta 20 juegos, los más conocidos primero; busca también en los nombres alternativos de IGDB, como los traducidos: «Plantas contra Zombis» encuentra Plants vs. Zombies, y si el nombre coincide exacto sale primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo, duración y año), `?random=1` (un juego al azar entre los 300 más conocidos de un género) y `?steam=1` (los 10 juegos más jugados en Steam: la lista pública de Steam, sin clave, con el pico de jugadores de ayer; IGDB pone los datos de cada juego). `?explorar` también dice cuántos juegos hay en total. Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`). La app también elige la variante por el código de respuesta (429 límite, 408 o más de 15 s tiempo, 401/403 credenciales, 503 mantenimiento, sin internet) y la página de error trae «Reintentar» para volver.
+  - La función es `api/igdb.js`. Acepta solo seis pedidos: `?buscar=texto` (hasta 20 juegos, los más conocidos primero; busca también en los nombres alternativos de IGDB, como los traducidos: «Plantas contra Zombis» encuentra Plants vs. Zombies, y si el nombre coincide exacto sale primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"; con `&plataforma=Xbox` o `PlayStation`, los de esa plataforma entre los 500 más jugados, para las pestañas de "Lo más jugado"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo, duración y año), `?random=1` (un juego al azar entre los 300 más conocidos de un género) y `?steam=1` (los 10 juegos más jugados en Steam: la lista pública de Steam, sin clave, con el pico de jugadores de ayer, ordenados por ese pico; IGDB pone los datos de cada juego). `?explorar` también dice cuántos juegos hay en total. Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`). La app también elige la variante por el código de respuesta (429 límite, 408 o más de 15 s tiempo, 401/403 credenciales, 503 mantenimiento, sin internet) y la página de error trae «Reintentar» para volver.
   - Vercel guarda cada respuesta una hora, para hacer menos consultas a IGDB.
   - Las respuestas usan los mismos nombres de campos que las tablas (minúsculas con guion bajo). La app agrega `v=4` (la versión de ese formato) a cada consulta, para que Vercel no entregue respuestas guardadas con un formato viejo; si el formato cambia otra vez, se sube ese número (`VERSION_API` en `js/app.js`).
   - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) y el juego random (`?random=1`) la buscan en español, en este orden:
@@ -449,7 +449,7 @@ Se relaciona con: ninguna.
 
 - **Externos (se piden cada vez):**
   - Catálogo de IGDB: nombre, nombre corto, géneros, plataformas, año, desarrolladora, tipo (AAA o Indie), horas de la historia ("Time to beat": solo la historia principal, con 10 reportes o más y hasta 300 h; si no, "Sin datos"), solo online (en vez de horas dice "Online"), descripción y portada. Ver Integraciones.
-  - Mejores juegos de la semana (IGDB) y Lo más jugado en Steam.
+  - Mejores juegos de la semana (IGDB) y Lo más jugado (Steam; Xbox y PlayStation según IGDB).
   - Cuenta de Steam de la persona: perfil (nombre, enlace, jugando ahora, recientes, nivel e insignias), biblioteca (horas y última vez), logros (por juego, resumen y más raros), lista de deseos (precio y descuento; se cambia desde Steam) y sus reseñas. El navegador guarda una copia para mostrar algo mientras llegan los nuevos.
   - Reseñas de Steam de cada juego (autor, recomienda o no, horas, fecha, votos de "útil").
   - Presencia ("en línea" y "jugando"): en tiempo real con Supabase Realtime (canal `en-linea`), no se guarda. Solo las cuentas reales avisan que están conectadas; el invitado y quien no tiene sesión solo miran. La última conexión sí se guarda (`usuarios.ultima_conexion`).
@@ -502,16 +502,17 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 - **Archivo de diseño:** disenos/index.html (comparte archivo con la ventana "Evento del mes")
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda empezar a buscar un juego o descubrir qué jugar y qué eventos hay. Sabemos que funciona si la persona usa el buscador o un atajo en su primera visita.
 - **Contenido:**
+  0. Animación de arranque (`.arranque`): la primera vez que se abre el sitio en una visita, el logo de SaveSlot se arma con un brillo (como el arranque de una consola), unos 1,5 s o hasta que la página cargue (máximo 3,5 s; un clic la quita). No sale con «menos movimiento» ni al volver al Inicio en la misma visita.
   1. Título, buscador y 3 portadas destacadas
   2. Atajos: Juego random, Recomiéndame algo corto, Torneos de esta semana
-  3. Vistos recientemente (solo si ya visitó juegos)
+  3. Vistos recientemente (solo si ya visitó juegos; la nota de la comunidad se ve como «8/10»)
   4. Mejores juegos de la semana (los 6 que más gente marca como "jugando ahora" en IGDB)
-  5. Lo más jugado en Steam (los 6 juegos de PC con más jugadores a la vez ayer; se ve solo si Steam responde)
+  5. Lo más jugado, con pestañas: **Steam** (los 6 juegos de PC con más jugadores a la vez ayer, de mayor a menor), **Xbox** y **PlayStation** (los 6 de esa plataforma que más gente marca como "jugando ahora" en IGDB, con «Popular en IGDB»: Xbox y PlayStation no publican cuántos juegan). Se ve si Steam o IGDB responden
   6. Reseñas destacadas
   7. Eventos: el evento del mes y un sorteo
 - **Qué funciona de verdad:**
   - Buscador y Mejores juegos de la semana: Real (IGDB). Si IGDB no responde, se ven los juegos de ejemplo mejor calificados
-  - Lo más jugado en Steam: Real (lista de Steam, datos de IGDB)
+  - Lo más jugado: Real (Steam: lista de Steam con datos de IGDB; Xbox y PlayStation: popularidad de IGDB)
   - Reseñas destacadas y votar "útil": Real (Supabase)
   - Vistos recientemente: Real (Supabase: los 6 más recientes de **vistos_recientes**; si un juego no está en el navegador, se pide a IGDB. Invitado y sin sesión: en el navegador)
   - Eventos: Real (Supabase)
@@ -540,10 +541,10 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   3. Lista de resultados con portada, de 24 en 24 con "Ver más juegos" (sin texto); con texto, hasta 20
   4. Filtros: género, plataforma, tipo, duración de la historia, año. Si lo escrito es un género ("terror"), se marca ese filtro
   5. Botones Juego random y Limpiar filtros
-  6. Lo más jugado en Steam (solo sin búsqueda ni filtros): los 6 juegos de PC con más jugadores a la vez ayer, con su puesto y sus jugadores; cada uno abre su ficha
+  6. Lo más jugado (solo sin búsqueda ni filtros), con las mismas pestañas Steam, Xbox y PlayStation que el Inicio: con su puesto y, en Steam, sus jugadores; cada uno abre su ficha
 - **Qué funciona de verdad:**
   - Búsqueda y filtros: Real (IGDB). Si IGDB no responde, busca en los juegos de ejemplo
-  - Lo más jugado en Steam: Real (lista de Steam, datos de IGDB)
+  - Lo más jugado: Real (Steam: lista de Steam con datos de IGDB; Xbox y PlayStation: popularidad de IGDB)
   - Sugerencias automáticas al escribir (del flujograma): Después
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).

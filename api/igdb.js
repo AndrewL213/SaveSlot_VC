@@ -540,15 +540,20 @@ async function similares(ids) {
 // Mejores juegos de la semana: los que más gente marca como "jugando ahora" en IGDB.
 // El número de ese tipo de popularidad se busca una vez por su nombre y se guarda.
 let numeroJugando = null;
-async function populares() {
+// Con plataforma ("Xbox" o "PlayStation"): los más jugados que salen en esa plataforma.
+// IGDB no separa la popularidad por plataforma: se toman los 500 más jugados y se dejan los de esa.
+async function populares(plataforma) {
   if (!numeroJugando) {
     const tipos = await consultar('popularity_types', 'fields id, name; where name = "Playing"; limit 1;');
     numeroJugando = tipos.length ? tipos[0].id : 1; // si no lo encuentra, usa las visitas (1)
   }
-  const lista = await consultar('popularity_primitives', 'fields game_id, value; where popularity_type = ' + numeroJugando + '; sort value desc; limit 20;');
+  const deEsa = ['Xbox', 'PlayStation'].indexOf(plataforma) !== -1 ? PLATAFORMAS[plataforma] : null;
+  const cuantos = deEsa ? 500 : 20;
+  const lista = await consultar('popularity_primitives', 'fields game_id, value; where popularity_type = ' + numeroJugando + '; sort value desc; limit ' + cuantos + ';');
   if (!lista.length) return [];
   const ids = lista.map(function (p) { return p.game_id; });
-  const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS + '; limit 20;');
+  const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS +
+    (deEsa ? ' & platforms = (' + deEsa.join(',') + ')' : '') + '; limit ' + cuantos + ';');
   juegos.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); });
   return conHoras(juegos.slice(0, 10));
 }
@@ -565,8 +570,11 @@ async function masJugadosSteam() {
     console.error(e);
     throw falla('api', 502);
   }
-  // Se piden 40 porque algunos (programas, herramientas) no son juegos para IGDB
-  const primeros = ranking.slice(0, 40).filter(function (x) { return Number.isInteger(x.appid); });
+  // Se piden 40 porque algunos (programas, herramientas) no son juegos para IGDB.
+  // Steam los ordena por jugadores de este momento, pero lo que mostramos es el pico de ayer:
+  // se reordenan por ese pico, así el número que se ve siempre baja de #1 a #6.
+  const primeros = ranking.slice(0, 40).filter(function (x) { return Number.isInteger(x.appid); })
+    .sort(function (a, b) { return (b.peak_in_game || 0) - (a.peak_in_game || 0); });
   if (!primeros.length) return [];
   const numeros = primeros.map(function (x) { return '"' + x.appid + '"'; }).join(',');
   const enlaces = await consultar('external_games', 'fields game, uid; where uid = (' + numeros + ') & (external_game_source = 1 | category = 1); limit 100;');
@@ -590,7 +598,7 @@ module.exports = async function (req, res) {
     let respuesta;
     if (q.buscar !== undefined) respuesta = { juegos: await buscar(q.buscar) };
     else if (q.id !== undefined) respuesta = { juego: await ficha(String(q.id)) };
-    else if (q.populares !== undefined) respuesta = { juegos: await populares() };
+    else if (q.populares !== undefined) respuesta = { juegos: await populares(String(q.plataforma || '')) };
     else if (q.explorar !== undefined) respuesta = await explorar(q);
     else if (q.random !== undefined) respuesta = { juego: await random(q) };
     else if (q.steam !== undefined) respuesta = { juegos: await masJugadosSteam() };

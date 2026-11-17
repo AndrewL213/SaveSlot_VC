@@ -44,7 +44,9 @@ Digitales 3. Más contexto en README.md.
   separados del diseño) y supabase.js (conexión con Supabase: dirección, llave
   publicable y clienteSupabase).
   Cada página carga, al final del <body> y en este orden: supabase-js (versión
-  fija, con integrity), js/supabase.js, js/data.js y js/app.js.
+  fija, con integrity), js/supabase.js, js/data.js y js/app.js. Única excepción:
+  index.html carga además js/arranque.js en el <head> (decide si sale la animación
+  de arranque antes de que se pinte la página).
 - api/: funciones de Vercel que usan claves secretas (por ejemplo,
   api/igdb.js, la consulta a IGDB, y api/steam/, el inicio de sesión y los
   datos de Steam: perfil, biblioteca y logros, api/epic/auth.js, entrar con Epic Games, y api/xbox/, vincular Xbox y sus juegos y logros; api/_vuelta.js tiene las comprobaciones de seguridad al volver de ellos). JavaScript sin paso de compilación.
@@ -175,6 +177,8 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<div class="aviso-flotante" role="status">Guardado <button class="aviso-flotante__accion">Deshacer</button></div>`
 - `.vacio`:
   `<div class="vacio"><b>Todavía no tienes reseñas</b><span>Cuando escribas una, aparecerá aquí.</span></div>`
+- `.arranque` con `__logo` (svg con `__marco` y `__barra`) y `__nombre` (animación al abrir el sitio; cubre la pantalla y solo se ve si `<html>` tiene `.con-arranque`, que pone js/arranque.js una vez por visita; `--saliendo` la desvanece):
+  `<div class="arranque" id="arranque" aria-hidden="true"><svg class="arranque__logo" viewBox="0 0 32 32"><rect class="arranque__marco" x="5" y="8" width="22" height="16" rx="3" pathLength="100"/><rect class="arranque__barra" x="9" y="18" width="14" height="3"/></svg><b class="arranque__nombre">SaveSlot</b></div>`
 - `.franja` con `.franja__enlace` (aviso arriba de la página):
   `<div class="franja" role="region" aria-label="Aviso"><span>Prototipo académico… <a class="franja__enlace" href="…">Más información</a></span><button class="boton boton--fantasma boton--icono boton--sm" aria-label="Ocultar aviso">…</button></div>`
 - `.heroe` con `__texto`, `__arte` y `__portada` (en una `.portada`; las 3 portadas solo en pantallas anchas):

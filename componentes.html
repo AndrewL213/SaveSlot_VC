@@ -41,6 +41,7 @@
   .cat-estatico .modal-fondo,
   .cat-estatico .aviso-flotante { position: static; transform: none; }
   .cat-estatico .modal-fondo { padding: var(--espacio-4); border-radius: var(--radio-md); }
+  .cat-estatico .arranque { position: relative; display: grid; width: 100%; min-height: calc(var(--espacio-8) * 7); border-radius: var(--radio-md); }
   @media (max-width: 700px) {
     .cat { padding: var(--espacio-6) var(--espacio-4); }
     /* Deja lugar para la barra de navegación de abajo */
@@ -870,6 +871,20 @@
     </div>
 
     <div class="cat-componente">
+      <h3>Arranque · <code>.arranque</code></h3>
+      <p>La animación al abrir SaveSlot: el marco del logo se dibuja, la barra se llena como una partida que se guarda y el logo brilla. En la app cubre la pantalla y sale solo en el Inicio, una vez por visita: <code>js/arranque.js</code> (en el <code>&lt;head&gt;</code>) le pone <code>.con-arranque</code> al <code>&lt;html&gt;</code>, y <code>app.js</code> la quita con <code>.arranque--saliendo</code> cuando la página cargó. Con «menos movimiento» no sale.</p>
+      <div class="cat-ejemplo cat-ejemplo--columna cat-estatico" data-codigo>
+        <div class="arranque" id="arranque" aria-hidden="true">
+          <svg class="arranque__logo" viewBox="0 0 32 32"><rect class="arranque__marco" x="5" y="8" width="22" height="16" rx="3" pathLength="100"/><rect class="arranque__barra" x="9" y="18" width="14" height="3"/></svg>
+          <b class="arranque__nombre">SaveSlot</b>
+        </div>
+      </div>
+      <div class="cat-ejemplo">
+        <button class="boton boton--secundario" type="button" id="repetir-arranque">Ver la animación otra vez</button>
+      </div>
+    </div>
+
+    <div class="cat-componente">
       <h3>Estado vacío · <code>.vacio</code></h3>
       <div class="cat-ejemplo cat-ejemplo--columna" data-codigo>
         <div class="vacio">
@@ -971,6 +986,12 @@
     document.addEventListener('keydown', tecla);
     document.body.appendChild(fondo);
     fondo.querySelector('.boton').focus();
+  });
+
+  // Arranque: se reemplaza por una copia para que la animación empiece de nuevo.
+  document.getElementById('repetir-arranque').addEventListener('click', function () {
+    var capa = document.getElementById('arranque');
+    capa.replaceWith(capa.cloneNode(true));
   });
 
   document.getElementById('mostrar-aviso').addEventListener('click', function () {

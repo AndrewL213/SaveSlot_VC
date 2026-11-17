@@ -1385,7 +1385,7 @@ function guardarJuegoIgdb(juego) {
 
 // Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
 // Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
-var VERSION_API = 4;
+var VERSION_API = 5;
 
 // La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
 // se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
@@ -2210,7 +2210,8 @@ function htmlJuegoMini(juego, ranking, detalle) {
     '<div class="juego__meta">' +
       // Con detalle (por ejemplo, jugadores de Steam) se muestra solo eso; si no, el género y la nota
       (detalle ? '<span class="tarjeta__texto">' + detalle + '</span>' : '<span class="tarjeta__texto">' + escapar(juego.generos[0] || '') + '</span>') +
-      (!detalle && juego.calificacion != null ? '<span class="nota nota--texto" aria-label="Nota de la comunidad ' + formatearNota(juego.calificacion) + ' de 10">' + formatearNota(juego.calificacion) + '</span>' : '') +
+      // La nota lleva "/10" (como en el resto de la app), para que no parezca un número suelto
+      (!detalle && juego.calificacion != null ? '<span class="nota nota--texto" title="Nota de la comunidad de SaveSlot" aria-label="Nota de la comunidad de SaveSlot: ' + formatearNota(juego.calificacion) + ' de 10">' + formatearNota(juego.calificacion) + '<small>/10</small></span>' : '') +
     '</div>' +
   '</li>';
 }
@@ -2220,18 +2221,59 @@ function conDatosLocales(juego) {
   return unirConIgdb(datosDe('juegos').find(function (x) { return x.id === juego.id; }) || null, juego);
 }
 
-// "Lo más jugado en Steam" (api/igdb?steam=1): llena la rejilla.
-// Devuelve una promesa: true si hay juegos para mostrar; false si Steam o IGDB no respondieron.
-function llenarMasJugadosSteam(rejilla) {
-  return preguntarIgdb({ steam: 1 }).then(function (datos) {
-    if (!datos.juegos || !datos.juegos.length) return false;
-    // 6, como las demás rejillas de portadas: así caben en una fila en computador
-    rejilla.innerHTML = datos.juegos.slice(0, 6).map(function (j, i) {
-      return htmlJuegoMini(conDatosLocales(j), i + 1, j.jugadores_steam ? formatearNumero(j.jugadores_steam) + ' jugadores' : '');
-    }).join('');
-    aplicarColores(rejilla);
-    return true;
-  }).catch(function () { return false; });
+// "Lo más jugado", con una pestaña por plataforma:
+// - Steam (api/igdb?steam=1): jugadores reales, el pico de ayer.
+// - Xbox y PlayStation (api/igdb?populares=1&plataforma=…): no publican cuántos juegan,
+//   así que van los que más gente marca como "jugando" en IGDB y salen en esa consola.
+var MAS_JUGADO = {
+  steam: { pedido: { steam: 1 }, texto: 'Juegos de PC con más jugadores a la vez ayer (el pico del día), según Steam.' },
+  Xbox: { pedido: { populares: 1, plataforma: 'Xbox' }, texto: 'Popular en IGDB: los juegos de Xbox que más gente marca como «jugando ahora». Xbox no publica cuántos jugadores tiene cada uno.' },
+  PlayStation: { pedido: { populares: 1, plataforma: 'PlayStation' }, texto: 'Popular en IGDB: los juegos de PlayStation que más gente marca como «jugando ahora». PlayStation no publica cuántos jugadores tiene cada uno.' }
+};
+
+// Llena la rejilla y activa las pestañas (#pestanas-mas-jugado).
+// Devuelve una promesa: true si hay juegos para mostrar (de Steam o, si Steam falla, de Xbox).
+function llenarMasJugados(rejilla) {
+  var pestanas = document.getElementById('pestanas-mas-jugado');
+  var explica = document.getElementById('explica-mas-jugado');
+  var pedidoActual = 0; // si cambian de pestaña rápido, solo cuenta la última respuesta
+
+  function mostrar(plataforma) {
+    var numero = ++pedidoActual;
+    var datos = MAS_JUGADO[plataforma];
+    var elegida = pestanas.querySelector('[data-plataforma="' + plataforma + '"]');
+    pestanas.querySelectorAll('.pestanas__boton').forEach(function (b) { b.setAttribute('aria-selected', String(b === elegida)); });
+    rejilla.setAttribute('aria-labelledby', elegida.id);
+    rejilla.setAttribute('aria-busy', 'true');
+    explica.textContent = datos.texto;
+    return preguntarIgdb(datos.pedido).then(function (d) {
+      if (numero !== pedidoActual) return true;
+      // 6, como las demás rejillas de portadas: así caben en una fila en computador
+      var lista = (d.juegos || []).slice(0, 6);
+      if (!lista.length) throw new Error('lista vacía');
+      rejilla.innerHTML = lista.map(function (j, i) {
+        var detalle = plataforma === 'steam'
+          ? (j.jugadores_steam ? formatearNumero(j.jugadores_steam) + ' jugadores' : '')
+          : 'Popular en IGDB';
+        return htmlJuegoMini(conDatosLocales(j), i + 1, detalle);
+      }).join('');
+      aplicarColores(rejilla);
+      rejilla.removeAttribute('aria-busy');
+      return true;
+    }).catch(function () {
+      if (numero !== pedidoActual) return true;
+      rejilla.innerHTML = '';
+      rejilla.removeAttribute('aria-busy');
+      explica.textContent = 'No pudimos traer esta lista ahora. Prueba otra pestaña o vuelve en un rato.';
+      return false;
+    });
+  }
+
+  pestanas.addEventListener('click', function (e) {
+    var boton = e.target.closest('[data-plataforma]');
+    if (boton && boton.getAttribute('aria-selected') !== 'true') mostrar(boton.getAttribute('data-plataforma'));
+  });
+  return mostrar('steam').then(function (hay) { return hay || mostrar('Xbox'); });
 }
 
 // Tarjeta de reseña con autor, nota, texto y acciones.
@@ -2431,8 +2473,8 @@ function pantallaIndex() {
     aplicarColores(cajaMejores);
   });
 
-  // Lo más jugado en Steam (se ve solo si Steam e IGDB responden)
-  llenarMasJugadosSteam(document.getElementById('steam-juegos')).then(function (hay) {
+  // Lo más jugado en Steam, Xbox y PlayStation (se ve solo si responden)
+  llenarMasJugados(document.getElementById('steam-juegos')).then(function (hay) {
     document.getElementById('steam-seccion').hidden = !hay;
   });
 
@@ -2567,7 +2609,7 @@ function pantallaBuscar() {
   var seccionSteam = document.getElementById('steam-seccion');
   var steamListo = false;
   var buscando = false;
-  llenarMasJugadosSteam(document.getElementById('steam-juegos')).then(function (hay) {
+  llenarMasJugados(document.getElementById('steam-juegos')).then(function (hay) {
     steamListo = hay;
     seccionSteam.hidden = buscando || !steamListo;
   });
@@ -6907,9 +6949,30 @@ function mostrarErrorDeCarga() {
   document.getElementById('reintentar-carga').addEventListener('click', function () { location.reload(); });
 }
 
+// Animación de arranque (.arranque, solo en el Inicio y una vez por visita; la decide js/arranque.js).
+// Se quita cuando la pantalla está lista, pero se ve al menos 1,5 s (lo que dura la animación)
+// y como mucho 3,5 s aunque algo tarde. Un clic la quita antes.
+var ARRANQUE_MINIMO = 1500;
+var ARRANQUE_MAXIMO = 3500;
+function quitarArranque(yaMismo) {
+  var capa = document.getElementById('arranque');
+  if (!capa || !document.documentElement.classList.contains('con-arranque') || capa.classList.contains('arranque--saliendo')) return;
+  var falta = yaMismo ? 0 : ARRANQUE_MINIMO - performance.now(); // performance.now(): ms desde que se abrió la página
+  if (falta > 0) { setTimeout(quitarArranque, falta); return; }
+  capa.classList.add('arranque--saliendo');
+  setTimeout(function () { capa.remove(); document.documentElement.classList.remove('con-arranque'); }, 400);
+}
+function prepararArranque() {
+  var capa = document.getElementById('arranque');
+  if (!capa || !document.documentElement.classList.contains('con-arranque')) return;
+  capa.addEventListener('click', function () { quitarArranque(true); });
+  setTimeout(function () { quitarArranque(true); }, Math.max(0, ARRANQUE_MAXIMO - performance.now()));
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
   var nombre = document.body.dataset.pantalla;
   var pantalla = PANTALLAS[nombre];
+  prepararArranque();
   var tablas = TABLAS_COMUNES.concat(TABLAS_DE_PANTALLA[nombre] || []);
   // La página de error tiene que verse aunque la base no responda: si falla, sigue con las tablas vacías
   var esError = nombre === 'error';
@@ -6956,6 +7019,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     prepararFranja();
     prepararPie();
     if (pantalla) await pantalla();
+    quitarArranque();
     // Aviso que dejó la página anterior (por ejemplo, "Contraseña guardada" al volver de Recuperar contraseña)
     var avisoAlEntrar = leerMemoria('avisoAlEntrar', null);
     if (avisoAlEntrar) { guardarMemoria('avisoAlEntrar', null); aviso = aviso ? aviso + ' · ' + avisoAlEntrar : avisoAlEntrar; }
@@ -6964,6 +7028,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   } catch (error) {
     console.error('No se pudo mostrar la pantalla ' + nombre + ':', error);
     if (cargando) cargando.remove();
+    quitarArranque(true);
     mostrarErrorDeCarga();
   }
 });
