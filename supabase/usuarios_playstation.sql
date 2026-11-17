@@ -1,4 +1,4 @@
--- supabase/usuarios_playstation.sql · Cuentas de PlayStation vinculadas (las usa solo el servidor: api/playstation/)
+-- supabase/usuarios_playstation.sql · Cuentas de PlayStation vinculadas (las usa solo el servidor: api/playstation.js)
 --
 -- Una fila por cuenta de SaveSlot con PlayStation vinculada: el número de la cuenta de PSN (account_id)
 -- y el ID de PSN (online_id). No guarda tokens: el servidor lee los trofeos públicos con la cuenta de PSN

@@ -467,7 +467,7 @@ grant select on table public.insignias to anon, authenticated;
 -- Steam solo se puede agregar si la cuenta de Supabase tiene Steam de verdad: el steam_id de app_metadata,
 -- que solo pone el servidor (api/steam/auth.js) al volver de Steam. Así nadie gana el XP de "vincular" sin vincular.
 -- Xbox no se agrega desde la app: la fila la pone el servidor (api/xbox/auth.js) al volver de Microsoft, con la llave secreta.
--- PlayStation tampoco: la pone api/playstation/auth.js cuando el «Sobre mí» de PSN tiene el código de SaveSlot.
+-- PlayStation tampoco: la pone api/playstation.js cuando el «Sobre mí» de PSN tiene el código de SaveSlot.
 drop policy if exists "cuentas_vinculadas: ver" on public.cuentas_vinculadas;
 create policy "cuentas_vinculadas: ver" on public.cuentas_vinculadas for select to anon, authenticated using (true);
 grant select on table public.cuentas_vinculadas to anon, authenticated;
