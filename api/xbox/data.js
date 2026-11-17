@@ -11,50 +11,7 @@
 // en IGDB (con las claves de Twitch, como api/igdb.js) y se usa esa portada, con crédito a IGDB.
 
 const x = require("./_xbox");
-
-/* ---------- Portadas de IGDB ---------- */
-let permisoIgdb = null, permisoIgdbVence = 0;
-async function permisoDeIgdb() {
-  if (permisoIgdb && Date.now() < permisoIgdbVence) return permisoIgdb;
-  const id = process.env.TWITCH_CLIENT_ID, secreto = process.env.TWITCH_CLIENT_SECRET;
-  if (!id || !secreto) return null;
-  const r = await fetch(`https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(id)}&client_secret=${encodeURIComponent(secreto)}&grant_type=client_credentials`, { method: "POST" });
-  if (!r.ok) return null;
-  const d = await r.json();
-  permisoIgdb = d.access_token;
-  permisoIgdbVence = Date.now() + (d.expires_in - 3600) * 1000;
-  return permisoIgdb;
-}
-// "Minecraft para Android", "Forza Horizon 5 (PC)", "Halo™: MCC" → el nombre del juego para buscarlo
-function nombreParaBuscar(nombre) {
-  return String(nombre || "")
-    .replace(/[™®©]/g, "")
-    .replace(/\s*[-–:]?\s*(para|for)\s+(android|ios|iphone|windows(\s*10|\s*11)?|pc|xbox[\w\s|]*)$/i, "")
-    .replace(/\s*\((pc|windows|xbox[^)]*|android|ios)\)$/i, "")
-    .replace(/\s*[-–:]\s*(windows 10|pocket|java|bedrock) edition$/i, "")
-    .replace(/"/g, "").trim();
-}
-// { titleId: { cover: "https://images.igdb.com/.../t_cover_big/xxx.jpg", slug: "halo-infinite" } }
-// para los juegos que IGDB encuentre. El slug sirve para abrir la ficha del juego en SaveSlot.
-async function portadasDeIgdb(juegos) {
-  const permiso = await permisoDeIgdb().catch((e) => { console.error("IGDB permiso:", e.message); return null; });
-  if (!permiso) { console.error("IGDB: sin permiso (¿faltan TWITCH_CLIENT_ID o TWITCH_CLIENT_SECRET?)"); return {}; }
-  const portadas = {};
-  // De a 4 juegos a la vez (IGDB deja 4 consultas por segundo)
-  for (let i = 0; i < juegos.length; i += 4) {
-    await Promise.all(juegos.slice(i, i + 4).map(async (j) => {
-      const r = await fetch("https://api.igdb.com/v4/games", {
-        method: "POST", headers: { "Client-ID": process.env.TWITCH_CLIENT_ID, Authorization: `Bearer ${permiso}` },
-        body: `fields name, slug, cover.image_id; search "${nombreParaBuscar(j.name)}"; where cover != null; limit 1;`,
-      }).catch(() => null);
-      if (!r || !r.ok) { console.error("IGDB portada de", j.name, r ? r.status : "sin respuesta"); return; }
-      const encontrado = ((await r.json().catch(() => [])) || [])[0];
-      if (encontrado && encontrado.cover) portadas[j.titleId] = { cover: `https://images.igdb.com/igdb/image/upload/t_cover_big/${encontrado.cover.image_id}.jpg`, slug: encontrado.slug || null };
-      else console.error("IGDB no encontró portada para", j.name, "→", nombreParaBuscar(j.name));
-    }));
-  }
-  return portadas;
-}
+const { portadasDeIgdb } = require("../_portadas-igdb");
 
 /* ---------- Logros de un juego (cuando titlehub no trae el total) ---------- */
 async function contarLogros(xsts, titleId) {
@@ -141,7 +98,7 @@ module.exports = async function handler(req, res) {
       g.percent = conteo.total ? Math.round(conteo.unlocked / conteo.total * 100) : 0;
     }));
     // Portadas de IGDB
-    const portadas = await portadasDeIgdb(games.slice(0, 40)).catch(() => ({}));
+    const portadas = await portadasDeIgdb(games.slice(0, 40), (g) => g.titleId, (g) => g.name).catch(() => ({}));
     games.forEach((g) => {
       const igdb = portadas[g.titleId] || {};
       g.cover = igdb.cover || null;
