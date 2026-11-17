@@ -1,5 +1,5 @@
 // api/_portadas-igdb.js · Busca la portada de IGDB de un juego por su nombre (empieza con "_": Vercel no
-// la publica como dirección). La usan api/xbox/data.js y api/playstation/data.js: CLAUDE.md solo permite
+// la publica como dirección). La usan api/xbox/data.js y api/playstation.js: CLAUDE.md solo permite
 // imágenes de IGDB y Steam, así que no se usan las de Xbox ni las de PlayStation.
 // Usa las claves de Twitch (TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET), como api/igdb.js.
 
