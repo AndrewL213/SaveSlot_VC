@@ -1420,7 +1420,7 @@ const DATOS = {
     { id: "nintendo", nombre: "Nintendo" }
   ],
   // Cuentas de juego que se pueden vincular (Editar perfil). Steam es real (api/steam);
-  // Xbox, real con una cuenta de verdad (Xbox Live; demo con el invitado); Epic Games solo con una cuenta real
+  // Xbox, real con una cuenta de verdad (Xbox Live; el invitado no puede vincular); Epic Games solo con una cuenta real
   // (se vincula en Formas de entrar; no da biblioteca); PlayStation no tiene conexión pública.
   cuentas: [
     { id: "steam", nombre: "Steam", nota: "Se conecta con tu cuenta de Steam", vincula: true },
@@ -1639,10 +1639,10 @@ const DATOS = {
       id: "demo",
       codigo: "DEMO",
       titulo: "Estás viendo el prototipo de SaveSlot",
-      texto: "Ya son reales: el catálogo de juegos (IGDB), las cuentas (correo, Google, Discord, Twitch y Steam) y todo lo de Steam: biblioteca, logros, lista de deseos con aviso de ofertas, juegos recientes, reseñas y precios. Con tu cuenta, lo que haces se guarda en la base de datos: perfil, reseñas, votos y comentarios, diario, lista de deseos, amigos (y quién está en línea), inscripciones a eventos, misiones, avisos y vistos recientemente. Todavía son de ejemplo las respuestas de MatchPlay (IA), cuyos chats se guardan solo en este navegador, y los logros de otras plataformas. Como invitado, todo queda en este navegador.",
+      texto: "Ya son reales: el catálogo de juegos (IGDB, con descripciones en español de Steam, Epic Games y Xbox), las cuentas (correo, Google, Discord, Twitch, Steam y Epic Games), todo lo de Steam (biblioteca, logros, lista de deseos con aviso de ofertas, juegos recientes, reseñas y precios), Xbox (gamertag, juegos y logros, y precio, nota, edad y Game Pass en cada ficha). Los eventos son de ejemplo: puedes inscribirte, pero no se juegan. Con tu cuenta, lo que haces se guarda en la base de datos: perfil, reseñas, votos y comentarios, diario, lista de deseos, amigos (y quién está en línea), inscripciones a eventos, misiones, avisos y vistos recientemente. Todavía son de ejemplo las respuestas de MatchPlay (IA), cuyos chats se guardan solo en este navegador, y los logros de PlayStation. Como invitado, todo queda en este navegador.",
       consejos: [
-        "Entra con tu correo, Google, Discord, Twitch o Steam; en Editar perfil puedes unirlos en una sola cuenta.",
-        "Vincula Steam para ver tu biblioteca, tus logros y tu lista de deseos reales.",
+        "Entra con tu correo, Google, Discord, Twitch, Steam o Epic Games; en Editar perfil puedes unirlos en una sola cuenta.",
+        "Vincula Steam o Xbox para ver tu biblioteca y tus logros reales.",
         "Borrar los datos del navegador borra tu actividad que todavía no está en la base."
       ],
       reintentar: false,

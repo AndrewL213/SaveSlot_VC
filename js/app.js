@@ -607,7 +607,7 @@ async function sincronizarSesionSupabase() {
   // Si entró con Google, Discord o Twitch (vinculados a ella en Editar perfil), sigue aquí.
   if (esCuentaSoloSteam(cuenta) && local && local.steam) return null;
 
-  var fila = await obtenerUno('usuarios', cuenta.id, 'auth_id');
+  var fila = await buscarMiFila(cuenta);
   var nueva = !fila;
   if (nueva) {
     var meta = cuenta.user_metadata || {};
@@ -617,7 +617,7 @@ async function sincronizarSesionSupabase() {
       return clienteSupabase.from('usuarios').insert({
         auth_id: cuenta.id, usuario: u, nombre: nombre, iniciales: inicialesDe(nombre),
         forma_de_entrar: esCuentaSoloEpic(cuenta) ? 'epic' : (FORMA_DE_ENTRAR[(cuenta.app_metadata || {}).provider] || 'correo')
-      }).select().single();
+      }).select(columnasDe('usuarios')).single();
     };
     var creada = await filaNueva(usuario);
     // El @ lo tomó otra persona entre que se registró y confirmó el correo (23505: ya existe en la base,
@@ -712,13 +712,20 @@ var FILAS = {};          // lo que llegó de Supabase, tal cual (por tabla)
 var DATOS_ARMADOS = {};  // lo mismo, con la forma que usan las pantallas
 
 // Pide una tabla entera a Supabase. Si falla, lo escribe en la consola y lanza el error.
+// Columnas que se piden de cada tabla. De usuarios no se pide auth_id (el número de la cuenta de Supabase):
+// la base no deja leerlo desde la app (supabase/esquema.sql). La fila propia se encuentra con mi_usuario_id().
+var COLUMNAS = {
+  usuarios: 'id, created_at, usuario, nombre, iniciales, sobre_mi, jugando_ahora, miembro_desde, nivel, xp, color, forma_de_entrar, invitado, foto, ultima_conexion'
+};
+function columnasDe(tipo) { return COLUMNAS[tipo] || '*'; }
+
 async function obtenerDatos(tipo) {
   if (!clienteSupabase) {
     var sinConexion = new Error('No se pudo conectar con Supabase (no cargó la librería supabase-js)');
     console.error(sinConexion);
     throw sinConexion;
   }
-  var respuesta = await clienteSupabase.from(tipo).select('*').order('id');
+  var respuesta = await clienteSupabase.from(tipo).select(columnasDe(tipo)).order('id');
   if (respuesta.error) {
     console.error('Supabase no entregó la tabla ' + tipo + ':', respuesta.error);
     throw respuesta.error;
@@ -730,7 +737,7 @@ async function obtenerDatos(tipo) {
 // (maybeSingle es como single, pero si no hay fila responde vacío en vez de un error 406).
 async function obtenerUno(tipo, valor, columna) {
   if (!clienteSupabase) throw new Error('No se pudo conectar con Supabase');
-  var respuesta = await clienteSupabase.from(tipo).select('*').eq(columna || 'id', valor).maybeSingle();
+  var respuesta = await clienteSupabase.from(tipo).select(columnasDe(tipo)).eq(columna || 'id', valor).maybeSingle();
   if (respuesta.error) {
     console.error('Supabase no entregó ' + tipo + ' (' + (columna || 'id') + ' = ' + valor + '):', respuesta.error);
     throw respuesta.error;
@@ -752,7 +759,7 @@ async function guardarDatos(tipo, fila) {
   }
   var pedido = clienteSupabase.from(tipo).insert(fila);
   var sensible = TABLAS_SENSIBLES.indexOf(tipo) !== -1;
-  var respuesta = sensible ? await pedido : await pedido.select();
+  var respuesta = sensible ? await pedido : await pedido.select(columnasDe(tipo));
   if (respuesta.error) {
     console.error('Supabase no guardó en ' + tipo + ':', respuesta.error);
     throw respuesta.error;
@@ -764,7 +771,7 @@ async function guardarDatos(tipo, fila) {
 // Devuelve la fila cambiada. Si falla, lo escribe en la consola y lanza el error.
 async function actualizarDatos(tipo, id, cambios) {
   if (!clienteSupabase) throw new Error('No se pudo conectar con Supabase');
-  var respuesta = await clienteSupabase.from(tipo).update(cambios).eq('id', id).select();
+  var respuesta = await clienteSupabase.from(tipo).update(cambios).eq('id', id).select(columnasDe(tipo));
   if (respuesta.error) {
     console.error('Supabase no cambió ' + tipo + ' ' + id + ':', respuesta.error);
     throw respuesta.error;
@@ -836,13 +843,31 @@ async function borrarMiResena(resena) {
 // (sin sesión, o invitado: lo que hace queda en el navegador).
 // Con crear = true, si la cuenta todavía no tiene fila (por ejemplo, una de Steam), se la crea.
 var MI_FILA = null;
+
+// Mi fila de usuarios (o null). auth_id no se puede leer desde la app: se pregunta a la base con
+// mi_usuario_id() una vez y el número de la fila se recuerda en el navegador ("miFilaId", con la cuenta).
+async function buscarMiFila(cuenta, sinRecordar) {
+  var recordado = sinRecordar ? null : leerMemoria('miFilaId', null);
+  var id = recordado && recordado.auth === cuenta.id ? recordado.id : null;
+  if (!id) {
+    var r = await clienteSupabase.rpc('mi_usuario_id');
+    if (r.error) { console.error('Supabase no dijo cuál es tu fila de usuarios:', r.error); throw r.error; }
+    id = r.data || null;
+    guardarMemoria('miFilaId', id ? { auth: cuenta.id, id: id } : null);
+    if (!id) return null;
+  }
+  var fila = (FILAS.usuarios || []).find(function (u) { return u.id === id; }) || await obtenerUno('usuarios', id);
+  // El número recordado ya no existe (por ejemplo, se borró la cuenta): se pregunta otra vez
+  if (!fila && recordado) return buscarMiFila(cuenta, true);
+  return fila || null;
+}
+
 async function reconocerMiFila(crear) {
   if (!clienteSupabase || !obtenerSesion()) { MI_FILA = null; return null; }
   var sesion = (await clienteSupabase.auth.getSession()).data.session;
   var cuenta = sesion && sesion.user;
   if (!cuenta || cuenta.is_anonymous) { MI_FILA = null; return null; }
-  var fila = (FILAS.usuarios || []).find(function (u) { return u.auth_id === cuenta.id; }) || null;
-  if (!fila) fila = await obtenerUno('usuarios', cuenta.id, 'auth_id');
+  var fila = await buscarMiFila(cuenta);
   if (!fila && crear) {
     var local = obtenerSesion();
     var nombre = local.name || 'Jugador';
@@ -1112,12 +1137,21 @@ function miPresencia() {
   };
 }
 
-// Entra al canal "en-linea". La promesa termina con la primera lista de conectados (o a los 1,5 s).
+// Entra al canal "en-linea". La promesa termina con la primera lista de conectados (o a los 0,6 s).
+// Para no hacer esperar cada página, la última lista se recuerda en la pestaña (sessionStorage) 2 minutos:
+// si hay una reciente, la página se dibuja ya con ella y se pone al día cuando llega la nueva.
+var EN_LINEA_RECIENTE = 2 * 60 * 1000;
 function iniciarPresencia() {
   return new Promise(function (listo) {
     if (!clienteSupabase || !clienteSupabase.channel) { listo(); return; }
     var terminado = false;
     var terminar = function () { if (!terminado) { terminado = true; listo(); } };
+    try {
+      var reciente = JSON.parse(sessionStorage.getItem('ss.enLinea') || 'null');
+      if (reciente && Date.now() - reciente.cuando < EN_LINEA_RECIENTE) { EN_LINEA = reciente.conectados; DATOS_ARMADOS = {}; terminar(); }
+    } catch (e) { /* sin sessionStorage: se espera la lista */ }
+    // Sin cuenta (visitante o invitado), Supabase no manda la lista de conectados: no se espera
+    if (!MI_FILA) terminar();
     var clave = MI_FILA ? MI_FILA.usuario : 'oyente-' + Math.random().toString(36).slice(2);
     var canal = clienteSupabase.channel('en-linea', { config: { presence: { key: clave } } });
     canal.on('presence', { event: 'sync' }, function () {
@@ -1129,6 +1163,7 @@ function iniciarPresencia() {
       });
       EN_LINEA = conectados;
       DATOS_ARMADOS = {};
+      try { sessionStorage.setItem('ss.enLinea', JSON.stringify({ cuando: Date.now(), conectados: conectados })); } catch (e) { /* sin sessionStorage */ }
       if (terminado && typeof alCambiarPresencia === 'function') alCambiarPresencia();
       terminar();
     });
@@ -1136,7 +1171,7 @@ function iniciarPresencia() {
       if (estado === 'SUBSCRIBED' && MI_FILA) canal.track(miPresencia()).catch(function () { /* sin presencia propia */ });
       if (estado === 'CHANNEL_ERROR' || estado === 'TIMED_OUT') terminar();
     });
-    setTimeout(terminar, 1500);
+    setTimeout(terminar, 600);
     // La última conexión (para "hace 2 h"), como mucho cada 5 minutos
     if (MI_FILA && Date.now() - (leerMemoria('ultimaConexionGuardada', 0) || 0) > CADA_CUANTO_ULTIMA_CONEXION) {
       guardarMemoria('ultimaConexionGuardada', Date.now());
@@ -3259,7 +3294,8 @@ function mostrarJuego(juego) {
     var precio = j.steam_gratis ? '<b>Gratis</b>'
       : (j.steam_precio ? (j.steam_descuento ? '<span class="etiqueta etiqueta--exito">-' + escapar(j.steam_descuento) + '%</span> <s>' + escapar(j.steam_precio_original || '') + '</s> ' : '') + '<b>' + escapar(j.steam_precio) + '</b>' : '');
     var partes = [precio,
-      j.steam_nota ? escapar(j.steam_nota) + (j.steam_nota_pct != null ? ' (' + j.steam_nota_pct + '% de ' + formatearNumero(j.steam_resenas) + ')' : '') : '',
+      // Sin reseñas en Steam no hay nota: antes decía «No existen reseñas de usuarios (0% de 0)»
+      j.steam_nota && j.steam_resenas > 0 ? escapar(j.steam_nota) + (j.steam_nota_pct != null ? ' (' + j.steam_nota_pct + '% de ' + formatearNumero(j.steam_resenas) + ')' : '') : '',
       j.steam_jugando ? formatearNumero(j.steam_jugando) + ' jugando ahora' : '',
       '<a href="https://store.steampowered.com/app/' + j.steam_appid + '/" target="_blank" rel="noopener">Ver en Steam</a>'
     ].filter(Boolean);
@@ -6216,6 +6252,9 @@ function pantallaBiblioteca() {
       [formatearNumero(jugados), 'Jugados'], [formatearNumero(todos.length - jugados), 'Sin estrenar']
     ].map(function (d) { return '<div class="dato"><span class="dato__valor">' + d[0] + '</span><span class="dato__etiqueta">' + d[1] + '</span></div>'; }).join('');
 
+    // Con la biblioteca vacía, ordenar o buscar no hace nada: se desactivan
+    document.querySelectorAll('[data-orden]').forEach(function (c) { c.disabled = !todos.length; });
+    buscador.disabled = !todos.length;
     var texto = buscador.value.trim().toLowerCase();
     var lista = todos.filter(function (j) { return !texto || j.nombre.toLowerCase().indexOf(texto) !== -1; }).sort(ORDENES[orden]);
     caja.innerHTML = lista.map(function (j) {
@@ -6226,7 +6265,7 @@ function pantallaBiblioteca() {
           '<b>' + escapar(j.nombre_corto) + '</b>' +
           '<span class="tarjeta__texto">' + (j.logros.totales ? j.logros.obtenidos + '/' + j.logros.totales + ' logros' : 'Jugado') + '</span></a>';
       }
-      return '<a href=""' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
+      return '<a href="' + escapar(enlaceJuego(j)) + '" target="_blank" rel="noopener" title="Ver ' + escapar(j.nombre) + ' en Steam">' +
         // De qué cuenta viene el juego: logo en la esquina inferior izquierda de la portada (hoy solo Steam)
         '<span class="portada portada--enlace">' + imagenPortada(j) +
           '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-steam.png')) + '" alt="Steam" title="De tu cuenta de Steam"></span>' +
@@ -6239,6 +6278,8 @@ function pantallaBiblioteca() {
 
   if (!tieneSteam() && !tieneXbox()) {
     document.getElementById('resumen-biblioteca').hidden = true;
+    document.querySelectorAll('[data-orden]').forEach(function (c) { c.disabled = true; });
+    buscador.disabled = true;
     caja.outerHTML = '<div class="vacio"><b>Vincula tu cuenta de Steam o de Xbox para ver tu biblioteca.</b><a href="editar-perfil.html#cuentas">Vincular cuenta</a></div>';
     return;
   }

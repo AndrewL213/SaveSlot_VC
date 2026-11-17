@@ -411,7 +411,12 @@ revoke all on table public.mensajes_contacto from anon, authenticated;
 -- usuarios: todos ven los perfiles; cada persona crea y cambia el suyo (no su nivel ni su XP)
 drop policy if exists "usuarios: ver" on public.usuarios;
 create policy "usuarios: ver" on public.usuarios for select to anon, authenticated using (true);
-grant select on table public.usuarios to anon, authenticated;
+-- Se ven todas las columnas menos auth_id (el número de la cuenta de Supabase): nadie lo necesita ver.
+-- La app encuentra la fila propia con mi_usuario_id(). (ultima_conexion sí se ve: es «Desconectado · hace 5 h».)
+-- OJO: si agregas una columna a usuarios que la app deba leer, agrégala aquí y en COLUMNAS de js/app.js.
+revoke select on table public.usuarios from anon, authenticated;
+grant select (id, created_at, usuario, nombre, iniciales, sobre_mi, jugando_ahora, miembro_desde, nivel, xp, color, forma_de_entrar, invitado, foto)
+  on table public.usuarios to anon, authenticated;
 drop policy if exists "usuarios: agregar el propio" on public.usuarios;
 create policy "usuarios: agregar el propio" on public.usuarios for insert to authenticated with check (auth_id = auth.uid());
 drop policy if exists "usuarios: cambiar el propio" on public.usuarios;
@@ -981,6 +986,7 @@ grant execute on function public.cumplir_mision(bigint, text, text) to service_r
 alter table public.usuarios add column if not exists ultima_conexion timestamptz;
 -- Cada persona solo cambia la suya (la regla "usuarios: cambiar el propio" ya limita a su fila)
 grant update (ultima_conexion) on table public.usuarios to authenticated;
+grant select (ultima_conexion) on table public.usuarios to anon, authenticated;
 
 -- ============================================================================
 -- 8. TAREA AUTOMÁTICA: AVISOS DE CIERRE DE INSCRIPCIONES (pg_cron, el reloj de Supabase)
