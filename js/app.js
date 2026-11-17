@@ -1360,7 +1360,7 @@ function slugDeJuego(ref) {
 
 // Datos del catálogo que manda IGDB. Los de la comunidad (calificación, dificultad, votos…),
 // la portada de assets/ y el color se quedan como están en data.js.
-var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'fuente_descripcion', 'id_tienda_xbox', 'similares'];
+var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'fuente_descripcion', 'id_tienda_xbox', 'tipos', 'similares'];
 
 // Junta un juego de data.js con el mismo juego de IGDB (cualquiera de los dos puede faltar).
 /* ---------- Datos de la comunidad de SaveSlot ----------
@@ -1414,7 +1414,7 @@ function guardarJuegoIgdb(juego) {
 
 // Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
 // Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
-var VERSION_API = 5;
+var VERSION_API = 6;
 
 // La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
 // se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
@@ -1516,13 +1516,29 @@ function filtrarJuegos(juegos, filtros) {
     if (texto && (j.nombre + ' ' + j.nombre_corto + ' ' + j.generos.join(' ')).toLowerCase().indexOf(texto) === -1) return false;
     if (filtros.generos.length && !filtros.generos.some(function (g) { return j.generos.indexOf(g) !== -1; })) return false;
     if (filtros.plataformas.length && !filtros.plataformas.some(function (p) { return j.plataformas.indexOf(p) !== -1; })) return false;
-    if (filtros.tipo && j.tipo !== filtros.tipo) return false;
+    if (filtros.tipo && !cumpleTipo(j, filtros)) return false;
     if (filtros.duracion === 'corto' && !(horas && horas < 10)) return false;
     if (filtros.duracion === 'medio' && !(horas && horas >= 10 && horas <= 40)) return false;
     if (filtros.duracion === 'largo' && !(horas && horas > 40)) return false;
     if (filtros.desde && j.anio && j.anio < filtros.desde) return false;
     if (filtros.hasta && j.anio && j.anio > filtros.hasta) return false;
     return true;
+  });
+}
+
+// ¿El juego es del tipo elegido en Buscar? (lo mismo que pide api/igdb.js al explorar)
+// AAA e Indie: su "tipo". Gratis, Multijugador, Remakes y Próximos: su lista "tipos" (de IGDB).
+// Exclusivos: sale en la plataforma elegida y en ninguna otra consola (PC no cuenta);
+// exclusivo de PC: en ninguna consola. Sin plataforma elegida, exclusivo de cualquier consola.
+var CONSOLAS = ['PlayStation', 'Xbox', 'Nintendo'];
+function cumpleTipo(juego, filtros) {
+  if (filtros.tipo === 'AAA' || filtros.tipo === 'Indie') return juego.tipo === filtros.tipo;
+  if (filtros.tipo !== 'Exclusivos') return (juego.tipos || []).indexOf(filtros.tipo) !== -1;
+  var consolas = juego.plataformas.filter(function (p) { return CONSOLAS.indexOf(p) !== -1; });
+  var elegidas = filtros.plataformas.length ? filtros.plataformas : CONSOLAS;
+  return elegidas.some(function (p) {
+    if (p === 'PC') return juego.plataformas.indexOf('PC') !== -1 && !consolas.length;
+    return consolas.length === 1 && consolas[0] === p;
   });
 }
 

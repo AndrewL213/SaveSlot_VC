@@ -35,7 +35,7 @@ let permiso = null;
 let permisoVence = 0;
 
 // Campos que se le piden a IGDB por cada juego.
-const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count, game_modes, external_games.uid, external_games.external_game_source, external_games.category, external_games.url;';
+const CAMPOS = 'fields name, slug, summary, first_release_date, genres.name, themes.name, keywords.slug, platforms.name, cover.image_id, involved_companies.developer, involved_companies.company.name, total_rating_count, game_modes, game_type, external_games.uid, external_games.external_game_source, external_games.category, external_games.url;';
 
 const POR_PAGINA = 24;
 
@@ -207,6 +207,14 @@ function traducir(j, horas) {
     anio: j.first_release_date ? new Date(j.first_release_date * 1000).getUTCFullYear() : null,
     desarrolladora: desarrolla ? desarrolla.company.name : '',
     tipo: nombresIgdb.indexOf('Indie') !== -1 ? 'Indie' : 'AAA',
+    // Los demás tipos del filtro de Buscar (para filtrar también los resultados de una búsqueda por nombre).
+    // "Exclusivos" no va aquí: depende de la plataforma elegida y se calcula con "plataformas".
+    tipos: [
+      (j.keywords || []).some(function (k) { return PALABRAS_GRATIS.indexOf(k.slug) !== -1; }) ? 'Gratis' : null,
+      (j.game_modes || []).some(function (m) { return MODOS_MULTIJUGADOR.indexOf(m) !== -1; }) ? 'Multijugador' : null,
+      j.game_type === 8 || j.game_type === 9 ? 'Remakes' : null,
+      j.first_release_date && j.first_release_date * 1000 > Date.now() ? 'Proximos' : null
+    ].filter(Boolean),
     // Solo online: tiene modos de juego y ninguno es "un jugador" (1). No tiene historia que medir.
     solo_online: !!(j.game_modes && j.game_modes.length && j.game_modes.indexOf(1) === -1),
     horas_historia: horas,
@@ -443,7 +451,7 @@ async function numerosDe(slugs) {
 }
 
 // Arma el "where" de IGDB con los filtros de la página. Solo acepta valores conocidos.
-async function condiciones(filtros) {
+async function condiciones(filtros, extras) {
   const partes = [SOLO_JUEGOS];
   const generos = lista(filtros.generos).filter(function (g) { return FILTRO_GENERO[g]; });
   if (generos.length) {
@@ -461,11 +469,56 @@ async function condiciones(filtros) {
   if (plataformas.length) partes.push('platforms = (' + plataformas.join(',') + ')');
   if (filtros.tipo === 'Indie') partes.push('genres = (32)');
   if (filtros.tipo === 'AAA') partes.push('genres = !(32)');
+  if (filtros.tipo === 'Multijugador') partes.push('game_modes = (' + MODOS_MULTIJUGADOR.join(',') + ')');
+  if (filtros.tipo === 'Remakes') partes.push('game_type = (8,9)'); // 8 remake, 9 remaster
+  if (filtros.tipo === 'Gratis') {
+    const numeros = await numerosDe(PALABRAS_GRATIS);
+    partes.push(numeros.length ? 'keywords = (' + numeros.join(',') + ')' : 'id = 0'); // sin la palabra en IGDB: ninguno
+  }
+  if (filtros.tipo === 'Exclusivos') partes.push(condicionExclusivos(lista(filtros.plataformas)));
+  if (filtros.tipo === 'Proximos') {
+    const acceso = extras ? await numeroAccesoAnticipado() : null;
+    partes.push('(first_release_date > ' + Math.floor(Date.now() / 1000) + (acceso ? ' | game_status = ' + acceso : '') + ')');
+  }
   const desde = anio(filtros.desde), hasta = anio(filtros.hasta);
   if (desde) partes.push('first_release_date >= ' + Date.UTC(desde, 0, 1) / 1000);
   if (hasta) partes.push('first_release_date < ' + Date.UTC(hasta + 1, 0, 1) / 1000);
-  partes.push('total_rating_count != null');
+  // Los que no salieron todavía no tienen calificaciones: para "Próximos" no se exige
+  if (filtros.tipo !== 'Proximos') partes.push('total_rating_count != null');
   return partes.join(' & ');
+}
+
+// Modos de juego de IGDB: 2 multijugador, 3 cooperativo, 4 pantalla dividida, 5 MMO, 6 battle royale
+const MODOS_MULTIJUGADOR = [2, 3, 4, 5, 6];
+// Palabras clave de IGDB para los juegos gratis
+const PALABRAS_GRATIS = ['free-to-play'];
+const CONSOLAS = ['PlayStation', 'Xbox', 'Nintendo'];
+
+// Exclusivos: salen en esa plataforma y en ninguna de las otras consolas (como se dice en el día a día:
+// un exclusivo de Xbox puede salir también en PC). Exclusivo de PC: no sale en ninguna consola.
+// Si no se eligió plataforma, cuenta un exclusivo de cualquier consola.
+function condicionExclusivos(elegidas) {
+  const familias = elegidas.filter(function (p) { return ['PC'].concat(CONSOLAS).indexOf(p) !== -1; });
+  const opciones = (familias.length ? familias : CONSOLAS).map(function (f) {
+    // Las consolas que no puede tener (para PC, todas)
+    const prohibidas = [].concat.apply([], CONSOLAS.filter(function (c) { return c !== f; }).map(function (c) { return PLATAFORMAS[c]; }));
+    return '(platforms = (' + PLATAFORMAS[f].join(',') + ') & platforms = !(' + prohibidas.join(',') + '))';
+  });
+  return '(' + opciones.join(' | ') + ')';
+}
+
+// Número del estado "Early Access" (acceso anticipado) en IGDB: se busca una vez por su nombre.
+let numeroAcceso;
+async function numeroAccesoAnticipado() {
+  if (numeroAcceso !== undefined) return numeroAcceso;
+  try {
+    const estados = await consultar('game_statuses', 'fields id, status; limit 50;');
+    const ea = estados.find(function (e) { return /early access/i.test(e.status || ''); });
+    numeroAcceso = ea ? ea.id : null;
+  } catch (e) {
+    return null; // se intenta otra vez en el próximo pedido
+  }
+  return numeroAcceso;
 }
 
 function lista(valor) {
@@ -486,15 +539,30 @@ function cumpleDuracion(juego, duracion) {
   return true;
 }
 
+// "Próximos" usa dos cosas que solo pide ese filtro (el estado "Early Access" y el orden por hypes):
+// si IGDB las rechaza, se pide otra vez solo con la fecha de salida, para que el filtro nunca rompa la página.
 async function explorar(filtros) {
+  if (filtros.tipo !== 'Proximos') return explorarCon(filtros, false);
+  try {
+    return await explorarCon(filtros, true);
+  } catch (e) {
+    console.error('Próximos sin extras:', e.message);
+    return explorarCon(filtros, false);
+  }
+}
+
+async function explorarCon(filtros, extras) {
   const pagina = Math.min(Math.max(parseInt(filtros.pagina, 10) || 1, 1), 50);
   const conDuracion = ['corto', 'medio', 'largo'].indexOf(filtros.duracion) !== -1;
   // Con duración se piden más, porque una parte se descarta después.
   const pedir = conDuracion ? POR_PAGINA * 3 : POR_PAGINA;
-  const where = await condiciones(filtros);
+  const where = await condiciones(filtros, extras);
+  // Los próximos no tienen calificaciones: se ordenan por cuánta gente los espera (hypes)
+  // o, sin extras, por la fecha de salida (los más cercanos primero)
+  const orden = filtros.tipo !== 'Proximos' ? 'total_rating_count desc' : extras ? 'hypes desc' : 'first_release_date asc';
   // A la vez: la página de juegos y cuántos hay en total (para "N juegos" en Buscar)
   const [juegos, cuenta] = await Promise.all([
-    consultar('games', CAMPOS + ' where ' + where + '; sort total_rating_count desc; limit ' + pedir + '; offset ' + (pagina - 1) * pedir + ';'),
+    consultar('games', CAMPOS + ' where ' + where + '; sort ' + orden + '; limit ' + pedir + '; offset ' + (pagina - 1) * pedir + ';'),
     conDuracion ? null : consultar('games/count', 'where ' + where + ';')
   ]);
   let traducidos = await conHoras(juegos);
