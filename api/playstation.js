@@ -43,6 +43,20 @@ function minutosDe(duracion) {
 const limpio = (nombre) => String(nombre || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 
 
+// Juegos jugados con sus horas (gamelist de PSN, solo PS4 y PS5). Si la cuenta vinculada es la misma con la que
+// entra el servidor (el NPSSO), se piden como "me", que no depende de la privacidad.
+async function jugadosDe(auth, id, onlineId) {
+  const opciones = { limit: 200, categories: "ps4_game,ps5_native_game" };
+  const pedir = (cuenta) => p.psn.getUserPlayedGames(auth, cuenta, opciones).catch((e) => { console.error("PSN juegos jugados (" + cuenta + "):", e.message); return null; });
+  let r = await pedir(id);
+  if (!r || !(r.titles || []).length) {
+    const yo = await p.psn.getProfileFromAccountId(auth, "me").catch(() => null);
+    if (yo && String(yo.onlineId).toLowerCase() === String(onlineId).toLowerCase()) r = (await pedir("me")) || r;
+  }
+  console.log("PSN juegos jugados:", r ? JSON.stringify(r).slice(0, 400) : "sin respuesta");
+  return r;
+}
+
 async function datos(req, res, cuenta) {
   try {
     const vinculo = await p.leerVinculo(cuenta.id);
@@ -53,7 +67,7 @@ async function datos(req, res, cuenta) {
     const [resumen, titulos, jugados] = await Promise.all([
       p.psn.getUserTrophyProfileSummary(auth, id).catch((e) => ({ error: e })),
       p.psn.getUserTitles(auth, id, { limit: 800 }).catch((e) => ({ error: e })),
-      p.psn.getUserPlayedGames(auth, id, { limit: 200 }).catch((e) => { console.error("PSN juegos jugados:", e.message); return null; }),
+      jugadosDe(auth, id, vinculo.online_id),
     ]);
     if (resumen.error && titulos.error) {
       console.error("PlayStation privado o sin datos:", String(resumen.error.message || resumen.error));
@@ -63,7 +77,6 @@ async function datos(req, res, cuenta) {
     // Horas y última vez de getUserPlayedGames (si la privacidad lo deja), por nombre del juego
     const horas = {};
     const listaJugados = (jugados && jugados.titles) || [];
-    console.log("PSN juegos jugados:", listaJugados.length, JSON.stringify(listaJugados.slice(0, 5).map((t) => [t.name, t.localizedName, t.concept && t.concept.name, t.playDuration, t.category])));
     listaJugados.forEach((t) => {
       const dato = { minutes: minutosDe(t.playDuration), last: t.lastPlayedDateTime };
       [t.name, t.localizedName, t.concept && t.concept.name].forEach((n) => { if (n) horas[limpio(n)] = dato; });
