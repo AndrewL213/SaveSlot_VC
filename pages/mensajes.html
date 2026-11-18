@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mensajes · SaveSlot</title>
+<meta name="description" content="Tus conversaciones con tus amigos de SaveSlot.">
+<meta name="theme-color" content="#12161D">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icono-app-192.png">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body data-pantalla="mensajes">
+
+<header class="navegacion">
+  <div class="navegacion__contenido">
+    <a class="navegacion__logo" href="../index.html"><img src="../assets/favicon.svg" alt="">SaveSlot</a>
+    <nav aria-label="Principal">
+      <ul class="navegacion__enlaces">
+        <li><a class="navegacion__enlace" href="../index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></a></li>
+        <li><a class="navegacion__enlace" href="buscar-juegos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4M15.5 12h.01M18 14h.01"/></svg><span>Juegos</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--escritorio" href="comunidad.html"><span>Comunidad</span></a></li>
+        <li><a class="navegacion__enlace" href="eventos.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Eventos</span></a></li>
+        <li><a class="navegacion__enlace" href="matchplay.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span>MatchPlay</span></a></li>
+        <li><a class="navegacion__enlace navegacion__enlace--movil" href="iniciar-sesion.html" data-enlace-cuenta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span data-texto>Entrar</span></a></li>
+      </ul>
+    </nav>
+    <form class="navegacion__buscar" role="search" action="buscar-juegos.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="solo-lectores" for="buscar-encabezado">Buscar juegos</label>
+      <input class="navegacion__buscar-campo" id="buscar-encabezado" name="q" type="search" placeholder="Buscar juegos">
+    </form>
+    <div class="navegacion__acciones" data-acciones-sesion>
+      <a class="boton boton--secundario boton--sm navegacion__ocultar-movil" href="iniciar-sesion.html">Iniciar sesión</a>
+      <a class="boton boton--sm" href="crear-cuenta.html">Crear cuenta</a>
+    </div>
+  </div>
+</header>
+
+<main class="chat">
+
+  <aside class="chat__biblioteca" id="biblioteca" aria-label="Conversaciones">
+    <h1 class="panel__titulo">Mensajes</h1>
+    <label class="solo-lectores" for="buscar-conversaciones">Buscar entre tus amigos</label>
+    <input class="campo campo--sm" id="buscar-conversaciones" type="search" placeholder="Buscar entre tus amigos">
+    <nav class="chat__lista" id="lista-conversaciones" aria-label="Tus conversaciones"></nav>
+  </aside>
+
+  <section class="chat__principal" aria-label="Conversación">
+    <button class="boton boton--secundario boton--sm chat__boton-biblioteca" type="button" id="boton-conversaciones" aria-expanded="false" aria-controls="biblioteca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Conversaciones</button>
+
+    <div class="chat__inicio" id="sin-conversacion">
+      <div class="chat__saludo">
+        <h2 class="titulo-pagina" id="titulo-sin-conversacion">Elige a un amigo para escribirle</h2>
+        <p class="bajada" id="texto-sin-conversacion">Los mensajes son solo entre amigos y llegan sin recargar la página.</p>
+      </div>
+    </div>
+
+    <div class="chat__hilo" id="hilo" hidden aria-live="polite"></div>
+
+    <form class="chat__compositor" id="compositor" hidden>
+      <div class="buscador">
+        <label class="solo-lectores" for="mensaje">Escribe tu mensaje</label>
+        <input class="buscador__campo" id="mensaje" autocomplete="off" maxlength="1000" placeholder="Escribe un mensaje">
+        <button class="boton boton--icono" type="submit" aria-label="Enviar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+      <p class="grupo-campo__error" id="error-mensaje" role="alert" hidden></p>
+    </form>
+  </section>
+
+</main>
+
+<footer class="pie">
+  <div class="pie__contenido">
+    <div class="pie__marca">
+      <a class="pie__logo" href="../index.html">SaveSlot</a>
+      <p class="pie__frase">Tu solución gamer. Todos tus juegos y sus comunidades en un solo lugar.</p>
+    </div>
+    <nav class="pie__columnas" aria-label="Pie de página">
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Explora</h2>
+        <a class="pie__enlace" href="buscar-juegos.html">Juegos</a>
+        <a class="pie__enlace" href="juego-random.html">Juego random</a>
+        <a class="pie__enlace" href="eventos.html">Eventos</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Cuenta</h2>
+        <a class="pie__enlace" href="perfil.html">Mi perfil</a>
+        <a class="pie__enlace" href="amigos.html">Amigos</a>
+        <a class="pie__enlace" href="historial-resenas.html">Historial de reseñas</a>
+        <a class="pie__enlace" href="diario.html">Diario</a>
+        <a class="pie__enlace" href="logros.html">Logros</a>
+        <a class="pie__enlace" href="biblioteca.html">Biblioteca</a>
+        <a class="pie__enlace" href="iniciar-sesion.html" data-pie-sesion>Iniciar sesión</a>
+      </div>
+      <div class="pie__columna">
+        <h2 class="pie__titulo">Ayuda</h2>
+        <a class="pie__enlace" href="contacto.html">Contáctanos</a>
+        <a class="pie__enlace" href="../404.html?tipo=estado">Estado de servicios</a>
+        <a class="pie__enlace" href="../404.html?tipo=demo">Sobre el prototipo</a>
+        <a class="pie__enlace" href="eventos.html#reglas">Reglas de eventos</a>
+      </div>
+    </nav>
+    <p class="pie__creditos">Proyecto académico sin fines comerciales · Creación Digital, Universidad El Bosque. Nombres de juegos, marcas y portadas pertenecen a sus dueños; portadas de Steam, IGDB y Wikipedia. Catálogo de juegos: IGDB.com. Cuentas: Supabase. Datos de Steam y Xbox: reales (Steam Web API y Xbox Live). Datos de PlayStation: API externa no oficial (psn-api, de la comunidad; no es de Sony). Comunidad y amigos: Supabase. Eventos y MatchPlay: de ejemplo.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" integrity="sha384-rwykjmWNwVxboyFmvK9OXN0wj9hnMHA2aAHtits54DuACyCq0M2PrSNxhRb+hvXT" crossorigin="anonymous"></script>
+<script src="../js/supabase.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+</body>
+</html>

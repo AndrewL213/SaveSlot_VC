@@ -365,7 +365,7 @@ Hoy: los avisos de baja de precio de la lista de deseos de Steam los crea la app
 Campos:
 - id: número — obligatorio
 - usuario: texto — obligatorio
-- tipo: opción (voto_util, cierre_inscripciones) — obligatorio
+- tipo: opción (voto_util, cierre_inscripciones, mensaje) — obligatorio
 - texto: texto — obligatorio
 - enlace: enlace — a dónde lleva — obligatorio
 - fecha: fecha y hora — obligatorio
@@ -432,6 +432,20 @@ Campos:
 - fecha: fecha y hora — la última vez que lo abrió — obligatorio
 Se relaciona con: usuarios.id y el juego. Una fila por persona y juego: abrirlo otra vez solo cambia la fecha. Los juegos que solo están en Steam (sin número de IGDB) se quedan en el navegador.
 
+### mensajes
+Qué guarda: los mensajes entre amigos (conversaciones 1 a 1).
+Tipo de dato: personal
+Se guarda en: Supabase (sección 9 de `supabase/esquema.sql`). Llegan en vivo con Supabase Realtime.
+Desde la app se puede: ver los propios (enviados y recibidos), enviar a un **amigo aceptado** (la base lo comprueba) y marcar como leídos los recibidos (Mensajes). No se pueden cambiar ni borrar. Cada mensaje nuevo crea un aviso en la campana de quien lo recibe (uno solo sin leer por conversación).
+Campos:
+- id: número — obligatorio
+- de_id: número (usuarios.id) — quién lo envía — obligatorio
+- para_id: número (usuarios.id) — a quién — obligatorio
+- texto: texto — de 1 a 1.000 caracteres — obligatorio
+- leido: sí/no — lo cambia solo quien lo recibe — obligatorio
+- created_at: fecha y hora — cuándo se envió — obligatorio
+Se relaciona con: usuarios.id (las dos personas) y amigos (solo se puede escribir a un amigo aceptado). Si se borra una cuenta, se borran sus mensajes.
+
 ### mensajes_contacto
 Qué guarda: lo que la gente escribe en Contáctanos.
 Tipo de dato: sensible
@@ -468,7 +482,7 @@ Se relaciona con: ninguna.
 - **Datos de ejemplo (`js/data.js`):** quedan solo como registro (la app ya no los muestra). Las personas de ejemplo ya no están en Supabase (se borraron con `supabase/limpiar-ejemplos.sql` y `esquema.sql` ya no las carga): la comunidad es de cuentas reales.
 - **Simulados (`js/data.js`):** respuestas_matchplay (las respuestas de la IA), y logros, progreso_logros y resumen_logros de otras plataformas (los de Steam son reales).
 - **Archivos (Supabase Storage):** carpeta pública **avatares** (código en `supabase/avatares.sql`, ya creada): las fotos de perfil, en `avatares/<id de Auth>/avatar.jpg`. Cualquiera las ve; cada persona solo sube, cambia o borra la suya (al borrar la cuenta se borra también). Solo imágenes JPG, PNG o WebP de hasta 2 MB (la app las recorta a 256 px antes de subirlas).
-- **Después:** subir clips propios, pagos de eventos y mensajes entre amigos. (Ver clips de Twitch en la ficha del juego ya es real.)
+- **Después:** subir clips propios y pagos de eventos. (Ver clips de Twitch en la ficha del juego y los mensajes entre amigos ya son reales.)
 
 ### Navegador → tabla de Supabase
 
@@ -928,7 +942,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Estado "en línea": Real (presencia de Supabase Realtime, en vivo: las tarjetas, el resumen y la pestaña cambian sin recargar). Desconectado dice "hace X" (`usuarios.ultima_conexion`)
   - Estado "jugando": Real (en línea y con "jugando ahora" de Supabase o el juego de Steam que avisa la presencia)
   - Actividad de amigos: Real (Supabase)
-  - Mensaje: Después (el diseño dice que llegará en una próxima versión)
+  - Mensaje: Real (abre la conversación en Mensajes, pantalla 34). **Cambio de spec** (antes era Después)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
@@ -951,7 +965,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Perfil, favoritos, reseñas, juegos en común, actividad y amigos en común: Real (Supabase)
   - Agregar o eliminar amigo: Real (Supabase, igual que en Amigos: eliminar pide confirmación)
   - Compartir (copiar enlace): Simulado
-  - Mensaje: Después
+  - Mensaje: Real (solo con amigos: abre la conversación en Mensajes, pantalla 34). **Cambio de spec** (antes era Después)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con sus portadas (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
@@ -1058,3 +1072,19 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Con el correo mal escrito, o la contraseña de menos de 8 caracteres, muestra el error junto al campo.
   - Con el enlace del correo, deja poner la contraseña nueva y entra a la cuenta.
   - Con un enlace vencido, avisa y deja pedir otro.
+
+### 34. Mensajes
+- **Archivo de diseño:** no tiene (pantalla nueva; usa el diseño de chat de MatchPlay y los componentes del kit: `.item-chat`, `.mensaje`, `.burbuja`, `.buscador`, `.fila`, `.contador`)
+- **Objetivo:** Esta pantalla existe para que el gamer casual pueda hablar con sus amigos sin salir de SaveSlot. Sabemos que funciona si dos amigos se escriben y se responden sin recargar.
+- **Contenido:**
+  1. Conversaciones: tus amigos y quien te escribió antes, las más recientes primero, con el número de mensajes sin leer y un buscador. En celular se abren con el botón «Conversaciones».
+  2. La conversación: quién es (enlace a su perfil y su estado), los mensajes (los tuyos a la derecha) con «hace X», y el campo para escribir (hasta 1.000 caracteres).
+  3. Sin conversación elegida: «Elige a un amigo para escribirle».
+- **Cómo se llega:** el botón de Mensajes de la barra (con el número de no leídos), «Mensajes» en el menú de la cuenta, «Mensaje» en Amigos y en el perfil de un amigo, y el aviso de la campana. La dirección es `mensajes.html?con=usuario`.
+- **Qué funciona de verdad:** Real (Supabase: tabla **mensajes**; en vivo con Supabase Realtime). Abrir una conversación marca como leídos sus mensajes y su aviso de la campana.
+- **Reglas:** solo se puede escribir a un amigo aceptado (si dejan de ser amigos, la conversación se puede leer pero no escribir). El invitado no tiene mensajes: se le invita a crear una cuenta.
+- **Está lista cuando:**
+  - Funciona en celular (375 px de ancho).
+  - Un mensaje enviado aparece en la otra cuenta sin recargar, y en su campana.
+  - No deja escribir a quien no es tu amigo (ni desde la página ni desde la consola del navegador).
+  - Al abrir la conversación, el número de no leídos baja a 0.

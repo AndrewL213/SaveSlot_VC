@@ -2073,6 +2073,7 @@ function mostrarAviso(texto, accion) {
 /* ---------- Partes comunes a todas las pantallas ---------- */
 
 var ICONO_AMIGOS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.8 3.1 2.6 3.5 5.2"/></svg>';
+var ICONO_MENSAJES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>';
 var ICONO_CAMPANA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
 
 /* ---------- Notificaciones (la campana) ----------
@@ -2116,6 +2117,27 @@ async function borrarAviso(aviso) {
   guardarMemoria('notisBorradas', (leerMemoria('notisBorradas', []) || []).concat(aviso.clave).slice(-200));
 }
 
+/* ---------- Mensajes entre amigos (tabla mensajes, sección 9 de esquema.sql) ---------- */
+
+// Cuántos mensajes te llegaron sin leer (para el número del botón Mensajes de la barra).
+// Sin cuenta real, o si la tabla todavía no existe en la base: 0.
+async function contarMensajesNuevos() {
+  if (!MI_FILA || !clienteSupabase) return 0;
+  var r = await clienteSupabase.from('mensajes').select('id', { count: 'exact', head: true }).eq('para_id', MI_FILA.id).eq('leido', false);
+  return r.error ? 0 : (r.count || 0);
+}
+function ponerContadorMensajes(cantidad) {
+  var enlace = document.querySelector('[data-mensajes]');
+  if (!enlace) return;
+  var contador = enlace.querySelector('.navegacion__contador');
+  if (contador) contador.remove();
+  if (cantidad) enlace.insertAdjacentHTML('beforeend', '<span class="contador contador--destacado navegacion__contador" aria-hidden="true">' + cantidad + '</span>');
+  enlace.setAttribute('aria-label', 'Mensajes' + (cantidad ? ', ' + cantidad + ' sin leer' : ''));
+}
+function enlaceMensajes(usuario) {
+  return rutaPagina('mensajes.html') + '?con=' + encodeURIComponent(usuario);
+}
+
 // Encabezado: con sesión muestra Amigos, campana y la pastilla del usuario.
 function prepararEncabezado() {
   var sesion = obtenerSesion();
@@ -2138,6 +2160,7 @@ function prepararEncabezado() {
 
   acciones.innerHTML =
     '<a class="boton boton--secundario boton--icono navegacion__ocultar-movil" href="' + rutaPagina('amigos.html') + '" aria-label="Amigos">' + ICONO_AMIGOS + '</a>' +
+    '<a class="boton boton--secundario boton--icono navegacion__ocultar-movil" href="' + rutaPagina('mensajes.html') + '" aria-label="Mensajes" data-mensajes>' + ICONO_MENSAJES + '</a>' +
     '<button class="boton boton--secundario boton--icono" type="button" data-notificaciones aria-label="Notificaciones, ' + cantidad + ' nuevas">' + ICONO_CAMPANA +
       (cantidad ? '<span class="contador contador--destacado navegacion__contador" aria-hidden="true">' + cantidad + '</span>' : '') + '</button>' +
     // Menú de la cuenta: Mi perfil, Editar perfil y Cerrar sesión
@@ -2150,12 +2173,14 @@ function prepararEncabezado() {
       '<div class="menu-usuario__lista" id="menu-cuenta" role="menu" hidden>' +
         '<a class="menu-usuario__opcion" role="menuitem" href="' + rutaPagina('perfil.html') + '">Mi perfil</a>' +
         '<a class="menu-usuario__opcion" role="menuitem" href="' + rutaPagina('editar-perfil.html') + '">Editar perfil</a>' +
+        '<a class="menu-usuario__opcion" role="menuitem" href="' + rutaPagina('mensajes.html') + '">Mensajes</a>' +
         '<span class="menu-usuario__separador" role="separator"></span>' +
         '<button class="menu-usuario__opcion menu-usuario__opcion--peligro" role="menuitem" type="button" data-cerrar-sesion>Cerrar sesión</button>' +
       '</div>' +
     '</div>';
 
   activarMenuCuenta(acciones);
+  contarMensajesNuevos().then(ponerContadorMensajes);
 
   acciones.querySelector('[data-notificaciones]').addEventListener('click', function () {
     // Todo lo que está ahora queda visto: se quita el número de la campana
@@ -6833,7 +6858,7 @@ function pantallaAmigos() {
     var perfil = 'perfil-usuario.html?id=' + encodeURIComponent(p.usuario);
     var acciones = {
       amigos: '<a class="boton boton--secundario boton--sm" href="' + perfil + '">Ver perfil</a>' +
-        '<button class="boton boton--secundario boton--sm" type="button" data-mensaje="' + escapar(p.usuario) + '" aria-disabled="true">Mensaje <span class="etiqueta etiqueta--contorno">Pronto</span></button>' +
+        '<a class="boton boton--secundario boton--sm" href="' + escapar(enlaceMensajes(p.usuario)) + '">Mensaje</a>' +
         '<button class="boton boton--fantasma boton--sm" type="button" data-eliminar-amigo="' + escapar(p.usuario) + '" aria-label="Eliminar a ' + escapar(p.nombre) + ' de tus amigos">Eliminar</button>',
       'solicitud recibida': '<button class="boton boton--sm" type="button" data-aceptar="' + escapar(p.usuario) + '">Aceptar</button>' +
         '<button class="boton boton--secundario boton--sm" type="button" data-rechazar="' + escapar(p.usuario) + '">Rechazar</button>' +
@@ -6903,7 +6928,6 @@ function pantallaAmigos() {
     var persona = buscarPorId('usuarios', usuario);
     var antes = ({ amigos: 'friend', 'solicitud recibida': 'in', 'solicitud enviada': 'out', ninguna: 'none' })[relacionCon(usuario)];
     var deshacer = { texto: 'Deshacer', alTocar: function () { cambiarRelacion(usuario, antes); mostrar(); } };
-    if (boton.dataset.mensaje) { mostrarAviso('Los mensajes directos llegarán en una próxima versión'); return; }
     if (MI_FILA) {
       // Cuenta real: en la base. Eliminar pide confirmación (en la base no se puede deshacer).
       var accion = boton.dataset.eliminarAmigo ? 'eliminar' : boton.dataset.aceptar ? 'aceptar' : boton.dataset.rechazar ? 'rechazar' : boton.dataset.agregar ? 'agregar' : 'cancelar';
@@ -7031,7 +7055,7 @@ async function pantallaUsuario() {
   function dibujarAcciones() {
     var compartir = '<button class="boton boton--secundario" type="button" data-accion="compartir">Compartir</button>';
     acciones.innerHTML = ({
-      amigos: '<span class="etiqueta etiqueta--amigo">✓ AMIGOS</span><button class="boton boton--secundario" type="button" data-accion="mensaje" aria-disabled="true">Mensaje <span class="etiqueta etiqueta--contorno">Pronto</span></button><button class="boton boton--fantasma" type="button" data-accion="eliminar">Eliminar amigo</button>',
+      amigos: '<span class="etiqueta etiqueta--amigo">✓ AMIGOS</span><a class="boton boton--secundario" href="' + escapar(enlaceMensajes(persona.usuario)) + '">Mensaje</a><button class="boton boton--fantasma" type="button" data-accion="eliminar">Eliminar amigo</button>',
       'solicitud recibida': '<button class="boton" type="button" data-accion="aceptar">Aceptar solicitud</button><button class="boton boton--secundario" type="button" data-accion="rechazar">Rechazar</button>',
       'solicitud enviada': '<span class="etiqueta etiqueta--contorno">SOLICITUD ENVIADA</span><button class="boton boton--fantasma" type="button" data-accion="cancelar">Cancelar</button>',
       ninguna: '<button class="boton" type="button" data-accion="agregar">+ Agregar amigo</button>'
@@ -7044,7 +7068,6 @@ async function pantallaUsuario() {
     var accion = boton.dataset.accion;
     if (accion === 'compartir') { copiarEnlace(location.href, 'Enlace del perfil copiado'); return; }
     if (!obtenerSesion()) { pedirCuenta('agregar amigos'); return; }
-    if (accion === 'mensaje') { mostrarAviso('Los mensajes directos llegarán en una próxima versión'); return; }
     var mensajes = { eliminar: 'Eliminado de tus amigos', aceptar: 'Ahora son amigos', rechazar: 'Solicitud rechazada', cancelar: 'Solicitud cancelada', agregar: 'Solicitud enviada' };
     if (MI_FILA) {
       // Cuenta real: en la base. Eliminar pide confirmación (en la base no se puede deshacer).
@@ -7300,6 +7323,208 @@ function revisarServicio(prueba) {
   return pedido.then(function () { return true; }, function (e) { console.error('Servicio ' + prueba + ' con fallas:', e); return false; });
 }
 
+// 34. Mensajes: conversaciones 1 a 1 con tus amigos, en vivo (Supabase Realtime)
+var MAXIMO_MENSAJES = 500; // los más recientes de todas tus conversaciones
+function pantallaMensajes() {
+  if (!exigirSesion()) return;
+  var lista = document.getElementById('lista-conversaciones');
+  var buscador = document.getElementById('buscar-conversaciones');
+  var hilo = document.getElementById('hilo');
+  var compositor = document.getElementById('compositor');
+  var campo = document.getElementById('mensaje');
+  var error = document.getElementById('error-mensaje');
+  var vacio = document.getElementById('sin-conversacion');
+  var biblioteca = document.getElementById('biblioteca');
+  var botonLista = document.getElementById('boton-conversaciones');
+  var mensajes = [];
+  var actual = new URLSearchParams(location.search).get('con'); // el @ de la conversación abierta
+
+  function mostrarVacio(titulo, texto, accion) {
+    hilo.hidden = true;
+    compositor.hidden = true;
+    vacio.hidden = false;
+    document.getElementById('titulo-sin-conversacion').textContent = titulo;
+    var parrafo = document.getElementById('texto-sin-conversacion');
+    parrafo.textContent = texto;
+    var boton = vacio.querySelector('[data-accion-vacio]');
+    if (boton) boton.remove();
+    if (accion) parrafo.insertAdjacentHTML('afterend', accion.replace('<a ', '<a data-accion-vacio '));
+  }
+
+  // El invitado no tiene cuenta en la base: no puede enviar ni recibir mensajes
+  if (!MI_FILA) {
+    buscador.disabled = true;
+    lista.innerHTML = '';
+    mostrarVacio('Los mensajes son para cuentas de SaveSlot', 'Crea tu cuenta gratis para escribirles a tus amigos.', '<a class="boton" href="crear-cuenta.html">Crear cuenta gratis</a>');
+    return;
+  }
+
+  var porId = {};
+  datosDe('usuarios').forEach(function (u) { porId[u.id_base] = u; });
+  function otroDe(m) { return m.de_id === MI_FILA.id ? m.para_id : m.de_id; }
+  function esAmigo(usuario) { return relacionCon(usuario) === 'amigos'; }
+
+  // Conversaciones: tus amigos y quien te escribió antes (aunque ya no sean amigos), las más recientes primero
+  function conversaciones() {
+    var grupos = {};
+    datosDe('usuarios').filter(function (u) { return esAmigo(u.usuario); }).forEach(function (u) { grupos[u.id_base] = { persona: u, ultimo: null, sinLeer: 0 }; });
+    mensajes.forEach(function (m) {
+      var otro = porId[otroDe(m)];
+      if (!otro) return;
+      var g = grupos[otro.id_base] = grupos[otro.id_base] || { persona: otro, ultimo: null, sinLeer: 0 };
+      g.ultimo = m;
+      if (m.para_id === MI_FILA.id && !m.leido) g.sinLeer++;
+    });
+    return Object.keys(grupos).map(function (k) { return grupos[k]; }).sort(function (a, b) {
+      var fa = a.ultimo ? a.ultimo.created_at : '', fb = b.ultimo ? b.ultimo.created_at : '';
+      return fb.localeCompare(fa) || a.persona.nombre.localeCompare(b.persona.nombre, 'es');
+    });
+  }
+
+  function dibujarLista() {
+    var texto = buscador.value.trim().toLowerCase();
+    var todas = conversaciones();
+    var visibles = todas.filter(function (c) { return !texto || (c.persona.nombre + ' ' + c.persona.usuario).toLowerCase().indexOf(texto) !== -1; });
+    lista.innerHTML = visibles.map(function (c) {
+      return '<div class="item-chat" aria-current="' + (c.persona.usuario === actual) + '">' +
+        '<button class="item-chat__abrir" type="button" data-con="' + escapar(c.persona.usuario) + '">' +
+          escapar(c.persona.nombre) + ' <span class="tarjeta__texto">@' + escapar(c.persona.usuario) + '</span>' +
+          (c.sinLeer ? ' <span class="contador contador--destacado" aria-label="' + c.sinLeer + ' sin leer">' + c.sinLeer + '</span>' : '') +
+        '</button></div>';
+    }).join('') || '<p class="tarjeta__texto">' + (todas.length ? 'Nadie coincide con «' + escapar(buscador.value.trim()) + '».' : 'Todavía no tienes amigos. <a href="amigos.html#sugerencias">Busca amigos</a>') + '</p>';
+  }
+
+  function htmlMensaje(m, persona) {
+    var cuando = '<span class="burbuja__fuente">' + escapar(textoHace(m.created_at) || '') + '</span>';
+    if (m.de_id === MI_FILA.id) return '<div class="mensaje mensaje--usuario"><div class="burbuja burbuja--usuario">' + escapar(m.texto) + cuando + '</div></div>';
+    return '<div class="mensaje"><span class="avatar avatar--sm" aria-hidden="true">' + contenidoAvatar(persona) + '</span>' +
+      '<div class="burbuja">' + escapar(m.texto) + cuando + '</div></div>';
+  }
+
+  function dibujarHilo(bajar) {
+    if (!actual) { mostrarVacio('Elige a un amigo para escribirle', 'Los mensajes son solo entre amigos y llegan sin recargar la página.'); return; }
+    var persona = datosDe('usuarios').find(function (u) { return u.usuario === actual; });
+    if (!persona) { mostrarVacio('No encontramos a @' + actual, 'Puede que haya cambiado su @ o borrado su cuenta.'); return; }
+    var suyos = mensajes.filter(function (m) { return otroDe(m) === persona.id_base; });
+    var amigo = esAmigo(persona.usuario);
+    if (!amigo && !suyos.length) {
+      mostrarVacio('Solo puedes escribirles a tus amigos', '@' + persona.usuario + ' todavía no es tu amigo. Envíale una solicitud desde su perfil.',
+        '<a class="boton boton--secundario" href="perfil-usuario.html?id=' + encodeURIComponent(persona.usuario) + '">Ver su perfil</a>');
+      return;
+    }
+    vacio.hidden = true;
+    hilo.hidden = false;
+    compositor.hidden = !amigo;
+    hilo.innerHTML =
+      '<a class="fila" href="perfil-usuario.html?id=' + encodeURIComponent(persona.usuario) + '">' +
+        '<span class="avatar avatar--sm" aria-hidden="true">' + contenidoAvatar(persona) + '</span>' +
+        '<span><b>' + escapar(persona.nombre) + '</b> <span class="tarjeta__texto">@' + escapar(persona.usuario) + '</span><br>' + htmlEstado(persona) + '</span></a>' +
+      (suyos.map(function (m) { return htmlMensaje(m, persona); }).join('') ||
+        '<p class="tarjeta__texto">Todavía no se han escrito. Salúdalo.</p>') +
+      (amigo ? '' : '<p class="tarjeta__texto">Ya no son amigos: puedes leer la conversación, pero no escribir.</p>');
+    if (bajar) compositor.hidden ? hilo.lastElementChild.scrollIntoView({ block: 'end' }) : compositor.scrollIntoView({ block: 'end' });
+    marcarLeidos(persona);
+  }
+
+  // Lo que te escribió esta persona queda leído (y su aviso de la campana también)
+  function marcarLeidos(persona) {
+    var nuevos = mensajes.filter(function (m) { return m.de_id === persona.id_base && m.para_id === MI_FILA.id && !m.leido; });
+    if (!nuevos.length) return;
+    nuevos.forEach(function (m) { m.leido = true; });
+    dibujarLista();
+    clienteSupabase.from('mensajes').update({ leido: true }).eq('de_id', persona.id_base).eq('para_id', MI_FILA.id).eq('leido', false)
+      .then(function () { return contarMensajesNuevos(); }).then(ponerContadorMensajes);
+    clienteSupabase.from('notificaciones').update({ leida: true }).eq('usuario_id', MI_FILA.id).eq('tipo', 'mensaje')
+      .eq('enlace', 'mensajes.html?con=' + persona.usuario).then(function () { /* la campana se pone al día en la próxima página */ });
+  }
+
+  function abrir(usuario) {
+    actual = usuario;
+    history.replaceState(null, '', location.pathname + '?con=' + encodeURIComponent(usuario));
+    error.hidden = true;
+    dibujarLista();
+    dibujarHilo(true);
+    abrirLista(false);
+    if (!compositor.hidden) campo.focus();
+  }
+
+  lista.addEventListener('click', function (e) {
+    var boton = e.target.closest('[data-con]');
+    if (boton) abrir(boton.dataset.con);
+  });
+  buscador.addEventListener('input', dibujarLista);
+
+  compositor.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var texto = campo.value.trim();
+    var persona = datosDe('usuarios').find(function (u) { return u.usuario === actual; });
+    if (!texto || !persona) return;
+    error.hidden = true;
+    campo.disabled = true;
+    var r = await clienteSupabase.from('mensajes').insert({ de_id: MI_FILA.id, para_id: persona.id_base, texto: texto })
+      .select('id, de_id, para_id, texto, leido, created_at').single();
+    campo.disabled = false;
+    if (r.error) {
+      console.error('No se pudo enviar el mensaje:', r.error);
+      error.textContent = r.error.code === '42501' ? 'Solo puedes escribirles a tus amigos.' : 'No pudimos enviar el mensaje. Intenta de nuevo.';
+      error.hidden = false;
+      campo.focus();
+      return;
+    }
+    campo.value = '';
+    mensajes.push(r.data);
+    dibujarLista();
+    dibujarHilo(true);
+    campo.focus();
+  });
+
+  // Celular: la lista de conversaciones se abre desde el botón (como en MatchPlay)
+  function abrirLista(abrirla) {
+    var velo = document.querySelector('.chat__velo');
+    biblioteca.classList.toggle('chat__biblioteca--abierta', abrirla);
+    botonLista.setAttribute('aria-expanded', String(abrirla));
+    if (abrirla && !velo) {
+      velo = crearElemento('<div class="chat__velo"></div>');
+      velo.addEventListener('click', function () { abrirLista(false); });
+      document.body.appendChild(velo);
+      buscador.focus();
+    }
+    if (!abrirla && velo) velo.remove();
+  }
+  botonLista.addEventListener('click', function () { abrirLista(!biblioteca.classList.contains('chat__biblioteca--abierta')); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && biblioteca.classList.contains('chat__biblioteca--abierta')) { abrirLista(false); botonLista.focus(); }
+  });
+
+  // Tus mensajes (la base solo entrega los tuyos) y, después, los nuevos en vivo
+  dibujarLista();
+  clienteSupabase.from('mensajes').select('id, de_id, para_id, texto, leido, created_at').order('created_at', { ascending: false }).limit(MAXIMO_MENSAJES).then(function (r) {
+    if (r.error) {
+      console.error('Supabase no entregó los mensajes:', r.error);
+      buscador.disabled = true;
+      mostrarVacio('Los mensajes todavía no están activados', 'Falta ejecutar la sección 9 de supabase/esquema.sql en el SQL Editor de Supabase.');
+      return;
+    }
+    mensajes = r.data.reverse();
+    dibujarLista();
+    dibujarHilo(true);
+    clienteSupabase.channel('mensajes-' + MI_FILA.id)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes', filter: 'para_id=eq.' + MI_FILA.id }, function (cambio) {
+        var nuevo = cambio.new;
+        if (!nuevo || mensajes.some(function (m) { return m.id === nuevo.id; })) return;
+        mensajes.push(nuevo);
+        var deQuien = porId[nuevo.de_id];
+        dibujarLista();
+        if (deQuien && deQuien.usuario === actual) dibujarHilo(true);
+        else {
+          contarMensajesNuevos().then(ponerContadorMensajes);
+          if (deQuien) mostrarAviso('@' + deQuien.usuario + ' te escribió', { texto: 'Ver', alTocar: function () { abrir(deQuien.usuario); } });
+        }
+      })
+      .subscribe();
+  });
+}
+
 /* ---------- Arranque ---------- */
 
 var PANTALLAS = {
@@ -7307,6 +7532,7 @@ var PANTALLAS = {
   buscar: pantallaBuscar,
   random: pantallaRandom,
   matchplay: pantallaMatchplay,
+  mensajes: pantallaMensajes,
   juego: pantallaJuego,
   escribir: pantallaEscribir,
   comunidad: pantallaComunidad,
@@ -7333,6 +7559,7 @@ var TABLAS_COMUNES = ['usuarios', 'amigos'];
 var TABLAS_DE_PANTALLA = {
   index: ['destacados_inicio', 'resenas', 'eventos'],
   matchplay: ['tendencias_matchplay'],
+  mensajes: [],
   juego: ['resenas', 'diario'],
   escribir: ['resenas', 'diario'],
   comunidad: ['resenas', 'diario'],
@@ -7439,7 +7666,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // En línea: las pantallas que muestran el estado de las personas esperan la primera lista de conectados
     if (!esError) {
       var presencia = iniciarPresencia();
-      if (['amigos', 'usuario', 'perfil', 'comunidad', 'resena', 'index', 'juego'].indexOf(nombre) !== -1) await presencia;
+      if (['amigos', 'usuario', 'perfil', 'comunidad', 'resena', 'index', 'juego', 'mensajes'].indexOf(nombre) !== -1) await presencia;
     }
     if (cargando) cargando.remove();
     prepararEncabezado();
