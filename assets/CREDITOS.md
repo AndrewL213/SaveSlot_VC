@@ -23,6 +23,7 @@ solo para identificar cada juego y siempre se indica su fuente y su dueño.
 | logo-google.svg, logo-discord.svg, logo-twitch.svg | Logos de los servicios para iniciar sesión | Simple Icons (CC0) para Discord y Twitch; logo «G» de Google | © Google, Discord y Twitch (Amazon). Se usan solo en los botones de iniciar sesión, según las guías de marca de cada servicio |
 | logo-steam.png | Logo de Steam (botón de iniciar sesión, etiquetas y portadas de la Biblioteca) | Logo de Steam aportado por el equipo; solo escalado a 128×128 | © Valve. Sin cambiar colores ni proporciones |
 | logo-xbox.png | Logo de Xbox (cuenta vinculada en Perfil, etiquetas y portadas de la Biblioteca) | Logo de Xbox aportado por el equipo; solo escalado a 128×128 | © Microsoft. Sin cambiar colores ni proporciones |
+| logo-playstation.png | Logo de PlayStation (cuenta vinculada en Perfil, etiquetas y portadas de la Biblioteca) | Logo de PlayStation aportado por el equipo; solo recortado y escalado a 128×128 | © Sony Interactive Entertainment. Sin cambiar colores ni proporciones |
 | logo-epic.png | Logo de Epic Games para el botón de iniciar sesión | Logo oficial de Epic Games («Epic Games logo for EOS users», enlazado desde las pautas de diseño de Epic Account Services); solo recortado y escalado | © Epic Games. Se usa solo en el botón de iniciar sesión, sin cambiar colores ni proporciones, según las pautas de Epic |
 
 ## APIs externas
