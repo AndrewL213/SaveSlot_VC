@@ -564,7 +564,7 @@ function tieneSteam() {
 }
 
 // A dónde lleva un juego: siempre a su ficha en SaveSlot.
-// - De Steam: la ficha lo busca en IGDB por su número de Steam (?steam=); si IGDB no lo tiene, va a Buscar con su nombre.
+// - De Steam: la ficha lo busca en IGDB por su número de Steam (?steam_app=; no "?steam=", que es la vuelta de entrar con Steam); si IGDB no lo tiene, va a Buscar con su nombre.
 // - De Xbox: por el slug de IGDB que encontró api/xbox/data; sin slug, a Buscar con su nombre.
 function enlaceJuego(juego) {
   if (juego.xbox || juego.playstation) {
@@ -572,7 +572,7 @@ function enlaceJuego(juego) {
       ? rutaPagina('detalle-juego.html') + '?id=' + encodeURIComponent(juego.slug)
       : rutaPagina('buscar-juegos.html') + '?q=' + encodeURIComponent(nombreParaBuscar(juego.nombre));
   }
-  if (juego.steam) return rutaPagina('detalle-juego.html') + '?steam=' + encodeURIComponent(juego.appid) + '&nombre=' + encodeURIComponent(juego.nombre);
+  if (juego.steam) return rutaPagina('detalle-juego.html') + '?steam_app=' + encodeURIComponent(juego.appid) + '&nombre=' + encodeURIComponent(juego.nombre);
   return rutaPagina('detalle-juego.html') + '?id=' + encodeURIComponent(juego.id);
 }
 
@@ -3241,8 +3241,9 @@ function htmlCalaveras(dificultad) {
 // 6. Detalle de juego (y 7. Ventana: Dificultad de 1 a 10)
 function pantallaJuego() {
   var parametros = new URLSearchParams(location.search);
-  // Desde la Biblioteca o el Perfil: un juego de Steam por su número (?steam=730&nombre=…)
-  var appid = parametros.get('steam');
+  // Desde la Biblioteca o el Perfil: un juego de Steam por su número (?steam_app=730&nombre=…).
+  // No se usa "?steam=": ese lo borra terminarVueltaDeSteam (es la vuelta de entrar con Steam).
+  var appid = parametros.get('steam_app');
   if (appid && /^\d{1,10}$/.test(appid)) {
     preguntarIgdb({ steam_app: appid }).then(function (datos) {
       guardarJuegoIgdb(datos.juego);
@@ -7270,14 +7271,17 @@ function mostrarErrorDeCarga() {
 }
 
 // Animación de arranque (.arranque, solo en el Inicio y una vez por visita; la decide js/arranque.js).
-// Se quita cuando la pantalla está lista, pero se ve al menos 1,5 s (lo que dura la animación)
-// y como mucho 3,5 s aunque algo tarde. Un clic la quita antes.
-var ARRANQUE_MINIMO = 1500;
-var ARRANQUE_MAXIMO = 3500;
+// Se quita cuando la pantalla está lista, pero se ve al menos 1,8 s (lo que dura la animación)
+// y como mucho 4 s aunque algo tarde. Un clic la quita antes.
+// Los tiempos se cuentan desde que la animación aparece (window.ARRANQUE_DESDE, de js/arranque.js),
+// no desde que se pidió la página: si la página tarda en llegar, la animación igual se ve completa.
+var ARRANQUE_MINIMO = 1800;
+var ARRANQUE_MAXIMO = 4000;
+function arranqueDesde() { return window.ARRANQUE_DESDE || 0; }
 function quitarArranque(yaMismo) {
   var capa = document.getElementById('arranque');
   if (!capa || !document.documentElement.classList.contains('con-arranque') || capa.classList.contains('arranque--saliendo')) return;
-  var falta = yaMismo ? 0 : ARRANQUE_MINIMO - performance.now(); // performance.now(): ms desde que se abrió la página
+  var falta = yaMismo ? 0 : arranqueDesde() + ARRANQUE_MINIMO - performance.now();
   if (falta > 0) { setTimeout(quitarArranque, falta); return; }
   capa.classList.add('arranque--saliendo');
   setTimeout(function () { capa.remove(); document.documentElement.classList.remove('con-arranque'); }, 400);
@@ -7286,7 +7290,7 @@ function prepararArranque() {
   var capa = document.getElementById('arranque');
   if (!capa || !document.documentElement.classList.contains('con-arranque')) return;
   capa.addEventListener('click', function () { quitarArranque(true); });
-  setTimeout(function () { quitarArranque(true); }, Math.max(0, ARRANQUE_MAXIMO - performance.now()));
+  setTimeout(function () { quitarArranque(true); }, Math.max(0, arranqueDesde() + ARRANQUE_MAXIMO - performance.now()));
 }
 
 document.addEventListener('DOMContentLoaded', async function () {

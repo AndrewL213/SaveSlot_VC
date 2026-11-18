@@ -503,7 +503,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 - **Archivo de diseño:** disenos/index.html (comparte archivo con la ventana "Evento del mes")
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda empezar a buscar un juego o descubrir qué jugar y qué eventos hay. Sabemos que funciona si la persona usa el buscador o un atajo en su primera visita.
 - **Contenido:**
-  0. Animación de arranque (`.arranque`): la primera vez que se abre el sitio en una visita, el logo de SaveSlot se arma con un brillo (como el arranque de una consola), unos 1,5 s o hasta que la página cargue (máximo 3,5 s; un clic la quita). No sale con «menos movimiento» ni al volver al Inicio en la misma visita.
+  0. Animación de arranque (`.arranque`): la primera vez que se abre el sitio en una visita, el logo de SaveSlot se arma con un brillo (como el arranque de una consola), al menos 1,8 s desde que aparece o hasta que la página cargue (máximo 4 s; un clic la quita). No sale con «menos movimiento» ni al volver al Inicio en la misma visita.
   1. Título, buscador y 3 portadas destacadas
   2. Atajos: Juego random, Recomiéndame algo corto, Torneos de esta semana
   3. Vistos recientemente (solo si ya visitó juegos; la nota de la comunidad se ve como «8/10»)

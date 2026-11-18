@@ -13,4 +13,6 @@
     return; // sin sessionStorage (modo privado estricto): sin animación
   }
   document.documentElement.classList.add('con-arranque');
+  // Desde cuándo se ve (app.js cuenta desde aquí el tiempo mínimo y el máximo)
+  window.ARRANQUE_DESDE = window.performance ? performance.now() : 0;
 })();
