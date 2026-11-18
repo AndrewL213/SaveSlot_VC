@@ -717,6 +717,7 @@ async function sincronizarSesionSupabase() {
     FILAS.usuarios = (FILAS.usuarios || []).concat(fila); // para que las pantallas ya la vean
     DATOS_ARMADOS = {};
   }
+  await asegurarTablasPropias(fila.id); // sus favoritos, deseos… (se pidieron sin saber cuál era su fila)
   var persona = TRADUCIR.usuarios([fila])[0];
   iniciarSesion({ name: persona.nombre, user: persona.usuario, initials: persona.iniciales, email: cuenta.email || '', auth_id: cuenta.id },
     { profile: perfilDesdeFila(persona), myReviews: [], diary: [], joined: [], inscripciones: [], friends: {}, chatsMatchplay: [] });
@@ -804,13 +805,17 @@ var COLUMNAS = {
 };
 function columnasDe(tipo) { return COLUMNAS[tipo] || '*'; }
 
-async function obtenerDatos(tipo) {
+// soloDe (opcional): el id de usuarios cuyas filas se piden (para las tablas de cada persona; ver soloLoPropio).
+async function obtenerDatos(tipo, soloDe) {
   if (!clienteSupabase) {
     var sinConexion = new Error('No se pudo conectar con Supabase (no cargó la librería supabase-js)');
     console.error(sinConexion);
     throw sinConexion;
   }
-  var respuesta = await clienteSupabase.from(tipo).select(columnasDe(tipo)).order('id');
+  var pedido = clienteSupabase.from(tipo).select(columnasDe(tipo));
+  // -1: ninguna fila (sin cuenta, o todavía no se sabe cuál es la propia)
+  if (soloDe !== undefined) pedido = pedido.eq('usuario_id', soloDe || -1);
+  var respuesta = await pedido.order('id');
   if (respuesta.error) {
     console.error('Supabase no entregó la tabla ' + tipo + ':', respuesta.error);
     throw respuesta.error;
@@ -1119,6 +1124,21 @@ async function traerMiXp() {
 }
 
 // Trae de Supabase (una sola vez por página) todo lo necesario para estas tablas
+// Tablas con lo de cada persona (favoritos, géneros, deseos, insignias, cuentas y diario).
+// Casi todas las pantallas solo muestran lo propio: ahí se piden solo las filas de la cuenta abierta,
+// en vez de las de todos (con cientos de usuarios eran miles de filas en cada página).
+// Las pantallas que muestran lo de otras personas las piden completas:
+// - Perfil de otro usuario: sus favoritos, sus notas (diario), juegos en común…
+// - Amigos: juegos en común (diario).
+// - Detalle de reseña: la entrada del diario del autor (horas jugadas).
+var TABLAS_DE_CADA_PERSONA = ['usuarios_favoritos', 'usuarios_generos', 'lista_deseos', 'insignias', 'cuentas_vinculadas', 'diario'];
+var PANTALLAS_CON_LO_DE_OTROS = { usuario: TABLAS_DE_CADA_PERSONA, amigos: ['diario'], resena: ['diario'] };
+function soloLoPropio(tabla) {
+  if (TABLAS_DE_CADA_PERSONA.indexOf(tabla) === -1) return false;
+  return (PANTALLAS_CON_LO_DE_OTROS[document.body.dataset.pantalla] || []).indexOf(tabla) === -1;
+}
+var PROPIAS_DE = null; // el id de usuarios con que se pidieron las tablas "solo lo propio"
+
 async function cargarDatos(tipos) {
   var faltan = [];
   tipos.forEach(function (tipo) {
@@ -1126,9 +1146,27 @@ async function cargarDatos(tipos) {
       if (!FILAS[tabla] && faltan.indexOf(tabla) === -1) faltan.push(tabla);
     });
   });
-  var listas = await Promise.all(faltan.map(obtenerDatos));
+  // Mi fila de usuarios, si ya se sabe (la recuerda buscarMiFila); si no, asegurarTablasPropias la corrige después
+  if (faltan.some(soloLoPropio)) {
+    var recordada = obtenerSesion() ? leerMemoria('miFilaId', null) : null;
+    PROPIAS_DE = recordada ? recordada.id : null;
+  }
+  var listas = await Promise.all(faltan.map(function (tabla) {
+    return soloLoPropio(tabla) ? obtenerDatos(tabla, PROPIAS_DE) : obtenerDatos(tabla);
+  }));
   faltan.forEach(function (tabla, i) { FILAS[tabla] = listas[i]; });
   DATOS_ARMADOS = {}; // con tablas nuevas, se vuelven a armar
+}
+
+// Si las tablas "solo lo propio" se pidieron con otro id (o sin id: primera vez en este navegador,
+// o se cambió de cuenta), se vuelven a pedir con el de la cuenta abierta.
+async function asegurarTablasPropias(id) {
+  if (!id || id === PROPIAS_DE) return;
+  var tablas = Object.keys(FILAS).filter(soloLoPropio);
+  var listas = await Promise.all(tablas.map(function (tabla) { return obtenerDatos(tabla, id); }));
+  tablas.forEach(function (tabla, i) { FILAS[tabla] = listas[i]; });
+  PROPIAS_DE = id;
+  DATOS_ARMADOS = {};
 }
 
 // Devuelve una copia de la lista pedida ("juegos", "resenas", "eventos"…): de Supabase si es una de
@@ -1416,7 +1454,7 @@ function slugDeJuego(ref) {
 
 // Datos del catálogo que manda IGDB. Los de la comunidad (calificación, dificultad, votos…),
 // la portada de assets/ y el color se quedan como están en data.js.
-var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'fuente_descripcion', 'id_tienda_xbox', 'tipos', 'similares'];
+var CAMPOS_DE_IGDB = ['id_igdb', 'appid_steam', 'nombre', 'generos', 'plataformas', 'anio', 'desarrolladora', 'tipo', 'descripcion', 'idioma_descripcion', 'fuente_descripcion', 'id_tienda_xbox', 'tipos', 'game_pass', 'similares'];
 
 // Junta un juego de data.js con el mismo juego de IGDB (cualquiera de los dos puede faltar).
 /* ---------- Datos de la comunidad de SaveSlot ----------
@@ -1470,7 +1508,7 @@ function guardarJuegoIgdb(juego) {
 
 // Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
 // Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
-var VERSION_API = 9;
+var VERSION_API = 10;
 
 // La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
 // se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
@@ -2302,10 +2340,18 @@ function htmlJuegoMini(juego, ranking, detalle) {
     '<div class="juego__meta">' +
       // Con detalle (por ejemplo, jugadores de Steam) se muestra solo eso; si no, el género y la nota
       (detalle ? '<span class="tarjeta__texto">' + detalle + '</span>' : '<span class="tarjeta__texto">' + escapar(juego.generos[0] || '') + '</span>') +
+      etiquetaGamePass(juego) +
       // La nota lleva "/10" (como en el resto de la app), para que no parezca un número suelto
       (!detalle && juego.calificacion != null ? '<span class="nota nota--texto" title="Nota de la comunidad de SaveSlot" aria-label="Nota de la comunidad de SaveSlot: ' + formatearNota(juego.calificacion) + ' de 10">' + formatearNota(juego.calificacion) + '<small>/10</small></span>' : '') +
     '</div>' +
   '</li>';
+}
+
+// Etiqueta "Game Pass" para las listas (Inicio, Buscar): la API la marca con la tienda de Xbox
+function etiquetaGamePass(juego) {
+  var donde = juego.game_pass || [];
+  if (!donde.length) return '';
+  return '<span class="etiqueta etiqueta--exito" title="Incluido en Game Pass (' + escapar(donde.join(' y ')) + ')">Game Pass</span>';
 }
 
 // Juego de IGDB unido con su copia de data.js, si la hay (portada de assets/, nota de la comunidad…)
@@ -2657,7 +2703,7 @@ function pantallaBuscar() {
       '<span class="resultado__nombre">' +
         '<b class="tarjeta__titulo">' + escapar(juego.nombre) + '</b>' +
         '<span class="tarjeta__texto">' + escapar(juego.generos.join(', ')) + ' · ' + escapar(juego.anio || '') + ' · ' + escapar(juego.plataformas.join(', ')) + '</span>' +
-        (juego.tipo ? '<span class="etiqueta etiqueta--contorno">' + escapar(juego.tipo) + '</span>' : '') +
+        '<span class="en-fila">' + (juego.tipo ? '<span class="etiqueta etiqueta--contorno">' + escapar(juego.tipo) + '</span>' : '') + etiquetaGamePass(juego) + '</span>' +
       '</span>' +
       '<span class="resultado__datos">' +
         '<span class="tarjeta__texto">Nota</span><span class="tarjeta__texto">Historia</span><span class="tarjeta__texto">Dificultad</span>' +
@@ -7312,7 +7358,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     var siguiente = esError ? null : await sincronizarSesionSupabase();
     if (siguiente && direccionCompleta(siguiente) !== location.href) { location.replace(siguiente); return; }
     // ¿La sesión es de una cuenta real con fila en usuarios? Entonces lo propio se lee y se guarda en la base
-    if (!esError) { await reconocerMiFila(false); traerMiPerfilDeLaBase(); }
+    if (!esError) {
+      await reconocerMiFila(false);
+      if (MI_FILA) await asegurarTablasPropias(MI_FILA.id);
+      traerMiPerfilDeLaBase();
+    }
     // La campana: las notificaciones propias de la base
     if (!esError) await cargarMisNotificaciones();
     // Steam vinculada: en la base (y los +100 XP la primera vez)

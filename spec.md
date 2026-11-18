@@ -507,7 +507,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   1. Título, buscador y 3 portadas destacadas
   2. Atajos: Juego random, Recomiéndame algo corto, Torneos de esta semana
   3. Vistos recientemente (solo si ya visitó juegos; la nota de la comunidad se ve como «8/10»)
-  4. Mejores juegos de la semana (los 6 que más gente marca como "jugando ahora" en IGDB)
+  4. Mejores juegos de la semana (los 6 que más gente marca como "jugando ahora" en IGDB; con la etiqueta «Game Pass» si está incluido)
   5. Lo más jugado, con pestañas: **Steam** (los 6 juegos de PC con más jugadores a la vez ayer, de mayor a menor), **Xbox** y **PlayStation** (los 6 de esa consola, sin los que también están en la otra, que más gente marca como "jugando ahora" en IGDB, con «Popular en IGDB»: Xbox y PlayStation no publican cuántos juegan). Se ve si Steam o IGDB responden
   6. Reseñas destacadas
   7. Eventos: el evento del mes y un sorteo
@@ -539,7 +539,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 - **Contenido:**
   1. Buscador
   2. Cantidad de resultados
-  3. Lista de resultados con portada, de 24 en 24 con "Ver más juegos" (sin texto); con texto, hasta 20
+  3. Lista de resultados con portada (y la etiqueta «Game Pass» si está incluido), de 24 en 24 con "Ver más juegos" (sin texto); con texto, hasta 20
   4. Filtros: género, plataforma, tipo, duración de la historia, año. Si lo escrito es un género ("terror"), se marca ese filtro. Tipo (se elige uno): Todos, AAA, Indie, **Exclusivos** (salen solo en la plataforma elegida: un exclusivo de Xbox no está en PlayStation, Nintendo ni PC; de PC, en ninguna consola. Hay que elegir una sola plataforma: si no, la página lo pide), **Gratis** (palabra clave «free-to-play» de IGDB), **Multijugador / cooperativo** (modos de juego de IGDB), **Remakes y remasters** y **Próximos y acceso anticipado** (salen después de hoy o están en «Early Access»; ordenados por cuánta gente los espera)
   5. Botones Juego random y Limpiar filtros
   6. Lo más jugado (solo sin búsqueda ni filtros), con las mismas pestañas Steam, Xbox y PlayStation que el Inicio: con su puesto y, en Steam, sus jugadores; cada uno abre su ficha

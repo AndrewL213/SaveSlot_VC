@@ -168,13 +168,28 @@ const MINIMO_DE_REPORTES = 10;
 async function conHoras(juegos) {
   if (!juegos.length) return [];
   const ids = juegos.map(function (j) { return j.id; }).join(',');
-  const tiempos = await consultar('game_time_to_beats', 'fields game_id, hastily, normally, count; where game_id = (' + ids + '); limit 500;');
+  const [tiempos, gamePass] = await Promise.all([
+    consultar('game_time_to_beats', 'fields game_id, hastily, normally, count; where game_id = (' + ids + '); limit 500;'),
+    listaDeGamePass()
+  ]);
   return juegos.map(function (j) {
     const t = tiempos.find(function (x) { return x.game_id === j.id; }) || {};
     const segundos = (t.count || 0) >= MINIMO_DE_REPORTES ? (t.hastily || t.normally) : null;
     const horas = segundos ? Math.max(1, Math.round(segundos / 3600)) : null;
-    return traducir(j, horas && horas <= MAXIMO_DE_HORAS ? horas : null);
+    const juego = traducir(j, horas && horas <= MAXIMO_DE_HORAS ? horas : null);
+    // Game Pass: ['consola', 'pc'] si está incluido (para la etiqueta en las listas y en la ficha)
+    juego.game_pass = juego.id_tienda_xbox ? (gamePass[juego.id_tienda_xbox] || []) : [];
+    return juego;
   });
+}
+
+// Los juegos de Game Pass (de la tienda de Xbox, guardados un día en api/xbox/_tienda.js).
+// Si tarda más de 2,5 s o falla, las listas salen igual, sin la etiqueta.
+function listaDeGamePass() {
+  return Promise.race([
+    tiendaXbox.juegosDeGamePass(),
+    new Promise(function (listo) { setTimeout(function () { listo({}); }, 2500); })
+  ]).catch(function () { return {}; });
 }
 
 // Pasa un juego de IGDB al formato de js/data.js.

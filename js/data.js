@@ -1662,19 +1662,20 @@ const DATOS = {
   ],
   // prueba (igdb, steam, base, cuentas o xbox): qué revisa 404.html al abrirse (ver revisarServicio en app.js); sin prueba, el estado es fijo
   estado_servicios: [
-    { id: "s1", servicio: "Catálogo de juegos", proveedor: "IGDB (Twitch), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "igdb" },
+    { id: "s1", servicio: "Catálogo de juegos, filtros y lo más jugado en Xbox y PlayStation", proveedor: "IGDB (Twitch), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "igdb" },
     { id: "s12", servicio: "Lo más jugado, precios, notas y reseñas de Steam (se actualiza cada día)", proveedor: "Steam (tienda y comunidad) + Supabase", estado: "conectado", texto: "Conectado", prueba: "steam" },
     { id: "s2", servicio: "Base de datos (perfiles, reseñas, eventos, misiones)", proveedor: "Supabase", estado: "conectado", texto: "Conectado", prueba: "base" },
     { id: "s8", servicio: "Cuentas: correo, Google, Discord, Twitch, Steam y Epic Games", proveedor: "Supabase Auth + Steam OpenID + Epic Games", estado: "conectado", texto: "Conectado", prueba: "cuentas" },
     { id: "s4", servicio: "Tu Steam: perfil, biblioteca, logros, deseos y reseñas", proveedor: "Steam Web API (Vercel)", estado: "conectado", texto: "Conectado" },
-    { id: "s16", servicio: "Precio, nota, edad (PEGI) y Game Pass de Xbox en la ficha", proveedor: "Tienda de Xbox (Microsoft Store), sin clave", estado: "conectado", texto: "Conectado" },
+    { id: "s16", servicio: "Precio, nota, edad (PEGI) y Game Pass de Xbox (Game Pass también en Inicio y Buscar)", proveedor: "Tienda de Xbox (Microsoft Store), sin clave", estado: "conectado", texto: "Conectado" },
     { id: "s15", servicio: "Descripciones de juegos en español", proveedor: "Tiendas de Steam, Epic Games y Xbox + DeepL (guardadas en Supabase)", estado: "conectado", texto: "Conectado" },
     { id: "s13", servicio: "Tu actividad: reseñas, diario, amigos, inscripciones, avisos y vistos", proveedor: "Supabase (el invitado, en este navegador)", estado: "conectado", texto: "Conectado" },
     { id: "s14", servicio: "Chats de MatchPlay", proveedor: "Este navegador", estado: "demo", texto: "Modo demo" },
     { id: "s3", servicio: "MatchPlay (IA)", proveedor: "Por definir", estado: "demo", texto: "Modo demo" },
     { id: "s5", servicio: "Tu Xbox: gamertag, juegos y logros", proveedor: "Xbox Live (cuenta de Microsoft), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "xbox" },
-    { id: "s6", servicio: "Cuentas: PlayStation", proveedor: "PlayStation Network (psn-api, no oficial)", estado: "pendiente", texto: "Falta el NPSSO" },
+    { id: "s6", servicio: "Tu PlayStation: ID, nivel, juegos y trofeos", proveedor: "PlayStation Network (psn-api, no oficial), desde Vercel", estado: "conectado", texto: "Conectado" },
     { id: "s9", servicio: "Clips y transmisiones", proveedor: "Twitch API", estado: "pendiente", texto: "Pendiente" },
-    { id: "s10", servicio: "Pagos de eventos", proveedor: "Pasarela de pagos", estado: "no-disponible", texto: "No disponible" }
+    { id: "s10", servicio: "Pagos de eventos", proveedor: "Pasarela de pagos", estado: "no-disponible", texto: "No disponible" },
+    { id: "s17", servicio: "Web administrativa (crear torneos y sorteos)", proveedor: "Otro repositorio + Supabase (ver web-administrativa.md)", estado: "pendiente", texto: "Pendiente" }
   ]
 };
