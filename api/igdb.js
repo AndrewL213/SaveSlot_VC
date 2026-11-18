@@ -470,14 +470,14 @@ async function condiciones(filtros, extras) {
   const plataformas = [].concat.apply([], lista(filtros.plataformas).map(function (p) { return PLATAFORMAS[p] || []; }));
   if (plataformas.length) partes.push('platforms = (' + plataformas.join(',') + ')');
   if (filtros.tipo === 'Indie') partes.push('genres = (32)');
-  if (filtros.tipo === 'AAA') partes.push(ningunoDe('genres', [32]));
   if (filtros.tipo === 'Multijugador') partes.push('game_modes = (' + MODOS_MULTIJUGADOR.join(',') + ')');
   if (filtros.tipo === 'Remakes') partes.push('game_type = (8,9)'); // 8 remake, 9 remaster
   if (filtros.tipo === 'Gratis') {
     const numeros = await numerosDe(PALABRAS_GRATIS);
     partes.push(numeros.length ? 'keywords = (' + numeros.join(',') + ')' : 'id = 0'); // sin la palabra en IGDB: ninguno
   }
-  if (filtros.tipo === 'Exclusivos') partes.push(condicionExclusivos(lista(filtros.plataformas)));
+  // Exclusivos necesita una sola plataforma; sin ella no hay resultados (la página pide elegirla)
+  if (filtros.tipo === 'Exclusivos' && !familiaExclusiva(filtros)) partes.push('id = 0');
   if (filtros.tipo === 'Proximos') {
     const acceso = extras ? await numeroAccesoAnticipado() : null;
     partes.push('(first_release_date > ' + Math.floor(Date.now() / 1000) + (acceso ? ' | game_status = ' + acceso : '') + ')');
@@ -496,25 +496,36 @@ const MODOS_MULTIJUGADOR = [2, 3, 4, 5, 6];
 const PALABRAS_GRATIS = ['free-to-play'];
 const CONSOLAS = ['PlayStation', 'Xbox', 'Nintendo'];
 
-// Exclusivos (estrictos): salen solo en esa plataforma. Un exclusivo de Xbox no sale en PlayStation,
-// Nintendo ni PC; uno de PC no sale en ninguna consola.
-// Necesita exactamente una plataforma elegida: IGDB rechazó la versión con varias a la vez
-// (grupos "(… & …) | (… & …)"). Sin una sola plataforma no hay resultados y la página pide elegirla.
-function condicionExclusivos(elegidas) {
-  const familias = elegidas.filter(function (p) { return ['PC'].concat(CONSOLAS).indexOf(p) !== -1; });
-  if (familias.length !== 1) return 'id = 0';
-  const f = familias[0];
-  // Las plataformas que no puede tener: todas las demás. "platforms = (…)" ya lo pone el filtro de plataforma.
-  const prohibidas = [].concat.apply([], ['PC'].concat(CONSOLAS).filter(function (c) { return c !== f; }).map(function (c) { return PLATAFORMAS[c]; }));
-  return ningunoDe('platforms', prohibidas);
+// AAA y Exclusivos son "no tiene…" (no es indie; no sale en otras plataformas). Esas condiciones
+// ("!= 6", "= !(…)", "!= (…)") no funcionan de forma estable en IGDB: un día filtraban y al otro no.
+// Por eso aquí IGDB trae los candidatos y nuestro código revisa cada juego (cumpleTipoPropio).
+
+// La plataforma de los exclusivos: debe haber exactamente una elegida (PC, PlayStation, Xbox o Nintendo)
+function familiaExclusiva(filtros) {
+  const familias = lista(filtros.plataformas).filter(function (p) { return ['PC'].concat(CONSOLAS).indexOf(p) !== -1; });
+  return familias.length === 1 ? familias[0] : null;
 }
 
-// "No tiene ninguno de estos": una condición por número (campo != 6 & campo != 14…).
-// En un campo con lista, "!= 6" es "no contiene el 6". Las formas "= !(…)" y "!= (…)" con varios
-// números no funcionaron como se esperaba en IGDB (la primera daba error; la segunda dejaba pasar juegos).
-function ningunoDe(campo, numeros) {
-  return numeros.map(function (n) { return campo + ' != ' + n; }).join(' & ');
+// Las plataformas de un juego tal como vienen de IGDB, agrupadas (PC, PlayStation, Xbox, Nintendo)
+function familiasDe(juego) {
+  return sinRepetidos((juego.platforms || []).map(function (p) { return plataformaDe(p.name); }));
 }
+
+// ¿Cumple el tipo que IGDB no puede filtrar bien?
+// - Exclusivos (estrictos): sale solo en esa plataforma (un exclusivo de Xbox tampoco está en PC).
+// - AAA: no es indie.
+function cumpleTipoPropio(juego, filtros) {
+  if (filtros.tipo === 'AAA') return !(juego.genres || []).some(function (g) { return g.name === 'Indie'; });
+  if (filtros.tipo === 'Exclusivos') {
+    const familias = familiasDe(juego);
+    return familias.length === 1 && familias[0] === familiaExclusiva(filtros);
+  }
+  return true;
+}
+function filtraEnCodigo(filtros) {
+  return filtros.tipo === 'AAA' || filtros.tipo === 'Exclusivos';
+}
+
 
 // Número del estado "Early Access" (acceso anticipado) en IGDB: se busca una vez por su nombre.
 let numeroAcceso;
@@ -569,6 +580,7 @@ async function explorarCon(filtros, extras) {
   // Los próximos no tienen calificaciones: se ordenan por cuánta gente los espera (hypes)
   // o, sin extras, por la fecha de salida (los más cercanos primero)
   const orden = filtros.tipo !== 'Proximos' ? 'total_rating_count desc' : extras ? 'hypes desc' : 'first_release_date asc';
+  if (filtraEnCodigo(filtros)) return explorarRevisando(filtros, where, orden, pagina, conDuracion);
   // A la vez: la página de juegos y cuántos hay en total (para "N juegos" en Buscar)
   const [juegos, cuenta] = await Promise.all([
     consultar('games', CAMPOS + ' where ' + where + '; sort ' + orden + '; limit ' + pedir + '; offset ' + (pagina - 1) * pedir + ';'),
@@ -578,6 +590,24 @@ async function explorarCon(filtros, extras) {
   if (conDuracion) traducidos = traducidos.filter(function (j) { return cumpleDuracion(j, filtros.duracion); }).slice(0, POR_PAGINA);
   // Con duración no se sabe el total (se filtra después): total = null
   return { juegos: traducidos, pagina: pagina, hay_mas: juegos.length === pedir, total: cuenta ? cuenta.count : null };
+}
+
+// AAA y Exclusivos: IGDB trae candidatos (los más conocidos primero, de a 500, hasta 2.000) y aquí se dejan
+// los que cumplen. No se sabe el total exacto (total = null: Buscar muestra "24+ juegos").
+const CANDIDATOS_POR_PEDIDO = 500;
+const MAXIMO_DE_PEDIDOS = 4;
+async function explorarRevisando(filtros, where, orden, pagina, conDuracion) {
+  const hasta = pagina * POR_PAGINA;
+  let cumplen = [];
+  let quedan = true;
+  for (let i = 0; i < MAXIMO_DE_PEDIDOS && quedan && cumplen.length <= hasta; i++) {
+    const lote = await consultar('games', CAMPOS + ' where ' + where + '; sort ' + orden + '; limit ' + CANDIDATOS_POR_PEDIDO + '; offset ' + i * CANDIDATOS_POR_PEDIDO + ';');
+    cumplen = cumplen.concat(lote.filter(function (j) { return cumpleTipoPropio(j, filtros); }));
+    quedan = lote.length === CANDIDATOS_POR_PEDIDO;
+  }
+  let traducidos = await conHoras(cumplen.slice(hasta - POR_PAGINA, hasta));
+  if (conDuracion) traducidos = traducidos.filter(function (j) { return cumpleDuracion(j, filtros.duracion); });
+  return { juegos: traducidos, pagina: pagina, hay_mas: cumplen.length > hasta, total: null };
 }
 
 // Un juego al azar entre los 300 más conocidos (del género pedido, si hay).
@@ -643,9 +673,12 @@ async function populares(plataforma) {
   if (!lista.length) return [];
   const ids = lista.map(function (p) { return p.game_id; });
   const juegos = await consultar('games', CAMPOS + ' where id = (' + ids.join(',') + ') & ' + SOLO_JUEGOS +
-    (deEsa ? ' & platforms = (' + deEsa.join(',') + ') & ' + ningunoDe('platforms', PLATAFORMAS[plataforma === 'Xbox' ? 'PlayStation' : 'Xbox']) : '') + '; limit ' + cuantos + ';');
+    (deEsa ? ' & platforms = (' + deEsa.join(',') + ')' : '') + '; limit ' + cuantos + ';');
   juegos.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); });
-  return conHoras(juegos.slice(0, 10));
+  // Sin los que también están en la otra consola (se revisa aquí: ver cumpleTipoPropio)
+  const otra = plataforma === 'Xbox' ? 'PlayStation' : 'Xbox';
+  const elegidos = deEsa ? juegos.filter(function (j) { return familiasDe(j).indexOf(otra) === -1; }) : juegos;
+  return conHoras(elegidos.slice(0, 10));
 }
 
 // Lo más jugado en Steam: la lista pública de Steam (sin clave) con el pico de jugadores de ayer.
