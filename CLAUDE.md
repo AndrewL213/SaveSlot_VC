@@ -37,7 +37,8 @@ Digitales 3. Más contexto en README.md.
   portadas de juegos que trae IGDB (images.igdb.com), siempre con crédito a IGDB,
   y las de la biblioteca de Steam del usuario (shared.fastly.steamstatic.com,
   con la dirección que da la tienda de Steam; cdn.cloudflare.steamstatic.com como respaldo),
-  siempre con crédito a Steam.
+  siempre con crédito a Steam, y las miniaturas de los clips de Twitch (clips-media-assets2.twitch.tv
+  y static-cdn.jtvnw.net), siempre con crédito a Twitch.
 - css/: estilos. tokens.css (decisiones base), components.css
   (componentes) y styles.css (estilos generales de las pantallas).
 - js/: código. app.js (comportamiento), data.js (listas fijas y datos simulados,
@@ -165,7 +166,7 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<div class="segmentado" role="tablist"><button class="segmentado__opcion" role="tab" aria-selected="true">Iniciar sesión</button></div>`
 - `.navegacion` con `__contenido`, `__logo`, `__enlaces`, `__enlace` (actual con `aria-current="page"`; `--escritorio` solo en computador, `--movil` solo en celular), `__buscar` con `__buscar-campo`, `__acciones` (`navegacion__ocultar-movil` para ocultar un botón en celular) `__usuario` con `__nombre` y `__nivel`, y `__contador` (un `.contador contador--destacado` sobre la campana). En celular los enlaces bajan a una barra fija (con íconos): la pantalla debe dejar espacio abajo.
   `<header class="navegacion"><div class="navegacion__contenido"><a class="navegacion__logo" href="index.html">SaveSlot</a>…</div></header>`
-- `.portada` (+ `--enlace`, `--sm`) con `.portada__imagen` (img con alt, de assets/ o de IGDB), `.portada__titulo`, `.portada__ranking` y `.portada__accion` (botón arriba a la derecha); `--c` de respaldo:
+- `.portada` (+ `--enlace`, `--sm`, `--ancha` horizontal 16:9 para miniaturas de video como los clips de Twitch) con `.portada__imagen` (img con alt, de assets/ o de IGDB), `.portada__titulo`, `.portada__ranking` y `.portada__accion` (botón arriba a la derecha); `--c` de respaldo:
   `<a class="portada portada--enlace" href="…" data-color="#8A2B2B"><img class="portada__imagen" src="assets/portada-hades.jpg" alt="Portada de Hades"><b class="portada__titulo">Hades</b></a>`
 - `.avatar` (+ `--sm` 32, normal 40, `--md` 56, `--lg` 128, `--ia`; anillo `--jugando`, `--en-linea`, `--desconectado` con `.avatar__punto` opcional):
   `<span class="avatar avatar--md avatar--jugando">SL<span class="avatar__punto"></span></span>`

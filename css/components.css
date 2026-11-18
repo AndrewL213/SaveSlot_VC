@@ -2328,6 +2328,11 @@ button.navegacion__usuario {
   display: none;
 }
 
+/* Horizontal (16:9): miniaturas de video, como los clips de Twitch */
+.portada--ancha {
+  aspect-ratio: 16 / 9;
+}
+
 /* ==========================================================================
    Avatar (persona)
    Tamaños: --sm (32) · normal (40) · --md (56) · --lg (128) · --ia (MatchPlay)

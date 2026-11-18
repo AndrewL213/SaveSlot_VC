@@ -1508,7 +1508,7 @@ function guardarJuegoIgdb(juego) {
 
 // Versión del formato de las respuestas de api/ (los campos con guion bajo son la 2).
 // Va en la dirección para que Vercel no entregue respuestas guardadas con el formato viejo.
-var VERSION_API = 10;
+var VERSION_API = 11;
 
 // La copia vieja de juegos abiertos (juegosIgdb) usaba los nombres de campos viejos (nombreCorto…):
 // se pasa una sola vez a juegos_igdb con los nombres nuevos (nombre_corto…) y se borra.
@@ -2345,6 +2345,43 @@ function htmlJuegoMini(juego, ranking, detalle) {
       (!detalle && juego.calificacion != null ? '<span class="nota nota--texto" title="Nota de la comunidad de SaveSlot" aria-label="Nota de la comunidad de SaveSlot: ' + formatearNota(juego.calificacion) + ' de 10">' + formatearNota(juego.calificacion) + '<small>/10</small></span>' : '') +
     '</div>' +
   '</li>';
+}
+
+// La pestaña Clips de la ficha: miniaturas (.portada--ancha) de los clips de Twitch más vistos del último mes
+function htmlClips(clips) {
+  if (clips.cargando) return '<div class="vacio"><b>Buscando clips en Twitch…</b></div>';
+  if (clips.fallo) return '<div class="vacio"><b>No pudimos traer los clips de Twitch.</b><span>Vuelve a intentarlo en un rato.</span></div>';
+  if (!clips.lista.length) return '<div class="vacio"><b>No hay clips de este juego en Twitch este mes.</b><span>Cuando alguien comparta uno, aparecerá aquí.</span></div>';
+  return '<ul class="rejilla-clips lista-limpia">' + clips.lista.map(function (c) {
+    return '<li>' +
+      '<a class="portada portada--enlace portada--ancha" href="' + escapar(c.enlace) + '" target="_blank" rel="noopener" data-clip="' + escapar(c.id) + '">' +
+        '<img class="portada__imagen" src="' + escapar(c.miniatura) + '" alt="" loading="lazy">' +
+        '<span class="portada__ranking">' + duracionClip(c.segundos) + '</span>' +
+        '<b class="portada__titulo">' + escapar(c.titulo) + '</b>' +
+        '<span class="solo-lectores">, ver el clip</span>' +
+      '</a>' +
+      '<div class="juego__meta"><span class="tarjeta__texto">' + escapar(c.canal) + '</span>' +
+        '<span class="tarjeta__texto">' + formatearNumero(c.vistas) + ' vistas</span></div>' +
+    '</li>';
+  }).join('') + '</ul>' +
+  '<p class="tarjeta__texto">Clips de Twitch: los más vistos del último mes (primero los que están en español).</p>';
+}
+
+// 75 → "1:15"
+function duracionClip(segundos) {
+  var s = Math.max(0, Math.round(segundos || 0));
+  return Math.floor(s / 60) + ':' + dosCifras(s % 60);
+}
+
+// Reproduce un clip en una ventana, con el reproductor de Twitch (pide el nombre del sitio en "parent")
+function abrirClip(clip) {
+  var direccion = 'https://clips.twitch.tv/embed?clip=' + encodeURIComponent(clip.id) + '&parent=' + encodeURIComponent(location.hostname) + '&autoplay=true';
+  abrirModal({
+    titulo: clip.titulo,
+    html: '<iframe class="clip-reproductor" src="' + escapar(direccion) + '" title="Clip de Twitch: ' + escapar(clip.titulo) + '" allowfullscreen></iframe>' +
+      '<p class="tarjeta__texto">De ' + escapar(clip.canal) + ' en Twitch · ' + formatearNumero(clip.vistas) + ' vistas</p>',
+    acciones: [{ texto: 'Ver en Twitch', href: clip.enlace }]
+  });
 }
 
 // Etiqueta "Game Pass" para las listas (Inicio, Buscar): la API la marca con la tienda de Xbox
@@ -3400,6 +3437,7 @@ function mostrarJuego(juego) {
   var steam = { resenas: [], resumen: null, appid: null };
   var origen = 'Todas';
   var logrosEnSteam = 0; // el total real de Steam, cuando llega (mostrarDatosSteam)
+  var clips = { cargando: true, lista: [] }; // clips de Twitch (llegan después: pedirClips)
   var pestanas = [
     { id: 'resenas', nombre: 'Reseñas', numero: resenas.length, html: function () {
       var filtro = '<div class="en-fila en-fila--desliza" role="group" aria-label="Origen de la reseña">' +
@@ -3427,9 +3465,7 @@ function mostrarJuego(juego) {
       }).join('')
         : '<div class="vacio"><b>Aún no hay guías.</b><a href="' + escribir + '&amp;tipo=guia">Escribir la primera</a></div>';
     } },
-    { id: 'clips', nombre: 'Clips', numero: 0, html: function () {
-      return '<div class="vacio"><b>Los clips llegarán con la API de Twitch.</b><span>Mientras tanto, cuenta tu experiencia en una reseña o una guía.</span></div>';
-    } },
+    { id: 'clips', nombre: 'Clips', numero: 0, html: function () { return htmlClips(clips); } },
     // El número de logros solo sale de Steam (mostrarDatosSteam): el de data.js era de ejemplo
     { id: 'logros', nombre: 'Logros', numero: 0, html: function () {
       return logros.length ? logros.map(function (l) {
@@ -3466,6 +3502,29 @@ function mostrarJuego(juego) {
   cajaPestanas.addEventListener('click', function (e) {
     var boton = e.target.closest('[data-pestana]');
     if (boton) mostrarPestana(boton.dataset.pestana);
+  });
+
+  // Clips de Twitch: se piden al abrir la ficha (para el número de la pestaña) y se reproducen en una ventana
+  if (juego.id_igdb) {
+    preguntarIgdb({ clips: juego.id_igdb }).then(function (d) {
+      clips = { cargando: false, lista: d.clips || [], twitch: d.twitch };
+    }, function () {
+      clips = { cargando: false, lista: [], fallo: true };
+    }).then(function () {
+      var contador = cajaPestanas.querySelector('[data-pestana="clips"] .contador');
+      if (contador) contador.textContent = formatearNumero(clips.lista.length);
+      if (pestanaActual === 'clips') mostrarPestana('clips');
+    });
+  } else {
+    clips = { cargando: false, lista: [] };
+  }
+  panel.addEventListener('click', function (e) {
+    var enlace = e.target.closest('[data-clip]');
+    if (!enlace) return;
+    var clip = clips.lista.find(function (c) { return c.id === enlace.dataset.clip; });
+    if (!clip) return;
+    e.preventDefault();
+    abrirClip(clip);
   });
   panel.addEventListener('click', function (e) {
     var chip = e.target.closest('[data-origen]');

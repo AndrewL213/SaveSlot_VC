@@ -730,6 +730,43 @@ async function masJugadosSteam() {
   });
 }
 
+// Clips de Twitch de un juego: los más vistos del último mes. Usa la misma aplicación de Twitch que IGDB
+// (TWITCH_CLIENT_ID y el permiso de pedirPermiso), así que no necesita claves nuevas.
+// Twitch encuentra el juego por su número de IGDB (games?igdb_id=). Primero los clips en español.
+async function pedirTwitch(ruta, reintento) {
+  const r = await llamar('https://api.twitch.tv/helix/' + ruta, {
+    headers: { 'Client-ID': process.env.TWITCH_CLIENT_ID, 'Authorization': 'Bearer ' + await pedirPermiso() }
+  });
+  if (r.status === 401 && !reintento) { permiso = null; return pedirTwitch(ruta, true); }
+  if (r.status === 429) throw falla('limite', 429);
+  if (r.status === 401 || r.status === 403) throw falla('credenciales', 500);
+  if (!r.ok) throw falla('api', 502);
+  return r.json();
+}
+
+const CLIPS_A_MOSTRAR = 12;
+const DIAS_DE_CLIPS = 30;
+async function clipsDeTwitch(idIgdb) {
+  if (!/^\d{1,10}$/.test(idIgdb)) throw falla('juego', 404);
+  const juego = ((await pedirTwitch('games?igdb_id=' + idIgdb)).data || [])[0];
+  if (!juego) return { twitch: null, clips: [] }; // Twitch no tiene ese juego
+  const desde = new Date(Date.now() - DIAS_DE_CLIPS * 24 * 60 * 60 * 1000).toISOString();
+  const lista = (await pedirTwitch('clips?game_id=' + encodeURIComponent(juego.id) + '&first=40&started_at=' + encodeURIComponent(desde))).data || [];
+  // Twitch los da del más visto al menos visto; se ponen primero los que están en español
+  const enEspanol = function (c) { return /^es/i.test(c.language || '') ? 0 : 1; };
+  const ordenados = lista.slice().sort(function (a, b) { return enEspanol(a) - enEspanol(b) || b.view_count - a.view_count; });
+  return {
+    twitch: { id: juego.id, nombre: juego.name },
+    clips: ordenados.slice(0, CLIPS_A_MOSTRAR).map(function (c) {
+      return {
+        id: c.id, titulo: c.title, canal: c.broadcaster_name, vistas: c.view_count,
+        segundos: Math.round(c.duration || 0), fecha: c.created_at, idioma: c.language,
+        miniatura: c.thumbnail_url, enlace: c.url
+      };
+    })
+  };
+}
+
 module.exports = async function (req, res) {
   const q = req.query || {};
   try {
@@ -741,7 +778,8 @@ module.exports = async function (req, res) {
     else if (q.explorar !== undefined) respuesta = await explorar(q);
     else if (q.random !== undefined) respuesta = { juego: await random(q) };
     else if (q.steam !== undefined) respuesta = { juegos: await masJugadosSteam() };
-    else { res.status(400).json({ error: 'pedido', detalle: 'Usa ?buscar=, ?id=, ?steam_app=, ?populares=1, ?explorar=1, ?random=1 o ?steam=1' }); return; }
+    else if (q.clips !== undefined) respuesta = await clipsDeTwitch(String(q.clips));
+    else { res.status(400).json({ error: 'pedido', detalle: 'Usa ?buscar=, ?id=, ?steam_app=, ?populares=1, ?explorar=1, ?random=1, ?steam=1 o ?clips=' }); return; }
     // Vercel guarda la respuesta una hora: menos consultas a IGDB y más rápido para todos.
     // El juego al azar no se guarda: cada pedido debe dar uno distinto.
     res.setHeader('Cache-Control', q.random !== undefined ? 'no-store' : 's-maxage=3600, stale-while-revalidate=86400');

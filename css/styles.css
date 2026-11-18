@@ -135,6 +135,30 @@ body {
   gap: var(--espacio-2);
 }
 
+/* Clips de Twitch (pestaña Clips de la ficha): miniaturas horizontales */
+.rejilla-clips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--espacio-8) * 6), 1fr));
+  gap: var(--espacio-4);
+}
+
+.rejilla-clips > * {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  min-width: 0;
+}
+
+/* El reproductor de Twitch dentro de la ventana */
+.clip-reproductor {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: var(--radio-md);
+  background: var(--color-fondo);
+}
+
 .rejilla-tarjetas {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
