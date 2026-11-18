@@ -5049,7 +5049,7 @@ function pantallaPerfil() {
       var extra = '';
       if (!cuentasVinculadas[p]) return;
       if (p === 'Xbox') lista.push('<span class="en-fila tarjeta__texto" title="Tu cuenta de Xbox"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox">@' + escapar(cuentasVinculadas.Xbox) + extra + '</span>');
-      else lista.push('<span class="tarjeta__texto" title="Tu cuenta de ' + p + '">' + p + ' @' + escapar(cuentasVinculadas[p]) + extra + '</span>');
+      else lista.push('<span class="en-fila tarjeta__texto" title="Tu cuenta de PlayStation"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-playstation.png')) + '" alt="PlayStation">@' + escapar(cuentasVinculadas[p]) + extra + '</span>');
     });
     if (epicPerfil) lista.push('<span class="en-fila tarjeta__texto" title="Tu cuenta de Epic Games"><img class="boton__logo" src="' + escapar(rutaRecurso('assets/logo-epic.png')) + '" alt="Epic Games">' + escapar(epicPerfil.nombre) + '</span>');
     var caja = document.getElementById('cuentas-perfil');
@@ -5070,10 +5070,10 @@ function pantallaPerfil() {
     }
     etiqueta.innerHTML = (logo ? '<img class="etiqueta__logo" src="' + escapar(rutaRecurso(logo)) + '" alt="">' : '') + escapar(texto);
   }
-  // PlayStation: nivel de trofeos y platinos (sin logo: no hay un logo oficial de PlayStation en assets/)
+  // PlayStation: nivel de trofeos y platinos
   function usarPsnEnPerfil(datos) {
     if (!datos) return;
-    if (datos.nivel != null) ponerEtiquetaPlataforma('psn', null, 'PSN NIVEL ' + datos.nivel + (datos.trofeos && datos.trofeos.platino ? ' · ' + datos.trofeos.platino + ' PLATINOS' : ''));
+    if (datos.nivel != null) ponerEtiquetaPlataforma('psn', 'assets/logo-playstation.png', 'PSN NIVEL ' + datos.nivel + (datos.trofeos && datos.trofeos.platino ? ' · ' + datos.trofeos.platino + ' PLATINOS' : ''));
     actualizarConXbox();
   }
   if (tienePlayStation()) {
@@ -5736,7 +5736,7 @@ function pantallaEditar() {
     }
     return fila + '<div class="grupo-campo">' +
       '<span class="grupo-campo__etiqueta">Prueba que <b>' + escapar(psn.id) + '</b> es tuyo</span>' +
-      '<span class="grupo-campo__ayuda">Pon este código en el «Sobre mí» de tu perfil de PlayStation (en la consola o en la app PlayStation: Perfil → Editar perfil → Sobre mí) y toca Verificar. Después lo puedes quitar.</span>' +
+      '<span class="grupo-campo__ayuda">Pon este código en el «Sobre mí» de tu perfil de PlayStation y toca Verificar. Solo se puede cambiar <b>en la consola (PS4 o PS5) o en la app móvil PlayStation App</b>: Perfil → Editar perfil → Sobre mí. La web de PlayStation no deja cambiarlo. Después lo puedes quitar.</span>' +
       '<div class="en-fila"><b class="etiqueta etiqueta--primario">' + escapar(psn.codigo) + '</b>' +
         '<button class="boton boton--secundario boton--sm" type="button" data-psn="copiar">Copiar</button>' +
         '<button class="boton boton--sm" type="button" data-psn="verificar">Verificar</button>' +
@@ -6561,18 +6561,19 @@ function pantallaBiblioteca() {
     var hayFiltros = texto || plataforma || genero || estadoPedido;
     caja.innerHTML = lista.map(function (j) {
       if (j.playstation) {
-        // Sin logo en la portada: no hay un logo oficial de PlayStation en assets/
-        return '<a href="' + escapar(enlaceJuego(j)) + '" title="Ver la ficha de ' + escapar(j.nombre) + (j.portada ? ' · Portada: IGDB' : '') + '">' +
-          '<span class="portada portada--enlace">' + imagenPortada(j) + '</span>' +
+        // Logo de PlayStation en la esquina de la portada; los trofeos se ven en Logros
+        return '<a href="' + escapar(enlaceJuego(j)) + '" title="Ver la ficha de ' + escapar(j.nombre) + '">' +
+          '<span class="portada portada--enlace">' + imagenPortada(j) +
+            '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-playstation.png')) + '" alt="PlayStation" title="De tu cuenta de PlayStation' + (j.portada ? ' · Portada: IGDB' : '') + '"></span>' +
           '<b>' + escapar(j.nombre_corto) + '</b>' +
-          '<span class="tarjeta__texto">PlayStation · ' + (j.horas ? formatearNumero(j.horas) + ' h · ' : '') + j.logros.obtenidos + '/' + j.logros.totales + ' trofeos</span></a>';
+          '<span class="tarjeta__texto">' + (j.horas ? formatearNumero(j.horas) + ' h' : 'Jugado') + '</span></a>';
       }
       if (j.xbox) {
         return '<a href="' + escapar(enlaceJuego(j)) + '" title="Ver la ficha de ' + escapar(j.nombre) + '">' +
           '<span class="portada portada--enlace">' + imagenPortada(j) +
             '<img class="portada__plataforma" src="' + escapar(rutaRecurso('assets/logo-xbox.png')) + '" alt="Xbox" title="De tu cuenta de Xbox' + (j.portada ? ' · Portada: IGDB' : '') + '"></span>' +
           '<b>' + escapar(j.nombre_corto) + '</b>' +
-          '<span class="tarjeta__texto">' + (j.logros.totales ? j.logros.obtenidos + '/' + j.logros.totales + ' logros' : 'Jugado') + '</span></a>';
+          '<span class="tarjeta__texto">Jugado</span></a>'; // los logros se ven en Logros
       }
       return '<a href="' + escapar(enlaceJuego(j)) + '" title="Ver la ficha de ' + escapar(j.nombre) + '">' +
         // De qué cuenta viene el juego: logo en la esquina inferior izquierda de la portada (hoy solo Steam)
