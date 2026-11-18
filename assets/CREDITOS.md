@@ -25,8 +25,14 @@ solo para identificar cada juego y siempre se indica su fuente y su dueño.
 | logo-xbox.png | Logo de Xbox (cuenta vinculada en Perfil, etiquetas y portadas de la Biblioteca) | Logo de Xbox aportado por el equipo; solo escalado a 128×128 | © Microsoft. Sin cambiar colores ni proporciones |
 | logo-epic.png | Logo de Epic Games para el botón de iniciar sesión | Logo oficial de Epic Games («Epic Games logo for EOS users», enlazado desde las pautas de diseño de Epic Account Services); solo recortado y escalado | © Epic Games. Se usa solo en el botón de iniciar sesión, sin cambiar colores ni proporciones, según las pautas de Epic |
 
-SaveSlot no está respaldado ni patrocinado por Riot Games, Nintendo, Valve, Google, Discord, Twitch, Microsoft ni ninguna de las
-empresas mencionadas. Todas las marcas pertenecen a sus dueños.
+## APIs externas
+
+| Plataforma | De dónde salen los datos | Nota |
+|---|---|---|
+| PlayStation | psn-api (https://www.npmjs.com/package/psn-api), librería externa y **no oficial** hecha por la comunidad | Sony no tiene una API pública: los trofeos y juegos se leen de PlayStation Network a través de esta librería. No es un servicio de Sony y puede dejar de funcionar si Sony cambia algo. Las portadas de esos juegos son de IGDB |
+
+SaveSlot no está respaldado ni patrocinado por Riot Games, Nintendo, Valve, Google, Discord, Twitch, Microsoft, Sony Interactive Entertainment ni ninguna de las
+empresas mencionadas. Todas las marcas pertenecen a sus dueños. Todas las marcas pertenecen a sus dueños.
 
 ## Kits de prensa oficiales (revisados el 2026-11-02)
 
