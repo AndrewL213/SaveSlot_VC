@@ -2615,7 +2615,7 @@ button.navegacion__usuario {
    Arranque (animación al abrir SaveSlot, como el arranque de una consola)
    .arranque con .arranque__logo (svg con .arranque__marco y .arranque__barra) y .arranque__nombre.
    Cubre la pantalla y solo se ve si <html> tiene .con-arranque: la pone js/arranque.js
-   una vez por visita (y nunca con "menos movimiento"). --saliendo la desvanece.
+   cada vez que se abre el Inicio (con "menos movimiento", también .arranque-quieto: logo sin animar). --saliendo la desvanece.
    ========================================================================== */
 .arranque {
   position: fixed;
@@ -2694,10 +2694,24 @@ button.navegacion__usuario {
   to { opacity: 1; transform: none; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .con-arranque .arranque {
-    display: none;
-  }
+/* Con "menos movimiento" (js/arranque.js pone .arranque-quieto): el logo ya armado, sin animación */
+.arranque-quieto .arranque__logo,
+.arranque-quieto .arranque__marco,
+.arranque-quieto .arranque__barra,
+.arranque-quieto .arranque__nombre {
+  animation: none;
+}
+
+.arranque-quieto .arranque__marco {
+  stroke-dashoffset: 0;
+}
+
+.arranque-quieto .arranque__barra {
+  transform: none;
+}
+
+.arranque-quieto .arranque__nombre {
+  opacity: 1;
 }
 
 /* ==========================================================================

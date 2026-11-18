@@ -2276,16 +2276,6 @@ function activarMenuCuenta(contenedor) {
 }
 
 // Franja "Prototipo académico": se puede cerrar y se recuerda.
-function prepararFranja() {
-  var franja = document.querySelector('[data-franja]');
-  if (!franja) return;
-  if (leerMemoria('hideDemo', false)) { franja.hidden = true; return; }
-  franja.querySelector('[data-cerrar-franja]').addEventListener('click', function () {
-    franja.hidden = true;
-    guardarMemoria('hideDemo', true);
-  });
-}
-
 // Pie: con sesión, "Iniciar sesión" pasa a "Cerrar sesión".
 function prepararPie() {
   var enlace = document.querySelector('[data-pie-sesion]');
@@ -7270,7 +7260,7 @@ function mostrarErrorDeCarga() {
   document.getElementById('reintentar-carga').addEventListener('click', function () { location.reload(); });
 }
 
-// Animación de arranque (.arranque, solo en el Inicio y una vez por visita; la decide js/arranque.js).
+// Animación de arranque (.arranque, cada vez que se abre el Inicio; la pone js/arranque.js).
 // Se quita cuando la pantalla está lista, pero se ve al menos 1,8 s (lo que dura la animación)
 // y como mucho 4 s aunque algo tarde. Un clic la quita antes.
 // Los tiempos se cuentan desde que la animación aparece (window.ARRANQUE_DESDE, de js/arranque.js),
@@ -7341,7 +7331,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
     if (cargando) cargando.remove();
     prepararEncabezado();
-    prepararFranja();
     prepararPie();
     if (pantalla) await pantalla();
     quitarArranque();

@@ -874,7 +874,7 @@
 
     <div class="cat-componente">
       <h3>Arranque · <code>.arranque</code></h3>
-      <p>La animación al abrir SaveSlot: el marco del logo se dibuja, la barra se llena como una partida que se guarda y el logo brilla. En la app cubre la pantalla y sale solo en el Inicio, una vez por visita: <code>js/arranque.js</code> (en el <code>&lt;head&gt;</code>) le pone <code>.con-arranque</code> al <code>&lt;html&gt;</code>, y <code>app.js</code> la quita con <code>.arranque--saliendo</code> cuando la página cargó. Con «menos movimiento» no sale.</p>
+      <p>La animación al abrir SaveSlot: el marco del logo se dibuja, la barra se llena como una partida que se guarda y el logo brilla. En la app cubre la pantalla y sale cada vez que se abre el Inicio: <code>js/arranque.js</code> (en el <code>&lt;head&gt;</code>) le pone <code>.con-arranque</code> al <code>&lt;html&gt;</code>, y <code>app.js</code> la quita con <code>.arranque--saliendo</code> cuando la página cargó. Con «menos movimiento», <code>js/arranque.js</code> también pone <code>.arranque-quieto</code>: el logo se ve ya armado, sin animación.</p>
       <div class="cat-ejemplo cat-ejemplo--columna cat-estatico" data-codigo>
         <div class="arranque" id="arranque" aria-hidden="true">
           <svg class="arranque__logo" viewBox="0 0 32 32"><rect class="arranque__marco" x="5" y="8" width="22" height="16" rx="3" pathLength="100"/><rect class="arranque__barra" x="9" y="18" width="14" height="3"/></svg>

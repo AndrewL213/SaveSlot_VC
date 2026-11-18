@@ -177,7 +177,7 @@ En las pantallas no se escribe `style`: el color de un juego o evento va en `dat
   `<div class="aviso-flotante" role="status">Guardado <button class="aviso-flotante__accion">Deshacer</button></div>`
 - `.vacio`:
   `<div class="vacio"><b>Todavía no tienes reseñas</b><span>Cuando escribas una, aparecerá aquí.</span></div>`
-- `.arranque` con `__logo` (svg con `__marco` y `__barra`) y `__nombre` (animación al abrir el sitio; cubre la pantalla y solo se ve si `<html>` tiene `.con-arranque`, que pone js/arranque.js una vez por visita; `--saliendo` la desvanece):
+- `.arranque` con `__logo` (svg con `__marco` y `__barra`) y `__nombre` (animación al abrir el sitio; cubre la pantalla y solo se ve si `<html>` tiene `.con-arranque`, que pone js/arranque.js cada vez que se abre el Inicio; con «menos movimiento», también `.arranque-quieto` en `<html>`: logo sin animar; `--saliendo` la desvanece):
   `<div class="arranque" id="arranque" aria-hidden="true"><svg class="arranque__logo" viewBox="0 0 32 32"><rect class="arranque__marco" x="5" y="8" width="22" height="16" rx="3" pathLength="100"/><rect class="arranque__barra" x="9" y="18" width="14" height="3"/></svg><b class="arranque__nombre">SaveSlot</b></div>`
 - `.franja` con `.franja__enlace` (aviso arriba de la página):
   `<div class="franja" role="region" aria-label="Aviso"><span>Prototipo académico… <a class="franja__enlace" href="…">Más información</a></span><button class="boton boton--fantasma boton--icono boton--sm" aria-label="Ocultar aviso">…</button></div>`
