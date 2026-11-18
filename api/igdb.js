@@ -19,6 +19,8 @@
 //   /api/igdb?random=1       → un juego al azar entre los más conocidos. genero=RPG · excepto=hades--1
 //   /api/igdb?steam=1        → los 10 juegos más jugados en Steam (PC), con su pico de jugadores
 //                              (jugadores_steam); la lista viene de Steam y los datos, de IGDB
+//   /api/igdb?clips=<igdb>   → los clips de Twitch más vistos del último mes de un juego
+//   POST /api/igdb?publicar_clip=1 → comparte un clip de la cuenta de Twitch vinculada (ver publicarClipDeTwitch)
 //
 // Solo se muestran juegos principales, remakes, remasters y expansiones que se venden solas:
 // nada de DLC, mods, packs ni ports no oficiales.
@@ -767,8 +769,72 @@ async function clipsDeTwitch(idIgdb) {
   };
 }
 
+// Compartir un clip de Twitch (POST ?publicar_clip=1, con la sesión de Supabase de la persona).
+// Solo se guarda si el clip es de su cuenta de Twitch vinculada (de su canal o lo recortó ella) y del
+// juego elegido. Lo guarda este servidor con la llave secreta: desde el navegador la base no deja
+// escribir clip_twitch (sección 10 de supabase/esquema.sql). Da los +50 XP de publicar, como una reseña.
+function codigoDeClip(enlace) {
+  const texto = String(enlace || '').trim();
+  const m = texto.match(/^(?:https?:\/\/)?(?:clips\.twitch\.tv\/(?!embed)|(?:www\.|m\.)?twitch\.tv\/[A-Za-z0-9_]+\/clip\/)([A-Za-z0-9_-]{3,100})(?:[?#/].*)?$/);
+  return m ? m[1] : null;
+}
+
+async function publicarClipDeTwitch(req) {
+  if (req.method !== 'POST') throw falla('pedido', 405);
+  const llave = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!llave) throw falla('credenciales', 500);
+  let datos = req.body;
+  if (typeof datos === 'string') { try { datos = JSON.parse(datos); } catch (e) { datos = {}; } }
+  datos = datos || {};
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) throw falla('sesion', 401);
+  const codigo = codigoDeClip(datos.enlace);
+  if (!codigo) throw falla('enlace', 400);
+  const juego = Number(datos.juego);
+  if (!Number.isInteger(juego) || juego <= 0) throw falla('juego', 400);
+
+  // La cuenta de la persona (con su sesión) y su Twitch vinculada
+  const rCuenta = await llamar(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: llave, Authorization: 'Bearer ' + token } });
+  if (!rCuenta.ok) throw falla('sesion', 401);
+  const cuenta = await rCuenta.json();
+  const twitch = (cuenta.identities || []).find(function (i) { return i.provider === 'twitch'; });
+  if (!twitch) throw falla('sin_twitch', 403);
+  const datosTwitch = twitch.identity_data || {};
+  const idTwitch = String(datosTwitch.provider_id || datosTwitch.sub || twitch.id);
+  const rFila = await llamar(SUPABASE_URL + '/rest/v1/usuarios?auth_id=eq.' + encodeURIComponent(cuenta.id) + '&select=id', { headers: cabecerasSupabase() });
+  const fila = rFila.ok ? (await rFila.json())[0] : null;
+  if (!fila) throw falla('sesion', 401);
+
+  // El clip: que exista, que sea de esa cuenta y de ese juego
+  const clip = ((await pedirTwitch('clips?id=' + encodeURIComponent(codigo))).data || [])[0];
+  if (!clip) throw falla('clip', 404);
+  if (clip.broadcaster_id !== idTwitch && clip.creator_id !== idTwitch) throw falla('no_es_tuyo', 403);
+  const juegoTwitch = ((await pedirTwitch('games?igdb_id=' + juego)).data || [])[0];
+  if (!juegoTwitch || juegoTwitch.id !== clip.game_id) throw falla('otro_juego', 422);
+
+  const titulo = String(datos.titulo || '').trim().slice(0, 80) || String(clip.title || '').slice(0, 80) || null;
+  const r = await llamar(SUPABASE_URL + '/rest/v1/resenas', {
+    method: 'POST',
+    headers: cabecerasSupabase({ Prefer: 'return=representation' }),
+    body: JSON.stringify({
+      usuario_id: fila.id, juego_igdb: juego, tipo: 'clip', estado: 'publicada', titulo: titulo,
+      clip_twitch: clip.id, clip_miniatura: clip.thumbnail_url || null,
+      clip_duracion: Math.min(61, Math.round(clip.duration || 0)), fecha: new Date().toISOString()
+    })
+  });
+  if (r.status === 409) throw falla('repetido', 409);
+  if (!r.ok) { console.error('No se guardó el clip', r.status, await r.text()); throw falla('api', 502); }
+  return { resena: (await r.json())[0] };
+}
+
 module.exports = async function (req, res) {
   const q = req.query || {};
+  if (q.publicar_clip !== undefined) {
+    res.setHeader('Cache-Control', 'no-store');
+    try { res.status(200).json(await publicarClipDeTwitch(req)); }
+    catch (e) { if (!e.tipo) console.error(e); res.status(e.estado || 500).json({ error: e.tipo || 'api' }); }
+    return;
+  }
   try {
     let respuesta;
     if (q.buscar !== undefined) respuesta = { juegos: await buscar(q.buscar) };

@@ -78,12 +78,12 @@
       </div>
     </fieldset>
 
-    <fieldset class="grupo-campo">
+    <fieldset class="grupo-campo" id="bloque-calificacion">
       <legend class="grupo-campo__etiqueta">Tu calificación <span class="etiqueta etiqueta--primario" id="texto-calificacion"></span></legend>
       <div class="escala" role="group" aria-label="Tu calificación de 1 a 10" id="escala-calificacion"></div>
     </fieldset>
 
-    <fieldset class="grupo-campo">
+    <fieldset class="grupo-campo" id="bloque-dificultad">
       <legend class="grupo-campo__etiqueta">¿Qué tan difícil fue? <span class="etiqueta etiqueta--error" id="texto-dificultad"></span></legend>
       <div class="escala escala--dificultad" role="group" aria-label="Dificultad de 1 a 10" id="escala-dificultad"></div>
       <div class="en-fila en-fila--entre grupo-campo__ayuda"><span>1 · Relajado</span><span>10 · Brutal</span></div>
@@ -104,10 +104,27 @@
       <p class="tarjeta tarjeta__texto" id="borrador-guardado" hidden><span class="nota nota--texto">✓</span> Borrador guardado en este navegador. Si cierras, no lo pierdes.</p>
     </div>
 
-    <div class="grupo-campo" id="bloque-clip" hidden>
-      <label class="grupo-campo__etiqueta" for="clip">Archivo de video</label>
-      <input class="campo" type="file" id="clip" accept="video/*">
-      <span class="grupo-campo__ayuda">MP4 o WebM, máximo 60 segundos.</span>
+    <div class="pila" id="bloque-clip" hidden>
+      <div class="segmentado" role="tablist" aria-label="De dónde viene el clip" id="origen-clip">
+        <button class="segmentado__opcion" type="button" role="tab" data-origen-clip="twitch" aria-selected="true">Enlace de Twitch</button>
+        <button class="segmentado__opcion" type="button" role="tab" data-origen-clip="archivo" aria-selected="false">Subir un video</button>
+      </div>
+      <div class="grupo-campo" id="campo-twitch">
+        <label class="grupo-campo__etiqueta" for="enlace-clip">Enlace del clip</label>
+        <input class="campo" type="url" id="enlace-clip" placeholder="https://clips.twitch.tv/…" aria-describedby="ayuda-enlace-clip error-clip">
+        <span class="grupo-campo__ayuda" id="ayuda-enlace-clip">Un clip de tu cuenta de Twitch vinculada (de tu canal o que recortaste tú) y de este juego.</span>
+      </div>
+      <div class="vacio" id="sin-twitch" hidden><b>Vincula tu cuenta de Twitch para compartir tus clips.</b><span>Así comprobamos que el clip es tuyo.</span><a class="boton boton--secundario boton--sm" href="editar-perfil.html#cuentas">Vincular en Editar perfil</a></div>
+      <div class="grupo-campo" id="campo-archivo" hidden>
+        <label class="grupo-campo__etiqueta" for="clip">Archivo de video</label>
+        <input class="campo" type="file" id="clip" accept="video/mp4,video/webm" aria-describedby="ayuda-archivo-clip error-clip">
+        <span class="grupo-campo__ayuda" id="ayuda-archivo-clip">MP4 o WebM, máximo 60 segundos y 50 MB. Solo videos tuyos y aptos para todo público: cualquiera puede reportarlo.</span>
+      </div>
+      <span class="grupo-campo__error" id="error-clip" hidden></span>
+      <div class="grupo-campo">
+        <label class="grupo-campo__etiqueta" for="titulo-clip">Título <span class="tarjeta__texto">(opcional)</span></label>
+        <input class="campo" id="titulo-clip" maxlength="80">
+      </div>
     </div>
 
     <div class="en-fila en-fila--entre formulario-resena__pie">

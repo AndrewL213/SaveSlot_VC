@@ -1345,6 +1345,8 @@ var TRADUCIR = {
         titulo: r.titulo, texto: r.texto, calificacion: r.calificacion, dificultad: r.dificultad,
         horas: r.horas == null ? null : Number(r.horas), estado_partida: r.estado_partida, minutos_lectura: r.minutos_lectura,
         spoiler: r.spoiler, editada: r.editada, fecha: fechaLocal(r.fecha),
+        clip_twitch: r.clip_twitch || null, clip_archivo: r.clip_archivo || null, clip_miniatura: r.clip_miniatura || null,
+        clip_duracion: r.clip_duracion == null ? null : Number(r.clip_duracion),
         votos_util: cuenta('votos_util', r.id), me_gusta: cuenta('me_gusta_resenas', r.id), porcentaje_util: null
       };
     });
@@ -2372,11 +2374,48 @@ function htmlJuegoMini(juego, ranking, detalle) {
   '</li>';
 }
 
-// La pestaña Clips de la ficha: miniaturas (.portada--ancha) de los clips de Twitch más vistos del último mes
-function htmlClips(clips) {
+// La pestaña Clips de la ficha: primero los clips de la comunidad de SaveSlot (resenas de tipo 'clip':
+// de Twitch o un video subido) y después los de Twitch más vistos del último mes.
+function htmlClips(clips, comunidad, juego) {
+  var compartir = '<a class="boton boton--secundario boton--sm" href="escribir-resena.html?id=' + encodeURIComponent(juego.id) + '&amp;tipo=clip">Compartir un clip</a>';
+  return '<div class="encabezado-seccion"><h3 class="encabezado-seccion__titulo">De la comunidad</h3>' + compartir + '</div>' +
+    (comunidad.length
+      ? '<ul class="rejilla-clips lista-limpia">' + comunidad.map(htmlClipComunidad).join('') + '</ul>'
+      : '<div class="vacio"><b>Nadie ha compartido clips de este juego en SaveSlot.</b><span>Comparte uno de tu cuenta de Twitch o sube un video corto.</span></div>') +
+    '<div class="encabezado-seccion"><h3 class="encabezado-seccion__titulo">Populares en Twitch</h3></div>' +
+    htmlClipsTwitch(clips);
+}
+
+// Dirección pública de un archivo de la carpeta "clips" de Supabase Storage
+function direccionClip(ruta) {
+  return clienteSupabase ? clienteSupabase.storage.from('clips').getPublicUrl(ruta).data.publicUrl : '';
+}
+// La miniatura de un clip de la comunidad: la de Twitch, o la .jpg que se subió junto al video
+function miniaturaClip(r) {
+  if (r.clip_twitch) return r.clip_miniatura || '';
+  return r.clip_archivo ? direccionClip(r.clip_archivo.replace(/\.[a-z0-9]+$/i, '.jpg')) : '';
+}
+
+function htmlClipComunidad(r) {
+  var miniatura = miniaturaClip(r);
+  var titulo = r.titulo || 'Clip de @' + r.autor;
+  return '<li>' +
+    '<a class="portada portada--enlace portada--ancha" href="#" data-clip-comunidad="' + escapar(r.id) + '">' +
+      (miniatura ? '<img class="portada__imagen" src="' + escapar(miniatura) + '" alt="" loading="lazy">' : '') +
+      (r.clip_duracion ? '<span class="portada__ranking">' + duracionClip(r.clip_duracion) + '</span>' : '') +
+      '<b class="portada__titulo">' + escapar(titulo) + '</b>' +
+      '<span class="solo-lectores">, ver el clip</span>' +
+    '</a>' +
+    '<div class="juego__meta"><a class="tarjeta__texto" href="' + escapar(enlacePerfil(r.autor)) + '">@' + escapar(r.autor) + '</a>' +
+      '<span class="tarjeta__texto">' + (r.clip_twitch ? 'Twitch' : 'Video en SaveSlot') + '</span></div>' +
+  '</li>';
+}
+
+// Los clips de Twitch más vistos del último mes: miniaturas (.portada--ancha)
+function htmlClipsTwitch(clips) {
   if (clips.cargando) return '<div class="vacio"><b>Buscando clips en Twitch…</b></div>';
   if (clips.fallo) return '<div class="vacio"><b>No pudimos traer los clips de Twitch.</b><span>Vuelve a intentarlo en un rato.</span></div>';
-  if (!clips.lista.length) return '<div class="vacio"><b>No hay clips de este juego en Twitch este mes.</b><span>Cuando alguien comparta uno, aparecerá aquí.</span></div>';
+  if (!clips.lista.length) return '<div class="vacio"><b>No hay clips de este juego en Twitch este mes.</b></div>';
   return '<ul class="rejilla-clips lista-limpia">' + clips.lista.map(function (c) {
     return '<li>' +
       '<a class="portada portada--enlace portada--ancha" href="' + escapar(c.enlace) + '" target="_blank" rel="noopener" data-clip="' + escapar(c.id) + '">' +
@@ -2407,6 +2446,56 @@ function abrirClip(clip) {
       '<p class="tarjeta__texto">De ' + escapar(clip.canal) + ' en Twitch · ' + formatearNumero(clip.vistas) + ' vistas</p>',
     acciones: [{ texto: 'Ver en Twitch', href: clip.enlace }]
   });
+}
+
+// Reproduce un clip de la comunidad: el de Twitch con su reproductor y el video subido con <video>.
+// Quien lo publicó puede eliminarlo; los demás (con cuenta) pueden reportarlo (con 3 reportes se oculta).
+function abrirClipComunidad(r, alBorrar) {
+  var titulo = r.titulo || 'Clip de @' + r.autor;
+  var reproductor = r.clip_twitch
+    ? '<iframe class="clip-reproductor" src="' + escapar('https://clips.twitch.tv/embed?clip=' + encodeURIComponent(r.clip_twitch) + '&parent=' + encodeURIComponent(location.hostname) + '&autoplay=true') + '" title="Clip de Twitch: ' + escapar(titulo) + '" allowfullscreen></iframe>'
+    : '<video class="clip-reproductor" src="' + escapar(direccionClip(r.clip_archivo)) + '" controls autoplay playsinline></video>';
+  var propio = MI_FILA && r.autor === MI_FILA.usuario;
+  var acciones = [];
+  if (r.clip_twitch) acciones.push({ texto: 'Ver en Twitch', href: 'https://clips.twitch.tv/' + encodeURIComponent(r.clip_twitch) });
+  if (propio) {
+    acciones.push({ texto: 'Eliminar', peligro: true, alTocar: function () {
+      abrirModal({
+        titulo: '¿Eliminar este clip?',
+        texto: 'Se quitará del juego. No se puede deshacer.',
+        acciones: [{ texto: 'Cancelar' }, { texto: 'Eliminar', peligro: true, alTocar: async function () {
+          try {
+            await eliminarDatos('resenas', r.id);
+            if (r.clip_archivo) clienteSupabase.storage.from('clips').remove([r.clip_archivo, r.clip_archivo.replace(/\.[a-z0-9]+$/i, '.jpg')]).catch(function () {});
+            FILAS.resenas = (FILAS.resenas || []).filter(function (x) { return String(x.id) !== String(r.id); });
+            DATOS_ARMADOS = {};
+            mostrarAviso('Clip eliminado');
+            if (alBorrar) alBorrar();
+          } catch (error) {
+            mostrarAviso('No pudimos borrar. Intenta de nuevo.');
+          }
+        } }]
+      });
+    } });
+  } else {
+    acciones.push({ texto: 'Reportar', alTocar: function () { reportarPublicacion(r); } });
+  }
+  abrirModal({
+    titulo: titulo,
+    html: reproductor + '<p class="tarjeta__texto">Compartido por @' + escapar(r.autor) + ' en SaveSlot' + (r.clip_twitch ? ' · Clip de Twitch' : '') + '</p>',
+    acciones: acciones
+  });
+}
+
+// Reportar una publicación ajena (tabla reportes): una vez por persona. Con 3 reportes la base la oculta.
+async function reportarPublicacion(r) {
+  if (!MI_FILA) { pedirCuenta('reportar un clip'); return; }
+  try {
+    await guardarDatos('reportes', { resena_id: r.id, usuario_id: MI_FILA.id, motivo: null });
+    mostrarAviso('Gracias por avisar. Con 3 reportes, el clip se oculta.');
+  } catch (error) {
+    mostrarAviso(error && error.code === '23505' ? 'Ya reportaste este clip.' : 'No pudimos enviar el reporte. Intenta de nuevo.');
+  }
 }
 
 // Etiqueta "Game Pass" para las listas (Inicio, Buscar): la API la marca con la tienda de Xbox
@@ -3456,6 +3545,7 @@ function mostrarJuego(juego) {
   var publicadas = obtenerResenas().filter(function (r) { return esJuego(r.juego_igdb, juego) && r.estado === 'publicada'; });
   var resenas = publicadas.filter(function (r) { return r.tipo === 'resena'; });
   var guias = publicadas.filter(function (r) { return r.tipo === 'guia'; });
+  var clipsComunidad = publicadas.filter(function (r) { return r.tipo === 'clip'; }); // clips de SaveSlot (pestaña Clips)
   var logros = datosDe('logros').filter(function (l) { return l.juego === juego.id; });
   var escribir = 'escribir-resena.html?id=' + encodeURIComponent(juego.id);
   // Reseñas de Steam del juego (llegan después) y filtro por origen
@@ -3490,7 +3580,7 @@ function mostrarJuego(juego) {
       }).join('')
         : '<div class="vacio"><b>Aún no hay guías.</b><a href="' + escribir + '&amp;tipo=guia">Escribir la primera</a></div>';
     } },
-    { id: 'clips', nombre: 'Clips', numero: 0, html: function () { return htmlClips(clips); } },
+    { id: 'clips', nombre: 'Clips', numero: clipsComunidad.length, html: function () { return htmlClips(clips, clipsComunidad, juego); } },
     // El número de logros solo sale de Steam (mostrarDatosSteam): el de data.js era de ejemplo
     { id: 'logros', nombre: 'Logros', numero: 0, html: function () {
       return logros.length ? logros.map(function (l) {
@@ -3537,13 +3627,25 @@ function mostrarJuego(juego) {
       clips = { cargando: false, lista: [], fallo: true };
     }).then(function () {
       var contador = cajaPestanas.querySelector('[data-pestana="clips"] .contador');
-      if (contador) contador.textContent = formatearNumero(clips.lista.length);
+      if (contador) contador.textContent = formatearNumero(clipsComunidad.length + clips.lista.length);
       if (pestanaActual === 'clips') mostrarPestana('clips');
     });
   } else {
     clips = { cargando: false, lista: [] };
   }
   panel.addEventListener('click', function (e) {
+    var deComunidad = e.target.closest('[data-clip-comunidad]');
+    if (deComunidad) {
+      e.preventDefault();
+      var suyo = clipsComunidad.find(function (r) { return String(r.id) === deComunidad.dataset.clipComunidad; });
+      if (suyo) abrirClipComunidad(suyo, function () {
+        clipsComunidad = clipsComunidad.filter(function (r) { return r !== suyo; });
+        var contador = cajaPestanas.querySelector('[data-pestana="clips"] .contador');
+        if (contador) contador.textContent = formatearNumero(clipsComunidad.length + (clips.lista || []).length);
+        mostrarPestana('clips');
+      });
+      return;
+    }
     var enlace = e.target.closest('[data-clip]');
     if (!enlace) return;
     var clip = clips.lista.find(function (c) { return c.id === enlace.dataset.clip; });
@@ -3558,7 +3660,7 @@ function mostrarJuego(juego) {
     mostrarPestana('resenas');
   });
   activarResenas(panel);
-  mostrarPestana('resenas');
+  mostrarPestana(location.hash === '#clips' ? 'clips' : 'resenas'); // #clips: al volver de publicar un clip
 
   // Steam: datos del catálogo (precio, nota, jugadores, logros) y reseñas.
   // El número de Steam sale de IGDB (api/steam/juego); si no, de tu biblioteca; si no, se busca por nombre.
@@ -3715,7 +3817,7 @@ function mostrarEscribir(juego) {
   var dificultad = juego.dificultad || 5;
   var meGusta = false;
   var claveBorrador = 'draft.' + juego.id;
-  var editando = leerResenasPropias().find(function (r) { return String(r.id) === parametros.get('editar') && esJuego(r.juego_igdb, juego); }) || null;
+  var editando = leerResenasPropias().find(function (r) { return String(r.id) === parametros.get('editar') && esJuego(r.juego_igdb, juego) && r.tipo !== 'clip'; }) || null;
   // Cuenta real: su borrador de este juego en la base (uno por juego)
   var borradorBase = MI_FILA && FILAS.resenas ? datosDe('resenas').find(function (r) {
     return r.autor === MI_FILA.usuario && r.estado === 'borrador' && esJuego(r.juego_igdb, juego);
@@ -3801,12 +3903,196 @@ function mostrarEscribir(juego) {
     if (campoTexto.value.trim()) guardarBorrador();
   });
 
+  // Clip: un enlace de la cuenta de Twitch vinculada (lo comprueba y lo guarda api/igdb.js) o un video
+  // subido a Supabase Storage (carpeta "clips", máximo 60 segundos y 50 MB). Sección 10 de esquema.sql.
+  var origenClip = 'twitch';
+  var tieneTwitch = null; // null: no se sabe (sin sesión); true o false: si tiene Twitch vinculada
+  var MAXIMO_VIDEO = 50 * 1024 * 1024;
+  function revisarTwitch() {
+    if (tieneTwitch !== null) return;
+    cuentaSupabase().then(function (sesion) {
+      if (!sesion) return;
+      return clienteSupabase.auth.getUserIdentities().then(function (r) {
+        var identidades = (r.data && r.data.identities) || [];
+        tieneTwitch = identidades.some(function (i) { return i.provider === 'twitch'; });
+        elegirOrigenClip(origenClip);
+      });
+    }).catch(function () { /* se sabrá al publicar */ });
+  }
+  function elegirOrigenClip(nuevo) {
+    origenClip = nuevo;
+    document.querySelectorAll('[data-origen-clip]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.origenClip === nuevo)); });
+    document.getElementById('campo-twitch').hidden = nuevo !== 'twitch' || tieneTwitch === false;
+    document.getElementById('sin-twitch').hidden = nuevo !== 'twitch' || tieneTwitch !== false;
+    document.getElementById('campo-archivo').hidden = nuevo !== 'archivo';
+    errorClip(null);
+  }
+  document.getElementById('origen-clip').addEventListener('click', function (e) {
+    var boton = e.target.closest('[data-origen-clip]');
+    if (boton) elegirOrigenClip(boton.dataset.origenClip);
+  });
+  // Muestra (o quita, con null) el error del clip junto al campo
+  function errorClip(mensaje, idCampo) {
+    var caja = document.getElementById('error-clip');
+    caja.hidden = !mensaje;
+    caja.textContent = mensaje || '';
+    ['enlace-clip', 'clip'].forEach(function (id) {
+      var campo = document.getElementById(id);
+      var conError = !!mensaje && id === idCampo;
+      campo.classList.toggle('campo--error', conError);
+      campo.setAttribute('aria-invalid', String(conError));
+      if (conError) campo.focus();
+    });
+  }
+  document.getElementById('enlace-clip').addEventListener('input', function () { errorClip(null); });
+  document.getElementById('clip').addEventListener('change', function () { errorClip(null); });
+
+  function fallaClip(mensaje, idCampo) {
+    var error = new Error(mensaje);
+    error.mensaje = mensaje;
+    error.campo = idCampo;
+    return error;
+  }
+
+  // Duración y miniatura (un cuadro del video, en .jpg) de un archivo de video, sin subirlo
+  function leerVideo(archivo) {
+    return new Promise(function (resolver, rechazar) {
+      var video = document.createElement('video');
+      var direccion = URL.createObjectURL(archivo);
+      var listo = false;
+      video.preload = 'metadata';
+      video.muted = true;
+      video.playsInline = true;
+      video.addEventListener('loadedmetadata', function () {
+        if (!isFinite(video.duration) || !(video.duration > 0)) { URL.revokeObjectURL(direccion); rechazar(new Error('duracion')); return; }
+        video.currentTime = Math.min(1, video.duration / 2);
+      });
+      video.addEventListener('seeked', function () {
+        if (listo) return;
+        listo = true;
+        var lienzo = document.createElement('canvas');
+        lienzo.width = 640;
+        lienzo.height = Math.round(640 * (video.videoHeight || 9) / (video.videoWidth || 16));
+        try { lienzo.getContext('2d').drawImage(video, 0, 0, lienzo.width, lienzo.height); } catch (e) { /* sin miniatura */ }
+        lienzo.toBlob(function (miniatura) {
+          URL.revokeObjectURL(direccion);
+          resolver({ duracion: video.duration, miniatura: miniatura });
+        }, 'image/jpeg', 0.8);
+      });
+      video.addEventListener('error', function () { URL.revokeObjectURL(direccion); rechazar(new Error('video')); });
+      video.src = direccion;
+    });
+  }
+
+  // Twitch: el servidor comprueba que el clip sea de tu Twitch vinculada y de este juego, y lo guarda
+  var ERRORES_CLIP_TWITCH = {
+    enlace: 'Ese enlace no es de un clip de Twitch.',
+    clip: 'No encontramos ese clip en Twitch. Revisa el enlace.',
+    no_es_tuyo: 'Este clip no es de tu cuenta de Twitch: debe ser de tu canal o haberlo recortado tú.',
+    otro_juego: 'Este clip es de otro juego. Compártelo desde la página de ese juego.',
+    sin_twitch: 'Primero vincula tu cuenta de Twitch en Editar perfil.',
+    repetido: 'Ya compartiste este clip.',
+    sesion: 'Tu sesión se cerró. Vuelve a entrar para compartir el clip.'
+  };
+  async function compartirClipDeTwitch(enlace, titulo) {
+    var sesion = await cuentaSupabase();
+    if (!sesion) throw fallaClip(ERRORES_CLIP_TWITCH.sesion);
+    var r = await fetch('/api/igdb?publicar_clip=1', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + sesion.access_token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enlace: enlace, juego: Number(juego.id_igdb), titulo: titulo })
+    });
+    var d = await r.json().catch(function () { return {}; });
+    if (!r.ok) {
+      if (d.error === 'sin_twitch') { tieneTwitch = false; elegirOrigenClip('twitch'); }
+      if (ERRORES_CLIP_TWITCH[d.error]) throw fallaClip(ERRORES_CLIP_TWITCH[d.error], 'enlace-clip');
+      throw new Error(d.error || 'api');
+    }
+  }
+
+  // Archivo: se sube el video y su miniatura a clips/<id de la cuenta>/ y se guarda la publicación
+  async function subirClip(archivo, titulo) {
+    var info;
+    try { info = await leerVideo(archivo); } catch (e) { throw fallaClip('No pudimos leer el video. Prueba con un MP4.', 'clip'); }
+    if (info.duracion > 60.5) throw fallaClip('El video dura ' + duracionClip(info.duracion) + ': el máximo es 1:00.', 'clip');
+    var sesion = await cuentaSupabase();
+    if (!sesion) throw fallaClip(ERRORES_CLIP_TWITCH.sesion);
+    var base = sesion.user.id + '/' + Date.now();
+    var ruta = base + (archivo.type === 'video/webm' ? '.webm' : '.mp4');
+    var carpeta = clienteSupabase.storage.from('clips');
+    botonPublicar.textContent = 'Subiendo video…';
+    var subida = await carpeta.upload(ruta, archivo, { contentType: archivo.type, cacheControl: '31536000' });
+    if (subida.error) throw subida.error;
+    if (info.miniatura) await carpeta.upload(base + '.jpg', info.miniatura, { contentType: 'image/jpeg', cacheControl: '31536000' });
+    try {
+      await guardarDatos('resenas', {
+        usuario_id: MI_FILA.id, juego_igdb: Number(juego.id_igdb), tipo: 'clip', estado: 'publicada', titulo: titulo || null,
+        clip_archivo: ruta, clip_duracion: Math.min(60, Math.round(info.duracion)), fecha: new Date().toISOString()
+      });
+    } catch (error) {
+      carpeta.remove([ruta, base + '.jpg']).catch(function () {});
+      throw error;
+    }
+  }
+
+  async function publicarClip() {
+    errorClip(null);
+    var titulo = document.getElementById('titulo-clip').value.trim();
+    var enlace = document.getElementById('enlace-clip').value.trim();
+    var archivo = document.getElementById('clip').files[0];
+    if (origenClip === 'twitch') {
+      if (tieneTwitch === false) { errorClip(ERRORES_CLIP_TWITCH.sin_twitch); return; }
+      if (!/^(https?:\/\/)?((www\.|m\.)?twitch\.tv\/[A-Za-z0-9_]+\/clip\/|clips\.twitch\.tv\/)[A-Za-z0-9_-]{3,}/.test(enlace)) {
+        errorClip('Pega el enlace de un clip de Twitch (clips.twitch.tv/… o twitch.tv/tu-canal/clip/…).', 'enlace-clip');
+        return;
+      }
+    } else {
+      if (!archivo) { errorClip('Elige un video MP4 o WebM.', 'clip'); return; }
+      if (['video/mp4', 'video/webm'].indexOf(archivo.type) === -1) { errorClip('El video debe ser MP4 o WebM.', 'clip'); return; }
+      if (archivo.size > MAXIMO_VIDEO) { errorClip('El video pesa ' + formatearNumero(Math.round(archivo.size / 1048576)) + ' MB: el máximo es 50 MB.', 'clip'); return; }
+    }
+    if (!obtenerSesion()) { pedirCuenta('compartir tu clip'); return; }
+    botonPublicar.disabled = true;
+    botonPublicar.textContent = 'Guardando…';
+    try {
+      var miFila = await reconocerMiFila(true).catch(function () { return null; });
+      if (!miFila) { pedirCuenta('compartir tu clip'); return; } // el invitado no puede: los clips van en la base
+      if (!Number(juego.id_igdb)) throw new Error('El juego no tiene número de IGDB');
+      if (origenClip === 'twitch') await compartirClipDeTwitch(enlace, titulo);
+      else await subirClip(archivo, titulo);
+      // Registro en el diario (sin nota: un clip no califica el juego)
+      await guardarDatos('diario', {
+        usuario_id: MI_FILA.id, juego_igdb: Number(juego.id_igdb), fecha: campoFecha.value || hoy(), estado: document.getElementById('estado').value,
+        horas: Number(document.getElementById('horas').value) || null, calificacion: null, me_gusta: meGusta, tiene_resena: false
+      }).catch(function () { /* el clip ya se publicó */ });
+      var perfil = await traerMiXp().catch(function () { return leerPerfil(); });
+      // 9. Ventana: Publicación confirmada
+      abrirModal({
+        icono: 'listo',
+        titulo: 'Clip publicado',
+        texto: 'Ganaste 50 XP. Vas en ' + formatearNumero(perfil.xp) + ' / ' + formatearNumero(XP_POR_NIVEL) + ' XP del nivel ' + perfil.level + '.',
+        acciones: [{ texto: 'Ver en el juego', href: 'detalle-juego.html?id=' + encodeURIComponent(juego.id) + '#clips', principal: true }, { texto: 'Ver mi diario', href: 'diario.html' }]
+      });
+    } catch (error) {
+      if (error && error.mensaje) errorClip(error.mensaje, error.campo);
+      else mostrarAviso('No pudimos publicar el clip. Intenta de nuevo.');
+    } finally {
+      botonPublicar.disabled = false;
+      botonPublicar.textContent = 'Publicar';
+    }
+  }
+
   // Tipo: Reseña, Guía o Clip
   function elegirTipo(nuevo) {
     tipo = nuevo;
     document.querySelectorAll('[data-tipo]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tipo === tipo)); });
     document.getElementById('bloque-texto').hidden = tipo === 'clip';
     document.getElementById('bloque-clip').hidden = tipo !== 'clip';
+    // Un clip no lleva nota ni dificultad (no cambia la nota del juego) ni borrador
+    document.getElementById('bloque-calificacion').hidden = tipo === 'clip';
+    document.getElementById('bloque-dificultad').hidden = tipo === 'clip';
+    document.getElementById('guardar-borrador').hidden = !!editando || tipo === 'clip';
+    if (tipo === 'clip') revisarTwitch();
     document.getElementById('etiqueta-texto').textContent = tipo === 'guia' ? 'Tu guía' : 'Tu reseña';
     document.getElementById('antetitulo-resena').textContent = editando ? 'Editar reseña' : ({ resena: 'Nueva reseña', guia: 'Nueva guía', clip: 'Nuevo clip' })[tipo];
   }
@@ -3931,10 +4217,7 @@ function mostrarEscribir(juego) {
 
   formulario.addEventListener('submit', async function (e) {
     e.preventDefault();
-    if (tipo === 'clip') {
-      abrirModal({ titulo: 'Los clips llegan pronto', texto: 'Subir clips todavía no está disponible. Mientras tanto puedes publicar una reseña o una guía.', acciones: [{ texto: 'Entendido', principal: true }] });
-      return;
-    }
+    if (tipo === 'clip') { publicarClip(); return; }
     if (campoTexto.value.trim().length < MINIMO) {
       mostrarError(true);
       campoTexto.focus();

@@ -1671,7 +1671,7 @@ const DATOS = {
     { id: "s15", servicio: "Descripciones de juegos en español", proveedor: "Tiendas de Steam, Epic Games y Xbox + DeepL (guardadas en Supabase)", estado: "conectado", texto: "Conectado" },
     { id: "s13", servicio: "Tu actividad: reseñas, diario, amigos, inscripciones, avisos y vistos", proveedor: "Supabase (el invitado, en este navegador)", estado: "conectado", texto: "Conectado" },
     { id: "s18", servicio: "Mensajes entre amigos (en vivo)", proveedor: "Supabase + Supabase Realtime", estado: "conectado", texto: "Conectado" },
-    { id: "s19", servicio: "Clips de juegos", proveedor: "Twitch API, desde Vercel", estado: "conectado", texto: "Conectado" },
+    { id: "s19", servicio: "Clips de juegos: populares de Twitch, compartir los de tu Twitch y subir videos (reportes)", proveedor: "Twitch API (Vercel) + Supabase Storage", estado: "conectado", texto: "Conectado" },
     { id: "s14", servicio: "Chats de MatchPlay", proveedor: "Este navegador", estado: "demo", texto: "Modo demo" },
     { id: "s3", servicio: "MatchPlay (IA)", proveedor: "Por definir", estado: "demo", texto: "Modo demo" },
     { id: "s5", servicio: "Tu Xbox: gamertag, juegos y logros", proveedor: "Xbox Live (cuenta de Microsoft), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "xbox" },

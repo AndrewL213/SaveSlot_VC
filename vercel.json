@@ -6,7 +6,7 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'sha256-OtMIVhLImoB0ycUv7HaUOAb0PnrTMZhFO6DXg1c3yoA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://jzshrfiezzysbkzdsjzf.supabase.co wss://jzshrfiezzysbkzdsjzf.supabase.co; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://clips.twitch.tv; frame-ancestors 'none'" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'sha256-OtMIVhLImoB0ycUv7HaUOAb0PnrTMZhFO6DXg1c3yoA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://jzshrfiezzysbkzdsjzf.supabase.co wss://jzshrfiezzysbkzdsjzf.supabase.co; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; media-src 'self' blob: https://jzshrfiezzysbkzdsjzf.supabase.co; frame-src https://clips.twitch.tv; frame-ancestors 'none'" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },

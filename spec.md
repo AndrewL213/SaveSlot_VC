@@ -26,7 +26,7 @@ Los enlaces que solo llevan a otra pantalla siempre funcionan y no se clasifican
 - **Cabeceras de seguridad** (`vercel.json`, en todas las direcciones): Content-Security-Policy (scripts solo de la app y de cdn.jsdelivr.net, más el script en línea de `404.html` por su huella sha256; conexiones solo a la app y a Supabase; imágenes de cualquier dirección https; nadie puede meter la app en un marco), X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy y Permissions-Policy (sin cámara, micrófono, ubicación ni pagos).
   - Su clave pública va en el código; los datos se protegen con reglas de acceso en la base.
 - **IGDB** (de Twitch): catálogo de juegos (búsqueda, filtros, ficha y tiempos para terminar). Sus claves (Client ID y Client Secret de Twitch) se guardan en Vercel y se usan solo desde una función en `api/`, que también renueva el token de acceso; nunca van en el código del navegador (IGDB tampoco acepta pedidos directos desde el navegador). Uso no comercial: si SaveSlot se vuelve comercial, hay que pedir permiso a Twitch.
-  - La función es `api/igdb.js`. Acepta solo ocho pedidos: `?steam_app=` (la ficha de un juego por su número de Steam, para la Biblioteca y el Perfil), `?buscar=texto` (hasta 20 juegos, los más conocidos primero; busca también en los nombres alternativos de IGDB, como los traducidos: «Plantas contra Zombis» encuentra Plants vs. Zombies, y si el nombre coincide exacto sale primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"; con `&plataforma=Xbox` o `PlayStation`, los de esa consola que no están en la otra, entre los 500 más jugados, para las pestañas de "Lo más jugado"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo —AAA, Indie, Exclusivos, Gratis, Multijugador, Remakes, Proximos—, duración y año), `?random=1` (un juego al azar entre los 300 más conocidos de un género) y `?clips=` (los clips de Twitch más vistos de un juego en el último mes, por su número de IGDB), `?steam=1` (los 10 juegos más jugados en Steam: la lista pública de Steam, sin clave, con el pico de jugadores de ayer, ordenados por ese pico; IGDB pone los datos de cada juego). `?explorar` también dice cuántos juegos hay en total. Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`). La app también elige la variante por el código de respuesta (429 límite, 408 o más de 15 s tiempo, 401/403 credenciales, 503 mantenimiento, sin internet) y la página de error trae «Reintentar» para volver.
+  - La función es `api/igdb.js`. Acepta solo nueve pedidos: `?steam_app=` (la ficha de un juego por su número de Steam, para la Biblioteca y el Perfil), `?buscar=texto` (hasta 20 juegos, los más conocidos primero; busca también en los nombres alternativos de IGDB, como los traducidos: «Plantas contra Zombis» encuentra Plants vs. Zombies, y si el nombre coincide exacto sale primero), `?id=` (la ficha de un juego por su slug o su número, con "Si te gusta, prueba"), `?populares=1` (los 10 que más gente marca como "jugando ahora" en IGDB, para "Mejores juegos de la semana"; con `&plataforma=Xbox` o `PlayStation`, los de esa consola que no están en la otra, entre los 500 más jugados, para las pestañas de "Lo más jugado"), `?explorar=1` (lista de Buscar juegos de 24 en 24, con los filtros de género, plataforma, tipo —AAA, Indie, Exclusivos, Gratis, Multijugador, Remakes, Proximos—, duración y año), `?random=1` (un juego al azar entre los 300 más conocidos de un género) `?clips=` (los clips de Twitch más vistos de un juego en el último mes, por su número de IGDB), `POST ?publicar_clip=1` (comparte un clip de la cuenta de Twitch vinculada: ver Escribir reseña) y `?steam=1` (los 10 juegos más jugados en Steam: la lista pública de Steam, sin clave, con el pico de jugadores de ayer, ordenados por ese pico; IGDB pone los datos de cada juego). `?explorar` también dice cuántos juegos hay en total. Solo muestra juegos principales, remakes, remasters y expansiones que se venden solas (nada de DLC, mods, packs ni ports no oficiales), y solo de **PC y consolas** (PlayStation, Xbox y Nintendo): los juegos que solo salen en celular o navegador no aparecen. Devuelve los juegos con el mismo formato de `js/data.js` y, si algo falla, el nombre de la variante de la página de error (`credenciales`, `limite`, `tiempo`, `api` o `juego`). La app también elige la variante por el código de respuesta (429 límite, 408 o más de 15 s tiempo, 401/403 credenciales, 503 mantenimiento, sin internet) y la página de error trae «Reintentar» para volver.
   - Vercel guarda cada respuesta una hora, para hacer menos consultas a IGDB.
   - Las respuestas usan los mismos nombres de campos que las tablas (minúsculas con guion bajo). La app agrega `v=4` (la versión de ese formato) a cada consulta, para que Vercel no entregue respuestas guardadas con un formato viejo; si el formato cambia otra vez, se sube ese número (`VERSION_API` en `js/app.js`).
   - IGDB tiene la descripción de los juegos solo en inglés. La ficha (`?id=`) y el juego random (`?random=1`) la buscan en español, en este orden:
@@ -224,7 +224,7 @@ Campos:
 Se relaciona con: usuarios.id. Una por persona y periodo. Solo cuenta lo jugado desde la primera vez que la persona abre SaveSlot ese día o esa semana.
 
 ### resenas
-Qué guarda: reseñas y guías publicadas, y los borradores.
+Qué guarda: reseñas, guías y clips publicados, y los borradores.
 Tipo de dato: aporte (los borradores son personales)
 Se guarda en: Supabase
 Desde la app se puede: ver las publicadas (Inicio, Detalle de juego, Comunidad, Detalle de reseña, Historial, Perfil de otro usuario); los borradores, solo su autor (Escribir reseña) · agregar (Escribir reseña) · cambiar y borrar las propias (Detalle de reseña, Historial, Escribir reseña).
@@ -232,7 +232,7 @@ Campos:
 - id: número — obligatorio
 - juego_igdb: número — el juego — obligatorio
 - autor: texto — obligatorio
-- tipo: opción (resena, guia) — obligatorio
+- tipo: opción (resena, guia, clip) — obligatorio
 - estado: opción (publicada, borrador) — obligatorio
 - titulo: texto — opcional
 - texto: texto largo — 50 caracteres o más para publicar — obligatorio al publicar
@@ -244,8 +244,26 @@ Campos:
 - spoiler: sí/no — contiene spoilers — obligatorio
 - editada: sí/no — obligatorio
 - fecha: fecha y hora — obligatorio
-Se relaciona con: usuarios.id (autor) y el juego. Un borrador por persona y juego.
+- clip_twitch: texto — solo clips: el código del clip de Twitch. Solo lo escribe el servidor (`api/igdb.js`), después de comprobar que el clip es de la cuenta de Twitch vinculada y del juego — opcional
+- clip_archivo: texto — solo clips: la ruta del video subido en la carpeta **clips** de Supabase Storage (`clips/<id de la cuenta>/…`, con su miniatura .jpg al lado) — opcional
+- clip_miniatura: enlace — solo clips de Twitch: la miniatura que da Twitch (con crédito a Twitch) — opcional
+- clip_duracion: número — segundos, hasta 60 — opcional
+- oculta: sí/no — la base la oculta con 3 reportes (**reportes**); solo la ve su autor — obligatorio
+Se relaciona con: usuarios.id (autor) y el juego. Un borrador por persona y juego. Un clip lleva o clip_twitch o clip_archivo (uno de los dos); el mismo clip de Twitch, una vez por persona.
 - Calculados: votos "útil", porcentaje de "útil" (guías) y me gusta.
+
+### reportes
+Qué guarda: quién reportó una publicación ajena (hoy, los clips). Sección 10 de `supabase/esquema.sql`.
+Tipo de dato: personal
+Se guarda en: Supabase
+Desde la app se puede: agregar (Detalle de juego, al ver un clip ajeno) y ver los propios. No se cambian ni se borran. Con 3 reportes de personas distintas, la base oculta la publicación (resenas.oculta); la revisará la web administrativa.
+Campos:
+- id: número — obligatorio
+- resena_id: número (resenas.id) — qué se reporta (nunca una propia) — obligatorio
+- usuario_id: número (usuarios.id) — quién reporta — obligatorio
+- motivo: texto — hasta 300 caracteres — opcional
+- created_at: fecha y hora — obligatorio
+Se relaciona con: resenas.id y usuarios.id. Una vez por persona y publicación.
 
 ### votos_util
 Qué guarda: quién marcó una reseña como útil.
@@ -482,7 +500,7 @@ Se relaciona con: ninguna.
 - **Datos de ejemplo (`js/data.js`):** quedan solo como registro (la app ya no los muestra). Las personas de ejemplo ya no están en Supabase (se borraron con `supabase/limpiar-ejemplos.sql` y `esquema.sql` ya no las carga): la comunidad es de cuentas reales.
 - **Simulados (`js/data.js`):** respuestas_matchplay (las respuestas de la IA), y logros, progreso_logros y resumen_logros de otras plataformas (los de Steam son reales).
 - **Archivos (Supabase Storage):** carpeta pública **avatares** (código en `supabase/avatares.sql`, ya creada): las fotos de perfil, en `avatares/<id de Auth>/avatar.jpg`. Cualquiera las ve; cada persona solo sube, cambia o borra la suya (al borrar la cuenta se borra también). Solo imágenes JPG, PNG o WebP de hasta 2 MB (la app las recorta a 256 px antes de subirlas).
-- **Después:** pagos de eventos. (Subir clips propios salió del plan; ver clips de Twitch en la ficha del juego y los mensajes entre amigos ya son reales.)
+- **Después:** pagos de eventos. (Ver y compartir clips —de Twitch o subidos— y los mensajes entre amigos ya son reales.)
 
 ### Navegador → tabla de Supabase
 
@@ -625,7 +643,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Editar o eliminar mi reseña: Real (Supabase)
   - Lista de deseos: Real (Supabase: tabla **lista_deseos**; agregar crea la fila y quitar la borra por su id; se puede deshacer). Mientras guarda, el botón se desactiva; si falla, avisa «No pudimos guardar» y queda como estaba. Como invitado, en el navegador
   - Número de logros: Real si el juego está en Steam (si no, la pestaña dice que no hay logros registrados; nunca un número de ejemplo). La pestaña Logros todavía no trae la lista del juego: dice cuántos tiene en Steam y lleva a la pantalla Logros
-  - Pestaña Clips: Real (API de Twitch, `api/igdb.js?clips=` con las mismas claves de Twitch de IGDB). Los 12 clips más vistos del juego en el último mes (primero los que están en español), con su miniatura (`.portada--ancha`), duración, canal y vistas; al tocar uno se reproduce en una ventana con el reproductor de Twitch, y «Ver en Twitch» lo abre allá. **Cambio de spec** (antes era Después).
+  - Pestaña Clips: Real. Arriba, **De la comunidad**: los clips que compartieron personas de SaveSlot (Supabase: **resenas** de tipo clip), con su autor, de Twitch o subidos; al tocar uno se reproduce en una ventana (el de Twitch con su reproductor; el subido, con el de la página). Quien lo publicó puede eliminarlo; los demás, con cuenta, pueden reportarlo (con 3 reportes se oculta). «Compartir un clip» lleva a Escribir reseña en Clip. Abajo, **Populares en Twitch** (API de Twitch, `api/igdb.js?clips=` con las mismas claves de Twitch de IGDB): los 12 clips más vistos del juego en el último mes (primero los que están en español), con su miniatura (`.portada--ancha`), duración, canal y vistas; al tocar uno se reproduce en una ventana con el reproductor de Twitch, y «Ver en Twitch» lo abre allá. **Cambio de spec** (antes era Después).
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
@@ -657,7 +675,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 - **Qué funciona de verdad:**
   - Publicar o editar reseña o guía y registrar en el diario: Real (Supabase: tablas **resenas** y **diario**; editar cambia la reseña por su id y la marca como editada; la base suma +50 XP al publicar). Mientras guarda, el botón dice «Guardando…»; si falla, avisa «No pudimos guardar. Intenta de nuevo.» y conserva lo escrito. Como invitado se guarda en el navegador
   - Guardar borrador: Real (Supabase: el botón crea o actualiza el borrador de ese juego, uno por juego; al publicar, ese borrador pasa a publicado). El guardado automático mientras se escribe queda en el navegador
-  - Subir clip: No incluido (salió del plan; el botón Clip avisa que no está disponible)
+  - Compartir clip: Real, solo con cuenta (el invitado ve «Necesitas una cuenta»). Sin nota, dificultad ni borrador (un clip no cambia la nota del juego); sí registra en el diario y da +50 XP. Dos formas: **Enlace de Twitch**: un clip de la cuenta de Twitch vinculada en Editar perfil (de su canal o que recortó la persona) y de este juego; lo comprueba y lo guarda `api/igdb.js` (sin Twitch vinculada, la pestaña pide vincularla). **Subir un video**: MP4 o WebM de máximo 60 segundos y 50 MB, a Supabase Storage (carpeta **clips**), con una miniatura sacada del video. **Cambio de spec** (antes era Después; se agregó la forma de compartir y la comprobación).
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
@@ -665,9 +683,10 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Al publicar, la reseña aparece en el juego, en el Diario y en el Historial.
   - Sin sesión iniciada, sale la ventana "Necesitas una cuenta".
   - Sirve para cualquier juego de IGDB (`?id=slug`), aunque no se haya abierto antes.
+  - En Clip, muestra el error junto al campo si el enlace no es de un clip de Twitch, si el clip no es de la cuenta vinculada o es de otro juego, si ya se compartió, o si el video no es MP4 o WebM, dura más de 60 segundos o pesa más de 50 MB. El clip publicado aparece en la pestaña Clips del juego.
 
 ### 9. Ventana: Publicación confirmada
-- **Archivo de diseño:** disenos/resena.html (ventana emergente "Reseña publicada" / "Guía publicada")
+- **Archivo de diseño:** disenos/resena.html (ventana emergente "Reseña publicada" / "Guía publicada"; también "Clip publicado")
 - **Objetivo:** Esta pantalla existe para que el gamer casual pueda confirmar que su reseña se publicó. Sabemos que funciona si la persona ve su reseña publicada en el juego.
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado.
