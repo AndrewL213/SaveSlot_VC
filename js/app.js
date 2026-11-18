@@ -2625,9 +2625,12 @@ function pantallaIndex() {
     document.getElementById('seccion-vistos').hidden = false;
   });
 
-  // Reseñas destacadas: las 3 primeras publicadas sin spoiler (como en el diseño)
+  // Reseñas destacadas: las 3 publicadas sin spoiler con más votos «útil» (si empatan, la más reciente)
   var destacadas = obtenerResenas()
     .filter(function (r) { return r.tipo === 'resena' && !r.spoiler && r.estado === 'publicada'; })
+    .sort(function (a, b) {
+      return (cuantasMarcas('votos_util', b) - cuantasMarcas('votos_util', a)) || String(b.fecha || '').localeCompare(String(a.fecha || ''));
+    })
     .slice(0, 3);
   var contenedorResenas = document.getElementById('resenas-destacadas');
   contenedorResenas.innerHTML = destacadas.map(function (r) { return htmlResena(r, { conJuego: true }); }).join('');

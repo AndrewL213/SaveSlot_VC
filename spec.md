@@ -509,7 +509,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   3. Vistos recientemente (solo si ya visitó juegos; la nota de la comunidad se ve como «8/10»)
   4. Mejores juegos de la semana (los 6 que más gente marca como "jugando ahora" en IGDB; con la etiqueta «Game Pass» si está incluido)
   5. Lo más jugado, con pestañas: **Steam** (los 6 juegos de PC con más jugadores a la vez ayer, de mayor a menor), **Xbox** y **PlayStation** (los 6 de esa consola, sin los que también están en la otra, que más gente marca como "jugando ahora" en IGDB, con «Popular en IGDB»: Xbox y PlayStation no publican cuántos juegan). Se ve si Steam o IGDB responden
-  6. Reseñas destacadas
+  6. Reseñas destacadas: las 3 con más votos «útil» (sin spoilers; si empatan, la más reciente)
   7. Eventos: el evento del mes y un sorteo
 - **Qué funciona de verdad:**
   - Buscador y Mejores juegos de la semana: Real (IGDB). Si IGDB no responde, se ven los juegos de ejemplo mejor calificados
