@@ -1675,8 +1675,7 @@ const DATOS = {
     { id: "s14", servicio: "Chats de MatchPlay", proveedor: "Este navegador", estado: "demo", texto: "Modo demo" },
     { id: "s3", servicio: "MatchPlay (IA)", proveedor: "Por definir", estado: "demo", texto: "Modo demo" },
     { id: "s5", servicio: "Tu Xbox: gamertag, juegos y logros", proveedor: "Xbox Live (cuenta de Microsoft), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "xbox" },
-    { id: "s6", servicio: "Tu PlayStation: ID, nivel, juegos y trofeos", proveedor: "PlayStation Network (psn-api, no oficial), desde Vercel", estado: "conectado", texto: "Conectado" },
-    { id: "s9", servicio: "Subir clips propios y transmisiones", proveedor: "Twitch API", estado: "pendiente", texto: "Pendiente" },
+    { id: "s6", servicio: "Tu PlayStation: ID, nivel, juegos y trofeos (la clave de PSN se renueva cada unos dos meses)", proveedor: "PlayStation Network (psn-api, no oficial), desde Vercel", estado: "conectado", texto: "Conectado" },
     { id: "s10", servicio: "Pagos de eventos", proveedor: "Pasarela de pagos", estado: "no-disponible", texto: "No disponible" },
     { id: "s17", servicio: "Web administrativa (crear torneos y sorteos)", proveedor: "Otro repositorio + Supabase (ver web-administrativa.md)", estado: "pendiente", texto: "Pendiente" }
   ]

@@ -57,7 +57,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 30. Biblioteca | `pages/biblioteca.html` | ✅ | ✅ | ✅ (datos reales de Steam) | ✅ |
 | 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ (sesión) | ✅ |
 | 32. Recuperar contraseña | `pages/recuperar-contrasena.html` | ✅ | ✅ | ✅ (Supabase Auth: resetPasswordForEmail y updateUser) | ✅ |
-| 34. Mensajes | `pages/mensajes.html` | ✅ | ✅ | ✅ (Supabase: tabla **mensajes**, en vivo con Realtime) | ⬜ pendiente: ejecutar la sección 9 de `esquema.sql` y probar con dos cuentas |
+| 34. Mensajes | `pages/mensajes.html` | ✅ | ✅ | ✅ (Supabase: tabla **mensajes**, en vivo con Realtime) | ⬜ pendiente: probar con dos cuentas amigas (la sección 9 de `esquema.sql` ya está en Supabase) |
 
 ## Ayuda
 
@@ -78,13 +78,16 @@ Mejoras:
 
 Falta de ustedes:
 - Los documentos de **términos y privacidad** (casilla de Crear cuenta) y del **reglamento y reembolsos** de eventos: hoy no enlazan a nada. El público incluye menores de edad: conviene que los revisen ustedes o su profesor.
-- En Supabase: ejecutar la **sección 9 de `supabase/esquema.sql`** (mensajes entre amigos) y, si no se hizo, `supabase/esquema.sql` y `supabase/eventos-ejemplo.sql` en el SQL Editor, y agregar `https://saveslot-pi.vercel.app/pages/recuperar-contrasena.html` en Authentication → URL Configuration → Redirect URLs.
-- **Probar con cuentas reales** lo que no se puede probar sin ellas: Biblioteca y Perfil con Steam, Xbox y PlayStation vinculadas (filtros, «Actividad reciente» y que cada juego abra su ficha) y el correo de «¿La olvidaste?» de punta a punta.
-- **PlayStation**: el NPSSO de la cuenta de PSN de SaveSlot (`PSN_NPSSO` en Vercel) vence cada unos dos meses; cuando venza, Editar perfil dirá que hay que pegar uno nuevo.
+- **Probar con cuentas reales** lo que no se puede probar sin ellas: mensajes entre dos cuentas amigas, Biblioteca y Perfil con Steam, Xbox y PlayStation vinculadas (filtros, «Actividad reciente» y que cada juego abra su ficha) y el correo de «¿La olvidaste?» de punta a punta.
 
 Al final: la **web administrativa** para registrar torneos y sorteos sin SQL. Va en otro repositorio y usa la misma base: las instrucciones completas están en `web-administrativa.md` (primero hay que agregarla a spec.md).
 
-Después (así lo marca spec.md): subir clips propios y pagos.
+Después: pagos de eventos.
+
+En segundo plano (ya funciona; solo es mantenerlo):
+- **PlayStation**: el NPSSO de la cuenta de PSN de SaveSlot (`PSN_NPSSO` en Vercel) vence cada unos dos meses; cuando venza, Editar perfil dirá que hay que pegar uno nuevo.
+
+Ya hecho (noviembre): Supabase al día (sección 9 de mensajes, `esquema.sql`, eventos de ejemplo y la dirección de vuelta de recuperar contraseña) y clips (los de Twitch en el Detalle de juego; subir clips propios sale de la lista).
 
 ## Pendientes para la revisión vs spec
 - **Revisión de las pantallas 21 a 31 (noviembre, de una vez)**: todas cumplen sus criterios de «Está lista cuando». Arreglos: (1) Diario, Historial y Perfil de otro usuario escondían los juegos que no estaban en este navegador (el Diario decía «No hay registros» y el Historial «Ninguna reseña coincide con los filtros» sin filtros), y Perfil de otro usuario se rompía entera si la persona había reseñado uno de esos juegos. Ahora se dibujan con `juegoOMarcador` («Cargando…» o «Juego no disponible») y se piden a IGDB con `traerJuegosQueFaltan`. (2) Logros decía «No tienes logros sincronizados de Todas»: ahora «…todavía». (3) «Mensaje guardado» lleva el ✓ verde del diseño. (4) El pie de todas las páginas tiene «Biblioteca» (antes solo 3). Diferencias que quedan: Notificaciones sin el trofeo del diseño (lleva una lista); «Logros más raros» muestra los de ejemplo, con la nota «Datos de ejemplo».

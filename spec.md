@@ -482,7 +482,7 @@ Se relaciona con: ninguna.
 - **Datos de ejemplo (`js/data.js`):** quedan solo como registro (la app ya no los muestra). Las personas de ejemplo ya no están en Supabase (se borraron con `supabase/limpiar-ejemplos.sql` y `esquema.sql` ya no las carga): la comunidad es de cuentas reales.
 - **Simulados (`js/data.js`):** respuestas_matchplay (las respuestas de la IA), y logros, progreso_logros y resumen_logros de otras plataformas (los de Steam son reales).
 - **Archivos (Supabase Storage):** carpeta pública **avatares** (código en `supabase/avatares.sql`, ya creada): las fotos de perfil, en `avatares/<id de Auth>/avatar.jpg`. Cualquiera las ve; cada persona solo sube, cambia o borra la suya (al borrar la cuenta se borra también). Solo imágenes JPG, PNG o WebP de hasta 2 MB (la app las recorta a 256 px antes de subirlas).
-- **Después:** subir clips propios y pagos de eventos. (Ver clips de Twitch en la ficha del juego y los mensajes entre amigos ya son reales.)
+- **Después:** pagos de eventos. (Subir clips propios salió del plan; ver clips de Twitch en la ficha del juego y los mensajes entre amigos ya son reales.)
 
 ### Navegador → tabla de Supabase
 
@@ -657,7 +657,7 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
 - **Qué funciona de verdad:**
   - Publicar o editar reseña o guía y registrar en el diario: Real (Supabase: tablas **resenas** y **diario**; editar cambia la reseña por su id y la marca como editada; la base suma +50 XP al publicar). Mientras guarda, el botón dice «Guardando…»; si falla, avisa «No pudimos guardar. Intenta de nuevo.» y conserva lo escrito. Como invitado se guarda en el navegador
   - Guardar borrador: Real (Supabase: el botón crea o actualiza el borrador de ese juego, uno por juego; al publicar, ese borrador pasa a publicado). El guardado automático mientras se escribe queda en el navegador
-  - Subir clip: Después
+  - Subir clip: No incluido (salió del plan; el botón Clip avisa que no está disponible)
 - **Está lista cuando:**
   - Se ve igual al diseño aprobado, con su portada (de assets/ o de IGDB).
   - Funciona en celular (375 px de ancho).
