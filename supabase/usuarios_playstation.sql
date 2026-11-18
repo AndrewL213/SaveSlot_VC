@@ -20,3 +20,18 @@ revoke all on public.usuarios_playstation from anon, authenticated;
 alter table public.cuentas_vinculadas drop constraint if exists cuentas_vinculadas_plataforma_check;
 alter table public.cuentas_vinculadas add constraint cuentas_vinculadas_plataforma_check
   check (plataforma in ('steam', 'xbox', 'playstation'));
+
+-- psn_sesion: la sesión de PlayStation Network del servidor (una sola fila, id = 1). api/_psn.js usa el NPSSO
+-- (PSN_NPSSO en Vercel) una vez, guarda aquí el access token (~1 hora) y el refresh token (~2 meses) y después
+-- solo renueva con el refresh token. Son como contraseñas: nadie la ve desde la app.
+create table if not exists public.psn_sesion (
+  id int primary key default 1 check (id = 1),
+  access_token text,
+  refresh_token text,
+  access_vence timestamptz,
+  refresh_vence timestamptz,
+  actualizado_el timestamptz default now()
+);
+
+alter table public.psn_sesion enable row level security;
+revoke all on public.psn_sesion from anon, authenticated;
