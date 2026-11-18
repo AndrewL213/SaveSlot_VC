@@ -34,12 +34,13 @@ async function leerCuerpo(req) {
 const ID_VALIDO = /^[A-Za-z][A-Za-z0-9_-]{2,15}$/; // así son los ID de PSN (3 a 16 caracteres)
 
 const suma = (t) => (t ? (t.bronze || 0) + (t.silver || 0) + (t.gold || 0) + (t.platinum || 0) : 0);
-// "PT2H35M10S" → 155 minutos
+// "PT2H35M10S" → 155 minutos ("P1DT2H" → 1560)
 function minutosDe(duracion) {
-  const m = /PT(?:(\d+)H)?(?:(\d+)M)?/.exec(String(duracion || ""));
-  return m ? Number(m[1] || 0) * 60 + Number(m[2] || 0) : 0;
+  const m = /P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?/.exec(String(duracion || ""));
+  return m ? Number(m[1] || 0) * 1440 + Number(m[2] || 0) * 60 + Number(m[3] || 0) : 0;
 }
-const limpio = (nombre) => String(nombre || "").replace(/[™®]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+// Para comparar nombres: "Call of Duty®: Black Ops II" y "CALL OF DUTY: BLACK OPS II" → "callofdutyblackopsii"
+const limpio = (nombre) => String(nombre || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 
 
 async function datos(req, res, cuenta) {
@@ -52,7 +53,7 @@ async function datos(req, res, cuenta) {
     const [resumen, titulos, jugados] = await Promise.all([
       p.psn.getUserTrophyProfileSummary(auth, id).catch((e) => ({ error: e })),
       p.psn.getUserTitles(auth, id, { limit: 800 }).catch((e) => ({ error: e })),
-      p.psn.getUserPlayedGames(auth, id, { limit: 200 }).catch(() => null),
+      p.psn.getUserPlayedGames(auth, id, { limit: 200 }).catch((e) => { console.error("PSN juegos jugados:", e.message); return null; }),
     ]);
     if (resumen.error && titulos.error) {
       console.error("PlayStation privado o sin datos:", String(resumen.error.message || resumen.error));
@@ -61,8 +62,11 @@ async function datos(req, res, cuenta) {
 
     // Horas y última vez de getUserPlayedGames (si la privacidad lo deja), por nombre del juego
     const horas = {};
-    ((jugados && jugados.titles) || []).forEach((t) => {
-      horas[limpio(t.name)] = { minutes: minutosDe(t.playDuration), last: t.lastPlayedDateTime };
+    const listaJugados = (jugados && jugados.titles) || [];
+    console.log("PSN juegos jugados:", listaJugados.length, JSON.stringify(listaJugados.slice(0, 5).map((t) => [t.name, t.localizedName, t.concept && t.concept.name, t.playDuration, t.category])));
+    listaJugados.forEach((t) => {
+      const dato = { minutes: minutosDe(t.playDuration), last: t.lastPlayedDateTime };
+      [t.name, t.localizedName, t.concept && t.concept.name].forEach((n) => { if (n) horas[limpio(n)] = dato; });
     });
 
     const games = ((titulos && titulos.trophyTitles) || []).map((t) => {
