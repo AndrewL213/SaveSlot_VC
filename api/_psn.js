@@ -2,8 +2,8 @@
 //
 // PlayStation no tiene una API pública ni un "Iniciar sesión con PlayStation" para otras webs. Se usa la
 // librería psn-api (no oficial, https://www.npmjs.com/package/psn-api), que entra a PlayStation Network con
-// el NPSSO de una cuenta de PSN creada solo para SaveSlot (variable de entorno PSN_NPSSO en Vercel; es como
-// una contraseña y vence cada ~2 meses: hay que volver a pegarlo). Con esa cuenta se leen los trofeos
+// el NPSSO de una cuenta de PSN (variable de entorno PSN_NPSSO en Vercel; es como una contraseña). El NPSSO se
+// usa una vez y la sesión que da PSN (refresh token, ~2 meses) se guarda en la tabla psn_sesion de Supabase. Con esa cuenta se leen los trofeos
 // PÚBLICOS de cualquier persona por su ID de PSN.
 //
 // Para que nadie vincule el ID de otra persona, se pide poner un código de SaveSlot en el «Sobre mí»
@@ -22,31 +22,71 @@ function falta() {
   return [!SERVICE_ROLE && "SUPABASE_SERVICE_ROLE_KEY", !NPSSO && "PSN_NPSSO"].filter(Boolean);
 }
 
-/* ---------- Permiso de PlayStation Network (se guarda mientras la función siga encendida) ---------- */
-let permiso = null; // { accessToken, refreshToken, vence, refrescoVence }
+/* ---------- Permiso de PlayStation Network ----------
+   El NPSSO se usa una sola vez: se cambia por un access token (dura ~1 hora) y un refresh token (dura ~2 meses).
+   Los dos se guardan en la tabla psn_sesion de Supabase (una sola fila, solo la ve el servidor), así cada vez
+   que la función arranca usa el guardado y lo renueva con el refresh token, sin volver a usar el NPSSO.
+   Solo si el refresh token venció (o PSN lo rechaza) se vuelve a usar PSN_NPSSO. */
+let permiso = null; // { accessToken, refreshToken, vence, refrescoVence } (en milisegundos)
+
+async function leerPermisoGuardado() {
+  const fila = ((await rest("psn_sesion?id=eq.1&select=*").catch(() => null)) || [])[0];
+  if (!fila || !fila.refresh_token) return null;
+  return {
+    accessToken: fila.access_token, refreshToken: fila.refresh_token,
+    vence: new Date(fila.access_vence).getTime() || 0, refrescoVence: new Date(fila.refresh_vence).getTime() || 0,
+  };
+}
+async function guardarPermiso(datos) {
+  await rest("psn_sesion?on_conflict=id", {
+    method: "POST",
+    body: JSON.stringify({
+      id: 1, access_token: datos.accessToken, refresh_token: datos.refreshToken,
+      access_vence: new Date(datos.vence).toISOString(), refresh_vence: new Date(datos.refrescoVence).toISOString(),
+      actualizado_el: new Date().toISOString(),
+    }),
+    extra: { Prefer: "resolution=merge-duplicates,return=minimal" },
+  }).catch((e) => console.error("PSN: no se pudo guardar la sesión:", e.message));
+}
+function aPermiso(tokens, ahora) {
+  return {
+    accessToken: tokens.accessToken, refreshToken: tokens.refreshToken,
+    vence: ahora + (tokens.expiresIn - 60) * 1000,
+    refrescoVence: ahora + (tokens.refreshTokenExpiresIn - 60) * 1000,
+  };
+}
+
 async function autorizacion() {
   const ahora = Date.now();
   if (permiso && ahora < permiso.vence) return { accessToken: permiso.accessToken };
-  let tokens;
+  // Al arrancar la función: la sesión guardada en Supabase
+  if (!permiso) permiso = await leerPermisoGuardado();
+  if (permiso && ahora < permiso.vence) return { accessToken: permiso.accessToken };
+
+  let tokens = null;
   if (permiso && ahora < permiso.refrescoVence) {
     tokens = await psn.exchangeRefreshTokenForAuthTokens(permiso.refreshToken).catch(() => null);
+    if (tokens && !tokens.accessToken) tokens = null; // PSN rechazó el refresh token
   }
   if (!tokens) {
     let codigo;
     try {
       codigo = await psn.exchangeNpssoForAccessCode(NPSSO);
     } catch (e) {
-      const error = new Error("El NPSSO de PlayStation venció o no es válido: hay que pegar uno nuevo en Vercel (PSN_NPSSO).");
+      const error = new Error("La sesión de PlayStation venció y el NPSSO tampoco sirve: hay que pegar uno nuevo en Vercel (PSN_NPSSO).");
       error.npsso = true;
       throw error;
     }
     tokens = await psn.exchangeAccessCodeForAuthTokens(codigo);
+    console.log("PSN: nueva sesión desde el NPSSO");
   }
-  permiso = {
-    accessToken: tokens.accessToken, refreshToken: tokens.refreshToken,
-    vence: ahora + (tokens.expiresIn - 60) * 1000,
-    refrescoVence: ahora + (tokens.refreshTokenExpiresIn - 60) * 1000,
-  };
+  permiso = aPermiso(tokens, ahora);
+  // Si PSN no manda un refresh token nuevo, se conserva el anterior
+  if (!permiso.refreshToken || !tokens.refreshTokenExpiresIn) {
+    const anterior = await leerPermisoGuardado();
+    if (anterior) { permiso.refreshToken = anterior.refreshToken; permiso.refrescoVence = anterior.refrescoVence; }
+  }
+  await guardarPermiso(permiso);
   return { accessToken: permiso.accessToken };
 }
 
