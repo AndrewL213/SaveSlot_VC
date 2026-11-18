@@ -50,7 +50,8 @@ async function jugadosDe(auth, id, onlineId) {
   const pedir = (cuenta) => p.psn.getUserPlayedGames(auth, cuenta, opciones).catch((e) => { console.error("PSN juegos jugados (" + cuenta + "):", e.message); return null; });
   let r = await pedir(id);
   if (!r || !(r.titles || []).length) {
-    const yo = await p.psn.getProfileFromAccountId(auth, "me").catch(() => null);
+    const yo = await p.psn.getProfileFromAccountId(auth, "me").catch((e) => { console.error("PSN perfil me:", e.message); return null; });
+    console.log("PSN cuenta del servidor:", yo ? yo.onlineId : "?", "· vinculada:", onlineId);
     if (yo && String(yo.onlineId).toLowerCase() === String(onlineId).toLowerCase()) r = (await pedir("me")) || r;
   }
   console.log("PSN juegos jugados:", r ? JSON.stringify(r).slice(0, 400) : "sin respuesta");
