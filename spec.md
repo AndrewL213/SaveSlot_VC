@@ -1107,3 +1107,26 @@ Antes de Supabase, lo que hacía cada persona se guardaba en el navegador (`loca
   - Un mensaje enviado aparece en la otra cuenta sin recargar, y en su campana.
   - No deja escribir a quien no es tu amigo (ni desde la página ni desde la consola del navegador).
   - Al abrir la conversación, el número de no leídos baja a 0.
+
+### 35. Administración (moderación)
+- **Archivo de diseño:** no tiene (pantalla nueva; usa solo componentes del kit: `.cabecera-juego`, `.datos-resumen` con `.dato`, `.chip`, `.barra-filtros`, `.tarjeta`, `.etiqueta`, `.tabla`, `.modal`, `.vacio`). Archivos: `pages/admin.html` y `js/admin.js`; la base, en `supabase/administracion.sql`.
+- **Objetivo:** que el equipo pueda moderar la comunidad sin escribir SQL. Funciona si una reseña ofensiva o una cuenta que molesta dejan de verse en toda la app con un clic.
+- **Quién entra:** solo las cuentas que están en la tabla **administradores** (se agregan a mano en el SQL Editor; ver el final de `administracion.sql`). Sin sesión, la página pide entrar; con una cuenta que no es administradora, dice «Esta página es solo para administradores». A las administradoras les aparece «Administración» en el menú de la cuenta.
+- **Contenido:**
+  1. Resumen: por revisar, reportadas visibles, ocultas, cuentas suspendidas, cuentas, reseñas, guías y clips.
+  2. Pestañas: **Por revisar** (ocultas o reportadas, las más reportadas primero), **Reseñas**, **Guías**, **Clips**, **Perfiles** y **Registro**, con buscador y filtro «Mostrar».
+  3. Cada publicación: tipo, estado, reportes, autor, juego, fecha, texto completo y por qué está oculta. Acciones: ver en la app o ver el clip, ver los reportes, ver y borrar comentarios, ocultar (con motivo), aprobar y mostrar o descartar reportes, borrar (con motivo) y suspender o quitar la suspensión a su autor.
+  4. Perfiles: @, nombre, sobre mí, correo, cómo entra, publicaciones, comentarios, reportes recibidos, última conexión y estado (activa, suspendida con su motivo, administrador). Acciones: ver sus publicaciones, abrir su perfil, suspender o quitar la suspensión.
+  5. Registro: qué hizo cada administrador, cuándo, a quién y por qué (con una copia corta de lo borrado).
+- **Qué funciona de verdad:** Real (Supabase). Todo pasa por las funciones `admin_…` de la base, que primero comprueban `es_admin()`.
+- **Reglas:**
+  - **Ocultar** una publicación la quita de toda la app; su autor la sigue viendo en su Historial con el motivo. **Aprobar** la vuelve a mostrar y descarta sus reportes. **Borrar** la quita para siempre (con sus comentarios, votos y reportes; en un clip subido, también el video).
+  - **Suspender** una cuenta: su perfil se ve como «Cuenta suspendida» y sus publicaciones y comentarios dejan de verse. No puede publicar, comentar, reportar, enviar mensajes, pedir amistad ni cambiar su perfil, pero sí entrar y ver la app, con un aviso arriba que dice el motivo. Nunca se puede suspender a un administrador.
+  - Cada acción queda en el registro y la persona afectada recibe un aviso en la campana (tipo `moderacion`).
+  - Lo oculto no se abre a los administradores con reglas de lectura: así nunca aparece en las pantallas normales de la app, ni siquiera para ellos.
+- **Está lista cuando:**
+  - Funciona en celular (375 px de ancho).
+  - Una cuenta que no es administradora no puede ver nada ni hacer nada (ni desde la página ni desde la consola del navegador).
+  - Una reseña oculta, borrada o de una cuenta suspendida deja de verse en Inicio, Comunidad, Detalle de juego y Detalle de reseña al recargar.
+  - La cuenta suspendida ve el aviso y la base le rechaza publicar, comentar y cambiar su perfil.
+

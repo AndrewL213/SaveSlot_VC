@@ -30,15 +30,16 @@ Gamers casuales de 15 a 24 años en España y Latinoamérica que hoy tienen que 
 - **Steam**: entrar con Steam, y ver perfil, biblioteca, logros, lista de deseos, reseñas y el precio, la nota y los jugadores de cada juego.
 - **Todavía en el navegador** (falta pasarlos a Supabase): chats de MatchPlay.
 - **Xbox**: vincular la cuenta de Microsoft y ver el gamertag, los juegos y los logros (Xbox Live). En la ficha de cada juego, precio, nota, edad (PEGI) y Game Pass de la tienda de Xbox.
+- **Administración**: `pages/admin.html`, para que el equipo modere perfiles, reseñas, guías y clips (ocultar, borrar, suspender cuentas). Solo entran las cuentas de la tabla `administradores` (ver `supabase/administracion.sql`).
 - **Simulado**: las respuestas de la IA de MatchPlay y los logros de PlayStation. Nintendo no se vincula (sus juegos sí están en el catálogo).
 
 ## Cómo está organizado este repo
 
 - `index.html` · La pantalla de inicio. Las demás pantallas están en `pages/`, y la página de error es `404.html`.
 - `disenos/` · Los diseños originales de las pantallas (inicio, buscador, ficha de juego, perfil, eventos, chat con IA y más). Son solo de referencia.
-- `js/` · El código de la app: `app.js` (cómo se comporta), `data.js` (listas fijas y datos simulados) y `supabase.js` (conexión con Supabase).
+- `js/` · El código de la app: `app.js` (cómo se comporta), `admin.js` (la página de Administración), `data.js` (listas fijas y datos simulados) y `supabase.js` (conexión con Supabase).
 - `api/` · Funciones de Vercel que usan claves secretas: `igdb.js` (catálogo de juegos) y `steam/` (inicio de sesión y datos de Steam).
-- `supabase/` · El código SQL de Supabase, para ejecutar en su SQL Editor: `esquema.sql` (todas las tablas, reglas de acceso y funciones de la app; se puede ejecutar varias veces), `juegos.sql` y `usuarios_steam.sql` (datos de Steam), `avatares.sql` (fotos de perfil), `borrar-cuenta.sql` (borrar la cuenta propia) y `limpiar-ejemplos.sql` (borra los datos de prueba).
+- `supabase/` · El código SQL de Supabase, para ejecutar en su SQL Editor: `esquema.sql` (todas las tablas, reglas de acceso y funciones de la app; se puede ejecutar varias veces), `juegos.sql` y `usuarios_steam.sql` (datos de Steam), `avatares.sql` (fotos de perfil), `borrar-cuenta.sql` (borrar la cuenta propia), `administracion.sql` (administradores, moderación y cuentas suspendidas) y `limpiar-ejemplos.sql` (borra los datos de prueba).
 - `vercel.json` · Tareas automáticas de Vercel, como actualizar cada día los datos de Steam.
 - `pantallas.md` · El avance de cada pantalla.
 - `assets/` · Las imágenes de la app: iconos, portadas de juegos y una foto de prueba, con sus créditos en `CREDITOS.md`.

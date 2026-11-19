@@ -58,6 +58,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ (sesión) | ✅ |
 | 32. Recuperar contraseña | `pages/recuperar-contrasena.html` | ✅ | ✅ | ✅ (Supabase Auth: resetPasswordForEmail y updateUser) | ✅ |
 | 34. Mensajes | `pages/mensajes.html` | ✅ | ✅ | ✅ (Supabase: tabla **mensajes**, en vivo con Realtime) | ⬜ pendiente: probar con dos cuentas amigas (la sección 9 de `esquema.sql` ya está en Supabase) |
+| 35. Administración (moderación) | `pages/admin.html` + `js/admin.js` | ✅ | ✅ | ✅ (Supabase: funciones `admin_…`, tablas **administradores** y **moderacion**; `supabase/administracion.sql`) | ⬜ pendiente: ejecutar `administracion.sql` en Supabase, agregar las cuentas administradoras y probar con una cuenta real |
 
 ## Ayuda
 

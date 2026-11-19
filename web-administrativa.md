@@ -1,5 +1,7 @@
 # Web administrativa de SaveSlot
 
+> **Actualización (noviembre):** la parte de **moderación** (perfiles, reseñas, guías y clips) ya está hecha **en este mismo repositorio**: `pages/admin.html`, `js/admin.js` y `supabase/administracion.sql` (sección 35 de `spec.md`). Ya crea la tabla `administradores` y la función `es_admin()` del paso 1. Lo que sigue pendiente de este documento es la gestión de **eventos**; si se hace, conviene agregarla como otra pestaña de `pages/admin.html` en vez de un repositorio aparte.
+
 Instrucciones para construir la web administrativa en **otro repositorio de GitHub** y conectarla con SaveSlot.
 
 Sirve para que el equipo cree, edite y borre **torneos y sorteos** sin escribir SQL, vea quién se inscribió y elija al ganador de un sorteo.

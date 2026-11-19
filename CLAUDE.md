@@ -45,7 +45,8 @@ Digitales 3. Más contexto en README.md.
   separados del diseño) y supabase.js (conexión con Supabase: dirección, llave
   publicable y clienteSupabase).
   Cada página carga, al final del <body> y en este orden: supabase-js (versión
-  fija, con integrity), js/supabase.js, js/data.js y js/app.js. Única excepción:
+  fija, con integrity), js/supabase.js, js/data.js y js/app.js (pages/admin.html
+  carga además js/admin.js, la pantalla de Administración, después de app.js). Única excepción:
   index.html carga además js/arranque.js en el <head> (decide si sale la animación
   de arranque antes de que se pinte la página).
 - api/: funciones de Vercel que usan claves secretas (por ejemplo,
@@ -53,7 +54,7 @@ Digitales 3. Más contexto en README.md.
   datos de Steam: perfil, biblioteca y logros, api/epic/auth.js, entrar con Epic Games, api/playstation.js, vincular PlayStation y sus trofeos (con psn-api), y api/xbox/, vincular Xbox y sus juegos y logros; api/_vuelta.js tiene las comprobaciones de seguridad al volver de ellos). JavaScript sin paso de compilación.
 - supabase/: el código SQL de Supabase. esquema.sql tiene todas las tablas, reglas
   y funciones de la app (se puede ejecutar varias veces); aparte están juegos.sql y
-  usuarios_steam.sql (Steam), usuarios_epic.sql (Epic Games), usuarios_xbox.sql (Xbox), usuarios_playstation.sql (PlayStation), avatares.sql (fotos de perfil), borrar-cuenta.sql y
+  usuarios_steam.sql (Steam), usuarios_epic.sql (Epic Games), usuarios_xbox.sql (Xbox), usuarios_playstation.sql (PlayStation), avatares.sql (fotos de perfil), administracion.sql (administradores y moderación), borrar-cuenta.sql y
   limpiar-ejemplos.sql. Si creas o cambias una tabla, guarda aquí su SQL.
 - vercel.json: las tareas automáticas de Vercel (crons), como la
   actualización diaria de los datos de Steam.
