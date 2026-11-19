@@ -801,9 +801,18 @@ var DATOS_ARMADOS = {};  // lo mismo, con la forma que usan las pantallas
 // Columnas que se piden de cada tabla. De usuarios no se pide auth_id (el número de la cuenta de Supabase):
 // la base no deja leerlo desde la app (supabase/esquema.sql). La fila propia se encuentra con mi_usuario_id().
 var COLUMNAS = {
-  usuarios: 'id, created_at, usuario, nombre, iniciales, sobre_mi, jugando_ahora, miembro_desde, nivel, xp, color, forma_de_entrar, invitado, foto, ultima_conexion'
+  usuarios: 'id, created_at, usuario, nombre, iniciales, sobre_mi, jugando_ahora, miembro_desde, nivel, xp, color, forma_de_entrar, invitado, foto, ultima_conexion, bloqueado'
 };
 function columnasDe(tipo) { return COLUMNAS[tipo] || '*'; }
+
+// bloqueado (cuenta suspendida por moderación) es de supabase/administracion.sql. Si todavía no se
+// ejecutó, la base no conoce la columna: se deja de pedir y la app sigue igual que antes.
+function sinColumnaBloqueado(tipo, error) {
+  if (tipo !== 'usuarios' || !error || COLUMNAS.usuarios.indexOf(', bloqueado') === -1) return false;
+  if (!/bloqueado/.test(error.message || '') && ['42703', '42501', 'PGRST204'].indexOf(error.code) === -1) return false;
+  COLUMNAS.usuarios = COLUMNAS.usuarios.replace(', bloqueado', '');
+  return true;
+}
 
 // soloDe (opcional): el id de usuarios cuyas filas se piden (para las tablas de cada persona; ver soloLoPropio).
 async function obtenerDatos(tipo, soloDe) {
@@ -816,6 +825,7 @@ async function obtenerDatos(tipo, soloDe) {
   // -1: ninguna fila (sin cuenta, o todavía no se sabe cuál es la propia)
   if (soloDe !== undefined) pedido = pedido.eq('usuario_id', soloDe || -1);
   var respuesta = await pedido.order('id');
+  if (respuesta.error && sinColumnaBloqueado(tipo, respuesta.error)) return obtenerDatos(tipo, soloDe);
   if (respuesta.error) {
     console.error('Supabase no entregó la tabla ' + tipo + ':', respuesta.error);
     throw respuesta.error;
@@ -828,6 +838,7 @@ async function obtenerDatos(tipo, soloDe) {
 async function obtenerUno(tipo, valor, columna) {
   if (!clienteSupabase) throw new Error('No se pudo conectar con Supabase');
   var respuesta = await clienteSupabase.from(tipo).select(columnasDe(tipo)).eq(columna || 'id', valor).maybeSingle();
+  if (respuesta.error && sinColumnaBloqueado(tipo, respuesta.error)) return obtenerUno(tipo, valor, columna);
   if (respuesta.error) {
     console.error('Supabase no entregó ' + tipo + ' (' + (columna || 'id') + ' = ' + valor + '):', respuesta.error);
     throw respuesta.error;
@@ -850,6 +861,8 @@ async function guardarDatos(tipo, fila) {
   var pedido = clienteSupabase.from(tipo).insert(fila);
   var sensible = TABLAS_SENSIBLES.indexOf(tipo) !== -1;
   var respuesta = sensible ? await pedido : await pedido.select(columnasDe(tipo));
+  // (si falla, la base no guardó nada: se puede intentar de nuevo sin la columna)
+  if (respuesta.error && sinColumnaBloqueado(tipo, respuesta.error)) return guardarDatos(tipo, fila);
   if (respuesta.error) {
     console.error('Supabase no guardó en ' + tipo + ':', respuesta.error);
     throw respuesta.error;
@@ -862,6 +875,7 @@ async function guardarDatos(tipo, fila) {
 async function actualizarDatos(tipo, id, cambios) {
   if (!clienteSupabase) throw new Error('No se pudo conectar con Supabase');
   var respuesta = await clienteSupabase.from(tipo).update(cambios).eq('id', id).select(columnasDe(tipo));
+  if (respuesta.error && sinColumnaBloqueado(tipo, respuesta.error)) return actualizarDatos(tipo, id, cambios);
   if (respuesta.error) {
     console.error('Supabase no cambió ' + tipo + ' ' + id + ':', respuesta.error);
     throw respuesta.error;
@@ -1347,6 +1361,8 @@ var TRADUCIR = {
         spoiler: r.spoiler, editada: r.editada, fecha: fechaLocal(r.fecha),
         clip_twitch: r.clip_twitch || null, clip_archivo: r.clip_archivo || null, clip_miniatura: r.clip_miniatura || null,
         clip_duracion: r.clip_duracion == null ? null : Number(r.clip_duracion),
+        // oculta: por 3 reportes o por moderación (solo su autor la recibe de la base); motivo_oculta, si lo dio moderación
+        oculta: !!r.oculta, motivo_oculta: r.motivo_oculta || null,
         votos_util: cuenta('votos_util', r.id), me_gusta: cuenta('me_gusta_resenas', r.id), porcentaje_util: null
       };
     });
@@ -2085,6 +2101,38 @@ var ICONO_CAMPANA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 var MIS_NOTIFICACIONES = [];
 
 // Trae las notificaciones propias de la base (cada persona solo ve las suyas)
+/* ---------- Moderación (supabase/administracion.sql) ----------
+   ES_ADMIN: la cuenta abierta puede usar Administración (pages/admin.html); se le muestra en el menú.
+   MI_BLOQUEO: { motivo, desde } si un administrador suspendió la cuenta; null si no.
+   Si administracion.sql todavía no se ejecutó, las funciones no existen: queda todo como antes. */
+var ES_ADMIN = false;
+var MI_BLOQUEO = null;
+async function revisarModeracionPropia() {
+  ES_ADMIN = false;
+  MI_BLOQUEO = null;
+  if (!MI_FILA || !clienteSupabase) return;
+  var respuestas = await Promise.all([
+    clienteSupabase.rpc('es_admin'),
+    MI_FILA.bloqueado ? clienteSupabase.rpc('mi_bloqueo') : Promise.resolve({ data: null })
+  ]).catch(function () { return [{}, {}]; });
+  ES_ADMIN = respuestas[0].data === true;
+  var bloqueo = respuestas[1].data;
+  if (bloqueo && bloqueo.bloqueado) MI_BLOQUEO = { motivo: bloqueo.motivo || null, desde: bloqueo.desde || null };
+}
+
+// Aviso arriba de cada página para la cuenta suspendida (la base ya no la deja publicar ni cambiar su perfil)
+function mostrarAvisoDeBloqueo() {
+  var principal = document.querySelector('main');
+  if (!MI_BLOQUEO || !principal || document.getElementById('aviso-bloqueo')) return;
+  principal.insertAdjacentHTML('afterbegin',
+    '<div class="contenedor contenedor--junto"><div class="tarjeta tarjeta--aviso" id="aviso-bloqueo" role="alert">' +
+      '<b>Tu cuenta está suspendida por moderación.</b>' +
+      '<span class="tarjeta__texto">' + (MI_BLOQUEO.motivo ? 'Motivo: ' + escapar(MI_BLOQUEO.motivo) + '. ' : '') +
+      'Puedes ver SaveSlot, pero no publicar reseñas, guías ni clips, comentar, enviar mensajes ni cambiar tu perfil. ' +
+      'Si crees que es un error, <a href="' + rutaPagina('contacto.html') + '">escríbenos</a>.</span>' +
+    '</div></div>');
+}
+
 async function cargarMisNotificaciones() {
   if (!MI_FILA) { MIS_NOTIFICACIONES = []; return; }
   try {
@@ -2176,6 +2224,7 @@ function prepararEncabezado() {
         '<a class="menu-usuario__opcion" role="menuitem" href="' + rutaPagina('perfil.html') + '">Mi perfil</a>' +
         '<a class="menu-usuario__opcion" role="menuitem" href="' + rutaPagina('editar-perfil.html') + '">Editar perfil</a>' +
         '<a class="menu-usuario__opcion" role="menuitem" href="' + rutaPagina('mensajes.html') + '">Mensajes</a>' +
+        (ES_ADMIN ? '<a class="menu-usuario__opcion" role="menuitem" href="' + rutaPagina('admin.html') + '">Administración</a>' : '') +
         '<span class="menu-usuario__separador" role="separator"></span>' +
         '<button class="menu-usuario__opcion menu-usuario__opcion--peligro" role="menuitem" type="button" data-cerrar-sesion>Cerrar sesión</button>' +
       '</div>' +
@@ -6639,6 +6688,8 @@ function pantallaHistorial() {
         '<div class="en-fila en-fila--entre"><div><a href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '"><b class="tarjeta__titulo">' + escapar(j.nombre_corto) + '</b></a> ' + etiquetaOrigen('SaveSlot') + '<br>' +
           '<span class="tarjeta__texto">' + formatearFecha(r.fecha) + ' · ' + escapar(r.estado_partida || 'Terminado') + ' · ' + (r.horas || 0) + ' h' + (r.editada ? ' · Editada' : '') + '</span></div>' +
           '<span class="nota">' + escapar(r.calificacion) + '<small>/10</small></span></div>' +
+        (r.oculta ? '<p class="tarjeta__texto"><span class="etiqueta etiqueta--error">OCULTA</span> Solo tú la ves' +
+          (r.motivo_oculta ? ': moderación la ocultó (' + escapar(r.motivo_oculta) + ').' : ': la ocultaron los reportes de la comunidad.') + '</p>' : '') +
         '<p class="tarjeta__texto texto-corto">' + (r.spoiler ? '<span class="etiqueta etiqueta--contorno">SPOILER</span> ' : '') + escapar(r.texto) + '</p>' +
         '<div class="en-fila en-fila--entre"><span class="tarjeta__texto">♥ ' + formatearNumero(r.me_gusta) + ' · Útil ' + formatearNumero(r.votos_util) + ' · ' + comentarios + (comentarios === 1 ? ' comentario' : ' comentarios') + '</span>' +
           '<span class="en-fila"><a class="boton boton--secundario boton--sm" href="detalle-resena.html?id=' + encodeURIComponent(r.id) + '">Ver</a>' +
@@ -7314,6 +7365,8 @@ async function pantallaUsuario() {
   if (!persona || !persona.nivel) { location.replace(rutaPagina('404.html') + '?tipo=usuario'); return; }
   var sesion = obtenerSesion();
   if (sesion && sesion.user === persona.usuario) { location.replace('perfil.html'); return; }
+  // Cuenta suspendida por moderación: su perfil no se muestra (solo los administradores la ven, en Administración)
+  if (fila.bloqueado) { location.replace(rutaPagina('404.html') + '?tipo=suspendida'); return; }
   document.title = persona.nombre + ' · SaveSlot';
 
   // Cabecera
@@ -7935,8 +7988,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (MI_FILA) await asegurarTablasPropias(MI_FILA.id);
       traerMiPerfilDeLaBase();
     }
-    // La campana: las notificaciones propias de la base
-    if (!esError) await cargarMisNotificaciones();
+    // La campana: las notificaciones propias de la base. Y si la cuenta es administradora o está suspendida
+    if (!esError) await Promise.all([cargarMisNotificaciones(), revisarModeracionPropia()]);
     // Steam vinculada: en la base (y los +100 XP la primera vez)
     var avisoXp = esError ? null : await guardarSteamEnLaBase().catch(function (error) { console.error('No se pudo guardar Steam en la base:', error); return null; });
     if (avisoXp) aviso = aviso ? aviso + ' · ' + avisoXp : avisoXp;
@@ -7955,6 +8008,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     prepararEncabezado();
     prepararPie();
     if (pantalla) await pantalla();
+    if (!esError) mostrarAvisoDeBloqueo();
     quitarArranque();
     // Aviso que dejó la página anterior (por ejemplo, "Contraseña guardada" al volver de Recuperar contraseña)
     var avisoAlEntrar = leerMemoria('avisoAlEntrar', null);
