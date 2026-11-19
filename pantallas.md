@@ -58,7 +58,7 @@ Avance de cada pantalla de spec.md, por tramo del flujo. Las páginas salen de l
 | 31. Menú de la cuenta | se abre en todas las páginas (nombre o avatar de la barra) | ✅ | ✅ | ✅ (sesión) | ✅ |
 | 32. Recuperar contraseña | `pages/recuperar-contrasena.html` | ✅ | ✅ | ✅ (Supabase Auth: resetPasswordForEmail y updateUser) | ✅ |
 | 34. Mensajes | `pages/mensajes.html` | ✅ | ✅ | ✅ (Supabase: tabla **mensajes**, en vivo con Realtime) | ⬜ pendiente: probar con dos cuentas amigas (la sección 9 de `esquema.sql` ya está en Supabase) |
-| 35. Administración (moderación) | `pages/admin.html` + `js/admin.js` | ✅ | ✅ | ✅ (Supabase: funciones `admin_…`, tablas **administradores** y **moderacion**; `supabase/administracion.sql`) | ⬜ pendiente: ejecutar `administracion.sql` en Supabase, agregar las cuentas administradoras y probar con una cuenta real |
+| 35. Administración (moderación) | `pages/admin.html` + `js/admin.js` | ✅ | ✅ | ✅ (Supabase: funciones `admin_…`, tablas **administradores** y **moderacion**; `supabase/administracion.sql`) | ⬜ pendiente: confirmar que las cuentas del equipo están en **administradores** y probar con una cuenta real (`administracion.sql` ya está en Supabase) |
 
 ## Ayuda
 
@@ -79,16 +79,18 @@ Mejoras:
 
 Falta de ustedes:
 - Los documentos de **términos y privacidad** (casilla de Crear cuenta) y del **reglamento y reembolsos** de eventos: hoy no enlazan a nada. El público incluye menores de edad: conviene que los revisen ustedes o su profesor.
-- **Probar con cuentas reales** lo que no se puede probar sin ellas: compartir un clip de Twitch (con Twitch vinculada en Editar perfil) y subir un video, mensajes entre dos cuentas amigas, Biblioteca y Perfil con Steam, Xbox y PlayStation vinculadas (filtros, «Actividad reciente» y que cada juego abra su ficha) y el correo de «¿La olvidaste?» de punta a punta.
+- **Probar con cuentas reales** lo que no se puede probar sin ellas: Administración (con una cuenta administradora y con una que no lo es), compartir un clip de Twitch (con Twitch vinculada en Editar perfil) y subir un video, mensajes entre dos cuentas amigas, Biblioteca y Perfil con Steam, Xbox y PlayStation vinculadas (filtros, «Actividad reciente» y que cada juego abra su ficha) y el correo de «¿La olvidaste?» de punta a punta.
 
-Al final: la **web administrativa** para registrar torneos y sorteos sin SQL. Va en otro repositorio y usa la misma base: las instrucciones completas están en `web-administrativa.md` (primero hay que agregarla a spec.md).
+Administración (pantalla 35, `pages/admin.html`): la **moderación ya está hecha** (perfiles, reseñas, guías y clips: ocultar, aprobar, borrar y suspender cuentas, con registro; ahí se revisan los clips ocultos por reportes). Falta:
+- **Gestión de eventos**: crear, editar y borrar torneos y sorteos sin SQL, ver inscritos y elegir ganador. Va como otra pestaña de `pages/admin.html` (no en otro repositorio); la base y las pantallas que hacen falta están en `web-administrativa.md`, y primero hay que agregarla a la sección 35 de spec.md.
+- Ojo: `administracion.sql` cambia reglas de **resenas**, **comentarios**, **reportes** y **amigos** que también están en `esquema.sql`. Si vuelven a ejecutar `esquema.sql`, ejecuten después `administracion.sql`, o la moderación deja de aplicarse.
 
 Después: pagos de eventos.
 
 En segundo plano (ya funciona; solo es mantenerlo):
 - **PlayStation**: el NPSSO de la cuenta de PSN de SaveSlot (`PSN_NPSSO` en Vercel) vence cada unos dos meses; cuando venza, Editar perfil dirá que hay que pegar uno nuevo.
 
-Ya hecho (noviembre): Supabase al día (sección 9 de mensajes, `esquema.sql`, eventos de ejemplo y la dirección de vuelta de recuperar contraseña) y ver clips de Twitch en el Detalle de juego, y la sección 10 (clips y reportes).
+Ya hecho (noviembre): Supabase al día (sección 9 de mensajes, `esquema.sql`, eventos de ejemplo y la dirección de vuelta de recuperar contraseña) y ver clips de Twitch en el Detalle de juego, la sección 10 (clips y reportes) y `administracion.sql` (moderación).
 
 ## Pendientes para la revisión vs spec
 - **Revisión de las pantallas 21 a 31 (noviembre, de una vez)**: todas cumplen sus criterios de «Está lista cuando». Arreglos: (1) Diario, Historial y Perfil de otro usuario escondían los juegos que no estaban en este navegador (el Diario decía «No hay registros» y el Historial «Ninguna reseña coincide con los filtros» sin filtros), y Perfil de otro usuario se rompía entera si la persona había reseñado uno de esos juegos. Ahora se dibujan con `juegoOMarcador` («Cargando…» o «Juego no disponible») y se piden a IGDB con `traerJuegosQueFaltan`. (2) Logros decía «No tienes logros sincronizados de Todas»: ahora «…todavía». (3) «Mensaje guardado» lleva el ✓ verde del diseño. (4) El pie de todas las páginas tiene «Biblioteca» (antes solo 3). Diferencias que quedan: Notificaciones sin el trofeo del diseño (lleva una lista); «Logros más raros» muestra los de ejemplo, con la nota «Datos de ejemplo».

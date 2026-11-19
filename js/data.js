@@ -1691,7 +1691,7 @@ const DATOS = {
     { id: "s5", servicio: "Tu Xbox: gamertag, juegos y logros", proveedor: "Xbox Live (cuenta de Microsoft), desde Vercel", estado: "conectado", texto: "Conectado", prueba: "xbox" },
     { id: "s6", servicio: "Tu PlayStation: ID, nivel, juegos y trofeos (la clave de PSN se renueva cada unos dos meses)", proveedor: "PlayStation Network (psn-api, no oficial), desde Vercel", estado: "conectado", texto: "Conectado" },
     { id: "s10", servicio: "Pagos de eventos", proveedor: "Pasarela de pagos", estado: "no-disponible", texto: "No disponible" },
-    { id: "s20", servicio: "Administración: moderar perfiles, reseñas, guías y clips", proveedor: "Supabase (solo cuentas administradoras)", estado: "conectado", texto: "Conectado" },
-    { id: "s17", servicio: "Administración: crear torneos y sorteos", proveedor: "Supabase (ver web-administrativa.md)", estado: "pendiente", texto: "Pendiente" }
+    { id: "s20", servicio: "Administración: moderar perfiles, reseñas, guías y clips (ocultar, borrar, suspender cuentas)", proveedor: "Supabase (solo cuentas administradoras)", estado: "conectado", texto: "Conectado" },
+    { id: "s17", servicio: "Administración: crear torneos y sorteos (irá en la página de Administración)", proveedor: "Supabase (ver web-administrativa.md)", estado: "pendiente", texto: "Pendiente" }
   ]
 };
